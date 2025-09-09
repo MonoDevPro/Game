@@ -1,6 +1,7 @@
 using Arch.Core;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Network.Contracts;
 // CORREÇÃO: Adiciona o using para o namespace do código gerado
 using Simulation.Core.Shared.Network.Generated; 
@@ -14,10 +15,13 @@ public class NetworkManager
     private readonly World _world;
 
     public NetPeer? ServerConnection { get; private set; }
+    
+    private readonly PlayerIndexSystem _playerIndex; // Adicionar esta linha
 
-    public NetworkManager(World world)
+    public NetworkManager(World world, PlayerIndexSystem playerIndex) // Modificar construtor
     {
         _world = world;
+        _playerIndex = playerIndex; // Adicionar esta linha
         Listener = new EventBasedNetListener();
         Net = new NetManager(Listener);
     }
@@ -47,7 +51,7 @@ public class NetworkManager
     private void OnReceive(NetPeer fromPeer, NetPacketReader dataReader, byte channel, DeliveryMethod deliveryMethod)
     {
         // Esta é a linha 50. Agora ela corresponde à assinatura gerada.
-        PacketProcessor.Process(_world, fromPeer, dataReader);
+        PacketProcessor.Process(_world, _playerIndex, dataReader);
         dataReader.Recycle();
     }
 

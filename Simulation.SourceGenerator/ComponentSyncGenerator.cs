@@ -7,7 +7,6 @@ using System.Text;
 
 namespace Simulation.SourceGenerator
 {
-    // Record para armazenar informações do componente, agora não é 'file' para evitar erros de visibilidade.
     internal record struct StructInfo(string Name, string Namespace, string Authority);
 
     [Generator]
@@ -20,12 +19,12 @@ namespace Simulation.SourceGenerator
             var provider = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     AttributeName,
-                    predicate: (node, _) => node is StructDeclarationSyntax,
-                    transform: (ctx, _) =>
+                    (node, _) => node is StructDeclarationSyntax,
+                    (ctx, _) =>
                     {
                         var structSyntax = (StructDeclarationSyntax)ctx.TargetNode;
-                        var attribute = ctx.Attributes.First(ad => ad.AttributeClass?.ToDisplayString() == AttributeName);
-                        var authority = attribute.ConstructorArguments[0].Value?.ToString(); // Ex: "0" para Server
+                        var attribute = ctx.Attributes.First();
+                        var authority = attribute.ConstructorArguments[0].Value?.ToString();
                         return new StructInfo(
                             structSyntax.Identifier.Text,
                             structSyntax.GetNamespace(),
@@ -33,7 +32,6 @@ namespace Simulation.SourceGenerator
                         );
                     })
                 .Collect();
-
             context.RegisterSourceOutput(provider, Execute);
         }
 
@@ -41,10 +39,8 @@ namespace Simulation.SourceGenerator
         {
             if (structs.IsDefaultOrEmpty) return;
             var distinctStructs = structs.Distinct().ToArray();
-
             var serverAuthStructs = distinctStructs.Where(s => s.Authority == "Server").ToList();
             var clientAuthStructs = distinctStructs.Where(s => s.Authority == "Client").ToList();
-
             var code = GenerateCode(distinctStructs, serverAuthStructs, clientAuthStructs);
             context.AddSource("Network.g.cs", code);
         }
@@ -57,22 +53,22 @@ namespace Simulation.SourceGenerator
 using System;
 using Arch.Core;
 using Arch.System;
+using Arch.System.SourceGenerator;
 using LiteNetLib;
 using MemoryPack;
+using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Network;
 using Simulation.Core.Shared.Network.Contracts;
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network.Attributes;
 
 namespace Simulation.Core.Shared.Network.Generated
-{
-    // ===================================
-    // PACKET TYPES & DEFINITIONS
-    // ===================================
-    public enum PacketType : byte
-    {");
-            foreach (var s in allStructs) sb.AppendLine($"        {s.Name}Update,");
-            sb.AppendLine("    }");
+{");
+            // Geração de Pacotes, Factory e Processador
+            sb.Append(@"
+    public enum PacketType : byte {");
+            foreach (var s in allStructs) sb.Append($"{s.Name}Update,");
+            sb.AppendLine("}");
 
             foreach (var s in allStructs)
             {
@@ -80,35 +76,18 @@ namespace Simulation.Core.Shared.Network.Generated
     [MemoryPackable]
     public partial struct {s.Name}UpdatePacket : IPacket
     {{
-        public Entity Entity {{ get; set; }}
+        public int PlayerId {{ get; set; }}
         public {s.Name} Data {{ get; set; }}
     }}");
             }
             sb.Append(@"
-    // ===================================
-    // PACKET FACTORY
-    // ===================================
-    public static class PacketFactory
-    {
-        public static PacketType GetPacketType<T>(T packet) where T : IPacket => packet switch
-        {");
-            foreach (var s in allStructs) sb.AppendLine($"            {s.Name}UpdatePacket _ => PacketType.{s.Name}Update,");
-            sb.AppendLine("            _ => throw new ArgumentOutOfRangeException(nameof(packet), $\"Unknown packet type: {typeof(T).Name}\")");
-            sb.AppendLine("        };");
-            sb.AppendLine("    }");
-            
-            sb.Append(@"
-    // ===================================
-    // PACKET PROCESSOR (Called by NetworkManager)
-    // ===================================
     public static class PacketProcessor
     {
-        public static void Process(World world, NetPeer peer, NetPacketReader reader)
+        public static void Process(World world, PlayerIndexSystem playerIndex, NetPacketReader reader)
         {
             if (reader.AvailableBytes == 0) return;
             var type = (PacketType)reader.GetByte();
             var dataSpan = reader.GetRemainingBytesSegment();
-
             switch (type)
             {");
             foreach (var s in allStructs)
@@ -116,95 +95,47 @@ namespace Simulation.Core.Shared.Network.Generated
                 sb.AppendLine($@"                case PacketType.{s.Name}Update:
                 {{
                     var packet = MemoryPackSerializer.Deserialize<{s.Name}UpdatePacket>(dataSpan);
-                    if (world.IsAlive(packet.Entity)) world.Set(packet.Entity, packet.Data);
+                    if (playerIndex.TryGetEntity(packet.PlayerId, out var entity))
+                    {{
+                        ref var comp = ref world.AddOrGet<{s.Name}>(entity);
+                        comp = packet.Data;
+                    }}
                     break;
                 }}");
             }
-            sb.AppendLine(@"                default: break;
-            }
-        }
-    }
-    // ===================================
-    // AUTOMATED NETWORK SYSTEMS
-    // ===================================");
-
-            // --- GERAR SISTEMA DO SERVIDOR ---
-            sb.AppendLine(@"
-    /// <summary>
-    /// Sistema gerado automaticamente para o SERVIDOR.
-    /// Encontra todos os componentes com [SynchronizedComponent(Authority.Server)] e os transmite.
-    /// </summary>
-    public partial class GeneratedServerSyncSystem : BaseSystem<World, float>
-    {
-        private readonly NetworkManager _networkManager;
-        public GeneratedServerSyncSystem(World world, NetworkManager networkManager) : base(world)
-        {
-            _networkManager = networkManager;
-        }");
-
-            foreach (var s in serverStructs)
-            {
-                sb.AppendLine($"        private readonly QueryDescription _query{s.Name} = new QueryDescription().WithAll<{s.Name}>();");
-            }
             
             sb.AppendLine(@"
-        public override void Update(in float t)
-        {");
-            foreach (var s in serverStructs)
-            {
-                sb.AppendLine($@"            World.Query(in _query{s.Name}, (Entity entity, ref {s.Name} comp) =>
-            {{
-                var packet = new {s.Name}UpdatePacket {{ Entity = entity, Data = comp }};
-                // TODO: Adicionar lógica de Area of Interest (AoI) em vez de Broadcast
-                _networkManager.Broadcast(packet, DeliveryMethod.Unreliable);
-            }});");
             }
-            sb.AppendLine(@"        }
+            reader.Recycle();
+        }
     }");
 
-            // --- GERAR SISTEMA DO CLIENTE ---
+            // Geração dos Sistemas
             sb.AppendLine(@"
-    /// <summary>
-    /// Sistema gerado automaticamente para o CLIENTE.
-    /// Encontra todos os componentes de 'intenção' com [SynchronizedComponent(Authority.Client)] e os envia ao servidor.
-    /// </summary>
-    public partial class GeneratedClientIntentSystem : BaseSystem<World, float>
-    {
-        private readonly NetworkManager _networkManager;
-        public GeneratedClientIntentSystem(World world, NetworkManager networkManager) : base(world)
-        {
-            _networkManager = networkManager;
-        }");
-            
-            if (clientStructs.Any())
-            {
-                foreach (var s in clientStructs)
-                {
-                    sb.AppendLine($"        private readonly QueryDescription _query{s.Name} = new QueryDescription().WithAll<{s.Name}>();");
+    public partial class GeneratedServerSyncSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
+    {");
+            foreach (var s in serverStructs) {
+                sb.AppendLine($"        [Query] [All<{s.Name}, PlayerId>] private void Sync{s.Name}(in PlayerId id, in {s.Name} comp) => networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.Unreliable);");
+            }
+            sb.AppendLine(@"
+    }");
+
+            sb.AppendLine(@"
+    public partial class GeneratedClientIntentSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
+    {");
+            if (clientStructs.Any()) {
+                foreach (var s in clientStructs) {
+                    sb.AppendLine($@"        [Query] [All<{s.Name}, PlayerId>] private void Send{s.Name}(in Entity entity, in PlayerId id, in {s.Name} comp)
+        {{
+            networkManager.SendToServer(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.ReliableOrdered);
+            World.Remove<{s.Name}>(entity); // Remove a intenção imediatamente após o envio.
+        }}");
                 }
             }
-            
             sb.AppendLine(@"
-        public override void Update(in float t)
-        {");
-            if(clientStructs.Any())
-            {
-                var queryName = $"_query{clientStructs[0].Name}";
-                foreach (var s in clientStructs)
-                {
-                    sb.AppendLine($@"            World.Query(in _query{s.Name}, (Entity entity, ref {s.Name} comp) =>
-            {{
-                var packet = new {s.Name}UpdatePacket {{ Entity = entity, Data = comp }};
-                _networkManager.SendToServer(packet, DeliveryMethod.ReliableOrdered);
-            }});");
-                }
-                sb.AppendLine($"            World.Remove<{string.Join(", ", clientStructs.Select(cs => cs.Name))}>(in {queryName});");
-            }
-            sb.AppendLine(@"        }
     }
 }
 ");
-            
             return sb.ToString();
         }
     }
@@ -220,12 +151,7 @@ namespace Simulation.Core.Shared.Network.Generated
             {
                 potentialNamespace = potentialNamespace.Parent;
             }
-
-            if (potentialNamespace is BaseNamespaceDeclarationSyntax namespaceSyntax)
-            {
-                return namespaceSyntax.Name.ToString();
-            }
-            return "Global";
+            return (potentialNamespace as BaseNamespaceDeclarationSyntax)?.Name.ToString() ?? "Global";
         }
     }
 }

@@ -4,5 +4,5 @@ namespace Simulation.Core.Shared.Network.Contracts;
 
 public interface IPacket
 {
-    public Entity Entity { get; set; }
+    public int PlayerId { get; set; }
 }

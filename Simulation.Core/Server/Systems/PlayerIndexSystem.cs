@@ -16,6 +16,7 @@ public sealed partial class PlayerIndexSystem(World world) : BaseSystem<World, f
     private void AddNewPlayers(in Entity entity, ref PlayerId playerId)
     {
         _playersByCharId[playerId.Value] = entity;
+        Console.WriteLine($"Indexing player {playerId.Value} with entity {entity}");
         World.Add<Indexed>(entity); // Marca como indexado
     }
 
