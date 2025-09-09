@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+
+        <!-- Necessário para Source Generators -->
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+        <!-- Emitir arquivos gerados para debug -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+
+        <!-- Metadata de pacote NuGet -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Simulation.SourceGenerator</PackageId>
+        <Title>Simulation Source Generator</Title>
+        <Version>1.0.0</Version>
+        <Authors>Filipe Bispo</Authors>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <Description>Source generator para sincronização de componentes no ECS.</Description>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Pacotes necessários para Roslyn Source Generators -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+        <!-- NÃO usar Microsoft.CodeAnalysis.Workspaces -->
+    </ItemGroup>
+
+    <!-- Inclui o DLL do generator no NuGet como analyzer -->
+    <ItemGroup>
+        <None Include="$(OutputPath)\$(AssemblyName).dll"
+              Pack="true"
+              PackagePath="analyzers/dotnet/cs"
+              Visible="false" />
+    </ItemGroup>
+
+</Project>
