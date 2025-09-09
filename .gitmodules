@@ -1,0 +1,3 @@
+[submodule "thirdparty/QuadTrees"]
+	path = thirdparty/QuadTrees
+	url = https://github.com/MonoDevPro/QuadTrees.git
