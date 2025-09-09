@@ -1,48 +1,98 @@
-﻿using LiteNetLib;
-using System.Net;
-using System.Net.Sockets;
+﻿using Arch.Core;
+using Arch.System;
+using Simulation.Core.Shared.Components;
+using Simulation.Core.Shared.Network;
+using Simulation.Core.Shared.Network.Generated; // Importa os sistemas gerados!
 
-// Configurações do Cliente
+// --- Configurações ---
 const string ServerAddress = "127.0.0.1";
-const int ServerPort = 9050;
-const string ConnectionKey = "MyMMORPGKey";
+const int ServerPort = 7777;
+const string ConnectionKey = "MinhaChaveDeProducao";
+Console.Title = "CLIENT";
 
-Console.WriteLine("Starting Client...");
+// --- Inicialização ---
+var world = World.Create();
 
-// Mundo ECS
-// var world = World.Create();
+var networkManager = new NetworkManager(world);
+networkManager.StartClient(ServerAddress, ServerPort, ConnectionKey);
 
-// Rede
-var listener = new EventBasedNetListener();
-var client = new NetManager(listener);
-client.Start();
-client.Connect(ServerAddress, ServerPort, ConnectionKey);
+// --- Entidade do Jogador (Exemplo) ---
+// Em um jogo real, a ID viria do servidor. Aqui, usamos um placeholder.
 
-listener.PeerConnectedEvent += peer =>
+Entity myPlayerEntity = default;
+
+networkManager.Listener.PeerConnectedEvent += peer =>
 {
-    Console.WriteLine($"Connected to server: {peer.Id}");
+    Console.WriteLine($"[Client] Connected to server: {peer.Id}");
+    // Cria uma entidade para o jogador local
+    myPlayerEntity = world.Create(
+        new PlayerId { Value = peer.Id },
+        new Position { X = 0, Y = 0 },
+        new Health { Current = 100, Max = 100 }
+    );
+    
+    Console.WriteLine($"Created local player Entity {myPlayerEntity} for Peer {peer.Id}");
 };
 
-listener.PeerDisconnectedEvent += (peer, info) =>
+Entity otherEntity = default;
+
+var networkManager2 = new NetworkManager(world);
+networkManager2.Listener.PeerConnectedEvent += peer =>
 {
-    Console.WriteLine($"Disconnected from server: {peer.Id}. Reason: {info.Reason}");
+    Console.WriteLine($"[Client] Connected to server: {peer.Id}");
+    // Cria uma entidade para o jogador local
+    otherEntity = world.Create(
+        new PlayerId { Value = peer.Id },
+        new Position { X = 0, Y = 0 },
+        new Health { Current = 100, Max = 100 }
+    );
+    
+    var o = world.Create(new PlayerId { Value = -1 }); 
+    
+    Console.WriteLine($"Created local player Entity {otherEntity} for Peer {peer.Id}");
 };
-
-listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod, channel) =>
-{
-    Console.WriteLine("Received data from server.");
-    dataReader.Recycle();
-};
+networkManager2.StartClient(ServerAddress, ServerPort, ConnectionKey);
 
 
-// Game Loop
+// --- Sistemas ECS ---
+var systems = new Group<float>("Game Systems",
+    // Registra o sistema de cliente gerado automaticamente.
+    new GeneratedClientIntentSystem(world, networkManager)
+    // Adicione seus sistemas de LÓGICA DE JOGO aqui (ex: InputSystem, RenderSystem)
+);
+systems.Initialize();
+
+// --- Game Loop & Simulação de Input ---
 bool isRunning = true;
-Console.CancelKeyPress += (sender, e) => isRunning = false;
+Console.CancelKeyPress += (_, _) => isRunning = false;
+Console.WriteLine("Client Started. Pressione 'A' para atacar, 'M' para mover. Pressione Ctrl+C para sair.");
 
 while (isRunning)
 {
-    client.PollEvents();
+    networkManager.PollEvents();
+    networkManager2.PollEvents();
+
+    // Simula input do jogador
+    if (Console.KeyAvailable)
+    {
+        var key = Console.ReadKey(true).Key;
+        if (key == ConsoleKey.A)
+        {
+            Console.WriteLine("Enviando AttackIntent...");
+            // Adiciona o componente de intenção na entidade do jogador. O sistema gerado cuidará do resto.
+            world.Add(myPlayerEntity, new AttackIntent { Target = otherEntity }); // Ataca a entidade 0 como exemplo
+        }
+        else if (key == ConsoleKey.M)
+        {
+            Console.WriteLine("Enviando MoveIntent...");
+            world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+        }
+    }
+
+    systems.Update(0.016f);
     Thread.Sleep(15);
 }
 
-client.Stop();
+// --- Desligamento ---
+systems.Dispose();
+networkManager.Stop();

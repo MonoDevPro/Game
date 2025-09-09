@@ -11,10 +11,4 @@
       <ProjectReference Include="..\Simulation.Core\Simulation.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Simulation.SourceGenerator\Simulation.SourceGenerator.csproj"
-                          OutputItemType="Analyzer"
-                          ReferenceOutputAssembly="false" />
-    </ItemGroup>
-
 </Project>

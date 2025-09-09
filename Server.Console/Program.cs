@@ -1,63 +1,54 @@
 ﻿using Arch.Core;
+using Arch.System;
 using LiteNetLib;
+using Simulation.Core.Shared.Components;
+using Simulation.Core.Shared.Network;
+using Simulation.Core.Shared.Network.Generated;
 
-// Configurações do Servidor
-const int ServerPort = 9050;
-const string ConnectionKey = "MyMMORPGKey";
+// --- Configurações ---
+const int ServerPort = 7777;
+const string ConnectionKey = "MinhaChaveDeProducao";
+Console.Title = "SERVER";
 
-Console.WriteLine("Starting Server...");
-
-// Mundo ECS
+// --- Inicialização ---
 var world = World.Create();
+var networkManager = new NetworkManager(world);
+networkManager.StartServer(ServerPort, ConnectionKey);
 
-// Rede
-var listener = new EventBasedNetListener();
-var server = new NetManager(listener);
-server.Start(ServerPort);
-
+// --- Sistemas ECS ---
+var systems = new Group<float>("Game Systems",
+    // AQUI ESTÁ A MÁGICA: Apenas registramos o sistema que o gerador criou para nós.
+    new GeneratedServerSyncSystem(world, networkManager)
+    // Adicione seus sistemas de LÓGICA DE JOGO aqui (ex: MovementSystem, CombatSystem)
+);
+systems.Initialize();
 Console.WriteLine($"Server started on port {ServerPort}");
 
-listener.ConnectionRequestEvent += request =>
-{
-    if (server.ConnectedPeersCount < 100 /* max connections */)
-        request.AcceptIfKey(ConnectionKey);
-    else
-        request.Reject();
-};
-
+// --- Lógica de Conexão (Exemplo) ---
+var listener = networkManager.Listener;
 listener.PeerConnectedEvent += peer =>
 {
-    Console.WriteLine($"Peer connected: {peer.Id}");
-    // Exemplo: Criar uma entidade para o novo jogador
-    var playerEntity = world.Create();
-    // Adicionar componentes iniciais
-    // world.Add(playerEntity, new Position { X = 0, Y = 0 }, new Health { Current = 100, Max = 100 });
-};
-
-listener.PeerDisconnectedEvent += (peer, info) =>
-{
-    Console.WriteLine($"Peer disconnected: {peer.Id}. Reason: {info.Reason}");
-};
-
-listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod, channel) =>
-{
-    // Aqui o PacketProcessor gerado seria chamado
-    // Simulation.Network.Generated.PacketProcessor.Process(fromPeer, dataReader);
-    Console.WriteLine($"Received data from {fromPeer.Id}");
-    dataReader.Recycle();
+    // Cria uma entidade para o jogador que se conectou
+    var playerEntity = world.Create(
+        new PlayerId { Value = peer.Id },
+        new Position { X = 10, Y = 10 },
+        new Health { Current = 100, Max = 100 }
+    );
+    Console.WriteLine($"Created Entity {playerEntity} for Peer {peer.Id}");
 };
 
 
-// Game Loop
+// --- Game Loop ---
 bool isRunning = true;
-Console.CancelKeyPress += (sender, e) => isRunning = false;
-
+Console.CancelKeyPress += (_, _) => isRunning = false;
 while (isRunning)
 {
-    server.PollEvents();
-    // world.Update(); // Atualiza a lógica do mundo
-    // systems.Update(); // Executa os sistemas ECS
+    networkManager.PollEvents();
+    systems.Update(0.016f); // Atualiza TODOS os sistemas, incluindo o de rede.
     Thread.Sleep(15);
 }
 
-server.Stop();
+// --- Desligamento ---
+systems.Dispose();
+networkManager.Stop();
+
