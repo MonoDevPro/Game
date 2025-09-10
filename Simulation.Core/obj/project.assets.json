@@ -2065,16 +2065,6 @@
         "runtime": {
           "bin/placeholder/QuadTrees.dll": {}
         }
-      },
-      "Simulation.Attributes/1.0.0": {
-        "type": "project",
-        "framework": ".NETStandard,Version=v2.0",
-        "compile": {
-          "bin/placeholder/Simulation.Attributes.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Simulation.Attributes.dll": {}
-        }
       }
     }
   },
@@ -6611,11 +6601,6 @@
       "type": "project",
       "path": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
       "msbuildProject": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
-    },
-    "Simulation.Attributes/1.0.0": {
-      "type": "project",
-      "path": "../Simulation.Attributes/Simulation.Attributes.csproj",
-      "msbuildProject": "../Simulation.Attributes/Simulation.Attributes.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -6631,8 +6616,7 @@
       "Microsoft.Extensions.DependencyInjection.Abstractions >= 8.0.2",
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.3",
       "Microsoft.Extensions.Options.ConfigurationExtensions >= 8.0.0",
-      "QuadTrees >= 1.0.0",
-      "Simulation.Attributes >= 1.0.0"
+      "QuadTrees >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -6661,9 +6645,6 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/filipe/Game/Simulation.Attributes/Simulation.Attributes.csproj": {
-              "projectPath": "/home/filipe/Game/Simulation.Attributes/Simulation.Attributes.csproj"
-            },
             "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
               "projectPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
             }

@@ -2,11 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Simulation.Attributes;
 
 namespace Simulation.SourceGenerator
 {
-    internal record struct StructInfo(string Name, string Namespace, string Authority, SyncTrigger Trigger);
+    internal record struct StructInfo(string Name, string Namespace, string Authority);
 
     internal static class CodeGenerator
     {
@@ -19,7 +18,6 @@ namespace Simulation.SourceGenerator
             GenerateHeader(sb);
             GeneratePacketTypeEnum(sb, allStructs);
             GeneratePacketStructs(sb, allStructs);
-            GeneratePreviousComponentStructs(sb, serverStructs); // Novo
             GeneratePacketFactory(sb, allStructs);
             GeneratePacketProcessor(sb, allStructs);
             GenerateServerSyncSystem(sb, serverStructs);
@@ -44,18 +42,10 @@ using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Network;
 using Simulation.Core.Shared.Network.Contracts;
 using Simulation.Core.Shared.Components;
+using Simulation.Core.Shared.Network.Attributes;
 
 namespace Simulation.Core.Shared.Network.Generated
 {");
-        }
-        
-        private static void GeneratePreviousComponentStructs(StringBuilder sb, List<StructInfo> serverStructs)
-        {
-            var onChangeStructs = serverStructs.Where(s => s.Trigger == SyncTrigger.OnChange);
-            foreach (var s in onChangeStructs)
-            {
-                sb.AppendLine($"    internal struct Previous{s.Name} {{ public {s.Namespace}.{s.Name} Value; }}");
-            }
         }
 
         private static void GeneratePacketTypeEnum(StringBuilder sb, List<StructInfo> allStructs)
@@ -113,7 +103,7 @@ namespace Simulation.Core.Shared.Network.Generated
                     var packet = MemoryPackSerializer.Deserialize<{s.Name}UpdatePacket>(dataSpan);
                     if (playerIndex.TryGetEntity(packet.PlayerId, out var entity))
                     {{
-                        world.AddOrSet(entity, packet.Data);
+                        world.AddOrGet<{s.Name}>(entity, packet.Data);
                     }}
                     break;
                 }}");
@@ -126,65 +116,46 @@ namespace Simulation.Core.Shared.Network.Generated
 
         private static void GenerateServerSyncSystem(StringBuilder sb, List<StructInfo> serverStructs)
         {
-            var onTickStructs = serverStructs.Where(s => s.Trigger == SyncTrigger.OnTick).ToList();
-            var onChangeStructs = serverStructs.Where(s => s.Trigger == SyncTrigger.OnChange).ToList();
-
             sb.AppendLine(@"
     public partial class GeneratedServerSyncSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
     {
         public override void Update(in float t)
         {");
-            // Chamadas para OnTick
-            foreach (var s in onTickStructs)
+            foreach (var s in serverStructs)
             {
-                sb.AppendLine($"            Sync{s.Name}OnTickQuery(World, networkManager);");
-            }
-            // Chamadas para OnChange
-            foreach (var s in onChangeStructs)
-            {
-                sb.AppendLine($"            Sync{s.Name}AddPreviousQuery(World);");
-                sb.AppendLine($"            Sync{s.Name}OnChangeQuery(World, networkManager);");
+                sb.AppendLine($"            Sync{s.Name}Query(World, networkManager);");
             }
             sb.AppendLine("        }");
 
-            // Geração de métodos para OnTick
-            foreach (var s in onTickStructs)
+            foreach (var s in serverStructs)
             {
+                var queryMethodName = $"Sync{s.Name}Query";
                 sb.AppendLine($@"
-        private readonly QueryDescription {s.Name}OnTick_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, PlayerId>();
-        private void Sync{s.Name}OnTickQuery(World world, NetworkManager networkManager)
-        {{
-            world.Query(in {s.Name}OnTick_QueryDescription, (in PlayerId id, in {s.Namespace}.{s.Name} comp) => 
-            {{
-                networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.Unreliable);
-            }});
-        }}");
-            }
+        private readonly QueryDescription {s.Name}_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, PlayerId>();
+        private World? _{s.Name}_Initialized;
+        private Query? _{s.Name}_Query;
 
-            // Geração de métodos para OnChange
-            foreach (var s in onChangeStructs)
-            {
-                sb.AppendLine($@"
-        private readonly QueryDescription {s.Name}AddPrevious_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}>().WithNone<Previous{s.Name}>();
-        private void Sync{s.Name}AddPreviousQuery(World world)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void {queryMethodName}(World world, NetworkManager networkManager)
         {{
-            world.Query(in {s.Name}AddPrevious_QueryDescription, (Entity entity, ref {s.Namespace}.{s.Name} comp) =>
+            if (!ReferenceEquals(_{s.Name}_Initialized, world))
             {{
-                world.Add(entity, new Previous{s.Name} {{ Value = comp }});
-            }});
-        }}
+                _{s.Name}_Query = world.Query(in {s.Name}_QueryDescription);
+                _{s.Name}_Initialized = world;
+            }}
 
-        private readonly QueryDescription {s.Name}OnChange_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, PlayerId, Previous{s.Name}>();
-        private void Sync{s.Name}OnChangeQuery(World world, NetworkManager networkManager)
-        {{
-            world.Query(in {s.Name}OnChange_QueryDescription, (in PlayerId id, ref {s.Namespace}.{s.Name} comp, ref Previous{s.Name} prev) =>
+            foreach (ref var chunk in _{s.Name}_Query!)
             {{
-                if (!comp.Equals(prev.Value))
+                ref var playerIdFirstElement = ref chunk.GetFirst<PlayerId>();
+                ref var componentFirstElement = ref chunk.GetFirst<{s.Namespace}.{s.Name}>();
+
+                foreach (var entityIndex in chunk)
                 {{
-                    networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.Unreliable);
-                    prev.Value = comp;
+                    ref readonly var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
+                    ref readonly var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
+                    networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.Unreliable);
                 }}
-            }});
+            }}
         }}");
             }
             sb.AppendLine("    }");
@@ -194,14 +165,7 @@ namespace Simulation.Core.Shared.Network.Generated
         {
             sb.AppendLine(@"
     public partial class GeneratedClientIntentSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
-    {");
-
-            foreach (var s in clientStructs)
-            {
-                sb.AppendLine($"        private readonly QueryDescription {s.Name}_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, PlayerId>();");
-            }
-
-            sb.AppendLine(@"
+    {
         public override void Update(in float t)
         {");
             foreach (var s in clientStructs)
@@ -212,14 +176,37 @@ namespace Simulation.Core.Shared.Network.Generated
 
             foreach (var s in clientStructs)
             {
+                var queryMethodName = $"Send{s.Name}Query";
                 sb.AppendLine($@"
-        private void Send{s.Name}Query(World world, NetworkManager networkManager)
+        private readonly QueryDescription {s.Name}_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, PlayerId>();
+        private World? _{s.Name}_Initialized;
+        private Query? _{s.Name}_Query;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void {queryMethodName}(World world, NetworkManager networkManager)
         {{
-            world.Query(in {s.Name}_QueryDescription, (Entity entity, ref PlayerId id, ref {s.Namespace}.{s.Name} comp) =>
+            if (!ReferenceEquals(_{s.Name}_Initialized, world))
             {{
-                networkManager.SendToServer(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.ReliableOrdered);
-                world.Remove<{s.Namespace}.{s.Name}>(entity);
-            }});
+                _{s.Name}_Query = world.Query(in {s.Name}_QueryDescription);
+                _{s.Name}_Initialized = world;
+            }}
+
+            foreach (ref var chunk in _{s.Name}_Query!)
+            {{
+                ref var entityFirstElement = ref chunk.Entity(0);
+                ref var playerIdFirstElement = ref chunk.GetFirst<PlayerId>();
+                ref var componentFirstElement = ref chunk.GetFirst<{s.Namespace}.{s.Name}>();
+
+                foreach (var entityIndex in chunk)
+                {{
+                    ref readonly var entity = ref Unsafe.Add(ref entityFirstElement, entityIndex);
+                    ref readonly var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
+                    ref readonly var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
+                    
+                    networkManager.SendToServer(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.ReliableOrdered);
+                    world.Remove<{s.Namespace}.{s.Name}>(entity);
+                }}
+            }}
         }}");
             }
             sb.AppendLine("    }");

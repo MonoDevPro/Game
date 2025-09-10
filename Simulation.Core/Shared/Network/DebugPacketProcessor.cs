@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Arch.Core;
 using LiteNetLib.Utils;
 using Simulation.Core.Server.Systems;
+using Simulation.Core.Shared.Network.Generated;
 using Simulation.Core.Shared.Options;
 
 namespace Simulation.Core.Shared.Network;

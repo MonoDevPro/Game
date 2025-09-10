@@ -1,4 +1,4 @@
-namespace Simulation.Attributes;
+namespace Simulation.Core.Shared.Network.Attributes;
 
 public enum Authority { Server, Client }
 public enum SyncTrigger { OnChange, OnTick }

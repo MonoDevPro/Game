@@ -4,7 +4,13 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+
+        <!-- Necessário para Source Generators -->
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+        <!-- Emitir arquivos gerados para debug -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,11 +18,5 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
         <!-- NÃO usar Microsoft.CodeAnalysis.Workspaces -->
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Simulation.Attributes\Simulation.Attributes.csproj"
-                          PrivateAssets="all"
-                          IncludeAssets="runtime; build; native; contentfiles; analyzers" />
     </ItemGroup>
 </Project>
