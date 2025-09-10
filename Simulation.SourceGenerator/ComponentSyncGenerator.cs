@@ -145,7 +145,6 @@ namespace Simulation.Core.Shared.Network.Generated
                 }
             }
             sb.AppendLine(@"
-        public override void Update(in float t) {}
     }
 }
 ");
