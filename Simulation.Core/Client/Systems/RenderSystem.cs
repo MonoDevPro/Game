@@ -17,6 +17,6 @@ public partial class RenderSystem(World world) : BaseSystem<World, float>(world)
     private void Render(in Position pos)
     {
         // Apenas para depuração, para confirmar que estamos a receber atualizações.
-        Console.WriteLine($"[Client] Render Position: X={pos.X}, Y={pos.Y}");
+        //Console.WriteLine($"[Client] Render Position: X={pos.X}, Y={pos.Y}");
     }
 }
