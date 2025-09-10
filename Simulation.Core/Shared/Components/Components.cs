@@ -1,5 +1,5 @@
 using Arch.Core;
-using Simulation.Core.Shared.Network.Attributes;
+using Simulation.Attributes;
 
 namespace Simulation.Core.Shared.Components;
 

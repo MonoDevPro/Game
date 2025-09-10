@@ -4,7 +4,6 @@ using LiteNetLib.Utils;
 using MemoryPack;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Network.Contracts;
-using Simulation.Core.Shared.Network.Generated;
 // CORREÇÃO: Adiciona o using para o namespace do código gerado
 using Simulation.Core.Shared.Options; 
 
