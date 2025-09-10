@@ -11,11 +11,18 @@ public static class DebugPacketProcessor
     private static DebugOptions? _debugOptions;
     private static readonly Dictionary<string, int> PacketCounts = new();
     private static readonly Dictionary<string, long> PacketTimings = new();
+    private static readonly object _fileLock = new object();
+    private static string? _logFilePath;
     
     public static void Initialize(DebugOptions debugOptions)
     {
         _debugOptions = debugOptions;
+        
+        // Set up log file path for server debug logging
+        _logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "server_console_debug.log");
+        
         LogDebug("DebugPacketProcessor initialized", DebugLevel.Info);
+        LogDebug($"Debug log file: {_logFilePath}", DebugLevel.Info);
     }
 
     public static void Process(World world, PlayerIndexSystem playerIndex, LiteNetLib.NetPacketReader reader)
@@ -129,7 +136,13 @@ public static class DebugPacketProcessor
 
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
         var levelStr = level.ToString().ToUpper();
-        Console.WriteLine($"[{timestamp}] [{levelStr}] [PKT] {message}");
+        var logMessage = $"[{timestamp}] [{levelStr}] [PKT] {message}";
+        
+        // Always write to console
+        Console.WriteLine(logMessage);
+        
+        // Also write to log file if path is set
+        WriteToLogFile(logMessage);
     }
 
     private static void LogError(string message, Exception? exception = null)
@@ -137,11 +150,43 @@ public static class DebugPacketProcessor
         if (_debugOptions?.LogPacketErrors != true) return;
 
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        Console.WriteLine($"[{timestamp}] [ERROR] [PKT] {message}");
+        var logMessage = $"[{timestamp}] [ERROR] [PKT] {message}";
+        
+        // Write to console
+        Console.WriteLine(logMessage);
+        WriteToLogFile(logMessage);
         
         if (exception != null)
         {
-            Console.WriteLine($"[{timestamp}] [ERROR] [PKT] Exception: {exception}");
+            var exceptionMessage = $"[{timestamp}] [ERROR] [PKT] Exception: {exception}";
+            Console.WriteLine(exceptionMessage);
+            WriteToLogFile(exceptionMessage);
+        }
+    }
+
+    public static void LogConnectionEvent(string message, bool isConnection)
+    {
+        if (_debugOptions?.EnablePacketDebugging != true) return;
+        
+        var eventType = isConnection ? "CONNECT" : "DISCONNECT";
+        LogDebug($"[{eventType}] {message}", DebugLevel.Info);
+    }
+
+    private static void WriteToLogFile(string message)
+    {
+        if (string.IsNullOrEmpty(_logFilePath)) return;
+
+        try
+        {
+            lock (_fileLock)
+            {
+                File.AppendAllText(_logFilePath, message + Environment.NewLine);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't let file logging errors break the application
+            Console.WriteLine($"[WARNING] Failed to write to debug log file: {ex.Message}");
         }
     }
 }
