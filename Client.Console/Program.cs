@@ -4,7 +4,7 @@ using Simulation.Core.Client.Systems;
 using Simulation.Core.Server.Systems; // Reutiliza o PlayerIndexSystem
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
-using Simulation.Core.Shared.Network.Generated;
+using Simulation.Generated.Network;
 using Simulation.Core.Shared.Options;
 
 Console.Title = "CLIENT";
@@ -29,8 +29,8 @@ networkManager.InitializeDebug(debugOptions);
 
 var systems = new Group<float>("Game Systems",
     playerIndexSystem, // Indexa os jogadores para a rede
-    new RenderSystem(world),
-    new GeneratedClientIntentSystem(world, networkManager)
+    new RenderSystem(world)
+    // TODO: new GeneratedClientIntentSystem(world, networkManager)
 );
 
 networkManager.StartClient("127.0.0.1", 7777, "MinhaChaveDeProducao");
@@ -50,8 +50,9 @@ while (true) {
     if (Console.KeyAvailable) {
         var key = Console.ReadKey(true).Key;
         if (key == ConsoleKey.D && !myPlayerEntity.Equals(Entity.Null)) {
-            Console.WriteLine("[Client] Sending MoveIntent...");
-            world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+            Console.WriteLine("[Client] Sending move intent...");
+            // TODO: world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+            Console.WriteLine("[Client] Move intent placeholder - would send movement command");
         }
         else if (key == ConsoleKey.S) {
             Console.WriteLine("[Client] Showing packet statistics:");

@@ -4,7 +4,8 @@ using LiteNetLib.Utils;
 using MemoryPack;
 using Simulation.Abstractions.Network;
 using Simulation.Core.Server.Systems;
-using Simulation.Core.Shared.Options; 
+using Simulation.Core.Shared.Options;
+using Simulation.Generated.Network; 
 
 namespace Simulation.Core.Shared.Network;
 

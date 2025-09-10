@@ -3,7 +3,7 @@ using Arch.System;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
-using Simulation.Core.Shared.Network.Generated;
+using Simulation.Generated.Network;
 using Simulation.Core.Shared.Options;
 
 Console.Title = "SERVER";
@@ -28,8 +28,8 @@ networkManager.InitializeDebug(debugOptions);
 
 var systems = new Group<float>("Game Systems",
     playerIndexSystem, // Indexa os jogadores para a rede
-    new MovementSystem(world),
-    new GeneratedServerSyncSystem(world, networkManager) // Envia atualizações
+    new MovementSystem(world)
+    // TODO: new GeneratedServerSyncSystem(world, networkManager) // Envia atualizações
 );
 
 networkManager.StartServer(7777, "MinhaChaveDeProducao");

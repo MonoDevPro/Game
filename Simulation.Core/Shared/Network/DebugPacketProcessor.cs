@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Arch.Core;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Options;
+using Simulation.Generated.Network;
 
 namespace Simulation.Core.Shared.Network;
 
