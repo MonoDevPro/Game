@@ -10,9 +10,6 @@ namespace Simulation.Core.Server.Systems;
 /// </summary>
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
-    private readonly QueryDescription _movableEntities = new QueryDescription()
-        .WithAll<MoveIntent, Position>();
-
     [Query]
     [All<MoveIntent, Position>]
     private void Move(in Entity entity, ref Position pos, ref MoveIntent intent)
@@ -20,7 +17,8 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
         // Atualiza a posição com base na direção da intenção
         pos.X += intent.Direction.X;
         pos.Y += intent.Direction.Y;
-        World.Remove<MoveIntent>(in _movableEntities);
+        // Remove a intenção após processá-la
+        World.Remove<MoveIntent>(entity);
         
         // Log para vermos a magia a acontecer no servidor
         Console.WriteLine($"[Server] Processed MoveIntent. New Position: X={pos.X}, Y={pos.Y}");
