@@ -1,9 +1,9 @@
 # =====================
 # Build & Output
 # =====================
-bin/
-obj/
-out/
+/bin/
+/obj/
+/out/
 Debug/
 Release/
 *.dll
