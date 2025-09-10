@@ -36,8 +36,14 @@ public class NetworkManager
     {
         Net.Start(port);
         Listener.ConnectionRequestEvent += request => request.AcceptIfKey(connectionKey);
-        Listener.PeerConnectedEvent += peer => Console.WriteLine($"[Server] Peer connected: {peer.Id}");
-        Listener.PeerDisconnectedEvent += (peer, info) => Console.WriteLine($"[Server] Peer disconnected: {peer.Id}");
+        Listener.PeerConnectedEvent += peer => {
+            Console.WriteLine($"[Server] Peer connected: {peer.Id}");
+            DebugPacketProcessor.LogConnectionEvent($"Peer connected: {peer.Id}", true);
+        };
+        Listener.PeerDisconnectedEvent += (peer, info) => {
+            Console.WriteLine($"[Server] Peer disconnected: {peer.Id}");
+            DebugPacketProcessor.LogConnectionEvent($"Peer disconnected: {peer.Id}", false);
+        };
         Listener.NetworkReceiveEvent += OnReceive;
     }
 
@@ -49,8 +55,12 @@ public class NetworkManager
         {
             ServerConnection = peer;
             Console.WriteLine($"[Client] Connected to server: {peer.Id}");
+            DebugPacketProcessor.LogConnectionEvent($"Client connected to server: {peer.Id}", true);
         };
-        Listener.PeerDisconnectedEvent += (peer, info) => Console.WriteLine($"[Client] Disconnected from server");
+        Listener.PeerDisconnectedEvent += (peer, info) => {
+            Console.WriteLine($"[Client] Disconnected from server");
+            DebugPacketProcessor.LogConnectionEvent("Client disconnected from server", false);
+        };
         Listener.NetworkReceiveEvent += OnReceive;
     }
 
