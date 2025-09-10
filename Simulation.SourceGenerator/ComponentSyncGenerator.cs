@@ -73,7 +73,7 @@ namespace Simulation.Core.Shared.Network.Generated
             {
                 sb.AppendLine($@"
     [MemoryPackable]
-    public partial struct {s.Name}UpdatePacket : IPacket
+    public struct {s.Name}UpdatePacket : IPacket
     {{
         public int PlayerId {{ get; set; }}
         public {s.Name} Data {{ get; set; }}
