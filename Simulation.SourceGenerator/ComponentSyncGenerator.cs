@@ -9,7 +9,7 @@ namespace Simulation.SourceGenerator
     public class ComponentSyncGenerator : IIncrementalGenerator
     {
         // Ajuste esse nome se o seu attribute tiver namespace/nome diferente.
-        private const string AttributeName = "Simulation.Core.Shared.Network.Attributes.SynchronizedComponentAttribute";
+        private const string AttributeName = "Simulation.Abstractions.Network.SynchronizedComponentAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {

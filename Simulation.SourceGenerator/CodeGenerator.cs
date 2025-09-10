@@ -18,13 +18,18 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("using System.Linq;");
             sb.AppendLine("using System.Threading;");
             sb.AppendLine("using LiteNetLib.Utils;"); // assume LiteNetLib
+            sb.AppendLine("using LiteNetLib;"); // for NetPacketReader
             sb.AppendLine("using MemoryPack;");      // assume MemoryPack
+            sb.AppendLine("using Arch.Core;");       // for World
+            sb.AppendLine("using Simulation.Core.Server.Systems;"); // for PlayerIndex
+            sb.AppendLine("using Simulation.Core.Shared.Network;"); // for NetworkManager
+            sb.AppendLine("using Simulation.Abstractions.Network;"); // for IPacket
             sb.AppendLine();
             sb.AppendLine("namespace Simulation.Generated.Network");
             sb.AppendLine("{");
 
-            // PacketKind enum (one kind per struct)
-            sb.AppendLine("    internal enum PacketKind : byte");
+            // PacketType enum (one type per struct)
+            sb.AppendLine("    internal enum PacketType : byte");
             sb.AppendLine("    {");
             sb.AppendLine("        Unknown = 0,");
             for (int i = 0; i < allStructs.Count; i++)
@@ -43,7 +48,7 @@ namespace Simulation.SourceGenerator
                 var ns = s.Namespace;
                 // Packet carries PlayerId (int) + Data (the component)
                 sb.AppendLine($"    [MemoryPackable]");
-                sb.AppendLine($"    internal partial struct {name}UpdatePacket");
+                sb.AppendLine($"    internal partial struct {name}UpdatePacket : IPacket");
                 sb.AppendLine("    {");
                 sb.AppendLine("        public int PlayerId { get; set; }");
                 sb.AppendLine($"        public {ns}.{s.Name} Data {{ get; set; }}");
@@ -55,14 +60,14 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("    internal static class PacketProcessor");
             sb.AppendLine("    {");
             sb.AppendLine("        // Main processing entry. Keep it robust: never throw on malformed packets.");
-            sb.AppendLine("        public static void Process(NetPacketReader reader, World world, PlayerIndex playerIndex, NetworkManager networkManager)");
+            sb.AppendLine("        public static void Process(World world, PlayerIndexSystem playerIndex, NetPacketReader reader)");
             sb.AppendLine("        {");
             sb.AppendLine("            try");
             sb.AppendLine("            {");
             sb.AppendLine("                if (reader == null) return;");
             sb.AppendLine("                // read packet kind first (assuming first byte identifies)");
             sb.AppendLine("                if (reader.AvailableBytes <= 0) return;");
-            sb.AppendLine("                var kind = (PacketKind)reader.GetByte();");
+            sb.AppendLine("                var kind = (PacketType)reader.GetByte();");
             sb.AppendLine("                var dataSeg = reader.GetRemainingBytesSegment();");
             sb.AppendLine("                if (dataSeg.Array == null || dataSeg.Count == 0) return;");
             sb.AppendLine();
@@ -75,26 +80,23 @@ namespace Simulation.SourceGenerator
             {
                 var name = SanitizeIdentifier(s.Name);
                 var ns = s.Namespace;
-                sb.AppendLine($"                    case PacketKind.{name}Update:");
+                sb.AppendLine($"                    case PacketType.{name}Update:");
                 sb.AppendLine("                    {");
                 sb.AppendLine("                        try");
                 sb.AppendLine("                        {");
                 sb.AppendLine($"                            var packet = MemoryPackSerializer.Deserialize<{name}UpdatePacket>(span);");
-                sb.AppendLine("                            if (packet == null) break;");
                 sb.AppendLine();
                 sb.AppendLine("                            // find entity for player");
                 sb.AppendLine("                            if (!playerIndex.TryGetEntity(packet.PlayerId, out var entity))");
                 sb.AppendLine("                                break; // unknown player");
                 sb.AppendLine();
-                sb.AppendLine($"                            // Add or set component on the entity (assumes ArchECS API world.AddOrGet<T>)");
-                sb.AppendLine($"                            ref var comp = ref world.AddOrGet<{ns}.{s.Name}>(entity);");
-                sb.AppendLine("                            // atribui os dados desserializados");
-                sb.AppendLine("                            comp = packet.Data;");
+                sb.AppendLine($"                            // Add or set component on the entity (assumes ArchECS API world.Set<T>)");
+                sb.AppendLine($"                            world.Set<{ns}.{s.Name}>(entity, packet.Data);");
                 sb.AppendLine("                        }");
                 sb.AppendLine("                        catch (Exception ex)");
                 sb.AppendLine("                        {");
                 sb.AppendLine("                            // log or swallow; be resilient to malformed packets");
-                sb.AppendLine("                            networkManager?.Logger?.LogError(ex, \"Failed to process packet\");");
+                sb.AppendLine("                            Console.WriteLine($\"Failed to process packet: {ex.Message}\");");
                 sb.AppendLine("                        }");
                 sb.AppendLine("                        break;");
                 sb.AppendLine("                    }");
@@ -107,55 +109,30 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("            catch (Exception ex)");
             sb.AppendLine("            {");
             sb.AppendLine("                // protect the receive loop from any unexpected exception");
-            sb.AppendLine("                try { networkManager?.Logger?.LogError(ex, \"PacketProcessor top-level error\"); } catch {}");
+            sb.AppendLine("                try { Console.WriteLine($\"PacketProcessor top-level error: {ex.Message}\"); } catch {}");
             sb.AppendLine("            }");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
 
-            // Optional: Generate a small helper for OnChange/OnTick sync systems.
+            // PacketFactory class
             sb.AppendLine();
-            sb.AppendLine("    // Generated sync helpers (OnChange/OnTick) - example skeletons");
+            sb.AppendLine("    internal static class PacketFactory");
+            sb.AppendLine("    {");
+            sb.AppendLine("        public static PacketType GetPacketType<T>(T packet) where T : IPacket");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return packet switch");
+            sb.AppendLine("            {");
+            
             foreach (var s in allStructs)
             {
                 var name = SanitizeIdentifier(s.Name);
-                var ns = s.Namespace;
-                var authority = s.Authority; // "Server" or "Client"
-                var trigger = s.Trigger;     // "OnChange" or "OnTick"
-                var rate = s.SyncRateTicks;
-
-                // Generate a skeleton method for sync on tick/change
-                sb.AppendLine($"    internal static partial class {name}Sync");
-                sb.AppendLine("    {");
-                sb.AppendLine($"        // Authority: {authority}  Trigger: {trigger}  RateTicks: {rate}");
-                sb.AppendLine($"        public static void Sync_{name}(World world, NetworkManager networkManager, PlayerIndex playerIndex)");
-                sb.AppendLine("        {");
-                sb.AppendLine("            // This method is intentionally simple and resilient.\n" +
-                              "            // It is a starting point: adapt the exact sending logic to your networking layer.\n" +
-                              "            try");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                // Exemplo: iterar entidades com o componente {ns}.{s.Name}");
-                sb.AppendLine($"                world.Query(in new Query_{name}(), (ref PlayerId pid, ref {ns}.{s.Name} comp) =>");
-                sb.AppendLine("                {");
-                sb.AppendLine("                    // verifique se mudou comparando com shadow (não gerado aqui)\n" +
-                              "                    // Se mudou, crie o packet e envie\n" +
-                              $"                    var packet = new {name}UpdatePacket {{ PlayerId = pid.Value, Data = comp }};");
-                sb.AppendLine("                    // serializar e enviar (exemplo):");
-                sb.AppendLine("                    try");
-                sb.AppendLine("                    {");
-                sb.AppendLine("                        var bytes = MemoryPackSerializer.Serialize(packet);");
-                sb.AppendLine("                        // prefira usar um método do networkManager para enviar - exemplo abaixo");
-                sb.AppendLine("                        networkManager?.Send(PacketKind." + name + "Update, bytes);");
-                sb.AppendLine("                    }");
-                sb.AppendLine("                    catch (Exception ex) { networkManager?.Logger?.LogError(ex, \"Failed to send sync packet\"); }");
-                sb.AppendLine("                });");
-                sb.AppendLine("            }");
-                sb.AppendLine("            catch (Exception ex)");
-                sb.AppendLine("            {");
-                sb.AppendLine("                networkManager?.Logger?.LogError(ex, \"Sync loop failed\");");
-                sb.AppendLine("            }");
-                sb.AppendLine("        }");
-                sb.AppendLine("    }");
+                sb.AppendLine($"                {name}UpdatePacket => PacketType.{name}Update,");
             }
+            
+            sb.AppendLine("                _ => PacketType.Unknown");
+            sb.AppendLine("            };");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
 
             sb.AppendLine("}"); // end namespace
 

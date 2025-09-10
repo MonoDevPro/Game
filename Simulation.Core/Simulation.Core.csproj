@@ -32,8 +32,8 @@
         <ProjectReference Include="..\Simulation.SourceGenerator\Simulation.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
-    <ItemGroup>
+    <!--<ItemGroup>
       <ProjectReference Include="..\thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj" />
-    </ItemGroup>
+    </ItemGroup>-->
 
 </Project>

@@ -3,7 +3,7 @@ using Arch.System;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
-using Simulation.Core.Shared.Network.Generated;
+using Simulation.Generated.Network;
 using Simulation.Core.Shared.Options;
 
 Console.Title = "SERVER";

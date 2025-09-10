@@ -2056,16 +2056,6 @@
           }
         }
       },
-      "QuadTrees/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v3.1",
-        "compile": {
-          "bin/placeholder/QuadTrees.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/QuadTrees.dll": {}
-        }
-      },
       "Simulation.Abstractions/1.0.0": {
         "type": "project",
         "framework": ".NETStandard,Version=v2.0",
@@ -6607,11 +6597,6 @@
         "zeroallocjobscheduler.nuspec"
       ]
     },
-    "QuadTrees/1.0.0": {
-      "type": "project",
-      "path": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
-      "msbuildProject": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
-    },
     "Simulation.Abstractions/1.0.0": {
       "type": "project",
       "path": "../Simulation.Abstractions/Simulation.Abstractions.csproj",
@@ -6631,41 +6616,36 @@
       "Microsoft.Extensions.DependencyInjection.Abstractions >= 8.0.2",
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.3",
       "Microsoft.Extensions.Options.ConfigurationExtensions >= 8.0.0",
-      "QuadTrees >= 1.0.0",
       "Simulation.Abstractions >= 1.0.0"
     ]
   },
   "packageFolders": {
-    "/home/filipe/.nuget/packages/": {}
+    "/home/runner/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
+      "projectUniqueName": "/home/runner/work/Game/Game/Simulation.Core/Simulation.Core.csproj",
       "projectName": "Simulation.Core",
-      "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
-      "packagesPath": "/home/filipe/.nuget/packages/",
-      "outputPath": "/home/filipe/Game/Simulation.Core/obj/",
+      "projectPath": "/home/runner/work/Game/Game/Simulation.Core/Simulation.Core.csproj",
+      "packagesPath": "/home/runner/.nuget/packages/",
+      "outputPath": "/home/runner/work/Game/Game/Simulation.Core/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/filipe/.nuget/NuGet/NuGet.Config"
+        "/home/runner/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
-        "/usr/lib64/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/filipe/Game/Simulation.Abstractions/Simulation.Abstractions.csproj": {
-              "projectPath": "/home/filipe/Game/Simulation.Abstractions/Simulation.Abstractions.csproj"
-            },
-            "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
-              "projectPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
+            "/home/runner/work/Game/Game/Simulation.Abstractions/Simulation.Abstractions.csproj": {
+              "projectPath": "/home/runner/work/Game/Game/Simulation.Abstractions/Simulation.Abstractions.csproj"
             }
           }
         }
@@ -6741,7 +6721,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.115/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
