@@ -12,7 +12,7 @@ public sealed partial class PlayerIndexSystem(World world) : BaseSystem<World, f
 
     [Query]
     [All<PlayerId>]
-    [None<Index>]
+    [None<Indexed>]
     private void AddNewPlayers(in Entity entity, ref PlayerId playerId)
     {
         _playersByCharId[playerId.Value] = entity;

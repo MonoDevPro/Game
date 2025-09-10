@@ -1,6 +1,7 @@
 using Arch.Core;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using MemoryPack;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Network.Contracts;
 // CORREÇÃO: Adiciona o using para o namespace do código gerado
@@ -74,6 +75,7 @@ public class NetworkManager
 
     public void Send<T>(NetPeer peer, T packet, DeliveryMethod deliveryMethod) where T : IPacket
     {
+        Console.WriteLine($"Sending packet of type {packet.GetType().Name} to peer {peer.Id}");
         var writer = GetWriterForPacket(packet);
         peer.Send(writer, deliveryMethod);
     }
@@ -81,12 +83,11 @@ public class NetworkManager
     private NetDataWriter GetWriterForPacket<T>(T packet) where T : IPacket
     {
         var writer = new NetDataWriter();
-        // CORREÇÃO: A chamada para PacketFactory agora resolve corretamente devido ao 'using'
-        /*var packetType = Simulation.Core.Shared.Network.Generated.p //.GetPacketType(packet);
+        var packetType = PacketFactory.GetPacketType(packet);
         var packetBytes = MemoryPackSerializer.Serialize(packet);
 
         writer.Put((byte)packetType); 
-        writer.Put(packetBytes);      */
+        writer.Put(packetBytes);      
         return writer;
     }
 

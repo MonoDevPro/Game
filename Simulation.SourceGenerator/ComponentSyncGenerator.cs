@@ -63,12 +63,11 @@ using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network.Attributes;
 
 namespace Simulation.Core.Shared.Network.Generated
-{");
-            // Geração de Pacotes, Factory e Processador
-            sb.Append(@"
-    public enum PacketType : byte {");
-            foreach (var s in allStructs) sb.Append($"{s.Name}Update,");
-            sb.AppendLine("}");
+{
+    public enum PacketType : byte
+    {");
+            foreach (var s in allStructs) sb.AppendLine($"        {s.Name}Update,");
+            sb.AppendLine("    }");
 
             foreach (var s in allStructs)
             {
@@ -81,6 +80,22 @@ namespace Simulation.Core.Shared.Network.Generated
     }}");
             }
             sb.Append(@"
+    // ===================================
+    // PACKET FACTORY
+    // ===================================
+    public static class PacketFactory
+    {
+        public static PacketType GetPacketType<T>(T packet) where T : IPacket => packet switch
+        {");
+            foreach (var s in allStructs) sb.AppendLine($"            {s.Name}UpdatePacket _ => PacketType.{s.Name}Update,");
+            sb.AppendLine("            _ => throw new ArgumentOutOfRangeException(nameof(packet), $\"Unknown packet type: {typeof(T).Name}\")");
+            sb.AppendLine("        };");
+            sb.AppendLine("    }");
+            
+            sb.Append(@"
+    // ===================================
+    // PACKET PROCESSOR (Called by NetworkManager)
+    // ===================================
     public static class PacketProcessor
     {
         public static void Process(World world, PlayerIndexSystem playerIndex, NetPacketReader reader)
@@ -103,14 +118,11 @@ namespace Simulation.Core.Shared.Network.Generated
                     break;
                 }}");
             }
-            
             sb.AppendLine(@"
             }
-            reader.Recycle();
         }
     }");
 
-            // Geração dos Sistemas
             sb.AppendLine(@"
     public partial class GeneratedServerSyncSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
     {");
@@ -128,11 +140,12 @@ namespace Simulation.Core.Shared.Network.Generated
                     sb.AppendLine($@"        [Query] [All<{s.Name}, PlayerId>] private void Send{s.Name}(in Entity entity, in PlayerId id, in {s.Name} comp)
         {{
             networkManager.SendToServer(new {s.Name}UpdatePacket {{ PlayerId = id.Value, Data = comp }}, DeliveryMethod.ReliableOrdered);
-            World.Remove<{s.Name}>(entity); // Remove a intenção imediatamente após o envio.
+            World.Remove<{s.Name}>(entity);
         }}");
                 }
             }
             sb.AppendLine(@"
+        public override void Update(in float t) {}
     }
 }
 ");
