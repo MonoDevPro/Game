@@ -1,22 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <!-- generator libraries historically target netstandard2.0 to be loadable by compilers -->
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-
-        <!-- Necessário para Source Generators -->
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
-        <!-- Emitir arquivos gerados para debug -->
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
         <!-- Pacotes necessários para Roslyn Source Generators -->
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.0.0-1.25277.114" PrivateAssets="all" />
         <!-- NÃO usar Microsoft.CodeAnalysis.Workspaces -->
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Simulation.Abstractions\Simulation.Abstractions.csproj" PrivateAssets="all" />
     </ItemGroup>
 </Project>

@@ -26,10 +26,12 @@ public sealed partial class SpatialIndexSystem(World world, int mapWidth, int ma
     [All<Position, LastKnownPosition, SpatialIndexed>]
     private void UpdateIndex(in Entity entity, ref Position currentPos, ref LastKnownPosition lastPos)
     {
-        if (currentPos.X != lastPos.Value.X || currentPos.Y != lastPos.Value.Y)
+        if (currentPos.X != lastPos.X || currentPos.Y != lastPos.Y)
         {
             SpatialIndex.Update(entity, currentPos);
-            lastPos.Value = currentPos; // Atualiza a última posição conhecida
+            
+            lastPos.X = currentPos.X; // Atualiza a última posição conhecida
+            lastPos.Y = currentPos.Y; // Atualiza a última posição conhecida
         }
     }
 
@@ -40,7 +42,7 @@ public sealed partial class SpatialIndexSystem(World world, int mapWidth, int ma
     {
         SpatialIndex.Add(entity, pos);
         World.Add<SpatialIndexed>(entity);
-        World.Add<LastKnownPosition>(entity, new LastKnownPosition { Value = pos });
+        World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
     }
     
     [Query]
@@ -48,6 +50,6 @@ public sealed partial class SpatialIndexSystem(World world, int mapWidth, int ma
     [None<LastKnownPosition>]
     private void AddLastKnownPosition(in Entity entity, ref Position pos)
     {
-        World.Add<LastKnownPosition>(entity, new LastKnownPosition { Value = pos });
+        World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
     }
 }

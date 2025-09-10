@@ -10,7 +10,7 @@ namespace Simulation.Core.Server.Systems;
 /// </summary>
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
-    [Query]
+    /*[Query]
     [All<MoveIntent, Position>]
     private void Move(in Entity entity, ref Position pos, ref MoveIntent intent)
     {
@@ -22,5 +22,5 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
         
         // Log para vermos a magia a acontecer no servidor
         Console.WriteLine($"[Server] Processed MoveIntent. New Position: X={pos.X}, Y={pos.Y}");
-    }
+    }*/
 }

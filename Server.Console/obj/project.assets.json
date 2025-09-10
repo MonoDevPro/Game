@@ -2066,6 +2066,16 @@
           "bin/placeholder/QuadTrees.dll": {}
         }
       },
+      "Simulation.Abstractions/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.0",
+        "compile": {
+          "bin/placeholder/Simulation.Abstractions.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Simulation.Abstractions.dll": {}
+        }
+      },
       "Simulation.Core/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -2081,7 +2091,8 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0",
-          "QuadTrees": "1.0.0"
+          "QuadTrees": "1.0.0",
+          "Simulation.Abstractions": "1.0.0"
         },
         "compile": {
           "bin/placeholder/Simulation.Core.dll": {}
@@ -6625,6 +6636,11 @@
       "type": "project",
       "path": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
       "msbuildProject": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
+    },
+    "Simulation.Abstractions/1.0.0": {
+      "type": "project",
+      "path": "../Simulation.Abstractions/Simulation.Abstractions.csproj",
+      "msbuildProject": "../Simulation.Abstractions/Simulation.Abstractions.csproj"
     },
     "Simulation.Core/1.0.0": {
       "type": "project",
