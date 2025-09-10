@@ -32,9 +32,18 @@ public struct InputComponent { public IntentFlags Intent; public InputFlags Inpu
 
 // Server --> Client Synced Components
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct StateComponent { public StateFlags Value; }
+public struct StateComponent : IEqualityComparer<StateComponent> 
+{ 
+    public StateFlags Value;
+    public bool Equals(StateComponent x, StateComponent y) => x.Value == y.Value;
+    public int GetHashCode(StateComponent obj) => (int)obj.Value;
+}
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Position { public int X, Y; }
+public struct Position : IEqualityComparer<StateComponent> { 
+    public int X, Y;
+    public bool Equals(StateComponent x, StateComponent y) => x.Value == y.Value;
+    public int GetHashCode(StateComponent obj) => (int)obj.Value;
+}
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
 public struct Direction { public int X, Y; }
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]

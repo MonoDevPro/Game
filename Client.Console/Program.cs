@@ -29,8 +29,8 @@ networkManager.InitializeDebug(debugOptions);
 
 var systems = new Group<float>("Game Systems",
     playerIndexSystem, // Indexa os jogadores para a rede
-    new RenderSystem(world)
-    // TODO: new GeneratedClientIntentSystem(world, networkManager)
+    new RenderSystem(world),
+    new GeneratedClientIntentSystem(world, networkManager)
 );
 
 networkManager.StartClient("127.0.0.1", 7777, "MinhaChaveDeProducao");

@@ -21,6 +21,9 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("using LiteNetLib;"); // for NetPacketReader
             sb.AppendLine("using MemoryPack;");      // assume MemoryPack
             sb.AppendLine("using Arch.Core;");       // for World
+            sb.AppendLine("using Arch.System;");
+            sb.AppendLine("using System.Runtime.CompilerServices;");
+            sb.AppendLine("using Arch.System.SourceGenerator;");
             sb.AppendLine("using Simulation.Core.Server.Systems;"); // for PlayerIndex
             sb.AppendLine("using Simulation.Core.Shared.Network;"); // for NetworkManager
             sb.AppendLine("using Simulation.Abstractions.Network;"); // for IPacket
@@ -55,6 +58,29 @@ namespace Simulation.SourceGenerator
                 sb.AppendLine("    }");
                 sb.AppendLine();
             }
+            
+            // ==================================================================
+            // NOVO BLOCO DE CÓDIGO ADICIONADO AQUI
+            // ==================================================================
+            // Gera os componentes "sombra" (Shadow) necessários para o gatilho OnChange.
+            sb.AppendLine("    // Shadow components to track changes for OnChange synchronization");
+            foreach (var s in allStructs)
+            {
+                // Só cria shadow para componentes de servidor com gatilho OnChange.
+                if (s.Authority == "Server" && s.Trigger == "OnChange")
+                {
+                    var name = SanitizeIdentifier(s.Name);
+                    var ns = s.Namespace;
+                    sb.AppendLine($"    internal struct Shadow{name}");
+                    sb.AppendLine("    {");
+                    sb.AppendLine($"        public {ns}.{s.Name} Value {{ get; set; }}");
+                    sb.AppendLine("    }");
+                    sb.AppendLine();
+                }
+            }
+            // ==================================================================
+            // FIM DO NOVO BLOCO
+            // ===========
 
             // PacketProcessor class
             sb.AppendLine("    internal static class PacketProcessor");
@@ -91,7 +117,8 @@ namespace Simulation.SourceGenerator
                 sb.AppendLine("                                break; // unknown player");
                 sb.AppendLine();
                 sb.AppendLine($"                            // Add or set component on the entity (assumes ArchECS API world.Set<T>)");
-                sb.AppendLine($"                            world.Set<{ns}.{s.Name}>(entity, packet.Data);");
+                sb.AppendLine($"                            ref var comp = ref world.AddOrGet<{ns}.{s.Name}>(entity);");
+                sb.AppendLine($"                            comp = packet.Data;");
                 sb.AppendLine("                        }");
                 sb.AppendLine("                        catch (Exception ex)");
                 sb.AppendLine("                        {");
@@ -133,10 +160,127 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("            };");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
+            
+            var serverStructs = allStructs.Where(s => s.Authority == "Server").ToList();
+            var clientStructs = allStructs.Where(s => s.Authority == "Client").ToList();
+            GenerateServerSyncSystem(sb, serverStructs);
+            sb.AppendLine();
+            GenerateClientIntentSystem(sb, clientStructs);
+            sb.AppendLine();
 
             sb.AppendLine("}"); // end namespace
 
             return sb.ToString();
+        }
+        
+        private static void GenerateServerSyncSystem(StringBuilder sb, List<ComponentSyncGenerator.StructInfo> serverStructs)
+        {
+            sb.AppendLine(@"
+    public sealed partial class GeneratedServerSyncSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
+    {
+        private ulong _tickCounter = 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Update(in float t)
+        {
+            _tickCounter++;");
+
+            foreach (var s in serverStructs)
+            {
+                if (s.Trigger == "OnTick" && s.SyncRateTicks > 0)
+                {
+                    sb.AppendLine($"            if (_tickCounter % {s.SyncRateTicks} == 0)");
+                    sb.AppendLine($"                Sync{s.Name}OnTick(World, networkManager);");
+                }
+                else // OnChange is the default
+                {
+                    sb.AppendLine($"            Sync{s.Name}OnChange(World, networkManager);");
+                }
+            }
+            sb.AppendLine("        }");
+
+            foreach (var s in serverStructs)
+            {
+                if (s.Trigger == "OnChange")
+                {
+                    GenerateOnChangeSyncMethod(sb, s);
+                }
+                else // OnTick
+                {
+                    GenerateOnTickSyncMethod(sb, s);
+                }
+            }
+            sb.AppendLine("    }");
+        }
+
+        private static void GenerateOnChangeSyncMethod(StringBuilder sb, ComponentSyncGenerator.StructInfo s)
+        {
+            sb.AppendLine($@"
+        private readonly QueryDescription {s.Name}_NewQueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, {s.Namespace}.PlayerId>().WithNone<Shadow{s.Name}>();
+        private void Sync{s.Name}OnChange(World world, NetworkManager networkManager)
+        {{
+            // Sync newly added entities
+            world.Query(in {s.Name}_NewQueryDescription, (Entity entity, ref {s.Namespace}.PlayerId playerId, ref {s.Namespace}.{s.Name} component) =>
+            {{
+                networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.Unreliable);
+                world.Add<Shadow{s.Name}>(entity, new Shadow{s.Name} {{ Value = component }});
+            }});
+
+            // Sync modified entities
+            var query = new QueryDescription().WithAll<{s.Namespace}.PlayerId, {s.Namespace}.{s.Name}, Shadow{s.Name}>();
+            world.Query(in query, (ref {s.Namespace}.PlayerId playerId, ref {s.Namespace}.{s.Name} component, ref Shadow{s.Name} shadow) =>
+            {{
+                if (!component.Equals(shadow.Value))
+                {{
+                    networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.Unreliable);
+                    shadow.Value = component;
+                }}
+            }});
+        }}");
+        }
+
+        private static void GenerateOnTickSyncMethod(StringBuilder sb, ComponentSyncGenerator.StructInfo s)
+        {
+            var queryMethodName = $"Sync{s.Name}OnTick";
+            sb.AppendLine($@"
+        private readonly QueryDescription {s.Name}_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, {s.Namespace}.PlayerId>();
+        private void {queryMethodName}(World world, NetworkManager networkManager)
+        {{
+            world.Query(in {s.Name}_QueryDescription, (ref {s.Namespace}.PlayerId playerId, ref {s.Namespace}.{s.Name} component) =>
+            {{
+                networkManager.Broadcast(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.Unreliable);
+            }});
+        }}");
+        }
+
+        private static void GenerateClientIntentSystem(StringBuilder sb, List<ComponentSyncGenerator.StructInfo> clientStructs)
+        {
+            sb.AppendLine(@"public sealed partial class GeneratedClientIntentSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Update(in float t)
+        {");
+            foreach (var s in clientStructs)
+            {
+                sb.AppendLine($"            Send{s.Name}Query(World, networkManager);");
+            }
+            sb.AppendLine("        }");
+
+            foreach (var s in clientStructs)
+            {
+                var queryMethodName = $"Send{s.Name}Query";
+                sb.AppendLine($@"
+        private readonly QueryDescription {s.Name}_QueryDescription = new QueryDescription().WithAll<{s.Namespace}.{s.Name}, {s.Namespace}.PlayerId>();
+        private void {queryMethodName}(World world, NetworkManager networkManager)
+        {{
+            world.Query(in {s.Name}_QueryDescription, (Entity entity, ref {s.Namespace}.PlayerId playerId, ref {s.Namespace}.{s.Name} component) =>
+            {{
+                networkManager.SendToServer(new {s.Name}UpdatePacket {{ PlayerId = playerId.Value, Data = component }}, DeliveryMethod.ReliableOrdered);
+                world.Remove<{s.Namespace}.{s.Name}>(entity);
+            }});
+        }}");
+            }
+            sb.AppendLine("    }");
         }
 
         /// <summary>
