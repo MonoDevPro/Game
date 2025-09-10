@@ -27,12 +27,22 @@ namespace Simulation.SourceGenerator
         {
             var structSyntax = (StructDeclarationSyntax)ctx.TargetNode;
             var attribute = ctx.Attributes.First();
-            var authority = attribute.ConstructorArguments[0].Value?.ToString();
             
+            var authority = attribute.ConstructorArguments[0].Value?.ToString();
+            var trigger = attribute.ConstructorArguments.Length > 1 && attribute.ConstructorArguments[1].Value != null
+                ? attribute.ConstructorArguments[1].Value.ToString()
+                : "0"; // Default to OnChange
+
+            var syncRateTicks = attribute.ConstructorArguments.Length > 2 && attribute.ConstructorArguments[2].Value != null 
+                ? (ushort)attribute.ConstructorArguments[2].Value
+                : (ushort)0;
+
             return new StructInfo(
                 structSyntax.Identifier.Text,
                 structSyntax.GetNamespace(),
-                authority == "0" ? "Server" : "Client"
+                authority == "0" ? "Server" : "Client",
+                trigger == "0" ? "OnChange" : "OnTick", // Now correctly parsed
+                syncRateTicks // Now correctly parsed
             );
         }
 

@@ -5,7 +5,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Simulation.SourceGenerator
 {
-    internal record struct StructInfo(string Name, string Namespace, string Authority);
+    // Updated StructInfo to include Trigger and SyncRateTicks
+    internal record struct StructInfo(string Name, string Namespace, string Authority, string Trigger, ushort SyncRateTicks);
 
     internal static class CodeGenerator
     {
@@ -119,11 +120,21 @@ namespace Simulation.Core.Shared.Network.Generated
             sb.AppendLine(@"
     public partial class GeneratedServerSyncSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
     {
+        private ulong _tickCounter = 0;
         public override void Update(in float t)
-        {");
+        {
+            _tickCounter++;");
             foreach (var s in serverStructs)
             {
-                sb.AppendLine($"            Sync{s.Name}Query(World, networkManager);");
+                if (s.Trigger == "OnTick" && s.SyncRateTicks > 0)
+                {
+                    sb.AppendLine($"            if (_tickCounter % {s.SyncRateTicks} == 0)");
+                    sb.AppendLine($"                Sync{s.Name}Query(World, networkManager);");
+                }
+                else
+                {
+                    sb.AppendLine($"            Sync{s.Name}Query(World, networkManager);");
+                }
             }
             sb.AppendLine("        }");
 
