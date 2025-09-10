@@ -5,13 +5,28 @@ using Simulation.Core.Server.Systems; // Reutiliza o PlayerIndexSystem
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
 using Simulation.Core.Shared.Network.Generated;
+using Simulation.Core.Shared.Options;
 
 Console.Title = "CLIENT";
 var world = World.Create();
 
+// Configure debug options for client (less verbose than server)
+var debugOptions = new DebugOptions
+{
+    EnablePacketDebugging = true,
+    LogPacketContents = false,
+    LogPacketTiming = false,
+    LogPacketErrors = true,
+    PacketDebugLevel = DebugLevel.Info
+};
+
 // Sistemas
 var playerIndexSystem = new PlayerIndexSystem(world);
 var networkManager = new NetworkManager(world, playerIndexSystem);
+
+// Initialize debug functionality
+networkManager.InitializeDebug(debugOptions);
+
 var systems = new Group<float>("Game Systems",
     playerIndexSystem, // Indexa os jogadores para a rede
     new RenderSystem(world),
@@ -20,7 +35,8 @@ var systems = new Group<float>("Game Systems",
 
 networkManager.StartClient("127.0.0.1", 7777, "MinhaChaveDeProducao");
 systems.Initialize();
-Console.WriteLine("Client Started. Pressione 'D' para mover.");
+Console.WriteLine("Client Started with debug packet processing enabled.");
+Console.WriteLine("Pressione 'D' para mover, 'S' para estatísticas.");
 
 var listener = networkManager.Listener;
 Entity myPlayerEntity = Entity.Null;
@@ -31,9 +47,16 @@ listener.PeerConnectedEvent += peer => {
 
 while (true) {
     networkManager.PollEvents();
-    if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.D && !myPlayerEntity.Equals(Entity.Null)) {
-        Console.WriteLine("[Client] Sending MoveIntent...");
-        world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+    if (Console.KeyAvailable) {
+        var key = Console.ReadKey(true).Key;
+        if (key == ConsoleKey.D && !myPlayerEntity.Equals(Entity.Null)) {
+            Console.WriteLine("[Client] Sending MoveIntent...");
+            world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+        }
+        else if (key == ConsoleKey.S) {
+            Console.WriteLine("[Client] Showing packet statistics:");
+            networkManager.LogPacketStatistics();
+        }
     }
     systems.Update(0.016f);
     Thread.Sleep(15);
