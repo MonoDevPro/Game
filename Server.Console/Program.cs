@@ -27,9 +27,9 @@ var networkManager = new NetworkManager(world, playerIndexSystem);
 networkManager.InitializeDebug(debugOptions);
 
 var systems = new Group<float>("Game Systems",
+    new GeneratedServerSyncSystem(world, networkManager), // Envia atualizações
     playerIndexSystem, // Indexa os jogadores para a rede
-    new MovementSystem(world),
-    new GeneratedServerSyncSystem(world, networkManager) // Envia atualizações
+    new MovementSystem(world)
 );
 
 networkManager.StartServer(7777, "MinhaChaveDeProducao");
