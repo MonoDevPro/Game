@@ -32,22 +32,44 @@ public struct InputComponent { public IntentFlags Intent; public InputFlags Inpu
 
 // Server --> Client Synced Components
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct StateComponent : IEqualityComparer<StateComponent> 
+public struct StateComponent : IEquatable<StateComponent>
 { 
     public StateFlags Value;
-    public bool Equals(StateComponent x, StateComponent y) => x.Value == y.Value;
-    public int GetHashCode(StateComponent obj) => (int)obj.Value;
+
+    public bool Equals(StateComponent other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is StateComponent other && Equals(other);
+    public override int GetHashCode() => (int)Value;
+    public static bool operator ==(StateComponent left, StateComponent right) => left.Equals(right);
+    public static bool operator !=(StateComponent left, StateComponent right) => !(left == right);
 }
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Position : IEqualityComparer<StateComponent> { 
+public struct Position : IEquatable<Position>
+{ 
     public int X, Y;
-    public bool Equals(StateComponent x, StateComponent y) => x.Value == y.Value;
-    public int GetHashCode(StateComponent obj) => (int)obj.Value;
+    public bool Equals(Position other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Position other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+    public static bool operator ==(Position left, Position right) => left.Equals(right);
+    public static bool operator !=(Position left, Position right) => !(left == right);
 }
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Direction { public int X, Y; }
+public struct Direction : IEquatable<Direction>
+{ 
+    public int X, Y;
+    public bool Equals(Direction other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Direction other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+}
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Health { public int Current, Max; }
+public struct Health : IEquatable<Health>
+{ 
+    public int Current, Max;
+    public bool Equals(Health other) => Current == other.Current && Max == other.Max;
+    public override bool Equals(object? obj) => obj is Health other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Current, Max);
+    public static bool operator ==(Health left, Health right) => left.Equals(right);
+    public static bool operator !=(Health left, Health right) => !(left == right);
+}
 
 // ---> Tags from Systems of indexing
 public struct Indexed;

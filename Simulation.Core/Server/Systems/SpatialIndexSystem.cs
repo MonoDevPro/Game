@@ -1,4 +1,3 @@
-/*
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -54,4 +53,3 @@ public sealed partial class SpatialIndexSystem(World world, int mapWidth, int ma
         World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
     }
 }
-*/

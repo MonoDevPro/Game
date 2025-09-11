@@ -51,7 +51,7 @@ while (true) {
         var key = Console.ReadKey(true).Key;
         if (key == ConsoleKey.D && !myPlayerEntity.Equals(Entity.Null)) {
             Console.WriteLine("[Client] Sending move intent...");
-            // TODO: world.Add(myPlayerEntity, new MoveIntent { Direction = new Direction { X = 1, Y = 0 } });
+            world.Add(myPlayerEntity, new InputComponent { Intent = IntentFlags.Move, Input = InputFlags.Right});
             Console.WriteLine("[Client] Move intent placeholder - would send movement command");
         }
         else if (key == ConsoleKey.S) {

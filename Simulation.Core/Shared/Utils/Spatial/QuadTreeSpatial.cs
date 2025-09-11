@@ -1,4 +1,3 @@
-/*
 using System.Collections.Concurrent;
 using System.Drawing;
 using Arch.Core;
@@ -135,4 +134,3 @@ public class QuadTreeSpatial(int minX, int minY, int width, int height)
         }
     }
 }
-*/

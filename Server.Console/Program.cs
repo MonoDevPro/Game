@@ -1,13 +1,13 @@
 ﻿using Arch.Core;
-using Arch.System;
+using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
-using Simulation.Generated.Network;
 using Simulation.Core.Shared.Options;
 
 Console.Title = "SERVER";
-var world = World.Create();
+
+var serviceCollection = new ServiceCollection();
 
 // Configure debug options
 var debugOptions = new DebugOptions
@@ -26,12 +26,6 @@ var networkManager = new NetworkManager(world, playerIndexSystem);
 // Initialize debug functionality
 networkManager.InitializeDebug(debugOptions);
 
-var systems = new Group<float>("Game Systems",
-    new GeneratedServerSyncSystem(world, networkManager), // Envia atualizações
-    playerIndexSystem, // Indexa os jogadores para a rede
-    new MovementSystem(world)
-);
-
 networkManager.StartServer(7777, "MinhaChaveDeProducao");
 systems.Initialize();
 Console.WriteLine("Server started with debug packet processing enabled.");
@@ -40,12 +34,11 @@ Console.WriteLine($"Debug settings: {debugOptions}");
 var listener = networkManager.Listener;
 listener.PeerConnectedEvent += peer => {
     Console.WriteLine($"[Server] Peer connected: {peer.Id}");
-    world.Create(new PlayerId { Value = peer.Id }, new Position { X = 10, Y = 10 });
+    world.Create(new PlayerId { Value = peer.Id }, new Position { X = 10, Y = 10 }, new MoveStats { Speed = 1.0f }, new StateComponent { Value = StateFlags.Idle });
 };
 
 var statsTimer = 0;
 while (true) {
-    networkManager.PollEvents();
     systems.Update(0.016f);
     
     // Log packet statistics every 10 seconds
