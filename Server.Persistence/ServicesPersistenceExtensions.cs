@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Server.Persistence.Context;
 using Server.Persistence.Hosted;
 using Server.Persistence.Repositories;
+using Server.Persistence.Staging;
 using Simulation.Core.Server.Persistence.Contracts;
 using Simulation.Core.Server.Staging;
 using Simulation.Core.Shared.Templates;
@@ -28,7 +29,7 @@ public static class ServicesPersistenceExtensions
         // Registra o serviço que vai consumir a fila (o QueuedHostedService que vimos antes)
         services.AddHostedService<QueuedHostedService>();
         
-        // Em ServicesPersistenceExtensions.cs ou Program.cs
+        services.AddSingleton<IMapStagingArea, MapStagingArea>();
         services.AddSingleton<IPlayerStagingArea, PlayerStagingArea>();
 
         services.AddScoped<IRepositoryAsync<int, MapData>, EFCoreRepository<int, MapData>>();
@@ -37,7 +38,6 @@ public static class ServicesPersistenceExtensions
         services.AddScoped<IRepository<int, MapData>, InMemoryRepository<int, MapData>>();
         services.AddScoped<IRepository<int, PlayerData>, InMemoryRepository<int, PlayerData>>();
         
-
         return services;
     }
 }

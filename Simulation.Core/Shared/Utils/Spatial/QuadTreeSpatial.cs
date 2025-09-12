@@ -1,4 +1,5 @@
-using System.Collections.Concurrent;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using Arch.Core;
 using QuadTrees;
@@ -9,7 +10,8 @@ namespace Simulation.Core.Shared.Utils.Spatial;
 
 /// <summary>
 /// Adapter que implementa o ISpatialIndex usando a biblioteca Splitice/QuadTrees.
-/// Inclui object pooling para reduzir alocações em queries de alta frequência.
+/// Object pooling para reduzir alocações em queries de alta frequência.
+/// **Não thread-safe** — assuma acesso de um único thread (ex.: thread principal).
 /// </summary>
 public class QuadTreeSpatial(int minX, int minY, int width, int height)
 {
@@ -18,13 +20,14 @@ public class QuadTreeSpatial(int minX, int minY, int width, int height)
         public Entity Entity { get; } = entity;
         public Rectangle Rect { get; set; } = new(pos.X, pos.Y, 1, 1); // Assumindo tamanho 1x1
     }
-    
+
     private readonly QuadTreeRect<QuadTreeItem> _qtree = new(new Rectangle(minX, minY, width, height));
     private readonly Dictionary<Entity, QuadTreeItem> _items = new();
-    
-    // Object pool para reduzir alocações em queries
-    private static readonly ConcurrentQueue<List<Entity>> EntityListPool = new();
-    private static readonly ConcurrentQueue<List<QuadTreeItem>> ItemListPool = new();
+
+    // Object pool (não concorrente) para reduzir alocações em queries
+    private static readonly Stack<List<Entity>> EntityListPool = new();
+    private static readonly Stack<List<QuadTreeItem>> ItemListPool = new();
+    private const int PoolLimit = 20;
 
     public void Add(Entity entity, Position position)
     {
@@ -50,17 +53,17 @@ public class QuadTreeSpatial(int minX, int minY, int width, int height)
             _qtree.Add(item);
         }
     }
-    
+
     public void Query(Position center, int radius, List<Entity> results)
     {
         var searchRect = new Rectangle(center.X - radius, center.Y - radius, radius * 2, radius * 2);
-        
+
         // Usa object pooling para lista intermediária
         var itemResults = GetPooledItemList();
         try
         {
             _qtree.GetObjects(searchRect, itemResults);
-            
+
             results.Clear();
             foreach (var item in itemResults)
                 results.Add(item.Entity);
@@ -74,18 +77,18 @@ public class QuadTreeSpatial(int minX, int minY, int width, int height)
     public List<Entity> Query(Position center, int radius)
     {
         var searchRect = new Rectangle(center.X - radius, center.Y - radius, radius * 2, radius * 2);
-        
+
         // Usa object pooling para ambas as listas
         var itemResults = GetPooledItemList();
         var entityResults = GetPooledEntityList();
-        
+
         try
         {
             _qtree.GetObjects(searchRect, itemResults);
-            
+
             foreach (var item in itemResults)
                 entityResults.Add(item.Entity);
-                
+
             // Retorna uma nova lista para evitar problemas de ownership
             return new List<Entity>(entityResults);
         }
@@ -95,42 +98,45 @@ public class QuadTreeSpatial(int minX, int minY, int width, int height)
             ReturnPooledEntityList(entityResults);
         }
     }
-    
+
     private static List<Entity> GetPooledEntityList()
     {
-        if (EntityListPool.TryDequeue(out var list))
+        if (EntityListPool.Count > 0)
         {
+            var list = EntityListPool.Pop();
             list.Clear();
             return list;
         }
-        return new List<Entity>();
+        return [];
     }
-    
+
     private static void ReturnPooledEntityList(List<Entity> list)
     {
-        if (list != null && EntityListPool.Count < 20) // Limita o pool
+        if (EntityListPool.Count < PoolLimit)
         {
             list.Clear();
-            EntityListPool.Enqueue(list);
+            EntityListPool.Push(list);
         }
     }
-    
+
     private static List<QuadTreeItem> GetPooledItemList()
     {
-        if (ItemListPool.TryDequeue(out var list))
+        if (ItemListPool.Count > 0)
         {
+            var list = ItemListPool.Pop();
             list.Clear();
             return list;
         }
         return new List<QuadTreeItem>();
     }
-    
+
     private static void ReturnPooledItemList(List<QuadTreeItem> list)
     {
-        if (list != null && ItemListPool.Count < 20) // Limita o pool
+        if (list == null) return;
+        if (ItemListPool.Count < PoolLimit)
         {
             list.Clear();
-            ItemListPool.Enqueue(list);
+            ItemListPool.Push(list);
         }
     }
 }

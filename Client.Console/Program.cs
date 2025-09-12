@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.System;
 using Simulation.Core.Client.Systems;
-using Simulation.Core.Server.Systems; // Reutiliza o PlayerIndexSystem
 using Simulation.Core.Shared.Components;
 using Simulation.Core.Shared.Network;
 using Simulation.Generated.Network;

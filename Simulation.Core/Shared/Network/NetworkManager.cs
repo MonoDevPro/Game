@@ -14,15 +14,17 @@ public class NetworkManager
     public NetManager Net { get; }
     public readonly EventBasedNetListener Listener;
     private readonly World _world;
+    private readonly NetworkOptions _options;
 
     public NetPeer? ServerConnection { get; private set; }
     
-    private readonly PlayerIndexSystem _playerIndex; // Adicionar esta linha
+    private readonly EntityIndexSystem _playerIndex; // Adicionar esta linha
 
-    public NetworkManager(World world, PlayerIndexSystem playerIndex) // Modificar construtor
+    public NetworkManager(World world, EntityIndexSystem playerIndex, NetworkOptions options) // Modificar construtor
     {
         _world = world;
         _playerIndex = playerIndex; // Adicionar esta linha
+        _options = options;
         Listener = new EventBasedNetListener();
         Net = new NetManager(Listener);
     }
@@ -32,10 +34,10 @@ public class NetworkManager
         DebugPacketProcessor.Initialize(debugOptions);
     }
 
-    public void StartServer(int port, string connectionKey)
+    public void StartServer()
     {
-        Net.Start(port);
-        Listener.ConnectionRequestEvent += request => request.AcceptIfKey(connectionKey);
+        Net.Start(_options.ServerPort);
+        Listener.ConnectionRequestEvent += request => request.AcceptIfKey(_options.ConnectionKey);
         Listener.PeerConnectedEvent += peer => {
             Console.WriteLine($"[Server] Peer connected: {peer.Id}");
             DebugPacketProcessor.LogConnectionEvent($"Peer connected: {peer.Id}", true);
@@ -47,10 +49,10 @@ public class NetworkManager
         Listener.NetworkReceiveEvent += OnReceive;
     }
 
-    public void StartClient(string address, int port, string connectionKey)
+    public void StartClient()
     {
         Net.Start();
-        Net.Connect(address, port, connectionKey);
+        Net.Connect(_options.ServerAddress, _options.ServerPort, _options.ConnectionKey);
         Listener.PeerConnectedEvent += peer =>
         {
             ServerConnection = peer;

@@ -2,25 +2,16 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.Shared.Components;
+using Simulation.Core.Shared.Options;
 using Simulation.Core.Shared.Utils.Spatial;
 
 namespace Simulation.Core.Server.Systems;
 
-public sealed partial class SpatialIndexSystem(World world, int mapWidth, int mapHeight) 
+public sealed partial class SpatialIndexSystem(World world, SpatialOptions options) 
     : BaseSystem<World, float>(world)
 {
     // Propriedade pública para que outros sistemas possam acessar o índice espacial
-    public readonly QuadTreeSpatial SpatialIndex = new(0, 0, mapWidth, mapHeight);
-    
-    [Query]
-    [All<SpatialIndexed>]
-    private void RemoveFromIndex(in Entity entity)
-    {
-        if (!World.IsAlive(entity))
-        {
-            SpatialIndex.Remove(entity);
-        }
-    }
+    public readonly QuadTreeSpatial SpatialIndex = new(0, 0, options.Width, options.Height);
     
     [Query]
     [All<Position, LastKnownPosition, SpatialIndexed>]

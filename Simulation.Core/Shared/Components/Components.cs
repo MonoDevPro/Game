@@ -1,4 +1,5 @@
 using Simulation.Abstractions.Network;
+using Simulation.Core.Shared.Templates;
 
 namespace Simulation.Core.Shared.Components;
 
@@ -72,14 +73,20 @@ public struct Health : IEquatable<Health>
 }
 
 // ---> Tags from Systems of indexing
-public struct Indexed;
-public struct MapIndexed;
+public struct NewlyCreated; // Tag to identify newly created entities
+public struct NewlyDestroyed; // Tag to identify entities to be destroyed
+public struct NeedSave; // Tag to identify entities that have changed and need to be synced
 public struct SpatialIndexed;
 public struct LastKnownPosition { public int X, Y; }
 
-// ---> Identity Components
-public struct PlayerId { public int Value; }
+
+/// Identity Components
 public struct MapId { public int Value; }
+public struct PlayerId { public int Value; }
+
+/// Metadata Components
+public struct MapInfo { public string Name; public int Width, Height; }
+public struct PlayerInfo { public string Name; public Gender Gender; public Vocation Vocation; }
 
 // ---> Combat Components
 public struct AttackAction { public float CastTimeRemaining; }

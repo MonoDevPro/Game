@@ -85,10 +85,20 @@ namespace Simulation.SourceGenerator
             {
                 var tc = attr.ConstructorArguments[1];
                 if (tc.Value is null) return "OnChange";
-                if (tc.Value is int i) return i == 0 ? "OnChange" : "OnTick";
-                var raw = tc.Value.ToString();
+                if (tc.Value is int i)
+                {
+                    return i switch
+                    {
+                        0 => "OnChange",
+                        1 => "OnTick",
+                        _ => "OnChange"
+                    };
+                }
+
+                var raw = tc.Value.ToString() ?? "";
                 if (string.IsNullOrEmpty(raw)) return "OnChange";
-                return raw.IndexOf("OnTick", StringComparison.OrdinalIgnoreCase) >= 0 ? "OnTick" : "OnChange";
+                if (raw.IndexOf("OnTick", StringComparison.OrdinalIgnoreCase) >= 0) return "OnTick";
+                return "OnChange";
             }
             return "OnChange";
         }

@@ -3,7 +3,7 @@ using System;
 namespace Simulation.Abstractions.Network;
 
 public enum Authority { Server, Client }
-public enum SyncTrigger { OnChange, OnTick }
+public enum SyncTrigger { OnChange, OnTick, OnSpawn }
 
 [AttributeUsage(AttributeTargets.Struct)]
 public class SynchronizedComponentAttribute(

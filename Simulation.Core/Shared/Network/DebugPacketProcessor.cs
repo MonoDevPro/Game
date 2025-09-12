@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Arch.Core;
+using LiteNetLib;
 using Simulation.Core.Server.Systems;
 using Simulation.Core.Shared.Options;
 using Simulation.Generated.Network;
@@ -11,7 +12,7 @@ public static class DebugPacketProcessor
     private static DebugOptions? _debugOptions;
     private static readonly Dictionary<string, int> PacketCounts = new();
     private static readonly Dictionary<string, long> PacketTimings = new();
-    private static readonly object _fileLock = new object();
+    private static readonly object FileLock = new object();
     private static string? _logFilePath;
     
     public static void Initialize(DebugOptions debugOptions)
@@ -25,7 +26,7 @@ public static class DebugPacketProcessor
         LogDebug($"Debug log file: {_logFilePath}", DebugLevel.Info);
     }
 
-    public static void Process(World world, PlayerIndexSystem playerIndex, LiteNetLib.NetPacketReader reader)
+    public static void Process(World world, EntityIndexSystem playerIndex, NetPacketReader reader)
     {
         if (_debugOptions?.EnablePacketDebugging != true)
         {
@@ -178,7 +179,7 @@ public static class DebugPacketProcessor
 
         try
         {
-            lock (_fileLock)
+            lock (FileLock)
             {
                 File.AppendAllText(_logFilePath, message + Environment.NewLine);
             }

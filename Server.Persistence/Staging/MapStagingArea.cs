@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.Server.Persistence.Contracts;
+using Simulation.Core.Server.Staging;
 using Simulation.Core.Shared.Templates;
 
-namespace Simulation.Core.Server.Staging;
+namespace Server.Persistence.Staging;
 
 public class MapStagingArea(IBackgroundTaskQueue saveQueue) : IMapStagingArea
 {

@@ -10,7 +10,7 @@ namespace Server.Persistence.Repositories;
 /// - Suporta reverse-lookup opcional (mantém mapa value -> key).
 /// - Expõe operações sync + async (Task wrappers).
 /// </summary>
-public abstract class InMemoryRepository<TKey, TEntity> : IRepository<TKey, TEntity>
+public class InMemoryRepository<TKey, TEntity> : IRepository<TKey, TEntity>
     where TKey : notnull
     where TEntity : class
 {

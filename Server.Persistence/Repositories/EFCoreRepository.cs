@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Server.Persistence.Context;
 using Simulation.Core.Server.Persistence;
 using Simulation.Core.Server.Persistence.Contracts;
 
 namespace Server.Persistence.Repositories;
 
-public class EFCoreRepository<TKey, TEntity>(DbContext context)
+public class EFCoreRepository<TKey, TEntity>(SimulationDbContext context)
     : IRepositoryAsync<TKey, TEntity> // Implementa apenas Async
     where TKey : notnull
     where TEntity : class // EF Core exige que entidades sejam classes

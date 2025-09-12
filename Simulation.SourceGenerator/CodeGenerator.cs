@@ -86,7 +86,7 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("    internal static class PacketProcessor");
             sb.AppendLine("    {");
             sb.AppendLine("        // Main processing entry. Keep it robust: never throw on malformed packets.");
-            sb.AppendLine("        public static void Process(World world, PlayerIndexSystem playerIndex, NetPacketReader reader)");
+            sb.AppendLine("        public static void Process(World world, EntityIndexSystem playerIndex, NetPacketReader reader)");
             sb.AppendLine("        {");
             sb.AppendLine("            try");
             sb.AppendLine("            {");
@@ -113,7 +113,7 @@ namespace Simulation.SourceGenerator
                 sb.AppendLine($"                            var packet = MemoryPackSerializer.Deserialize<{name}UpdatePacket>(span);");
                 sb.AppendLine();
                 sb.AppendLine("                            // find entity for player");
-                sb.AppendLine("                            if (!playerIndex.TryGetEntity(packet.PlayerId, out var entity))");
+                sb.AppendLine("                            if (!playerIndex.TryGetPlayerEntity(packet.PlayerId, out var entity))");
                 sb.AppendLine("                                break; // unknown player");
                 sb.AppendLine();
                 sb.AppendLine($"                            // Add or set component on the entity (assumes ArchECS API world.Set<T>)");
@@ -167,7 +167,6 @@ namespace Simulation.SourceGenerator
             sb.AppendLine();
             GenerateClientIntentSystem(sb, clientStructs);
             sb.AppendLine();
-
             sb.AppendLine("}"); // end namespace
 
             return sb.ToString();
@@ -192,7 +191,7 @@ namespace Simulation.SourceGenerator
                     sb.AppendLine($"            if (_tickCounter % {s.SyncRateTicks} == 0)");
                     sb.AppendLine($"                Sync{s.Name}OnTick(World, networkManager);");
                 }
-                else // OnChange is the default
+                else // OnChange
                 {
                     sb.AppendLine($"            Sync{s.Name}OnChange(World, networkManager);");
                 }
@@ -252,7 +251,7 @@ namespace Simulation.SourceGenerator
             }});
         }}");
         }
-
+        
         private static void GenerateClientIntentSystem(StringBuilder sb, List<ComponentSyncGenerator.StructInfo> clientStructs)
         {
             sb.AppendLine(@"public sealed partial class GeneratedClientIntentSystem(World world, NetworkManager networkManager) : BaseSystem<World, float>(world)
