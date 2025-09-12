@@ -1,17 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Persistence.Context;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.Models;
 
 namespace Server.Persistence.Seeds;
 
 public static class DataSeeder
 {
-    private static List<MapData> GetMapSeed()
+    private static List<MapModel> GetMapSeed()
     {
-        var maps = new List<MapData>();
+        var maps = new List<MapModel>();
         for (int id = 0; id < 4; id++)
         {
-            maps.Add(new MapData
+            maps.Add(new MapModel
                 { MapId = id, Name = $"Default Map {id}", Width = 30, Height = 30, UsePadded = false, BorderBlocked = true });
         }
         foreach (var map in maps)
@@ -29,9 +29,9 @@ public static class DataSeeder
         return maps;
     }
     
-    private static List<PlayerData> GetPlayerSeed()
+    private static List<PlayerModel> GetPlayerSeed()
     {
-        var players = new List<PlayerData>
+        var players = new List<PlayerModel>
         {
             new() { Id = 1, Name = "Filipe", MapId = 1, PosX = 5, PosY = 5, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
             new() { Id = 2, Name = "Rodorfo", MapId = 1, PosX = 8, PosY = 8, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
@@ -47,9 +47,9 @@ public static class DataSeeder
         await context.Database.MigrateAsync();
 
         // Verifica se já existem mapas para não duplicar os dados
-        if (!await context.MapTemplates.AnyAsync())
+        if (!await context.MapModels.AnyAsync())
         {
-            context.MapTemplates.AddRange(GetMapSeed());
+            context.MapModels.AddRange(GetMapSeed());
             await context.SaveChangesAsync();
             Console.WriteLine("--> Database seeded with initial MapTemplates.");
         }
@@ -57,9 +57,9 @@ public static class DataSeeder
             Console.WriteLine("--> Database already has data. No seeding needed.");
 
         // Você pode adicionar outras chamadas de seed aqui
-        if (!await context.PlayerTemplates.AnyAsync())
+        if (!await context.PlayerModels.AnyAsync())
         {
-            context.PlayerTemplates.AddRange(GetPlayerSeed());
+            context.PlayerModels.AddRange(GetPlayerSeed());
             await context.SaveChangesAsync();
             Console.WriteLine("--> Database seeded with initial PlayerTemplates.");
         }

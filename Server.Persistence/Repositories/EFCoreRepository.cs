@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Persistence.Context;
-using Simulation.Core.Server.Persistence;
-using Simulation.Core.Server.Persistence.Contracts;
+using Simulation.Core.Persistence;
+using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence.Repositories;
 

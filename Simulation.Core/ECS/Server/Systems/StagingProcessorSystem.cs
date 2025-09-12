@@ -1,0 +1,47 @@
+using Arch.Core;
+using Arch.System;
+using Simulation.Core.ECS.Server.Staging;
+using Simulation.Core.ECS.Shared;
+using Simulation.Core.Models;
+
+namespace Simulation.Core.ECS.Server.Systems;
+
+public class StagingProcessorSystem(World world,
+    IPlayerStagingArea playerStagingArea, IMapStagingArea mapStagingArea,
+    EntityIndexSystem entityIndex) : BaseSystem<World, float>(world)
+{
+    
+    public override void Update(in float deltaTime)
+    {
+        // Processa mapas pendentes
+        while (mapStagingArea.TryDequeueMapLoaded(out var mapData))
+        {
+            if (mapData is null) 
+                continue;
+            if (entityIndex.TryGetMap(mapData.MapId, out _)) 
+                continue; // Mapa já existe
+            
+            World.Create<NewlyCreated, MapModel>(new NewlyCreated(), mapData);
+        }
+        
+        // Processa logins pendentes
+        while (playerStagingArea.TryDequeueLogin(out var playerData))
+        {
+            if (playerData is null) 
+                continue;
+            if (entityIndex.TryGetPlayerEntity(playerData.Id, out _)) 
+                continue; // Jogador já está online
+            
+            World.Create(new NewlyCreated(), playerData);
+        }
+
+        // Processa saídas pendentes
+        while (playerStagingArea.TryDequeueLeave(out var charId))
+        {
+            if (!entityIndex.TryGetPlayerEntity(charId, out var entity)) 
+                continue; // Jogador não encontrado
+            
+            World.Add<NewlyDestroyed>(entity, new NewlyDestroyed());
+        }
+    }
+}

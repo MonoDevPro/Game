@@ -10,7 +10,7 @@ namespace Server.Persistence.Context
             var optionsBuilder = new DbContextOptionsBuilder<SimulationDbContext>();
 
             // ⚠️ Ajuste a connection string conforme o seu banco
-            optionsBuilder.UseSqlite("Server=(localdb)\\mssqllocaldb;Database=GameDb;Trusted_Connection=True;");
+            optionsBuilder.UseSqlite("Data Source=GameDb.db;");
 
             return new SimulationDbContext(optionsBuilder.Options);
         }

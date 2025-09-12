@@ -47,7 +47,7 @@ namespace Server.Persistence.Migrations
 
                     b.HasKey("MapId");
 
-                    b.ToTable("MapTemplates");
+                    b.ToTable("MapTemplates", (string)null);
                 });
 
             modelBuilder.Entity("Simulation.Core.Shared.Templates.PlayerData", b =>
@@ -73,7 +73,7 @@ namespace Server.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PlayerTemplates");
+                    b.ToTable("PlayerTemplates", (string)null);
                 });
 #pragma warning restore 612, 618
         }

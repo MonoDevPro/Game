@@ -5,9 +5,9 @@ using Server.Persistence.Context;
 using Server.Persistence.Hosted;
 using Server.Persistence.Repositories;
 using Server.Persistence.Staging;
-using Simulation.Core.Server.Persistence.Contracts;
-using Simulation.Core.Server.Staging;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.ECS.Server.Staging;
+using Simulation.Core.Models;
+using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence;
 
@@ -32,11 +32,11 @@ public static class ServicesPersistenceExtensions
         services.AddSingleton<IMapStagingArea, MapStagingArea>();
         services.AddSingleton<IPlayerStagingArea, PlayerStagingArea>();
 
-        services.AddScoped<IRepositoryAsync<int, MapData>, EFCoreRepository<int, MapData>>();
-        services.AddScoped<IRepositoryAsync<int, PlayerData>, EFCoreRepository<int, PlayerData>>();
+        services.AddScoped<IRepositoryAsync<int, MapModel>, EFCoreRepository<int, MapModel>>();
+        services.AddScoped<IRepositoryAsync<int, PlayerModel>, EFCoreRepository<int, PlayerModel>>();
         
-        services.AddScoped<IRepository<int, MapData>, InMemoryRepository<int, MapData>>();
-        services.AddScoped<IRepository<int, PlayerData>, InMemoryRepository<int, PlayerData>>();
+        services.AddScoped<IRepository<int, MapModel>, InMemoryRepository<int, MapModel>>();
+        services.AddScoped<IRepository<int, PlayerModel>, InMemoryRepository<int, PlayerModel>>();
         
         return services;
     }

@@ -3,14 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Server.Persistence;
-using Simulation.Core.Server.Factories;
-using Simulation.Core.Server.Persistence.Contracts;
-using Simulation.Core.Server.Staging;
-using Simulation.Core.Server.Systems;
-using Simulation.Core.Shared;
-using Simulation.Core.Shared.Network;
-using Simulation.Core.Shared.Options;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.ECS.Server;
+using Simulation.Core.ECS.Server.Staging;
+using Simulation.Core.ECS.Server.Systems;
+using Simulation.Core.Models;
+using Simulation.Core.Options;
+using Simulation.Core.Persistence.Contracts;
 
 Console.Title = "SERVER";
 
@@ -38,26 +36,34 @@ services.AddSingleton<ISimulationBuilder, SimulationBuilder>();
 
 using var provider = services.BuildServiceProvider();
 
-var worldOptions = provider.GetRequiredService<WorldOptions>();
-var spatialOptions = provider.GetRequiredService<SpatialOptions>();
-var networkOptions = provider.GetRequiredService<NetworkOptions>();
-var simulationBuilder = provider.GetRequiredService<ISimulationBuilder>();
+// Maps loading
+var mapStaging = provider.GetRequiredService<IMapStagingArea>();
+var mapRepo = provider.GetRequiredService<IRepositoryAsync<int, MapModel>>();
+var maps = await mapRepo.GetAllAsync();
+foreach (var map in maps)
+{
+    mapStaging.StageMapLoaded(map);
+    Console.WriteLine($"[Server] Map loaded: {map.Name} (ID: {map.MapId})");
+}
 
+// Players tests Staging
 var stagingPlayer = provider.GetRequiredService<IPlayerStagingArea>();
-var stagingMap = provider.GetRequiredService<IMapStagingArea>();
-var mapRepo = provider.GetRequiredService<IRepositoryAsync<int, MapData>>();
-var playerRepo = provider.GetRequiredService<IRepositoryAsync<int, PlayerData>>();
+var playerRepo = provider.GetRequiredService<IRepositoryAsync<int, PlayerModel>>();
+var players = await playerRepo.GetAllAsync();
+foreach (var player in players)
+{
+    stagingPlayer.StageLogin(player);
+    Console.WriteLine($"[Server] Player loaded: {player.Name} (ID: {player.Id})");
+}
 
-simulationBuilder
-    .WithWorldOptions(worldOptions)
-    .WithSpatialOptions(spatialOptions)
-    .WithNetworkOptions(networkOptions)
-    .WithRootServices(provider);
-
-var systems = simulationBuilder.Build();
+// Build and start the simulation systems
+var systems = provider.GetRequiredService<ISimulationBuilder>()
+    .WithWorldOptions(provider.GetRequiredService<WorldOptions>())
+    .WithSpatialOptions(provider.GetRequiredService<SpatialOptions>())
+    .WithRootServices(provider)
+    .Build();
 
 systems.Initialize();
-Console.WriteLine("Server started with debug packet processing enabled.");
 
 var networkSystem = systems.Get<NetworkSystem>();
 var listener = networkSystem.Manager.Listener;

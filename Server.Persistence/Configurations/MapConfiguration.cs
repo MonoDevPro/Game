@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.Models;
 
 namespace Server.Persistence.Configurations;
 
-public class MapConfiguration : IEntityTypeConfiguration<MapData>
+public class MapConfiguration : IEntityTypeConfiguration<MapModel>
 {
-    public void Configure(EntityTypeBuilder<MapData> builder)
+    public void Configure(EntityTypeBuilder<MapModel> builder)
     {
         builder.HasKey(m => m.MapId);
         builder.Property(m => m.Name).IsRequired().HasMaxLength(150);

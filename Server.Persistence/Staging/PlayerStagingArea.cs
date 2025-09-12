@@ -1,32 +1,32 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Server.Persistence.Contracts;
-using Simulation.Core.Server.Staging;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.ECS.Server.Staging;
+using Simulation.Core.Models;
+using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence.Staging;
 
 public class PlayerStagingArea(IBackgroundTaskQueue saveQueue, ILogger<PlayerStagingArea> logger,
-    IRepository<int, MapData> mapMemory, IRepository<int, PlayerData> playerMemory) : IPlayerStagingArea
+    IRepository<int, MapModel> mapMemory, IRepository<int, PlayerModel> playerMemory) : IPlayerStagingArea
 {
-    private readonly ConcurrentQueue<PlayerData> _pendingLogins = new();
+    private readonly ConcurrentQueue<PlayerModel> _pendingLogins = new();
     private readonly ConcurrentQueue<int> _pendingLeaves = new();
 
-    public void StageLogin(PlayerData data)
+    public void StageLogin(PlayerModel model)
     {
         try
         {
-            playerMemory.Add(data.Id, data);
-            _pendingLogins.Enqueue(data);
+            playerMemory.Add(model.Id, model);
+            _pendingLogins.Enqueue(model);
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Erro ao adicionar PlayerData ao repositório de memória para CharId {CharId}", data.Id);
+            logger.LogError(e, "Erro ao adicionar PlayerData ao repositório de memória para CharId {CharId}", model.Id);
         }
     }
 
-    public bool TryDequeueLogin(out PlayerData? data) 
+    public bool TryDequeueLogin(out PlayerModel? data) 
         => _pendingLogins.TryDequeue(out data);
 
     public void StageLeave(int charId)
@@ -37,12 +37,12 @@ public class PlayerStagingArea(IBackgroundTaskQueue saveQueue, ILogger<PlayerSta
         return _pendingLeaves.TryDequeue(out charId);
     }
 
-    public void StageSave(PlayerData data)
+    public void StageSave(PlayerModel model)
     {
         saveQueue.QueueBackgroundWorkItem(async (sp, ct) =>
         {
-            var repo = sp.GetRequiredService<IRepositoryAsync<int, PlayerData>>();
-            await repo.UpdateAsync(data.Id, data, ct);
+            var repo = sp.GetRequiredService<IRepositoryAsync<int, PlayerModel>>();
+            await repo.UpdateAsync(model.Id, model, ct);
         });
     }
 }

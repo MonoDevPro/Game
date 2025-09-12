@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,8 +23,8 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("using Arch.System;");
             sb.AppendLine("using System.Runtime.CompilerServices;");
             sb.AppendLine("using Arch.System.SourceGenerator;");
-            sb.AppendLine("using Simulation.Core.Server.Systems;"); // for PlayerIndex
-            sb.AppendLine("using Simulation.Core.Shared.Network;"); // for NetworkManager
+            sb.AppendLine("using Simulation.Core.ECS.Server.Systems;"); // for PlayerIndex
+            sb.AppendLine("using Simulation.Core.Network;"); // for NetworkManager
             sb.AppendLine("using Simulation.Abstractions.Network;"); // for IPacket
             sb.AppendLine();
             sb.AppendLine("namespace Simulation.Generated.Network");

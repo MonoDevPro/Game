@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using Simulation.Core.Server.Persistence;
-using Simulation.Core.Server.Persistence.Contracts;
+using Simulation.Core.Persistence;
+using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence.Repositories;
 

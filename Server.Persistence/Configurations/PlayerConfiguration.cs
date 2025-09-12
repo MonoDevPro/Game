@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Simulation.Core.Shared.Templates;
+using Simulation.Core.Models;
 
 namespace Server.Persistence.Configurations;
 
-public class PlayerConfiguration : IEntityTypeConfiguration<PlayerData>
+public class PlayerConfiguration : IEntityTypeConfiguration<PlayerModel>
 {
-    public void Configure(EntityTypeBuilder<PlayerData> builder)
+    public void Configure(EntityTypeBuilder<PlayerModel> builder)
     {
         // --- Configuração da Entidade PlayerTemplate ---
         builder.HasKey(p => p.Id); // Define a chave primária

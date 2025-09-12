@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Simulation.Core.Server.Persistence.Contracts;
+using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence.Commons;
 
