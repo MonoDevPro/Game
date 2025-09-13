@@ -2,7 +2,10 @@ using Arch.Core;
 using Arch.Relationships;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Simulation.Core.ECS.Server.Systems.Indexes;
+using Simulation.Core.ECS.Server.Systems.Relationships;
 using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Utils.Map;
 
 namespace Simulation.Core.ECS.Server.Systems;
@@ -11,31 +14,36 @@ namespace Simulation.Core.ECS.Server.Systems;
 /// Sistema central responsável por manter índices de alta performance
 /// para as entidades principais do mundo, como Mapas e Jogadores.
 /// </summary>
-public sealed partial class EntityIndexSystem(World world) : BaseSystem<World, float>(world)
+public sealed partial class EntityIndexSystem(World world) : BaseSystem<World, float>(world), IPlayerIndex, IMapIndex
 {
     // Índices privados que oferecem busca O(1)
-    private readonly Dictionary<int, (Entity Entity, MapService MapService)> _mapsByMapId = new();
+    private readonly Dictionary<int, MapInstance> _mapsByMapId = new();
     private readonly Dictionary<int, Entity> _playersByCharId = new();
+    
+    // Cache para evitar alocações a cada chamada do GetPlayerIdsInMap
+    private readonly List<int> _playerIdCache = [];
     
     // --- Ciclo de Vida do Índice ---
 
     [Query]
-    [All<NewlyCreated, MapId, MapService>]
-    private void IndexNewMaps(in Entity entity, ref MapId mapId, ref MapService mapService)
+    [All<NewlyCreated, MapId, MapData>] // Procura por MapData, não MapService
+    private void IndexNewMaps(in Entity entity, ref MapId mapId, ref MapData mapData)
     {
-        _mapsByMapId[mapId.Value] = (entity, mapService);
-        World.Remove<MapService>(entity);
+        var mapService = MapService.CreateFromTemplate(mapData);
+        World.Add(entity, mapService);
+        _mapsByMapId[mapId.Value] = new MapInstance(entity, mapService);
     }
 
+
     [Query]
-    [All<NewlyCreated, PlayerId, MapId>]
+    [All<NewlyCreated, PlayerId, PlayerData>]
     private void IndexNewPlayers(in Entity entity, ref PlayerId playerId, ref MapId mapId)
     {
         _playersByCharId[playerId.Value] = entity;
         
         // Cria uma relação do Mapa (pai) para o Jogador (filho), com o PlayerId como payload.
         if (_mapsByMapId.TryGetValue(mapId.Value, out var mapInfo))
-            World.AddRelationship<PlayerId>(entity, mapInfo.Entity, playerId);
+            World.AddPlayerToMap<PlayerId>(entity, mapInfo, playerId);
     }
     
     [Query]
@@ -62,19 +70,20 @@ public sealed partial class EntityIndexSystem(World world) : BaseSystem<World, f
     /// <summary>
     /// Obtém a entidade e o serviço de um mapa pelo seu ID, se existir e estiver vivo.
     /// </summary>
-    public bool TryGetMap(int mapId, out (Entity Entity, MapService MapService) mapInfo)
+    public bool TryGetMap(int mapId, out MapInstance mapInstance)
     {
-        if (_mapsByMapId.TryGetValue(mapId, out mapInfo))
+        if (_mapsByMapId.TryGetValue(mapId, out mapInstance))
         {
-            if (World.IsAlive(mapInfo.Entity))
+            if (World.IsAlive(mapInstance.Entity))
             {
                 return true;
             }
             _mapsByMapId.Remove(mapId); // Auto-correção
         }
-        mapInfo = default;
+        mapInstance = default;
         return false;
     }
+
 
     /// <summary>
     /// Obtém a entidade de um jogador pelo seu ID, se existir e estiver viva.
@@ -91,5 +100,19 @@ public sealed partial class EntityIndexSystem(World world) : BaseSystem<World, f
         }
         entity = default;
         return false;
+    }
+
+    /// <summary>
+    /// Obtém uma coleção de todos os IDs de jogadores presentes num determinado mapa.
+    /// Utiliza as relações do ArchECS para uma consulta eficiente.
+    /// </summary>
+    public IEnumerable<int> GetPlayerIdsInMap(int mapId)
+    {
+        _playerIdCache.Clear();
+
+        if (!TryGetMap(mapId, out var mapInstance) || !World.HasRelationship<PlayerId>(mapInstance.Entity)) 
+            return _playerIdCache;
+        
+        return World.GetPlayerIdsInMap(mapInstance, _playerIdCache);
     }
 }

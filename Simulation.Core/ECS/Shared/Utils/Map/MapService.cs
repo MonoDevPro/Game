@@ -1,4 +1,6 @@
+using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.Models;
+using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Shared.Utils.Map;
 
@@ -13,6 +15,8 @@ public class MapService
     // storage mode
     public bool UsePadded { get; init; } = false;
     public int PaddedSize { get; init; } = 0; // p (if padded)
+    
+    public bool BorderBlocked { get; init; }
 
     // mapping (used for compact mode)
     // posToRank: index by linear pos (y*width + x) -> rank (0..Count-1)
@@ -30,6 +34,7 @@ public class MapService
         Width = width;
         Height = height;
         UsePadded = usePadded;
+        BorderBlocked = borderBlocked;
 
         if (usePadded)
         {
@@ -71,20 +76,18 @@ public class MapService
     }
 
     // Factory
-    public static MapService CreateFromTemplate(MapModel model)
+    public static MapService CreateFromTemplate(MapData data)
     {
-        if (model == null) throw new ArgumentNullException(nameof(model));
-
-        int w = model.Width;
-        int h = model.Height;
+        int w = data.Width;
+        int h = data.Height;
 
         if (w <= 0 || h <= 0)
-            throw new ArgumentException($"Invalid map dimensions in template MapId={model.MapId}: width={w}, height={h}");
+            throw new ArgumentException($"Invalid map dimensions in template MapId={data.MapId}: width={w}, height={h}");
 
         var expected = w * h;
 
-        var tiles = model.TilesRowMajor;
-        if (tiles == null || tiles.Length != expected)
+        var tiles = data.TilesRowMajor;
+        if (tiles.Length != expected)
         {
             // fallback: fill floor
             var fallbackTiles = new TileType[expected];
@@ -92,13 +95,13 @@ public class MapService
             tiles = fallbackTiles;
         }
 
-        var collision = model.CollisionRowMajor;
-        if (collision == null || collision.Length != expected)
+        var collision = data.CollisionRowMajor;
+        if (collision.Length != expected)
         {
             collision = new byte[expected]; // default = 0 -> no collision
         }
 
-        return new MapService(model.MapId, model.Name ??= string.Empty, w, h, model.UsePadded, model.BorderBlocked);
+        return new MapService(data.MapId, data.Name, w, h, data.UsePadded, data.BorderBlocked);
     }
 
     // helpers

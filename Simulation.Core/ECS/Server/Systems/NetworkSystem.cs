@@ -11,13 +11,15 @@ namespace Simulation.Core.ECS.Server.Systems;
 /// - processa pacotes imediatamente no callback OnReceive (sem filas)
 /// - mais simples e com menos alocação quando PollEvents roda no main thread
 /// </summary>
-public sealed class NetworkSystem(World world, NetworkManager manager, DebugOptions opt) : BaseSystem<World, float>(world)
+public sealed class NetworkSystem(World world, NetworkManager manager, DebugOptions? opt = null) : BaseSystem<World, float>(world)
 {
     public readonly NetworkManager Manager = manager;
 
     public override void Initialize()
     {
-        Manager.InitializeDebug(opt);
+        if (opt is not null)
+            Manager.InitializeDebug(opt);
+        
         Manager.StartServer();
     }
     

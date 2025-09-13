@@ -1,50 +1,22 @@
 using Arch.Core;
 using Arch.System;
-using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Server.Systems;
-using Simulation.Core.Models;
+using Simulation.Core.ECS.Server.Systems.Indexes;
 using Simulation.Core.Network;
 using Simulation.Core.Options;
-using Simulation.Core.Persistence.Contracts;
 using Simulation.Generated.Network;
 
 namespace Simulation.Core.ECS.Server;
-
-/// <summary>
-/// Define um contrato para a construção de uma pipeline de simulação completa.
-/// </summary>
-public interface ISimulationBuilder
-{
-    /// <summary>
-    /// Fornece as opções de configuração do mundo ECS.
-    /// </summary>
-    ISimulationBuilder WithWorldOptions(WorldOptions options);
-
-    /// <summary>
-    /// Fornece as opções de configuração do sistema espacial.
-    /// </summary>
-    ISimulationBuilder WithSpatialOptions(SpatialOptions options);
-    
-    /// <summary>
-    /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.
-    /// </summary>
-    ISimulationBuilder WithRootServices(IServiceProvider services);
-
-
-    /// <summary>
-    /// Constrói e retorna o grupo de sistemas (a pipeline) configurado.
-    /// </summary>
-    /// Um Group pronto a ser executado.
-    Group<float> Build();
-}
 
 public class SimulationBuilder : ISimulationBuilder
 {
     private WorldOptions? _worldOptions;
     private SpatialOptions? _spatialOptions;
+    private NetworkOptions? _networkOptions;
+    private DebugOptions? _debugOptions;
     private IServiceProvider? _rootServices;
 
     public ISimulationBuilder WithWorldOptions(WorldOptions options)
@@ -58,7 +30,14 @@ public class SimulationBuilder : ISimulationBuilder
         _spatialOptions = options;
         return this;
     }
-    
+
+    public ISimulationBuilder WithNetworkOptions(NetworkOptions options, DebugOptions? debugOptions = null)
+    {
+        _networkOptions = options;
+        _debugOptions = debugOptions;
+        return this;
+    }
+
     public ISimulationBuilder WithRootServices(IServiceProvider services)
     {
         _rootServices = services;
@@ -68,7 +47,7 @@ public class SimulationBuilder : ISimulationBuilder
     public Group<float> Build()
     {
         // Validação para garantir que todas as dependências foram fornecidas.
-        if (_worldOptions is null || _spatialOptions is null || _rootServices is null)
+        if (_worldOptions is null || _spatialOptions is null || _networkOptions is null || _rootServices is null)
             throw new InvalidOperationException("WorldOptions, SpatialOptions and RootServices must be provided before building.");
 
         // 1. Cria o World com as opções fornecidas.
@@ -89,10 +68,11 @@ public class SimulationBuilder : ISimulationBuilder
         systemServices.AddSingleton(_rootServices.GetRequiredService<IPlayerStagingArea>());
         systemServices.AddSingleton(_rootServices.GetRequiredService<IMapStagingArea>());
         systemServices.AddSingleton(_rootServices.GetRequiredService<ILoggerFactory>());
-        systemServices.AddSingleton(_rootServices.GetRequiredService<EventBasedNetListener>());
-        systemServices.AddSingleton(_rootServices.GetRequiredService<IRepository<int, MapModel>>());
-        systemServices.AddSingleton(_rootServices.GetRequiredService<IRepository<int, PlayerModel>>());
-        systemServices.AddSingleton<NetworkManager>();
+        systemServices.AddSingleton<NetworkManager>( sp => 
+            new NetworkManager(world, 
+                sp.GetRequiredService<IPlayerIndex>(), 
+                _networkOptions)
+        );
         
         systemServices.AddSingleton<NetworkSystem>();
         systemServices.AddSingleton<StagingProcessorSystem>();
@@ -106,6 +86,9 @@ public class SimulationBuilder : ISimulationBuilder
         systemServices.AddSingleton<EntityDestructorSystem>();
         systemServices.AddSingleton<EntitySnapshotSystem>();
         systemServices.AddSingleton<GeneratedServerSyncSystem>();
+        
+        systemServices.AddSingleton<IPlayerIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
+        systemServices.AddSingleton<IMapIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         
         // 4. Constrói o provedor de serviços exclusivo para o ECS
         var ecsServiceProvider = systemServices.BuildServiceProvider();

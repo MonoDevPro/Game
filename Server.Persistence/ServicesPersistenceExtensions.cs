@@ -8,6 +8,7 @@ using Server.Persistence.Staging;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.Models;
 using Simulation.Core.Persistence.Contracts;
+using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence;
 
@@ -32,11 +33,8 @@ public static class ServicesPersistenceExtensions
         services.AddSingleton<IMapStagingArea, MapStagingArea>();
         services.AddSingleton<IPlayerStagingArea, PlayerStagingArea>();
 
-        services.AddScoped<IRepositoryAsync<int, MapModel>, EFCoreRepository<int, MapModel>>();
-        services.AddScoped<IRepositoryAsync<int, PlayerModel>, EFCoreRepository<int, PlayerModel>>();
-        
-        services.AddScoped<IRepository<int, MapModel>, InMemoryRepository<int, MapModel>>();
-        services.AddScoped<IRepository<int, PlayerModel>, InMemoryRepository<int, PlayerModel>>();
+        services.AddScoped<IMapRepository, MapRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
         
         return services;
     }

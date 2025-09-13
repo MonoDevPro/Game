@@ -1,4 +1,4 @@
-namespace Simulation.Core.Models;
+namespace Simulation.Core.Persistence.Models;
 
 public enum TileType : byte { Empty = 0, Floor = 1, Wall = 2, TreeStump = 3 }
 

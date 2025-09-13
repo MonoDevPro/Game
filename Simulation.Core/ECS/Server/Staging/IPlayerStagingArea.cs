@@ -1,3 +1,4 @@
+using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.Models;
 
 namespace Simulation.Core.ECS.Server.Staging;
@@ -11,14 +12,14 @@ public interface IPlayerStagingArea
     /// <summary>
     /// Coloca os dados de um jogador na fila de espera para entrar no ECS.
     /// </summary>
-    void StageLogin(PlayerModel model);
+    void StageLogin(PlayerData data);
     /// <summary>
     /// Tenta retirar os dados de um jogador da fila.
     /// </summary>
-    bool TryDequeueLogin(out PlayerModel? template);
+    bool TryDequeueLogin(out PlayerData data);
     
-    void StageLeave(int charId);
-    bool TryDequeueLeave(out int charId);
+    void StageLeave(int playerId);
+    bool TryDequeueLeave(out int playerId);
 
-    void StageSave(PlayerModel model);
+    void StageSave(PlayerData data);
 }

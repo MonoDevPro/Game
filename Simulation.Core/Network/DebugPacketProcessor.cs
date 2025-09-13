@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Arch.Core;
 using LiteNetLib;
-using Simulation.Core.ECS.Server.Systems;
+using Simulation.Core.ECS.Server.Systems.Indexes;
 using Simulation.Core.Options;
 using Simulation.Generated.Network;
 
@@ -26,7 +26,7 @@ public static class DebugPacketProcessor
         LogDebug($"Debug log file: {_logFilePath}", DebugLevel.Info);
     }
 
-    public static void Process(World world, EntityIndexSystem playerIndex, NetPacketReader reader)
+    public static void Process(World world, IPlayerIndex playerIndex, NetPacketReader reader)
     {
         if (_debugOptions?.EnablePacketDebugging != true)
         {

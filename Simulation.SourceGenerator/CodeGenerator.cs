@@ -23,10 +23,9 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("using Arch.System;");
             sb.AppendLine("using System.Runtime.CompilerServices;");
             sb.AppendLine("using Arch.System.SourceGenerator;");
-            sb.AppendLine("using Simulation.Core.ECS.Server.Systems;"); // for PlayerIndex
+            sb.AppendLine("using Simulation.Core.ECS.Server.Systems.Indexes;"); // for IPlayerIndex
             sb.AppendLine("using Simulation.Core.Network;"); // for NetworkManager
             sb.AppendLine("using Simulation.Abstractions.Network;"); // for IPacket
-            sb.AppendLine();
             sb.AppendLine("namespace Simulation.Generated.Network");
             sb.AppendLine("{");
 
@@ -85,7 +84,7 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("    internal static class PacketProcessor");
             sb.AppendLine("    {");
             sb.AppendLine("        // Main processing entry. Keep it robust: never throw on malformed packets.");
-            sb.AppendLine("        public static void Process(World world, EntityIndexSystem playerIndex, NetPacketReader reader)");
+            sb.AppendLine("        public static void Process(World world, IPlayerIndex playerIndex, NetPacketReader reader)");
             sb.AppendLine("        {");
             sb.AppendLine("            try");
             sb.AppendLine("            {");

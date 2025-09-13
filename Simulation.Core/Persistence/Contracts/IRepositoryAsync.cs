@@ -2,7 +2,7 @@ namespace Simulation.Core.Persistence.Contracts;
 
 public interface IRepositoryAsync<in TKey, TEntity>  : IAsyncDisposable
     where TKey : notnull
-    where TEntity : class
+    where TEntity : notnull
 {
     // Read
     Task<TEntity?> GetAsync(TKey id, CancellationToken ct = default);

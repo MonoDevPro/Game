@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Simulation.Core.Models;
+using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence.Context;
 

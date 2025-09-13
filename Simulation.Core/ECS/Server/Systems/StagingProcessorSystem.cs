@@ -2,7 +2,9 @@ using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.Models;
+using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Server.Systems;
 
@@ -16,23 +18,19 @@ public class StagingProcessorSystem(World world,
         // Processa mapas pendentes
         while (mapStagingArea.TryDequeueMapLoaded(out var mapData))
         {
-            if (mapData is null) 
-                continue;
             if (entityIndex.TryGetMap(mapData.MapId, out _)) 
                 continue; // Mapa já existe
             
-            World.Create<NewlyCreated, MapModel>(new NewlyCreated(), mapData);
+            World.Create<NewlyCreated, MapData>(new NewlyCreated(), mapData);
         }
         
         // Processa logins pendentes
         while (playerStagingArea.TryDequeueLogin(out var playerData))
         {
-            if (playerData is null) 
-                continue;
             if (entityIndex.TryGetPlayerEntity(playerData.Id, out _)) 
                 continue; // Jogador já está online
             
-            World.Create(new NewlyCreated(), playerData);
+            World.Create<NewlyCreated, PlayerData>(new NewlyCreated(), playerData);
         }
 
         // Processa saídas pendentes

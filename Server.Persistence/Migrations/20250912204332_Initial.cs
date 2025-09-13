@@ -11,7 +11,7 @@ namespace Server.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "MapTemplates",
+                name: "MapModels",
                 columns: table => new
                 {
                     MapId = table.Column<int>(type: "INTEGER", nullable: false)
@@ -26,11 +26,11 @@ namespace Server.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MapTemplates", x => x.MapId);
+                    table.PrimaryKey("PK_MapModels", x => x.MapId);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PlayerTemplates",
+                name: "PlayerModels",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -41,7 +41,7 @@ namespace Server.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PlayerTemplates", x => x.Id);
+                    table.PrimaryKey("PK_PlayerModels", x => x.Id);
                 });
         }
 
@@ -49,10 +49,10 @@ namespace Server.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "MapTemplates");
+                name: "MapModels");
 
             migrationBuilder.DropTable(
-                name: "PlayerTemplates");
+                name: "PlayerModels");
         }
     }
 }

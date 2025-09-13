@@ -16,7 +16,7 @@ namespace Server.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.19");
 
-            modelBuilder.Entity("Simulation.Core.Shared.Templates.MapData", b =>
+            modelBuilder.Entity("Simulation.Core.Models.MapModel", b =>
                 {
                     b.Property<int>("MapId")
                         .ValueGeneratedOnAdd()
@@ -47,10 +47,10 @@ namespace Server.Persistence.Migrations
 
                     b.HasKey("MapId");
 
-                    b.ToTable("MapTemplates", (string)null);
+                    b.ToTable("MapModels");
                 });
 
-            modelBuilder.Entity("Simulation.Core.Shared.Templates.PlayerData", b =>
+            modelBuilder.Entity("Simulation.Core.Models.PlayerModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -73,7 +73,7 @@ namespace Server.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PlayerTemplates", (string)null);
+                    b.ToTable("PlayerModels");
                 });
 #pragma warning restore 612, 618
         }

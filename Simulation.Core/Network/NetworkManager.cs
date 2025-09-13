@@ -1,9 +1,11 @@
+using System.Collections.Concurrent;
 using Arch.Core;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using MemoryPack;
 using Simulation.Abstractions.Network;
 using Simulation.Core.ECS.Server.Systems;
+using Simulation.Core.ECS.Server.Systems.Indexes;
 using Simulation.Core.Options;
 using Simulation.Generated.Network;
 
@@ -15,12 +17,15 @@ public class NetworkManager
     public readonly EventBasedNetListener Listener;
     private readonly World _world;
     private readonly NetworkOptions _options;
+    
+    // Mapeamento interno de PlayerId para a conexão NetPeer.
+    private readonly ConcurrentDictionary<int, NetPeer> _peersById = new();
 
     public NetPeer? ServerConnection { get; private set; }
     
-    private readonly EntityIndexSystem _playerIndex; // Adicionar esta linha
+    private readonly IPlayerIndex _playerIndex; // Adicionar esta linha
 
-    public NetworkManager(World world, EntityIndexSystem playerIndex, NetworkOptions options) // Modificar construtor
+    public NetworkManager(World world, IPlayerIndex playerIndex, NetworkOptions options) // Modificar construtor
     {
         _world = world;
         _playerIndex = playerIndex; // Adicionar esta linha
@@ -39,11 +44,12 @@ public class NetworkManager
         Net.Start(_options.ServerPort);
         Listener.ConnectionRequestEvent += request => request.AcceptIfKey(_options.ConnectionKey);
         Listener.PeerConnectedEvent += peer => {
-            Console.WriteLine($"[Server] Peer connected: {peer.Id}");
+            _peersById[peer.Id] = peer; // Adiciona ao nosso índice
             DebugPacketProcessor.LogConnectionEvent($"Peer connected: {peer.Id}", true);
         };
-        Listener.PeerDisconnectedEvent += (peer, info) => {
-            Console.WriteLine($"[Server] Peer disconnected: {peer.Id}");
+        Listener.PeerDisconnectedEvent += (peer, info) => 
+        {
+            _peersById.TryRemove(peer.Id, out _); // Remove do nosso índice
             DebugPacketProcessor.LogConnectionEvent($"Peer disconnected: {peer.Id}", false);
         };
         Listener.NetworkReceiveEvent += OnReceive;
@@ -77,6 +83,18 @@ public class NetworkManager
     {
         Net.PollEvents();
     }
+    
+    /// <summary>
+    /// Envia um pacote para um jogador específico usando o seu PlayerId.
+    /// </summary>
+    public void SendTo(int playerId, IPacket packet, DeliveryMethod deliveryMethod)
+    {
+        if (_peersById.TryGetValue(playerId, out var peer))
+        {
+            var writer = GetWriterForPacket(packet);
+            peer.Send(writer, deliveryMethod);
+        }
+    }
 
     public void SendToServer<T>(T packet, DeliveryMethod deliveryMethod) where T : IPacket
     {
@@ -88,6 +106,40 @@ public class NetworkManager
     {
         var writer = GetWriterForPacket(packet);
         Net.SendToAll(writer, deliveryMethod);
+    }
+    
+    /// <summary>
+    /// Envia um pacote para todos os jogadores num mapa específico.
+    /// </summary>
+    public void BroadcastToAllInMap(int mapId, IPacket packet, DeliveryMethod deliveryMethod)
+    {
+        var writer = GetWriterForPacket(packet);
+        var playerIds = _playerIndex.GetPlayerIdsInMap(mapId);
+        foreach (var playerId in playerIds)
+        {
+            if (_peersById.TryGetValue(playerId, out var peer))
+            {
+                peer.Send(writer, deliveryMethod);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Envia um pacote para todos os jogadores num mapa, exceto um.
+    /// </summary>
+    public void BroadcastToOthersInMap(int excludedPlayerId, int mapId, IPacket packet, DeliveryMethod deliveryMethod)
+    {
+        var writer = GetWriterForPacket(packet);
+        var playerIds = _playerIndex.GetPlayerIdsInMap(mapId);
+        foreach (var playerId in playerIds)
+        {
+            if (playerId == excludedPlayerId) continue;
+            
+            if (_peersById.TryGetValue(playerId, out var peer))
+            {
+                peer.Send(writer, deliveryMethod);
+            }
+        }
     }
 
     public void Send<T>(NetPeer peer, T packet, DeliveryMethod deliveryMethod) where T : IPacket
