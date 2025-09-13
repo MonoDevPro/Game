@@ -1,7 +1,7 @@
 using Arch.Core;
 using Simulation.Core.ECS.Shared.Data;
 
-namespace Simulation.Core.ECS.Shared.Factories;
+namespace Simulation.Core.ECS.Shared.Systems.Factories;
 
 public static class PlayerFactory
 {

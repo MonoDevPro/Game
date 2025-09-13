@@ -1,9 +1,8 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.Network;
-using Simulation.Core.Options;
 
-namespace Simulation.Core.ECS.Server.Systems;
+namespace Simulation.Core.ECS.Shared.Systems;
 
 /// <summary>
 /// NetworkSystem (modo direto)
@@ -17,7 +16,7 @@ public sealed class NetworkSystem(World world, NetworkManager manager) : BaseSys
 
     public override void Initialize()
     {
-        Manager.StartServer();
+        Manager.Initialize();
     }
     
     public override void Update(in float dt)

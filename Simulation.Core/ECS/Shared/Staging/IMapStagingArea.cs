@@ -1,6 +1,6 @@
 using Simulation.Core.ECS.Shared.Data;
 
-namespace Simulation.Core.ECS.Server.Staging;
+namespace Simulation.Core.ECS.Shared.Staging;
 
 /// <summary>
 /// Interface representing a staging area for map-related operations.

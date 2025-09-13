@@ -3,7 +3,7 @@ using Arch.Core;
 using QuadTrees;
 using QuadTrees.QTreeRect;
 
-namespace Simulation.Core.ECS.Shared.Utils.Spatial;
+namespace Simulation.Core.ECS.Shared.Systems.Utils.Spatial;
 
 /// <summary>
 /// Adapter que implementa o ISpatialIndex usando a biblioteca Splitice/QuadTrees.

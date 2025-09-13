@@ -2,7 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Shared;
-using Simulation.Core.ECS.Shared.Utils.Spatial;
+using Simulation.Core.ECS.Shared.Systems.Utils.Spatial;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Server.Systems;
@@ -20,9 +20,7 @@ public sealed partial class SpatialIndexSystem(World world, SpatialOptions optio
         if (currentPos.X != lastPos.X || currentPos.Y != lastPos.Y)
         {
             SpatialIndex.Update(entity, currentPos);
-            
-            lastPos.X = currentPos.X; // Atualiza a última posição conhecida
-            lastPos.Y = currentPos.Y; // Atualiza a última posição conhecida
+            World.Set<LastKnownPosition>(entity, new LastKnownPosition(currentPos.X, currentPos.Y));
         }
     }
 

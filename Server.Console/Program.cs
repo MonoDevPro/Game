@@ -17,9 +17,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddPersistence(context.Configuration);
         
         // Registar o SimulationBuilder e as Options
-        services.AddSingleton<ISimulationBuilder, SimulationBuilder>();
+        services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<SpatialOptions>(context.Configuration.GetSection(SpatialOptions.SectionName));
+        services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
         
         // 3. Adicionar a nossa lógica principal de jogo como um Hosted Service
         services.AddHostedService<GameServerHost>();

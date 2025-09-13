@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
-using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Shared.Staging;
 using Simulation.Core.Persistence.Contracts;
 
 namespace Server.Persistence.Staging;

@@ -1,14 +1,15 @@
 using Arch.Core;
-using Arch.Relationships;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using LiteNetLib;
+using LiteNetLib.Utils;
 using Microsoft.Extensions.Logging;
+using Simulation.Core.ECS.Server.Systems.Builders;
+using Simulation.Core.ECS.Server.Systems.Relationships;
 using Simulation.Core.ECS.Shared;
-using Simulation.Core.ECS.Shared.Builders;
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.ECS.Shared.Indexes;
-using Simulation.Core.ECS.Shared.Relationships;
+using Simulation.Core.ECS.Shared.Systems;
+using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Network;
 using Simulation.Core.Network.Packets;
 

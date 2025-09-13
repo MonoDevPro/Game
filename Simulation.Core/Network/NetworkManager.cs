@@ -4,11 +4,24 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using MemoryPack;
 using Simulation.Abstractions.Network;
-using Simulation.Core.ECS.Shared.Indexes;
+using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Options;
-using Simulation.Generated.Network;
 
 namespace Simulation.Core.Network;
+
+[MemoryPackable]
+public partial struct ComponentSyncPacket<T> : IPacket where T : struct, IEquatable<T>
+{
+    // Usamos PlayerId em vez de EntityId para associar ao jogador correto.
+    public int PlayerId { get; set; }
+    public T Component { get; set; }
+}
+
+public enum NetworkRole
+{
+    Server,
+    Client
+}
 
 public class NetworkManager
 {
@@ -16,21 +29,39 @@ public class NetworkManager
     public readonly EventBasedNetListener Listener;
     private readonly World _world;
     private readonly NetworkOptions _options;
+    private readonly PacketRegistry _packetRegistry; // Adicione este campo
+    private readonly PacketProcessor _packetProcessor;
+    private readonly NetDataWriter _writer = new(); // Adicione este campo
+    private readonly NetworkRole _role;
     
     // Mapeamento interno de PlayerId para a conexão NetPeer.
     private readonly ConcurrentDictionary<int, NetPeer> _peersById = new();
 
     public NetPeer? ServerConnection { get; private set; }
     
-    private readonly IPlayerIndex _playerIndex; // Adicionar esta linha
+    private readonly IPlayerIndex _playerIndex;
 
-    public NetworkManager(World world, IPlayerIndex playerIndex, NetworkOptions options) // Modificar construtor
+    public NetworkManager(World world, IPlayerIndex playerIndex, NetworkOptions options, PacketRegistry packetRegistry, PacketProcessor processor, NetworkRole role)
     {
         _world = world;
-        _playerIndex = playerIndex; // Adicionar esta linha
+        _playerIndex = playerIndex;
         _options = options;
         Listener = new EventBasedNetListener();
-        Net = new NetManager(Listener);
+        Net = new NetManager(Listener)
+        {
+            DisconnectTimeout = options.DisconnectTimeoutMs
+        };
+        _packetRegistry = packetRegistry;
+        _packetProcessor = processor;
+        _role = role;
+    }
+    
+    public void Initialize()
+    {
+        if (_role == NetworkRole.Server)
+            StartServer();
+        else
+            StartClient();
     }
 
     public void StartServer()
@@ -65,7 +96,7 @@ public class NetworkManager
     private void OnReceive(NetPeer fromPeer, NetPacketReader dataReader, byte channel, DeliveryMethod deliveryMethod)
     {
         // Use DebugPacketProcessor which wraps the generated PacketProcessor with debug functionality
-        PacketProcessor.Process(_world, _playerIndex, dataReader);
+        _packetProcessor.Process(dataReader, _world, _playerIndex);
         dataReader.Recycle();
     }
 
@@ -74,42 +105,84 @@ public class NetworkManager
         Net.PollEvents();
     }
     
+    // NOVO MÉTODO para enviar componentes genéricos
+    public void SendComponent<T>(int playerId, T component, DeliveryMethod deliveryMethod) where T : struct, IEquatable<T>
+    {
+        if (!_packetRegistry.TryGetPacketId(typeof(T), out var packetId))
+        {
+            // O componente não foi registrado para sincronização.
+            return;
+        }
+
+        var packet = new ComponentSyncPacket<T>
+        {
+            PlayerId = playerId,
+            Component = component
+        };
+
+        _writer.Reset();
+        _writer.Put(packetId); // 1. Escreve o ID do tipo de pacote
+
+        var payload = MemoryPackSerializer.Serialize(packet);
+        _writer.Put(payload); // 2. Escreve o pacote serializado
+
+        Broadcast(_writer, deliveryMethod);
+    }
+    
+    public void SendTo<T>(int playerId, T packet, DeliveryMethod deliveryMethod) where T : struct, IEquatable<T>
+    {
+        if (!_packetRegistry.TryGetPacketId(typeof(T), out var packetId))
+        {
+            // O componente não foi registrado para sincronização.
+            return;
+        }
+        _writer.Reset();
+        _writer.Put(packetId); // 1. Escreve o ID do tipo de pacote
+
+        var payload = MemoryPackSerializer.Serialize(packet);
+        _writer.Put(payload); // 2. Escreve o pacote serializado
+        SendTo(playerId, _writer, deliveryMethod);
+    }
+    
+    // Modifique os métodos de envio para aceitar NetDataWriter
+    public void Broadcast(NetDataWriter writer, DeliveryMethod deliveryMethod)
+    {
+        Net?.SendToAll(writer, deliveryMethod);
+    }
+    
     /// <summary>
     /// Envia um pacote para um jogador específico usando o seu PlayerId.
     /// </summary>
-    public void SendTo(int playerId, IPacket packet, DeliveryMethod deliveryMethod)
+    public void SendTo(int playerId, NetDataWriter writer, DeliveryMethod deliveryMethod)
     {
         if (_peersById.TryGetValue(playerId, out var peer))
         {
-            var writer = GetWriterForPacket(packet);
             peer.Send(writer, deliveryMethod);
         }
     }
 
-    public void SendToServer<T>(T packet, DeliveryMethod deliveryMethod) where T : IPacket
-    {
-        if (ServerConnection == null) return;
-        Send(ServerConnection, packet, deliveryMethod);
-    }
-    
-    public void Broadcast<T>(T packet, DeliveryMethod deliveryMethod) where T : IPacket
-    {
-        var writer = GetWriterForPacket(packet);
-        Net.SendToAll(writer, deliveryMethod);
-    }
-    
     /// <summary>
     /// Envia um pacote para todos os jogadores num mapa específico.
     /// </summary>
-    public void BroadcastToAllInMap(int mapId, IPacket packet, DeliveryMethod deliveryMethod)
+    public void BroadcastToAllInMap<T>(int mapId, T packet, DeliveryMethod deliveryMethod) where T : struct, IEquatable<T>
     {
-        var writer = GetWriterForPacket(packet);
+        if (!_packetRegistry.TryGetPacketId(typeof(T), out var packetId))
+        {
+            // O componente não foi registrado para sincronização.
+            return;
+        }
+        _writer.Reset();
+        _writer.Put(packetId); // 1. Escreve o ID do tipo de pacote
+        
+        var payload = MemoryPackSerializer.Serialize(packet);
+        _writer.Put(payload); // 2. Escreve o pacote serializado
+        
         var playerIds = _playerIndex.GetPlayerIdsInMap(mapId);
         foreach (var playerId in playerIds)
         {
             if (_peersById.TryGetValue(playerId, out var peer))
             {
-                peer.Send(writer, deliveryMethod);
+                peer.Send(_writer, deliveryMethod);
             }
         }
     }
@@ -117,9 +190,19 @@ public class NetworkManager
     /// <summary>
     /// Envia um pacote para todos os jogadores num mapa, exceto um.
     /// </summary>
-    public void BroadcastToOthersInMap(int excludedPlayerId, int mapId, IPacket packet, DeliveryMethod deliveryMethod)
+    public void BroadcastToOthersInMap<T>(int excludedPlayerId, int mapId, T packet, DeliveryMethod deliveryMethod) where T : struct, IEquatable<T>
     {
-        var writer = GetWriterForPacket(packet);
+        if (!_packetRegistry.TryGetPacketId(typeof(T), out var packetId))
+        {
+            // O componente não foi registrado para sincronização.
+            return;
+        }
+        _writer.Reset();
+        _writer.Put(packetId); // 1. Escreve o ID do tipo de pacote
+        
+        var payload = MemoryPackSerializer.Serialize(packet);
+        _writer.Put(payload); // 2. Escreve o pacote serializado
+        
         var playerIds = _playerIndex.GetPlayerIdsInMap(mapId);
         foreach (var playerId in playerIds)
         {
@@ -127,30 +210,9 @@ public class NetworkManager
             
             if (_peersById.TryGetValue(playerId, out var peer))
             {
-                peer.Send(writer, deliveryMethod);
+                peer.Send(_writer, deliveryMethod);
             }
         }
-    }
-
-    public void Send<T>(NetPeer peer, T packet, DeliveryMethod deliveryMethod) where T : IPacket
-    {
-        var writer = GetWriterForPacket(packet);
-        peer.Send(writer, deliveryMethod);
-        
-        // Enhanced debug logging is now handled in DebugPacketProcessor for received packets
-        // For sent packets, we keep simple logging for now
-        Console.WriteLine($"Sending packet of type {packet.GetType().Name} to peer {peer.Id}");
-    }
-    
-    private NetDataWriter GetWriterForPacket<T>(T packet) where T : IPacket
-    {
-        var writer = new NetDataWriter();
-        var packetType = PacketFactory.GetPacketType(packet);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
-
-        writer.Put((byte)packetType); 
-        writer.Put(packetBytes);      
-        return writer;
     }
 
     public void Stop()

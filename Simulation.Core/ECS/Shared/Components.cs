@@ -3,7 +3,7 @@ using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Shared;
 
-// ---> Flags
+// ---> Flags (inalterados)
 [Flags] public enum InputFlags : byte
 {
     None=0, 
@@ -27,77 +27,47 @@ namespace Simulation.Core.ECS.Shared;
     Dead     = 1 << 3,
 }
 
-// Client --> Server Synced Components
+// ---> Componentes Sincronizados
 [SynchronizedComponent(Authority.Client)]
-public struct InputComponent { public IntentFlags Intent; public InputFlags Input; }
+public readonly record struct InputComponent(IntentFlags Intent, InputFlags Input);
 
-// Server --> Client Synced Components
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct StateComponent : IEquatable<StateComponent>
-{ 
-    public StateFlags Value;
+public readonly record struct StateComponent(StateFlags Value);
 
-    public bool Equals(StateComponent other) => Value == other.Value;
-    public override bool Equals(object? obj) => obj is StateComponent other && Equals(other);
-    public override int GetHashCode() => (int)Value;
-    public static bool operator ==(StateComponent left, StateComponent right) => left.Equals(right);
-    public static bool operator !=(StateComponent left, StateComponent right) => !(left == right);
-}
 [SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Position : IEquatable<Position>
-{ 
-    public int X, Y;
-    public bool Equals(Position other) => X == other.X && Y == other.Y;
-    public override bool Equals(object? obj) => obj is Position other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(X, Y);
-    public static bool operator ==(Position left, Position right) => left.Equals(right);
-    public static bool operator !=(Position left, Position right) => !(left == right);
-}
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Direction : IEquatable<Direction>
-{ 
-    public int X, Y;
-    public bool Equals(Direction other) => X == other.X && Y == other.Y;
-    public override bool Equals(object? obj) => obj is Direction other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(X, Y);
-}
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
-public struct Health : IEquatable<Health>
-{ 
-    public int Current, Max;
-    public bool Equals(Health other) => Current == other.Current && Max == other.Max;
-    public override bool Equals(object? obj) => obj is Health other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(Current, Max);
-    public static bool operator ==(Health left, Health right) => left.Equals(right);
-    public static bool operator !=(Health left, Health right) => !(left == right);
-}
+public readonly record struct Position(int X, int Y);
 
-// ---> Tags from Systems of indexing
-public struct NewlyCreated; // Tag to identify newly created entities
-public struct NewlyDestroyed; // Tag to identify entities to be destroyed
-public struct NeedSave; // Tag to identify entities that have changed and need to be synced
+[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
+public readonly record struct Direction(int X, int Y);
+
+[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
+public readonly record struct Health(int Current, int Max);
+
+// ---> Tags (inalterados, pois não contêm dados)
+public struct NewlyCreated;
+public struct NewlyDestroyed;
+public struct NeedSave;
 public struct SpatialIndexed;
-public struct LastKnownPosition { public int X, Y; }
 
+// ---> Componentes de Dados
+public readonly record struct LastKnownPosition(int X, int Y);
 
-/// Identity Components
-public struct MapId { public int Value; }
-public struct PlayerId { public int Value; }
+public readonly record struct MapId(int Value);
+public readonly record struct PlayerId(int Value);
 
-/// Metadata Components
-public struct MapInfo { public string Name; public int Width, Height; }
-public struct PlayerInfo { public string Name; public Gender Gender; public Vocation Vocation; }
+public readonly record struct MapInfo(string Name, int Width, int Height);
+public readonly record struct PlayerInfo(string Name, Gender Gender, Vocation Vocation);
 
-// ---> Combat Components
-public struct AttackAction { public float CastTimeRemaining; }
-public struct AttackCooldown { public float CooldownRemaining; }
-public struct AttackStats { public float CastTime; public float Cooldown; public int Damage, AttackRange; }
+// ---> Componentes de Combate
+public readonly record struct AttackAction(float CastTimeRemaining);
+public readonly record struct AttackCooldown(float CooldownRemaining);
+public readonly record struct AttackStats(float CastTime, float Cooldown, int Damage, int AttackRange);
 
-// ---> Movement Components
-public struct MoveAction { public Position Start, Target; public float Elapsed, Duration; }
-public struct MoveStats { public float Speed; }
+// ---> Componentes de Movimento
+public readonly record struct MoveAction(Position Start, Position Target, float Elapsed, float Duration);
+public readonly record struct MoveStats(float Speed);
 
-// ---> Teleport Components
-public struct TeleportAction { public Position TargetPosition; public float CastTimeRemaining; }
-public struct TeleportCooldown { public float CooldownRemaining; }
-public struct TeleportStats { public float CastTime; public float Cooldown; }
+// ---> Componentes de Teleporte
+public readonly record struct TeleportAction(Position TargetPosition, float CastTimeRemaining);
+public readonly record struct TeleportCooldown(float CooldownRemaining);
+public readonly record struct TeleportStats(float CastTime, float Cooldown);

@@ -1,7 +1,8 @@
 using Arch.Core;
+using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
 
-namespace Simulation.Core.ECS.Shared.Builders;
+namespace Simulation.Core.ECS.Server.Systems.Builders;
 
 public static class PlayerBuilder
 {

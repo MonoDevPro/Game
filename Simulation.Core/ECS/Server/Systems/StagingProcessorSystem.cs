@@ -1,9 +1,10 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Shared.Staging;
 using Simulation.Core.Persistence.Models;
+using EntityIndexSystem = Simulation.Core.ECS.Shared.Systems.EntityIndexSystem;
 
 namespace Simulation.Core.ECS.Server.Systems;
 

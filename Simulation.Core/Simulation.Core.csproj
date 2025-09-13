@@ -27,15 +27,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Simulation.Abstractions\Simulation.Abstractions.csproj" />
-        <ProjectReference Include="..\Simulation.SourceGenerator\Simulation.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Network\Sync\" />
     </ItemGroup>
 
 </Project>

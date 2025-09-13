@@ -1,4 +1,4 @@
-namespace Simulation.Abstractions.Network;
+namespace Simulation.Core.Network;
 
 public interface IPacket
 {

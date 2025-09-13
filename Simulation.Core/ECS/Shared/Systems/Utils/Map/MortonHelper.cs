@@ -1,4 +1,4 @@
-namespace Simulation.Core.ECS.Shared.Utils.Map;
+namespace Simulation.Core.ECS.Shared.Systems.Utils.Map;
 
 public static class MortonHelper
 {

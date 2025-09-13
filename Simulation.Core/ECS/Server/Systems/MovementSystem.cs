@@ -103,9 +103,13 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
             }
 
             // avança tempo usando dt
-            action.Elapsed += dt * stats.Speed; // escala por speed
-            if (action.Elapsed < 0f) 
-                action.Elapsed = 0f;
+            var elapsed = action.Elapsed;
+            elapsed += dt * stats.Speed; // escala por speed
+            if (elapsed < 0f) 
+                elapsed = 0f;
+            
+            World.Set<MoveAction>(entity, action with { Elapsed = elapsed });
+            
             var t = action.Duration > 0f ? MathF.Min(1f, action.Elapsed / action.Duration) : 1f;
 
             // interpola (float) e arredonda para inteiro a atribuir Position

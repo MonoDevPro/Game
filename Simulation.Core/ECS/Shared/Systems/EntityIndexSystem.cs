@@ -2,13 +2,12 @@ using Arch.Core;
 using Arch.Relationships;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Server.Systems.Relationships;
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.ECS.Shared.Indexes;
-using Simulation.Core.ECS.Shared.Relationships;
-using Simulation.Core.ECS.Shared.Utils.Map;
+using Simulation.Core.ECS.Shared.Systems.Indexes;
+using Simulation.Core.ECS.Shared.Systems.Utils.Map;
 
-namespace Simulation.Core.ECS.Server.Systems;
+namespace Simulation.Core.ECS.Shared.Systems;
 
 /// <summary>
 /// Sistema central responsável por manter índices de alta performance

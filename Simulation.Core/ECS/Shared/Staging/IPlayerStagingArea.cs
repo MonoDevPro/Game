@@ -1,6 +1,6 @@
 using Simulation.Core.ECS.Shared.Data;
 
-namespace Simulation.Core.ECS.Server.Staging;
+namespace Simulation.Core.ECS.Shared.Staging;
 
 /// <summary>
 /// Uma área de transferência thread-safe para manter os dados de jogadores que foram

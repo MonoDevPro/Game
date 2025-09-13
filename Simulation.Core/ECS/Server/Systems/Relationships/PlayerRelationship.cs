@@ -1,8 +1,9 @@
 using Arch.Core;
 using Arch.Relationships;
-using Simulation.Core.ECS.Shared.Indexes;
+using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Systems.Indexes;
 
-namespace Simulation.Core.ECS.Shared.Relationships;
+namespace Simulation.Core.ECS.Server.Systems.Relationships;
 
 public static class PlayerRelationship
 {
