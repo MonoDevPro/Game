@@ -1,5 +1,5 @@
 using MemoryPack;
-using Simulation.Core.Models;
+using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Shared.Data;
 

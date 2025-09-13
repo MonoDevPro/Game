@@ -1,5 +1,4 @@
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.Models;
 
 namespace Simulation.Core.Persistence.Models;
 

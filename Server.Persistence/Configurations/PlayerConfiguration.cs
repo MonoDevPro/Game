@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Simulation.Core.Models;
+using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence.Configurations;
 

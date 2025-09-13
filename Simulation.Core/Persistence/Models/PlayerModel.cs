@@ -1,4 +1,4 @@
-namespace Simulation.Core.Models;
+namespace Simulation.Core.Persistence.Models;
 
 public enum Gender : int { None, Male, Female }
 public enum Vocation : int { None, Mage, Archer }

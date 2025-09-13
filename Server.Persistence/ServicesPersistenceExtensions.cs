@@ -6,7 +6,6 @@ using Server.Persistence.Hosted;
 using Server.Persistence.Repositories;
 using Server.Persistence.Staging;
 using Simulation.Core.ECS.Server.Staging;
-using Simulation.Core.Models;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 

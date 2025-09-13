@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Contracts\" />
+      <Folder Include="Network\Sync\" />
     </ItemGroup>
 
 </Project>

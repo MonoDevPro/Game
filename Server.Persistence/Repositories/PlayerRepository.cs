@@ -1,6 +1,5 @@
 using Server.Persistence.Context;
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.Models;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 

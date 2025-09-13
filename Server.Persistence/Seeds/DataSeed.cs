@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Persistence.Context;
-using Simulation.Core.Models;
 using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence.Seeds;

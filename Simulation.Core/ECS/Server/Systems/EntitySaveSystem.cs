@@ -2,8 +2,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Server.Staging;
-using Simulation.Core.ECS.Server.Systems.Builders;
 using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Builders;
 
 namespace Simulation.Core.ECS.Server.Systems;
 

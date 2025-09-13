@@ -2,7 +2,7 @@ using Arch.Core;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Utils.Map;
 
-namespace Simulation.Core.ECS.Server.Systems.Indexes;
+namespace Simulation.Core.ECS.Shared.Indexes;
 
 /// <summary>
 /// Define um contrato para um índice que mapeia um ID de mapa para a sua entidade e serviço.

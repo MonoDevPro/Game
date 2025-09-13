@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.Models;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 

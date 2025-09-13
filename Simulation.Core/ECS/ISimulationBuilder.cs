@@ -19,7 +19,7 @@ public interface ISimulationBuilder
     ISimulationBuilder WithSpatialOptions(SpatialOptions options);
     
     /// <summary> Fornece as opções de configuração do sistema de rede.</summary>
-    ISimulationBuilder WithNetworkOptions(NetworkOptions options, DebugOptions? debugOptions = null);
+    ISimulationBuilder WithNetworkOptions(NetworkOptions options);
     
     /// <summary>
     /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.

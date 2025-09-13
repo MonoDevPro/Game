@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Server.Systems;
-using Simulation.Core.ECS.Server.Systems.Indexes;
+using Simulation.Core.ECS.Shared.Indexes;
 using Simulation.Core.Network;
 using Simulation.Core.Options;
 using Simulation.Generated.Network;
@@ -16,7 +16,6 @@ public class SimulationBuilder : ISimulationBuilder
     private WorldOptions? _worldOptions;
     private SpatialOptions? _spatialOptions;
     private NetworkOptions? _networkOptions;
-    private DebugOptions? _debugOptions;
     private IServiceProvider? _rootServices;
 
     public ISimulationBuilder WithWorldOptions(WorldOptions options)
@@ -31,10 +30,9 @@ public class SimulationBuilder : ISimulationBuilder
         return this;
     }
 
-    public ISimulationBuilder WithNetworkOptions(NetworkOptions options, DebugOptions? debugOptions = null)
+    public ISimulationBuilder WithNetworkOptions(NetworkOptions options)
     {
         _networkOptions = options;
-        _debugOptions = debugOptions;
         return this;
     }
 

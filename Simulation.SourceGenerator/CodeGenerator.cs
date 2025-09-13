@@ -23,7 +23,7 @@ namespace Simulation.SourceGenerator
             sb.AppendLine("using Arch.System;");
             sb.AppendLine("using System.Runtime.CompilerServices;");
             sb.AppendLine("using Arch.System.SourceGenerator;");
-            sb.AppendLine("using Simulation.Core.ECS.Server.Systems.Indexes;"); // for IPlayerIndex
+            sb.AppendLine("using Simulation.Core.ECS.Shared.Indexes;"); // for IPlayerIndex
             sb.AppendLine("using Simulation.Core.Network;"); // for NetworkManager
             sb.AppendLine("using Simulation.Abstractions.Network;"); // for IPacket
             sb.AppendLine("namespace Simulation.Generated.Network");

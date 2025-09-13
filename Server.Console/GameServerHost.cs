@@ -19,13 +19,12 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
         var spatialOptions = scope.ServiceProvider.GetRequiredService<IOptions<SpatialOptions>>().Value;
         var networkOptions = scope.ServiceProvider.GetRequiredService<IOptions<NetworkOptions>>().Value;
-        var debugOptions = scope.ServiceProvider.GetRequiredService<IOptions<DebugOptions>>().Value;
 
         // Constrói a pipeline de simulação
         var simulationPipeline = builder
             .WithWorldOptions(worldOptions)
             .WithSpatialOptions(spatialOptions)
-            .WithNetworkOptions(networkOptions, debugOptions)
+            .WithNetworkOptions(networkOptions)
             .WithRootServices(scope.ServiceProvider) // Passa o scope atual
             .Build();
 

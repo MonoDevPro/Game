@@ -3,7 +3,6 @@ using Arch.System;
 using Simulation.Core.ECS.Server.Staging;
 using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.Models;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Server.Systems;

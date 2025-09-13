@@ -1,6 +1,6 @@
 using Arch.Core;
 
-namespace Simulation.Core.ECS.Server.Systems.Indexes;
+namespace Simulation.Core.ECS.Shared.Indexes;
 
 /// <summary>
 /// Define um contrato para um índice que mapeia um ID de jogador para a sua entidade.

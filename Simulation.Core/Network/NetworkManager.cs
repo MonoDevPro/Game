@@ -4,8 +4,7 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using MemoryPack;
 using Simulation.Abstractions.Network;
-using Simulation.Core.ECS.Server.Systems;
-using Simulation.Core.ECS.Server.Systems.Indexes;
+using Simulation.Core.ECS.Shared.Indexes;
 using Simulation.Core.Options;
 using Simulation.Generated.Network;
 
@@ -34,23 +33,16 @@ public class NetworkManager
         Net = new NetManager(Listener);
     }
 
-    public void InitializeDebug(DebugOptions debugOptions)
-    {
-        DebugPacketProcessor.Initialize(debugOptions);
-    }
-
     public void StartServer()
     {
         Net.Start(_options.ServerPort);
         Listener.ConnectionRequestEvent += request => request.AcceptIfKey(_options.ConnectionKey);
         Listener.PeerConnectedEvent += peer => {
             _peersById[peer.Id] = peer; // Adiciona ao nosso índice
-            DebugPacketProcessor.LogConnectionEvent($"Peer connected: {peer.Id}", true);
         };
         Listener.PeerDisconnectedEvent += (peer, info) => 
         {
             _peersById.TryRemove(peer.Id, out _); // Remove do nosso índice
-            DebugPacketProcessor.LogConnectionEvent($"Peer disconnected: {peer.Id}", false);
         };
         Listener.NetworkReceiveEvent += OnReceive;
     }
@@ -63,11 +55,9 @@ public class NetworkManager
         {
             ServerConnection = peer;
             Console.WriteLine($"[Client] Connected to server: {peer.Id}");
-            DebugPacketProcessor.LogConnectionEvent($"Client connected to server: {peer.Id}", true);
         };
         Listener.PeerDisconnectedEvent += (peer, info) => {
             Console.WriteLine($"[Client] Disconnected from server");
-            DebugPacketProcessor.LogConnectionEvent("Client disconnected from server", false);
         };
         Listener.NetworkReceiveEvent += OnReceive;
     }
@@ -75,7 +65,7 @@ public class NetworkManager
     private void OnReceive(NetPeer fromPeer, NetPacketReader dataReader, byte channel, DeliveryMethod deliveryMethod)
     {
         // Use DebugPacketProcessor which wraps the generated PacketProcessor with debug functionality
-        DebugPacketProcessor.Process(_world, _playerIndex, dataReader);
+        PacketProcessor.Process(_world, _playerIndex, dataReader);
         dataReader.Recycle();
     }
 
@@ -166,15 +156,5 @@ public class NetworkManager
     public void Stop()
     {
         Net.Stop();
-    }
-
-    public void LogPacketStatistics()
-    {
-        DebugPacketProcessor.LogStatistics();
-    }
-
-    public void ClearPacketStatistics()
-    {
-        DebugPacketProcessor.ClearStatistics();
     }
 }

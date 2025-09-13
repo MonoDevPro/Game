@@ -1,8 +1,7 @@
 using Arch.Core;
-using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
 
-namespace Simulation.Core.ECS.Server.Systems.Factories;
+namespace Simulation.Core.ECS.Shared.Factories;
 
 public static class MapFactory
 {
