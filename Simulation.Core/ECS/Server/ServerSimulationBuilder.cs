@@ -8,6 +8,8 @@ using Simulation.Core.ECS.Shared.Systems;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Network;
 using Simulation.Core.Options;
+using EntityDestructorSystem = Simulation.Core.ECS.Shared.Systems.EntityDestructorSystem;
+using MovementSystem = Simulation.Core.ECS.Shared.Systems.MovementSystem;
 
 namespace Simulation.Core.ECS.Server;
 

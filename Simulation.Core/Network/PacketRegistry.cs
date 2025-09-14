@@ -17,9 +17,7 @@ public class PacketRegistry
     public void Register<T>() where T : struct, IEquatable<T>
     {
         if (_packetTypeToId.ContainsKey(typeof(T)))
-        {
             return; // Já registrado
-        }
 
         var packetId = _nextPacketId++;
         _packetTypeToId[typeof(T)] = packetId;

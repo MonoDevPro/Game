@@ -3,6 +3,8 @@ using Arch.System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Client.Systems;
+using Simulation.Core.ECS.Server.Systems;
+using Simulation.Core.ECS.Shared.Staging;
 using Simulation.Core.ECS.Shared.Systems;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Network;
@@ -64,6 +66,8 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         systemServices.AddTransient(typeof(ILogger<>), typeof(Logger<>));
         systemServices.AddSingleton(world);
         systemServices.AddSingleton(_rootServices.GetRequiredService<ILoggerFactory>());
+        systemServices.AddSingleton(_rootServices.GetRequiredService<IPlayerStagingArea>());
+        systemServices.AddSingleton(_rootServices.GetRequiredService<IMapStagingArea>());
 
         var packetRegistry = new PacketRegistry();
         systemServices.AddSingleton(packetRegistry);
@@ -79,7 +83,10 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         
         // Sistemas específicos do cliente
         systemServices.AddSingleton<NetworkSystem>();
+        systemServices.AddSingleton<StagingProcessorSystem>();
         systemServices.AddSingleton<EntityIndexSystem>(); // O cliente também precisa indexar entidades
+        systemServices.AddSingleton<EntityFactorySystem>();
+        systemServices.AddSingleton<MovementSystem>();
         systemServices.AddSingleton<RenderSystem>(); // Sistema de renderização
         systemServices.AddSingleton<IPlayerIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         
@@ -88,7 +95,10 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         
         // A ordem é importante: processar a rede, depois a lógica, depois renderizar.
         AddSystem<NetworkSystem>(pipeline, ecsServiceProvider);
+        AddSystem<StagingProcessorSystem>(pipeline, ecsServiceProvider);
         AddSystem<EntityIndexSystem>(pipeline, ecsServiceProvider);
+        AddSystem<EntityFactorySystem>(pipeline, ecsServiceProvider);
+        AddSystem<MovementSystem>(pipeline, ecsServiceProvider);
 
         var networkManager = ecsServiceProvider.GetRequiredService<NetworkManager>();
         foreach (var (componentType, options) in _syncRegistrations)

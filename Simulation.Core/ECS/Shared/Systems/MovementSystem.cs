@@ -1,9 +1,8 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Simulation.Core.ECS.Shared;
 
-namespace Simulation.Core.ECS.Server.Systems;
+namespace Simulation.Core.ECS.Shared.Systems;
 
 /// <summary>
 /// Movement system adaptado ao estilo de source generators do Arch:
