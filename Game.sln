@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Persistence", "Serve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Console", "Client.Console\Client.Console.csproj", "{1AD13BE7-A94D-4BFC-B558-1871295A92C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simulation.Abstractions", "Simulation.Abstractions\Simulation.Abstractions.csproj", "{1989FD2E-70EA-463F-9763-81C6E2ACA0EF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadTrees", "thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj", "{5EC6B98E-D813-4472-9E9C-9FF39E83CDB6}"
 EndProject
 Global
@@ -42,10 +40,6 @@ Global
 		{1AD13BE7-A94D-4BFC-B558-1871295A92C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AD13BE7-A94D-4BFC-B558-1871295A92C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AD13BE7-A94D-4BFC-B558-1871295A92C0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1989FD2E-70EA-463F-9763-81C6E2ACA0EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1989FD2E-70EA-463F-9763-81C6E2ACA0EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1989FD2E-70EA-463F-9763-81C6E2ACA0EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1989FD2E-70EA-463F-9763-81C6E2ACA0EF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5EC6B98E-D813-4472-9E9C-9FF39E83CDB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5EC6B98E-D813-4472-9E9C-9FF39E83CDB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EC6B98E-D813-4472-9E9C-9FF39E83CDB6}.Release|Any CPU.ActiveCfg = Release|Any CPU

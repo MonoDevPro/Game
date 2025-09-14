@@ -3,7 +3,6 @@ using Arch.Core;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using MemoryPack;
-using Simulation.Abstractions.Network;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Options;
 

@@ -1,4 +1,4 @@
-using Simulation.Abstractions.Network;
+
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Shared;
@@ -28,19 +28,14 @@ namespace Simulation.Core.ECS.Shared;
 }
 
 // ---> Componentes Sincronizados
-[SynchronizedComponent(Authority.Client)]
 public readonly record struct InputComponent(IntentFlags Intent, InputFlags Input);
 
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
 public readonly record struct StateComponent(StateFlags Value);
 
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
 public readonly record struct Position(int X, int Y);
 
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
 public readonly record struct Direction(int X, int Y);
 
-[SynchronizedComponent(Authority.Server, SyncTrigger.OnChange)]
 public readonly record struct Health(int Current, int Max);
 
 // ---> Tags (inalterados, pois não contêm dados)

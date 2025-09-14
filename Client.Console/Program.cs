@@ -2,7 +2,6 @@
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Client;
 using Simulation.Core.Options;
-using Simulation.Abstractions.Network;
 using Simulation.Core.ECS.Shared;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Options;
@@ -13,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Staging;
-using Simulation.Core.ECS.Shared.Systems;
 
 // --- Configuração do Host ---
 Console.Title = "CLIENT";

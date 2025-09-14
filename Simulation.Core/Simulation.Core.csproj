@@ -26,10 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Simulation.Abstractions\Simulation.Abstractions.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj" />
     </ItemGroup>
 

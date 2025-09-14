@@ -1,6 +1,7 @@
-using Simulation.Abstractions.Network;
-
 namespace Simulation.Core.Options;
+
+public enum Authority { Server, Client }
+public enum SyncTrigger { OnChange, OnTick, OnSpawn }
 
 /// <summary>
 /// Encapsula as opções de configuração para um componente sincronizado.

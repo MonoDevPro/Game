@@ -1,5 +1,4 @@
 using MemoryPack;
-using Simulation.Abstractions.Network;
 using Simulation.Core.ECS.Shared.Data;
 
 namespace Simulation.Core.Network.Packets;

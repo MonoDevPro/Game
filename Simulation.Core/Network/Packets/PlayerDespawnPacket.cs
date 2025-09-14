@@ -1,5 +1,4 @@
 using MemoryPack;
-using Simulation.Abstractions.Network;
 
 namespace Simulation.Core.Network.Packets;
 
