@@ -114,9 +114,6 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
             logger.LogInformation("Sistema de sincronização genérico para {ComponentType} registrado.", componentType.Name);
         }
         
-        // Adiciona sistemas de final de quadro
-        // Sistemas de sync genéricos criados dinamicamente (não usam atributo)
-        
         pipeline.Initialize();
         return (pipeline, world);
     }
