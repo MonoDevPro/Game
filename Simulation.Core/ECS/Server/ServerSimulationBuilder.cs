@@ -6,6 +6,7 @@ using Simulation.Core.ECS.Server.Systems;
 using Simulation.Core.ECS.Shared.Staging;
 using Simulation.Core.ECS.Shared.Systems;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
+using Simulation.Core.ECS.Shared.Systems.Provider;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
 
@@ -85,13 +86,14 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         systemServices.AddSingleton<IPlayerIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         systemServices.AddSingleton<IMapIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         
+        systemServices.AddSystemGroup(new Group<float>("SimulationServer Group"));
+        
         var ecsServiceProvider = systemServices.BuildServiceProvider();
         
-        var pipeline = new Group<float>("SimulationServer Group");
+        // registra pipeline e provider no container
+        var pipeline = ecsServiceProvider.GetRequiredService<Group<float>>();
         
-        // ADIÇÃO: Adiciona o NetworkSystem no início para processar pacotes primeiro.
         AddSystem<NetworkSystem>(pipeline, ecsServiceProvider);
-
         // Adiciona sistemas de lógica de jogo
         AddSystem<StagingProcessorSystem>(pipeline, ecsServiceProvider);
         AddSystem<EntityIndexSystem>(pipeline, ecsServiceProvider);
