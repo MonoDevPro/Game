@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using MemoryPack;
+using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
 
@@ -26,7 +27,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
     private readonly Query _clientIntentQuery;
 
     // O construtor agora só precisa do que é essencial para a sua lógica.
-    public GenericSyncSystem(World world, IChannelEndpoint channelEndpoint, SyncOptions options) : base(world)
+    public GenericSyncSystem(World world, IChannelEndpoint channelEndpoint, IPlayerIndex index, SyncOptions options) : base(world)
     {
         _channelEndpoint = channelEndpoint;
         _options = options;
@@ -35,6 +36,13 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
         _onChangeQuery = world.Query(new QueryDescription().WithAll<PlayerId, T, Shadow<T>>());
         _onTickQuery = world.Query(new QueryDescription().WithAll<PlayerId, T>());
         _clientIntentQuery = world.Query(new QueryDescription().WithAll<PlayerId, T>());
+        
+        _channelEndpoint.RegisterHandler<ComponentSyncPacket<T>>((peer, packet) =>
+        {
+            if (!index.TryGetPlayerEntity(packet.PlayerId, out var playerEntity)) return;
+            ref var component = ref world.AddOrGet<T>(playerEntity);
+            component = packet.Data;
+        });
     }
     
     public override void Update(in float t)

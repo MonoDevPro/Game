@@ -10,7 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Simulation.Core.ECS.Shared.Staging;
 using Arch.System;
+using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Shared.Systems.Factories;
 using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Core.Persistence.Models;
 using Simulation.Network;
 
 // --- Configuração do Host ---
@@ -55,7 +59,6 @@ var build = builder
     //.WithSynchronizedComponent<StateComponent>(new SyncOptions { Authority = Authority.Server })
     .WithSynchronizedComponent<Direction>(new SyncOptions { Authority = Authority.Server })
     .WithSynchronizedComponent<InputComponent>(new SyncOptions { Authority = Authority.Client })
-    
     .Build();
 
 logger.LogInformation("Pipeline de simulação do cliente construída. A entrar no loop principal.");
@@ -81,9 +84,53 @@ public class ClientGameLoop
 
     public void Run()
     {
+        // Cria a entidade do jogador local (será substituída pela entidade real do servidor após o login/registro)
+        var playerData = new PlayerData
+        {
+            Id = 1,
+            MapId = 1,
+            Name = _registerMode ? "NewPlayer" : "ExistingPlayer",
+            Gender = Gender.Male,
+            Vocation = Vocation.Mage,
+            PosX = 0,
+            PosY = 0,
+            HealthMax = 100,
+            HealthCurrent = 100,
+            AttackCastTime = 1.0f,
+            AttackCooldown = 1.5f,
+            AttackDamage = 10,
+            AttackRange = 1,
+            MoveSpeed = 0.5f
+        };
+        
+        var entity = _world.Create(new NewlyCreated());
+        _localPlayer = _world.CreatePlayerEntity(entity, playerData);
+        
         while (true)
         {
-            return;
+            _pipeline.Update(0.016f); // Aproximadamente 60 FPS
+
+            // Loga o estado do jogador local a cada 5 segundos
+            if ((DateTime.UtcNow - _lastStateLog).TotalSeconds >= 0.5f)
+            {
+                _world.Add<InputComponent>(_localPlayer.Value,
+                    new InputComponent(IntentFlags.Move, InputFlags.Left));
+                
+                if (_localPlayer.HasValue && _world.IsAlive(_localPlayer.Value))
+                {
+                    var position = _world.Get<Position>(_localPlayer.Value);
+                    var health = _world.Get<Health>(_localPlayer.Value);
+                    Console.WriteLine($"[Estado do Jogador] Posição: ({position.X}, {position.Y}), Vida: {health.Current}/{health.Max}");
+                }
+                else
+                {
+                    Console.WriteLine("Jogador local ainda não atribuído ou não existe.");
+                }
+                _lastStateLog = DateTime.UtcNow;
+            }
+
+            // Simula um atraso para evitar uso excessivo da CPU
+            Thread.Sleep(10);
         }
     }
 }

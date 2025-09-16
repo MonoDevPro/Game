@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using System.Reflection;
 using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,37 +92,18 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         // Registro dos pacotes de autenticação
         // Pacotes de resposta não precisam de handler no servidor.
         // IDS serão registrados pelo AuthService externo antes da construção se necessário.
+        var index = ecsServiceProvider.GetRequiredService<IPlayerIndex>();
         foreach (var (componentType, options) in _syncRegistrations)
         {
             var genericSystemType = typeof(GenericSyncSystem<>);
             var specificSystemType = genericSystemType.MakeGenericType(componentType);
 
             // CORREÇÃO: Usamos Activator.CreateInstance para passar manualmente o 'options'.
-            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, options)!;
+            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, index, options)!;
             pipeline.Add(systemInstance);
             
             var logger = ecsServiceProvider.GetRequiredService<ILogger<ClientSimulationBuilder>>();
             logger.LogInformation("Sistema de sincronização genérico para {ComponentType} registrado.", componentType.Name);
-        }
-        
-        
-        foreach (var (componentType, options) in _syncRegistrations)
-        {
-            var realType = typeof(ComponentSyncPacket<>);
-            var specificType = realType.MakeGenericType(componentType);
-            
-            // O cliente também precisa registrar todos os tipos para poder recebê-los.
-            var registerMethod = typeof(IChannelEndpoint).GetMethod(nameof(IChannelEndpoint.RegisterHandler));
-            var genericRegisterMethod = registerMethod!.MakeGenericMethod(specificType);
-            genericRegisterMethod.Invoke(endpoint, null);
-            
-            // Adiciona o sistema de sincronização. No cliente, ele vai lidar principalmente
-            // com o envio de componentes com Authority.Client (ex: InputComponent).
-            var genericSystemType = typeof(GenericSyncSystem<>);
-            var specificSystemType = genericSystemType.MakeGenericType(componentType);
-
-            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, options)!;
-            pipeline.Add(systemInstance);
         }
         
         // Adiciona o sistema de renderização no final da pipeline.
@@ -134,4 +117,104 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
     {
         group.Add(provider.GetRequiredService<T>());
     }
+    
+    static void EnsurePacketTypeIsValid(Type packetType)
+    {
+        if (packetType == null) throw new ArgumentNullException(nameof(packetType));
+        if (!packetType.IsValueType) throw new ArgumentException("T must be a struct (value type)", nameof(packetType));
+        if (!typeof(IPacket).IsAssignableFrom(packetType)) throw new ArgumentException("T must implement IPacket", nameof(packetType));
+    }
+    // Exemplo genérico para invocar SendToPeerId<T>(int peerId, T packet, NetworkDeliveryMethod m)
+    public static void InvokeSendToPeerId(IChannelEndpoint endpoint, Type packetType, int peerId, object packet, NetworkDeliveryMethod method)
+    {
+        EnsurePacketTypeIsValid(packetType);
+
+        var mi = typeof(IChannelEndpoint).GetMethod(nameof(IChannelEndpoint.SendToPeerId)) 
+                 ?? throw new InvalidOperationException("Method not found");
+        var gen = mi.MakeGenericMethod(packetType);
+        // packet deve ser um boxed value type compatível com packetType
+        gen.Invoke(endpoint, new object[] { peerId, packet, method });
+    }
+    // Exemplo para consultar IsRegisteredHandler<T>()
+    public static bool InvokeIsRegisteredHandler(IChannelEndpoint endpoint, Type packetType)
+    {
+        EnsurePacketTypeIsValid(packetType);
+
+        var mi = typeof(IChannelEndpoint).GetMethod(nameof(IChannelEndpoint.IsRegisteredHandler))
+                 ?? throw new InvalidOperationException("Method not found");
+        var gen = mi.MakeGenericMethod(packetType);
+        return (bool)gen.Invoke(endpoint, null);
+    }
+    
+    public static class ChannelReflectionHelpers
+{
+    // Cria um PacketHandler<T> que chama targetMethod (por exemplo: void OnPacket(INetPeerAdapter peer, object pkt))
+    // targetInstance pode ser null se o método for estático.
+    public static Delegate CreatePacketHandlerDelegate(Type packetType, object targetInstance, MethodInfo targetMethod)
+    {
+        EnsurePacketTypeIsValid(packetType);
+        if (targetMethod == null) throw new ArgumentNullException(nameof(targetMethod));
+
+        // tipo do delegate: PacketHandler<T>
+        var packetHandlerType = typeof(PacketHandler<>).MakeGenericType(packetType);
+
+        // parâmetros do delegate: (INetPeerAdapter peer, T packet)
+        var peerParam = Expression.Parameter(typeof(INetPeerAdapter), "peer");
+        var packetParam = Expression.Parameter(packetType, "packet");
+
+        // precisamos adaptar packetParam para o parâmetro do targetMethod (ex: object)
+        // Supondo targetMethod signature: void M(INetPeerAdapter, object) ou (NetPeer, object) etc.
+        var targetParams = targetMethod.GetParameters();
+        if (targetParams.Length != 2)
+            throw new ArgumentException("targetMethod deve ter 2 parâmetros (INetPeerAdapter, object) ou equivalente");
+
+        // converte packetParam para o tipo esperado pelo targetMethod (ex: object)
+        Expression convertedPacket = packetParam;
+        var expectedPacketType = targetParams[1].ParameterType;
+        if (expectedPacketType != packetType)
+        {
+            convertedPacket = Expression.Convert(packetParam, expectedPacketType);
+        }
+
+        // converte peerParam se necessário
+        Expression peerArg = peerParam;
+        var expectedPeerType = targetParams[0].ParameterType;
+        if (expectedPeerType != typeof(INetPeerAdapter))
+            peerArg = Expression.Convert(peerParam, expectedPeerType);
+
+        // construir chamada ao método alvo
+        Expression call;
+        if (targetMethod.IsStatic)
+        {
+            call = Expression.Call(targetMethod, peerArg, convertedPacket);
+        }
+        else
+        {
+            var instance = Expression.Constant(targetInstance ?? throw new ArgumentNullException(nameof(targetInstance)), targetInstance.GetType());
+            // se o tipo do instance não for exato, converter
+            Expression instanceExp = instance;
+            if (targetMethod.DeclaringType != instance.Type)
+                instanceExp = Expression.Convert(instance, targetMethod.DeclaringType);
+            call = Expression.Call(instanceExp, targetMethod, peerArg, convertedPacket);
+        }
+
+        // lambda do tipo PacketHandler<T>
+        var lambda = Expression.Lambda(packetHandlerType, call, peerParam, packetParam);
+        return lambda.Compile(); // Delegate do tipo PacketHandler<T>
+    }
+
+    // Usa o delegate criado para chamar RegisterHandler<T> por reflection
+    public static void RegisterHandlerDynamic(IChannelEndpoint endpoint, Type packetType, object targetInstance, MethodInfo targetMethod)
+    {
+        EnsurePacketTypeIsValid(packetType);
+
+        var handlerDelegate = CreatePacketHandlerDelegate(packetType, targetInstance, targetMethod);
+
+        var mi = typeof(IChannelEndpoint).GetMethod(nameof(IChannelEndpoint.RegisterHandler))
+                 ?? throw new InvalidOperationException("RegisterHandler method not found");
+        var gen = mi.MakeGenericMethod(packetType);
+        gen.Invoke(endpoint, new object[] { handlerDelegate });
+    }
+}
+
 }

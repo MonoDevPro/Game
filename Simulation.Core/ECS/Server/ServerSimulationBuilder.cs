@@ -102,13 +102,14 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         // Registro dos pacotes de autenticação
         // Pacotes de resposta não precisam de handler no servidor.
         // IDS serão registrados pelo AuthService externo antes da construção se necessário.
+        var index = ecsServiceProvider.GetRequiredService<IPlayerIndex>();
         foreach (var (componentType, options) in _syncRegistrations)
         {
             var genericSystemType = typeof(GenericSyncSystem<>);
             var specificSystemType = genericSystemType.MakeGenericType(componentType);
 
             // CORREÇÃO: Usamos Activator.CreateInstance para passar manualmente o 'options'.
-            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, options)!;
+            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, index, options)!;
             pipeline.Add(systemInstance);
             
             var logger = ecsServiceProvider.GetRequiredService<ILogger<ServerSimulationBuilder>>();
