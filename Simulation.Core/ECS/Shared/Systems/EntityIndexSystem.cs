@@ -6,6 +6,7 @@ using Simulation.Core.ECS.Server.Systems.Relationships;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.ECS.Shared.Systems.Utils.Map;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Shared.Systems;
 
@@ -13,6 +14,7 @@ namespace Simulation.Core.ECS.Shared.Systems;
 /// Sistema central responsável por manter índices de alta performance
 /// para as entidades principais do mundo, como Mapas e Jogadores.
 /// </summary>
+ [PipelineSystem(SystemStage.Logic, -50)] // cedo na fase lógica
 public sealed partial class EntityIndexSystem(World world) : 
     BaseSystem<World, float>(world), 
     IPlayerIndex,

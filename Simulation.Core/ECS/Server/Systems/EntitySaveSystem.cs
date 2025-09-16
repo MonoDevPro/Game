@@ -5,9 +5,12 @@ using Simulation.Core.ECS.Server.Systems.Builders;
 using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Staging;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Server.Systems;
 
+ [PipelineSystem(SystemStage.Save)]
+ [DependsOn(typeof(Simulation.Core.ECS.Server.Systems.SpatialIndexSystem))]
 public sealed partial class EntitySaveSystem(World world, IPlayerStagingArea playerStagingArea, IMapStagingArea map) : BaseSystem<World, float>(world)
 {
     [Query]

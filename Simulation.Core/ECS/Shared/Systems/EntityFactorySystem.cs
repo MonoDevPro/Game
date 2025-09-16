@@ -3,9 +3,11 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Systems.Factories;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Shared.Systems;
 
+ [PipelineSystem(SystemStage.Logic, 0)]
 public sealed partial class EntityFactorySystem(World world): BaseSystem<World, float>(world)
 {
     [Query]

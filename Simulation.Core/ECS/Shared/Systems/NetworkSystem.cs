@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.Network;
+using Simulation.Core.ECS.Pipeline;
 using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.ECS.Shared.Systems;
@@ -9,6 +10,7 @@ namespace Simulation.Core.ECS.Shared.Systems;
 /// Sistema dedicado a processar todos os eventos de rede de entrada uma vez por frame.
 /// Deve ser o primeiro sistema a ser executado na pipeline.
 /// </summary>
+ [PipelineSystem(SystemStage.Net)]
 public class NetworkSystem(World world, INetworkManager networkManager) : BaseSystem<World, float>(world)
 {
     public override void Initialize()

@@ -9,6 +9,7 @@ using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.ECS.Shared.Systems.Provider;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Server;
 
@@ -93,13 +94,8 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         // registra pipeline e provider no container
         var pipeline = ecsServiceProvider.GetRequiredService<Group<float>>();
         
-        AddSystem<NetworkSystem>(pipeline, ecsServiceProvider);
-        // Adiciona sistemas de lógica de jogo
-        AddSystem<StagingProcessorSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntityIndexSystem>(pipeline, ecsServiceProvider);
-        AddSystem<SpatialIndexSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntityFactorySystem>(pipeline, ecsServiceProvider);
-        AddSystem<MovementSystem>(pipeline, ecsServiceProvider);
+        // Registra automaticamente sistemas anotados com PipelineSystemAttribute
+        pipeline.RegisterAttributedSystems<float>(ecsServiceProvider, isServer:true);
         
         // Registro dos pacotes de autenticação
         // Pacotes de resposta não precisam de handler no servidor.
@@ -119,9 +115,7 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         }
         
         // Adiciona sistemas de final de quadro
-        AddSystem<EntitySaveSystem>(pipeline, ecsServiceProvider);
-        //AddSystem<EntitySnapshotSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntityDestructorSystem>(pipeline, ecsServiceProvider);
+        // Sistemas de sync genéricos criados dinamicamente (não usam atributo)
         
         pipeline.Initialize();
         return (pipeline, world);

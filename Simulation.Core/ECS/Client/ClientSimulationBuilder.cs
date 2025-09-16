@@ -11,6 +11,7 @@ using Simulation.Core.ECS.Shared.Systems;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Client;
 
@@ -83,11 +84,8 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         var pipeline = new Group<float>("SimulationClient Group");
         
         // A ordem é importante: processar a rede, depois a lógica, depois renderizar.
-        AddSystem<NetworkSystem>(pipeline, ecsServiceProvider);
-        AddSystem<StagingProcessorSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntityIndexSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntityFactorySystem>(pipeline, ecsServiceProvider);
-        AddSystem<MovementSystem>(pipeline, ecsServiceProvider);
+    // Registro automático de sistemas anotados
+    pipeline.RegisterAttributedSystems<float>(ecsServiceProvider, isServer:false);
 
         // Registro dos pacotes de autenticação
         // Pacotes de resposta não precisam de handler no servidor.
@@ -106,8 +104,7 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
             logger.LogInformation("Sistema de sincronização genérico para {ComponentType} registrado.", componentType.Name);
         }
         
-        // Adiciona o sistema de renderização no final da pipeline.
-        AddSystem<RenderSystem>(pipeline, ecsServiceProvider);
+    // Sistemas de sync genéricos dinamicamente adicionados abaixo
         
         pipeline.Initialize();
         return (pipeline, world);
@@ -143,7 +140,8 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
         var mi = typeof(IChannelEndpoint).GetMethod(nameof(IChannelEndpoint.IsRegisteredHandler))
                  ?? throw new InvalidOperationException("Method not found");
         var gen = mi.MakeGenericMethod(packetType);
-        return (bool)gen.Invoke(endpoint, null);
+    var result = gen.Invoke(endpoint, null);
+    return result is true;
     }
     
     public static class ChannelReflectionHelpers
@@ -193,7 +191,7 @@ public class ClientSimulationBuilder : ISimulationBuilder<float>
             var instance = Expression.Constant(targetInstance ?? throw new ArgumentNullException(nameof(targetInstance)), targetInstance.GetType());
             // se o tipo do instance não for exato, converter
             Expression instanceExp = instance;
-            if (targetMethod.DeclaringType != instance.Type)
+            if (targetMethod.DeclaringType != null && targetMethod.DeclaringType != instance.Type)
                 instanceExp = Expression.Convert(instance, targetMethod.DeclaringType);
             call = Expression.Call(instanceExp, targetMethod, peerArg, convertedPacket);
         }

@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Shared.Systems;
 
@@ -11,6 +12,8 @@ namespace Simulation.Core.ECS.Shared.Systems;
 /// - Preserva flags existentes no StateComponent (opera por bits).
 /// - O delta time é injetado pelo gerador via [Data] in float dt.
 /// </summary>
+ [PipelineSystem(SystemStage.Movement)]
+ [DependsOn(typeof(Simulation.Core.ECS.Shared.Systems.EntityIndexSystem))]
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
     // Inicia movimento: entidades com InputComponent e sem MoveAction (ou seja, não estão se movendo)

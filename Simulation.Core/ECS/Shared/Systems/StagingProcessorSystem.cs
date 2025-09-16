@@ -1,10 +1,13 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Pipeline;
 using Simulation.Core.ECS.Shared.Staging;
 
 namespace Simulation.Core.ECS.Shared.Systems;
 
+ [PipelineSystem(SystemStage.Staging)]
+ [DependsOn(typeof(Simulation.Core.ECS.Shared.Systems.NetworkSystem))]
 public class StagingProcessorSystem(World world,
     IPlayerStagingArea playerStagingArea, IMapStagingArea mapStagingArea,
     EntityIndexSystem entityIndex) : BaseSystem<World, float>(world)

@@ -3,12 +3,14 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Client.Systems;
 
 /// <summary>
 /// Sistema de "renderização" que usa o Source Generator do Arch.
 /// </summary>
+ [PipelineSystem(SystemStage.Rendering)]
 public partial class RenderSystem(World world) : BaseSystem<World, float>(world)
 {
     // A query é definida diretamente no método.

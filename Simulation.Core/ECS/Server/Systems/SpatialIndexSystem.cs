@@ -5,9 +5,11 @@ using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Systems.Network;
 using Simulation.Core.ECS.Shared.Systems.Utils.Spatial;
 using Simulation.Core.Options;
+using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Server.Systems;
 
+ [PipelineSystem(SystemStage.Spatial)]
 public sealed partial class SpatialIndexSystem(World world, SpatialOptions options) 
     : BaseSystem<World, float>(world)
 {
