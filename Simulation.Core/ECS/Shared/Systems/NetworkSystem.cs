@@ -1,32 +1,29 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.Network;
+using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.ECS.Shared.Systems;
 
 /// <summary>
-/// NetworkSystem (modo direto)
-/// - chama _net.PollEvents() no Update (main thread)
-/// - processa pacotes imediatamente no callback OnReceive (sem filas)
-/// - mais simples e com menos alocação quando PollEvents roda no main thread
+/// Sistema dedicado a processar todos os eventos de rede de entrada uma vez por frame.
+/// Deve ser o primeiro sistema a ser executado na pipeline.
 /// </summary>
-public sealed class NetworkSystem(World world, NetworkManager manager) : BaseSystem<World, float>(world)
+public class NetworkSystem(World world, INetworkManager networkManager) : BaseSystem<World, float>(world)
 {
-    public readonly NetworkManager Manager = manager;
-
     public override void Initialize()
     {
-        Manager.Initialize();
-    }
-    
-    public override void Update(in float dt)
-    {
-        Manager.PollEvents();
+        networkManager.Initialize();
     }
 
+    public override void BeforeUpdate(in float t)
+    {
+        // Esta é a única chamada para PollEvents em todo o loop de simulação.
+        networkManager.PollEvents();
+    }
+    
     public override void Dispose()
     {
-        Manager.Stop();
-        base.Dispose();
+        networkManager.Stop();
     }
 }

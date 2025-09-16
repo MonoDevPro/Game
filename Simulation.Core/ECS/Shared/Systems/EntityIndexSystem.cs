@@ -13,7 +13,10 @@ namespace Simulation.Core.ECS.Shared.Systems;
 /// Sistema central responsável por manter índices de alta performance
 /// para as entidades principais do mundo, como Mapas e Jogadores.
 /// </summary>
-public sealed partial class EntityIndexSystem(World world) : BaseSystem<World, float>(world), IPlayerIndex, IMapIndex
+public sealed partial class EntityIndexSystem(World world) : 
+    BaseSystem<World, float>(world), 
+    IPlayerIndex,
+    IMapIndex
 {
     // Índices privados que oferecem busca O(1)
     private readonly Dictionary<int, MapInstance> _mapsByMapId = new();

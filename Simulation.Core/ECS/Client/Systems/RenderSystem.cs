@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Systems.Network;
 
 namespace Simulation.Core.ECS.Client.Systems;
 

@@ -1,5 +1,6 @@
 using Arch.Core;
 using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Shared.Systems.Network;
 
 namespace Simulation.Core.ECS.Shared.Systems.Factories;
 
@@ -16,7 +17,7 @@ public static class PlayerFactory
             new AttackStats { CastTime = playerData.AttackCastTime, Cooldown = playerData.AttackCooldown, Damage = playerData.AttackDamage, AttackRange = playerData.AttackRange },
             new MoveStats { Speed = playerData.MoveSpeed },
             new Health { Current = playerData.HealthCurrent, Max = playerData.HealthMax },
-            new StateComponent { Value = StateFlags.Idle }
+            new ActionComponent { Value = StateFlags.Idle }
         );
         return entity;
     }

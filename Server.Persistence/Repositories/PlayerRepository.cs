@@ -1,4 +1,5 @@
 using Server.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
@@ -29,5 +30,36 @@ public class PlayerRepository(SimulationDbContext context) : EFCoreRepository<in
         await _context.SaveChangesAsync(ct);
 
         return true;
+    }
+
+    public async Task<PlayerModel?> GetByNameAsync(string name, CancellationToken ct = default)
+    {
+        return await _context.PlayerModels
+            .AsQueryable()
+            .Where(p => p.Name == name)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<PlayerModel> CreateWithDefaultsAsync(string name, string passwordHash, CancellationToken ct = default)
+    {
+        // Defaults iniciais simples; podem ser extraídos para config no futuro
+        var player = new PlayerModel
+        {
+            Name = name,
+            PasswordHash = passwordHash,
+            MapId = 1,
+            PosX = 1,
+            PosY = 1,
+            MoveSpeed = 1.0f,
+            AttackCastTime = 1.0f,
+            AttackCooldown = 1.0f,
+            HealthMax = 100,
+            HealthCurrent = 100,
+            AttackDamage = 10,
+            AttackRange = 1
+        };
+        _context.PlayerModels.Add(player);
+        await _context.SaveChangesAsync(ct);
+        return player;
     }
 }

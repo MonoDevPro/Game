@@ -11,6 +11,8 @@ public class PlayerConfiguration : IEntityTypeConfiguration<PlayerModel>
         // --- Configuração da Entidade PlayerTemplate ---
         builder.HasKey(p => p.Id); // Define a chave primária
         builder.Property(p => p.Name).IsRequired().HasMaxLength(100);
+    builder.HasIndex(p => p.Name).IsUnique();
+    builder.Property(p => p.PasswordHash).IsRequired().HasMaxLength(200);
 
         // Mapeia enums para serem armazenados como strings no banco de dados (mais legível)
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(20);

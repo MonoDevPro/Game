@@ -13,4 +13,14 @@ public interface IPlayerRepository : IRepositoryAsync<int, PlayerModel>
     /// Atualiza um PlayerModel na base de dados a partir de um PlayerData vindo do ECS.
     /// </summary>
     Task<bool> UpdateFromDataAsync(PlayerData data, CancellationToken ct = default);
+
+    /// <summary>
+    /// Obtém um jogador pelo seu nome (case sensitive simples por enquanto).
+    /// </summary>
+    Task<PlayerModel?> GetByNameAsync(string name, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cria um novo jogador com valores padrão iniciais.
+    /// </summary>
+    Task<PlayerModel> CreateWithDefaultsAsync(string name, string passwordHash, CancellationToken ct = default);
 }

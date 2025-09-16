@@ -1,3 +1,4 @@
+/*
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -96,3 +97,4 @@ public sealed partial class EntitySnapshotSystem(World world, EntityIndexSystem 
         return _players;
     }
 }
+*/

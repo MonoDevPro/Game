@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Shared;
+using Simulation.Core.ECS.Shared.Systems.Network;
 using Simulation.Core.Options;
 
 namespace Server.Console;
@@ -18,17 +19,15 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         var builder = scope.ServiceProvider.GetRequiredService<ISimulationBuilder<float>>();
         var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
         var spatialOptions = scope.ServiceProvider.GetRequiredService<IOptions<SpatialOptions>>().Value;
-        var networkOptions = scope.ServiceProvider.GetRequiredService<IOptions<NetworkOptions>>().Value;
 
         var (simulationPipeline, world) = builder
             .WithWorldOptions(worldOptions)
             .WithSpatialOptions(spatialOptions)
-            .WithNetworkOptions(networkOptions)
             .WithRootServices(scope.ServiceProvider)
             
             .WithSynchronizedComponent<Position>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
             .WithSynchronizedComponent<Health>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
-            .WithSynchronizedComponent<StateComponent>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
+            .WithSynchronizedComponent<ActionComponent>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
             .WithSynchronizedComponent<Direction>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
             .WithSynchronizedComponent<InputComponent>(new SyncOptions { Authority = Authority.Client })
             

@@ -1,6 +1,7 @@
 using Arch.Core;
 using Simulation.Core.ECS.Shared;
 using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Shared.Systems.Network;
 
 namespace Simulation.Core.ECS.Server.Systems.Builders;
 

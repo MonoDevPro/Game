@@ -16,7 +16,7 @@ namespace Server.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.19");
 
-            modelBuilder.Entity("Simulation.Core.Models.MapModel", b =>
+            modelBuilder.Entity("Simulation.Core.Persistence.Models.MapModel", b =>
                 {
                     b.Property<int>("MapId")
                         .ValueGeneratedOnAdd()
@@ -50,7 +50,7 @@ namespace Server.Persistence.Migrations
                     b.ToTable("MapModels");
                 });
 
-            modelBuilder.Entity("Simulation.Core.Models.PlayerModel", b =>
+            modelBuilder.Entity("Simulation.Core.Persistence.Models.PlayerModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,12 +66,20 @@ namespace Server.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Vocation")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("PlayerModels");
                 });

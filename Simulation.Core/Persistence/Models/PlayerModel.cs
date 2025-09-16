@@ -8,6 +8,7 @@ public class PlayerModel
     // --- Dados Frios / de Identificação ---
     public int Id;
     public string Name = string.Empty;
+    public string PasswordHash = string.Empty; // BCrypt hash
     public Gender Gender;
     public Vocation Vocation;
     

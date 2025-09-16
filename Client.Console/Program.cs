@@ -2,16 +2,16 @@
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Client;
 using Simulation.Core.Options;
-using Simulation.Core.ECS.Shared;
-using Arch.Core.Extensions;
 using Microsoft.Extensions.Options;
 using Arch.Core;
 using Client.Console;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Simulation.Core.ECS.Shared.Data;
 using Simulation.Core.ECS.Shared.Staging;
+using Arch.System;
+using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Network;
 
 // --- Configuração do Host ---
 Console.Title = "CLIENT";
@@ -23,6 +23,8 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
+        services.AddNetworking();
+        
         services.AddSingleton<ISimulationBuilder<float>, ClientSimulationBuilder>();
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
@@ -43,7 +45,6 @@ var networkOptions = host.Services.GetRequiredService<IOptions<NetworkOptions>>(
 
 var build = builder
     .WithWorldOptions(worldOptions)
-    .WithNetworkOptions(networkOptions)
     .WithRootServices(host.Services)
     
     // --- Regista os mesmos componentes que o servidor ---
@@ -51,7 +52,7 @@ var build = builder
     // e para enviar os seus próprios componentes de "intenção".
     .WithSynchronizedComponent<Position>(new SyncOptions { Authority = Authority.Server })
     .WithSynchronizedComponent<Health>(new SyncOptions { Authority = Authority.Server })
-    .WithSynchronizedComponent<StateComponent>(new SyncOptions { Authority = Authority.Server })
+    //.WithSynchronizedComponent<StateComponent>(new SyncOptions { Authority = Authority.Server })
     .WithSynchronizedComponent<Direction>(new SyncOptions { Authority = Authority.Server })
     .WithSynchronizedComponent<InputComponent>(new SyncOptions { Authority = Authority.Client })
     
@@ -59,51 +60,30 @@ var build = builder
 
 logger.LogInformation("Pipeline de simulação do cliente construída. A entrar no loop principal.");
 
-// --- Loop Principal do Jogo (Simulado) ---
-Entity? localPlayer = null;
-var world = build.World;
-var pipeline = build.Group;
+bool registerMode = args.Any(a => a.Equals("--register", StringComparison.OrdinalIgnoreCase));
+new ClientGameLoop(build.World, build.Group, registerMode).Run();
 
-// TODO: TEMPORÁRIO: Fluxo de testes para simular o login e carregamento de mapas.
-var players = DataSeeder.GetPlayerSeed();
-var maps = DataSeeder.GetMapSeed();
-var playerStagingArea = host.Services.GetRequiredService<IPlayerStagingArea>();
-var mapStagingArea = host.Services.GetRequiredService<IMapStagingArea>();
-foreach (var map in maps)
-    mapStagingArea.StageMapLoaded(MapData.FromModel(map));
-foreach (var player in players)
-    playerStagingArea.StageLogin(PlayerData.FromModel(player));
-
-
-while (true)
+public class ClientGameLoop
 {
-    // Num jogo real, a entidade do jogador seria criada pelo servidor após a conexão.
-    // Este loop procura pela entidade que representa o nosso jogador.
-    if (localPlayer == null || !localPlayer.Value.IsAlive())
+    private readonly World _world;
+    private readonly Group<float> _pipeline;
+    private Entity? _localPlayer;
+    private DateTime _lastStateLog = DateTime.UtcNow;
+
+    private readonly bool _registerMode;
+
+    public ClientGameLoop(World world, Group<float> pipeline, bool registerMode)
     {
-        // Esta query encontra a primeira entidade com PlayerId (assumindo que é a nossa)
-        var playerQuery = new QueryDescription().WithAll<PlayerId>();
-        world.Query(in playerQuery, (Entity entity) => {
-            localPlayer = entity;
-            Console.WriteLine($"Jogador local entrou no jogo com a entidade {entity.Id}.");
-        });
+        _world = world;
+        _pipeline = pipeline;
+        _registerMode = registerMode;
     }
 
-    // Simula a entrada do jogador e adiciona um InputComponent para ser enviado
-    if (localPlayer.HasValue)
+    public void Run()
     {
-        // Aqui iria a lógica real para ler o teclado.
-        // Como exemplo, vamos apenas adicionar um componente de input para mover para a direita.
-        // O GenericSyncSystem<InputComponent> irá detetar e enviar este componente para o servidor.
-        world.Add(localPlayer.Value, new InputComponent(IntentFlags.Move, InputFlags.Right));
-        
-        if (world.TryGet<Position>(localPlayer.Value, out var position))
-            Console.WriteLine($"Posição atual do jogador: ({position.X}, {position.Y}");
+        while (true)
+        {
+            return;
+        }
     }
-
-    // Atualiza a pipeline: processa eventos de rede recebidos, atualiza sistemas, etc.
-    pipeline.Update(0.016f);
-    
-    // Controla a taxa de atualização para aproximadamente 66 FPS.
-    Thread.Sleep(15);
 }

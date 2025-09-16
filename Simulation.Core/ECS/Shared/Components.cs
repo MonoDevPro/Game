@@ -1,4 +1,5 @@
 
+using Simulation.Core.ECS.Shared.Systems.Network;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Shared;
@@ -26,17 +27,6 @@ namespace Simulation.Core.ECS.Shared;
     Attacking= 1 << 2,
     Dead     = 1 << 3,
 }
-
-// ---> Componentes Sincronizados
-public readonly record struct InputComponent(IntentFlags Intent, InputFlags Input);
-
-public readonly record struct StateComponent(StateFlags Value);
-
-public readonly record struct Position(int X, int Y);
-
-public readonly record struct Direction(int X, int Y);
-
-public readonly record struct Health(int Current, int Max);
 
 // ---> Tags (inalterados, pois não contêm dados)
 public struct NewlyCreated;

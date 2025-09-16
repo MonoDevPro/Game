@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Server.Console;
@@ -8,22 +9,26 @@ using Server.Persistence.Seeds;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Server;
 using Simulation.Core.Options;
+using Simulation.Network;
 
 // 1. Configurar o Host da Aplicação
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        // 2. Adicionar os serviços de persistência e outros
-        services.AddPersistence(context.Configuration);
-        
-        // Registar o SimulationBuilder e as Options
-        services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<SpatialOptions>(context.Configuration.GetSection(SpatialOptions.SectionName));
         services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
         
-        // 3. Adicionar a nossa lógica principal de jogo como um Hosted Service
+        services.AddLogging(configure => configure.AddConsole());
+        
+        services.AddPersistence(context.Configuration);
+        
+        services.AddNetworking();
+        
+        services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
+
         services.AddHostedService<GameServerHost>();
+        
     })
     .Build();
 

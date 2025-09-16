@@ -1,9 +1,16 @@
 namespace Simulation.Core.Options;
 
+public enum NetworkAuthority
+{
+    Server,
+    Client
+}
+
 public class NetworkOptions
 {
     public static string SectionName = "Network";
     
+    public NetworkAuthority Authority { get; set; } = NetworkAuthority.Client;
     public string ServerAddress { get; set; } = "127.0.0.1";
     public int ServerPort { get; set; } = 7777;
     public string ConnectionKey { get; set; } = "default_key";

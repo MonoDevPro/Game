@@ -6,10 +6,8 @@ using Simulation.Core.ECS.Server.Systems;
 using Simulation.Core.ECS.Shared.Staging;
 using Simulation.Core.ECS.Shared.Systems;
 using Simulation.Core.ECS.Shared.Systems.Indexes;
-using Simulation.Core.Network;
+using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
-using EntityDestructorSystem = Simulation.Core.ECS.Shared.Systems.EntityDestructorSystem;
-using MovementSystem = Simulation.Core.ECS.Shared.Systems.MovementSystem;
 
 namespace Simulation.Core.ECS.Server;
 
@@ -17,7 +15,6 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
 {
     private WorldOptions? _worldOptions;
     private SpatialOptions? _spatialOptions;
-    private NetworkOptions? _networkOptions;
     private IServiceProvider? _rootServices;
     
     private readonly List<(Type type, SyncOptions options)> _syncRegistrations = [];
@@ -31,12 +28,6 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
     public ISimulationBuilder<float> WithSpatialOptions(SpatialOptions options)
     {
         _spatialOptions = options;
-        return this;
-    }
-
-    public ISimulationBuilder<float> WithNetworkOptions(NetworkOptions options)
-    {
-        _networkOptions = options;
         return this;
     }
 
@@ -55,7 +46,7 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
 
     public (Group<float> Group, World World) Build()
     {
-        if (_worldOptions is null || _spatialOptions is null || _networkOptions is null || _rootServices is null)
+        if (_worldOptions is null || _spatialOptions is null || _rootServices is null)
             throw new InvalidOperationException("WorldOptions, SpatialOptions, RootServices e NetworkOptions devem ser fornecidos.");
 
         var world = World.Create(
@@ -73,22 +64,16 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         systemServices.AddSingleton(_rootServices.GetRequiredService<IPlayerStagingArea>());
         systemServices.AddSingleton(_rootServices.GetRequiredService<IMapStagingArea>());
         systemServices.AddSingleton(_rootServices.GetRequiredService<ILoggerFactory>());
-        
-        // MELHORIA: Registro de serviços de rede mais limpo.
-        var packetRegistry = new PacketRegistry();
-        systemServices.AddSingleton(packetRegistry);
-        systemServices.AddSingleton<PacketProcessor>();
-        systemServices.AddSingleton<NetworkManager>(sp => new NetworkManager(
-            world,
-            sp.GetRequiredService<IPlayerIndex>(),
-            _networkOptions,
-            packetRegistry,
-            sp.GetRequiredService<PacketProcessor>(),
-            NetworkRole.Server
-        ));
+
+
+        systemServices.AddSingleton(_rootServices.GetRequiredService<INetworkManager>());
+        var endpoint = _rootServices
+            .GetRequiredService<IChannelProcessorFactory>()
+            .CreateOrGet(NetworkChannel.Simulation);
+        systemServices.AddSingleton<IChannelEndpoint>(endpoint);
         
         // Registro dos sistemas
-        systemServices.AddSingleton<NetworkSystem>(); // NOVO: Sistema para PollEvents
+        systemServices.AddSingleton<NetworkSystem>(); // PollEvents
         systemServices.AddSingleton<StagingProcessorSystem>();
         systemServices.AddSingleton<EntityIndexSystem>();
         systemServices.AddSingleton<SpatialIndexSystem>();
@@ -96,11 +81,12 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         systemServices.AddSingleton<MovementSystem>();
         systemServices.AddSingleton<EntitySaveSystem>();
         systemServices.AddSingleton<EntityDestructorSystem>();
-        systemServices.AddSingleton<EntitySnapshotSystem>();
+        //systemServices.AddSingleton<EntitySnapshotSystem>();
         systemServices.AddSingleton<IPlayerIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         systemServices.AddSingleton<IMapIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());
         
         var ecsServiceProvider = systemServices.BuildServiceProvider();
+        
         var pipeline = new Group<float>("SimulationServer Group");
         
         // ADIÇÃO: Adiciona o NetworkSystem no início para processar pacotes primeiro.
@@ -113,19 +99,16 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         AddSystem<EntityFactorySystem>(pipeline, ecsServiceProvider);
         AddSystem<MovementSystem>(pipeline, ecsServiceProvider);
         
-        // --- Loop de Registro de Sincronização ---
-        var networkManager = ecsServiceProvider.GetRequiredService<NetworkManager>();
+        // Registro dos pacotes de autenticação
+        // Pacotes de resposta não precisam de handler no servidor.
+        // IDS serão registrados pelo AuthService externo antes da construção se necessário.
         foreach (var (componentType, options) in _syncRegistrations)
         {
-            var registerMethod = typeof(PacketRegistry).GetMethod(nameof(PacketRegistry.Register));
-            var genericRegisterMethod = registerMethod!.MakeGenericMethod(componentType);
-            genericRegisterMethod.Invoke(packetRegistry, null);
-            
             var genericSystemType = typeof(GenericSyncSystem<>);
             var specificSystemType = genericSystemType.MakeGenericType(componentType);
 
             // CORREÇÃO: Usamos Activator.CreateInstance para passar manualmente o 'options'.
-            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, networkManager, options)!;
+            var systemInstance = (ISystem<float>)Activator.CreateInstance(specificSystemType, world, endpoint, options)!;
             pipeline.Add(systemInstance);
             
             var logger = ecsServiceProvider.GetRequiredService<ILogger<ServerSimulationBuilder>>();
@@ -134,7 +117,7 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         
         // Adiciona sistemas de final de quadro
         AddSystem<EntitySaveSystem>(pipeline, ecsServiceProvider);
-        AddSystem<EntitySnapshotSystem>(pipeline, ecsServiceProvider);
+        //AddSystem<EntitySnapshotSystem>(pipeline, ecsServiceProvider);
         AddSystem<EntityDestructorSystem>(pipeline, ecsServiceProvider);
         
         pipeline.Initialize();

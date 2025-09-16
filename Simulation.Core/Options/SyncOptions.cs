@@ -14,7 +14,6 @@ public record SyncOptions
     public Authority Authority { get; init; } = Authority.Server;
     public SyncTrigger Trigger { get; init; } = SyncTrigger.OnChange;
     public ushort SyncRateTicks { get; init; } = 0; // 0 = a cada tick (se o gatilho for OnTick)
-
-    public static SyncOptions DefaultServer => new() { Authority = Authority.Server };
-    public static SyncOptions DefaultClient => new() { Authority = Authority.Client };
+    public bool SyncOnSpawn { get; init; } = true;
+    public bool SyncOnDespawn { get; init; } = true;
 }

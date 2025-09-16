@@ -1,5 +1,6 @@
 using Arch.Core;
 using Arch.System;
+using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS;
@@ -18,9 +19,6 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// Fornece as opções de configuração do sistema espacial.
     /// </summary>
     ISimulationBuilder<TData> WithSpatialOptions(SpatialOptions options);
-    
-    /// <summary> Fornece as opções de configuração do sistema de rede.</summary>
-    ISimulationBuilder<TData> WithNetworkOptions(NetworkOptions options);
     
     /// <summary>
     /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.

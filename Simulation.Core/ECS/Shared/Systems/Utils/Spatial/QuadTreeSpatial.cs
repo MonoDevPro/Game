@@ -2,6 +2,7 @@ using System.Drawing;
 using Arch.Core;
 using QuadTrees;
 using QuadTrees.QTreeRect;
+using Simulation.Core.ECS.Shared.Systems.Network;
 
 namespace Simulation.Core.ECS.Shared.Systems.Utils.Spatial;
 
