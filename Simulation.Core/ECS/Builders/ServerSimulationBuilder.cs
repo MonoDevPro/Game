@@ -80,7 +80,7 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         systemServices.AddSingleton<SpatialIndexSystem>();
         systemServices.AddSingleton<EntityFactorySystem>();
         systemServices.AddSingleton<MovementSystem>();
-        systemServices.AddSingleton<EntitySaveSystem>();
+        systemServices.AddSingleton<SaveSystem>();
         systemServices.AddSingleton<EntityDestructorSystem>();
         //systemServices.AddSingleton<EntitySnapshotSystem>();
         systemServices.AddSingleton<IPlayerIndex>(sp => sp.GetRequiredService<EntityIndexSystem>());

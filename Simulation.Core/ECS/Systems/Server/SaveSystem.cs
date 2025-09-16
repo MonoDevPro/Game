@@ -11,7 +11,7 @@ namespace Simulation.Core.ECS.Systems.Server;
 
 [PipelineSystem(SystemStage.Save)]
 [DependsOn(typeof(SpatialIndexSystem))]
-public sealed partial class EntitySaveSystem(World world, IWorldStaging staging) : BaseSystem<World, float>(world)
+public sealed partial class SaveSystem(World world, IWorldStaging staging) : BaseSystem<World, float>(world)
 {
     [Query]
     [All<NeedSave, PlayerId, MapId>]
