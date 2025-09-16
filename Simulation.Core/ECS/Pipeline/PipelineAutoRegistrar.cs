@@ -10,11 +10,12 @@ public static class PipelineAutoRegistrar
 
     // DependencyRules legacy removido; agora usamos DependsOnAttribute dinâmico.
 
-    public static void RegisterAttributedSystems<TData>(this Group<TData> group, IServiceProvider provider, bool isServer, params Assembly[] assemblies)
+    public static void RegisterAttributedSystems<TGroup, TData>(this TGroup group, IServiceProvider provider, bool isServer, params Assembly[] assemblies)
+        where TGroup : Group<TData>
         where TData : notnull
     {
-        if (assemblies == null || assemblies.Length == 0)
-            assemblies = new[] { Assembly.GetExecutingAssembly() };
+        if (assemblies.Length == 0)
+            assemblies = [Assembly.GetExecutingAssembly()];
 
         var systems = new List<SystemMeta>();
         foreach (var asm in assemblies)
@@ -38,7 +39,7 @@ public static class PipelineAutoRegistrar
             .ThenBy(s => s.Attr.OrderOffset)
             .ToList();
 
-    ValidateDependencies(ordered);
+        ValidateDependencies(ordered);
 
         foreach (var meta in ordered)
         {
@@ -64,8 +65,7 @@ public static class PipelineAutoRegistrar
         foreach (var meta in ordered)
         {
             var deps = meta.ImplType.GetCustomAttributes<DependsOnAttribute>(false)
-                .SelectMany(a => a.Dependencies)
-                .Where(d => d != null);
+                .SelectMany(a => a.Dependencies);
             foreach (var dep in deps)
             {
                 if (!position.TryGetValue(dep, out var posDep))

@@ -7,7 +7,7 @@ using Server.Persistence;
 using Server.Persistence.Context;
 using Server.Persistence.Seeds;
 using Simulation.Core.ECS;
-using Simulation.Core.ECS.Server;
+using Simulation.Core.ECS.Builders;
 using Simulation.Core.Options;
 using Simulation.Network;
 

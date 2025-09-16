@@ -3,8 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Simulation.Core.ECS;
-using Simulation.Core.ECS.Shared;
-using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.Options;
 
 namespace Server.Console;

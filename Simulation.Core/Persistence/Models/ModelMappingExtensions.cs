@@ -1,4 +1,5 @@
-using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Staging.Map;
+using Simulation.Core.ECS.Staging.Player;
 
 namespace Simulation.Core.Persistence.Models;
 

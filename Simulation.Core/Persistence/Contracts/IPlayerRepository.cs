@@ -1,4 +1,4 @@
-using Simulation.Core.ECS.Shared.Data;
+using Simulation.Core.ECS.Staging.Player;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.Persistence.Contracts;

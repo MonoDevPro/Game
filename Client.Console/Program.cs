@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS;
-using Simulation.Core.ECS.Client;
 using Simulation.Core.Options;
 using Microsoft.Extensions.Options;
 using Arch.Core;
@@ -8,12 +7,11 @@ using Client.Console;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Simulation.Core.ECS.Shared.Staging;
 using Arch.System;
-using Simulation.Core.ECS.Shared;
-using Simulation.Core.ECS.Shared.Data;
-using Simulation.Core.ECS.Shared.Systems.Factories;
-using Simulation.Core.ECS.Shared.Systems.Network;
+using Simulation.Core.ECS.Builders;
+using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Staging;
+using Simulation.Core.ECS.Staging.Player;
 using Simulation.Core.Persistence.Models;
 using Simulation.Network;
 
@@ -33,8 +31,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
 
-        services.AddSingleton<IPlayerStagingArea, PlayerStagingArea>();
-        services.AddSingleton<IMapStagingArea, MapStagingArea>();
+    services.AddSingleton<IWorldStaging, WorldStagingClient>();
     })
     .Build();
 

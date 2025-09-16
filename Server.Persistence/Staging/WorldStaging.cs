@@ -1,0 +1,70 @@
+using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
+using Simulation.Core.ECS.Staging;
+using Simulation.Core.ECS.Staging.Map;
+using Simulation.Core.ECS.Staging.Player;
+using Simulation.Core.Persistence.Contracts;
+
+namespace Server.Persistence.Staging;
+
+public class WorldStaging(IBackgroundTaskQueue saveQueue) : IWorldStaging
+{
+    private readonly ConcurrentQueue<PlayerData> _playerLogins = new();
+    private readonly ConcurrentQueue<int> _playerLeaves = new();
+    private readonly ConcurrentQueue<MapData> _mapLoaded = new();
+
+    public void Enqueue<T>(StagingQueue queue, T item)
+    {
+        switch (queue)
+        {
+            case StagingQueue.PlayerLogin when item is PlayerData p:
+                _playerLogins.Enqueue(p);
+                break;
+            case StagingQueue.PlayerLeave when item is int id:
+                _playerLeaves.Enqueue(id);
+                break;
+            case StagingQueue.MapLoaded when item is MapData m:
+                _mapLoaded.Enqueue(m);
+                break;
+            default:
+                throw new ArgumentException($"Tipo inválido {typeof(T).Name} para fila {queue}");
+        }
+    }
+
+    public bool TryDequeue<T>(StagingQueue queue, out T item)
+    {
+        object? result = null;
+        bool ok = queue switch
+        {
+            StagingQueue.PlayerLogin => _playerLogins.TryDequeue(out var p) && (result = p) != null,
+            StagingQueue.PlayerLeave => _playerLeaves.TryDequeue(out var id) && (result = id) != null,
+            StagingQueue.MapLoaded  => _mapLoaded.TryDequeue(out var m) && (result = m) != null,
+            _ => false
+        };
+        if (ok && result is T cast)
+        {
+            item = cast;
+            return true;
+        }
+        item = default!;
+        return false;
+    }
+
+    public void StageSave(PlayerData data)
+    {
+        saveQueue.QueueBackgroundWorkItem(async (sp, ct) =>
+        {
+            var repo = sp.GetRequiredService<IPlayerRepository>();
+            await repo.UpdateFromDataAsync(data, ct);
+        });
+    }
+
+    public void StageSave(MapData data)
+    {
+        saveQueue.QueueBackgroundWorkItem(async (sp, ct) =>
+        {
+            var repo = sp.GetRequiredService<IMapRepository>();
+            await repo.AddFromDataAsync(data, ct);
+        });
+    }
+}
