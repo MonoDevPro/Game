@@ -1,6 +1,6 @@
 using Server.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 

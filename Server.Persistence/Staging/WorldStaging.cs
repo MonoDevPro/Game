@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Staging;
 using Simulation.Core.Persistence.Contracts;
 

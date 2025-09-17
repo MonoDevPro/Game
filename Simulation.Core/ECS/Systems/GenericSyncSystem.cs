@@ -18,20 +18,20 @@ public readonly partial record struct ComponentSyncPacket<T>(int PlayerId, ulong
 public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, IEquatable<T>
 {
     private readonly IChannelEndpoint _channelEndpoint;
-    private readonly SyncOptions _options;
+    private readonly SyncAttribute _attribute;
     private ulong _tickCounter = 0;
 
-    // --- Queries (inalteradas, já estavam ótimas) ---
+    // --- Queries ---
     private readonly Query _initialStateQuery;
     private readonly Query _onChangeQuery;
     private readonly Query _onTickQuery;
     private readonly Query _clientIntentQuery;
 
     // O construtor agora só precisa do que é essencial para a sua lógica.
-    public GenericSyncSystem(World world, IChannelEndpoint channelEndpoint, IPlayerIndex index, SyncOptions options) : base(world)
+    public GenericSyncSystem(World world, IChannelEndpoint channelEndpoint, IPlayerIndex index, SyncAttribute attribute) : base(world)
     {
         _channelEndpoint = channelEndpoint;
-        _options = options;
+        _attribute = attribute;
 
         _initialStateQuery = world.Query(new QueryDescription().WithAll<PlayerId, T>().WithNone<Shadow<T>>());
         _onChangeQuery = world.Query(new QueryDescription().WithAll<PlayerId, T, Shadow<T>>());
@@ -50,13 +50,13 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
     {
         _tickCounter++;
 
-        if (_options.Authority == Authority.Server)
+        if (_attribute.Authority == Authority.Server)
         {
             SyncInitialState();
-            if (_options.Trigger == SyncTrigger.OnChange) SyncOnChange();
-            else if (_options.Trigger == SyncTrigger.OnTick) SyncOnTick();
+            if (_attribute.Trigger == SyncTrigger.OnChange) SyncOnChange();
+            else if (_attribute.Trigger == SyncTrigger.OnTick) SyncOnTick();
         }
-        else if (_options.Authority == Authority.Client)
+        else if (_attribute.Authority == Authority.Client)
         {
             SyncClientIntent();
         }
@@ -91,7 +91,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
                 
                 // O estado inicial deve ser enviado de forma confiável (Reliable).
-                SendComponentUpdate(playerId.Value, component, NetworkDeliveryMethod.ReliableOrdered);
+                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
                 World.Add<Shadow<T>>(entity, new Shadow<T>(component));
             }
         }
@@ -115,7 +115,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
                 if (component.Equals(shadow.Value)) 
                     continue;
 
-                SendComponentUpdate(playerId.Value, component, NetworkDeliveryMethod.Unreliable);
+                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
                 shadow = new Shadow<T>(component);
             }
         }
@@ -124,7 +124,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SyncOnTick()
     {
-        if (_options.SyncRateTicks > 1 && _tickCounter % _options.SyncRateTicks != 0) return;
+        if (_attribute.SyncRateTicks > 1 && _tickCounter % _attribute.SyncRateTicks != 0) return;
         
         foreach (ref var chunk in _onTickQuery.GetChunkIterator())
         {
@@ -136,7 +136,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendComponentUpdate(playerId.Value, component, NetworkDeliveryMethod.Unreliable);
+                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
             }
         }
     }
@@ -156,7 +156,7 @@ public class GenericSyncSystem<T> : BaseSystem<World, float> where T : struct, I
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendClientIntentUpdate(playerId.Value, component, NetworkDeliveryMethod.ReliableOrdered);
+                SendClientIntentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
                 World.Remove<T>(entity);
             }
         }

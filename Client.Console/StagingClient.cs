@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Staging;
 
 namespace Client.Console;

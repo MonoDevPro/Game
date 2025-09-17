@@ -33,7 +33,7 @@ public static class SyncAutoRegistrar
         }
     }
 
-    private static IEnumerable<(Type Component, SyncOptions Options)> ScanComponentsWithSyncAttribute()
+    private static IEnumerable<(Type Component, SyncAttribute Attribute)> ScanComponentsWithSyncAttribute()
     {
         var asm = typeof(SyncAutoRegistrar).Assembly;
         foreach (var t in asm.GetTypes())
@@ -41,10 +41,9 @@ public static class SyncAutoRegistrar
             if (!t.IsValueType || t.IsPrimitive) continue;
             var attr = t.GetCustomAttribute<SyncAttribute>();
             if (attr is null) continue;
-            // Só suportamos IEquatable<T> para GenericSyncSystem
             var equatable = typeof(IEquatable<>).MakeGenericType(t);
             if (!equatable.IsAssignableFrom(t)) continue;
-            yield return (t, attr.ToOptions());
+            yield return (t, attr);
         }
     }
 }

@@ -1,6 +1,6 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Pipeline;
 using Simulation.Core.ECS.Staging;
 

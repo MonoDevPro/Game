@@ -1,6 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.Persistence.Contracts;
-using Simulation.Core.ECS.Data;
 
 namespace Simulation.Core.ECS;
 
@@ -8,37 +9,28 @@ namespace Simulation.Core.ECS;
 /// Serviço central para a gestão do mundo do jogo.
 /// Contém o índice espacial e os dados do mapa, atuando como a única fonte da verdade.
 /// </summary>
-public class WorldManager(IMapRepository mapRepository, WorldSpatial worldSpatial)
+public class WorldManager
 {
-    public WorldSpatial WorldSpatial { get; private set; } = worldSpatial;
-    public MapService? MapService { get; private set; }
-
+    public WorldSpatial WorldSpatial { get; private set; }
+    public MapService MapService { get; private set; }
+    
     /// <summary>
-    /// Carrega os dados do mapa a partir da base de dados e inicializa o WorldSpatial.
+    /// Serviço central para a gestão do mundo do jogo.
+    /// Contém o índice espacial e os dados do mapa, atuando como a única fonte da verdade.
     /// </summary>
-    public async Task InitializeAsync(int mapIdToLoad)
+    public WorldManager(MapService mapService)
     {
-        var mapData = await mapRepository.GetMapAsync(mapIdToLoad);
-        if (mapData == null)
-        {
-            throw new Exception($"Mapa com ID {mapIdToLoad} não encontrado na base de dados.");
-        }
-
-        MapService = MapService.CreateFromTemplate(mapData.Value);
-        MapService.PopulateFromRowMajor(mapData.Value.TilesRowMajor, mapData.Value.CollisionRowMajor);
-        
-        WorldSpatial = new WorldSpatial(0, 0, MapService.Width, MapService.Height);
+        WorldSpatial = new WorldSpatial(
+            minX: 0, 
+            minY: 0, 
+            width: mapService.Width, 
+            height: mapService.Height);
+        MapService = mapService;
     }
 
-    /// <summary>
-    /// Guarda o estado atual do mapa na base de dados.
-    /// </summary>
-    public async Task SaveMapAsync()
+    public MapData GetMapData()
     {
-        if (MapService == null)
-            throw new InvalidOperationException("MapService não está inicializado. Chame InitializeAsync primeiro.");
-        
-        var mapData = new MapData
+        return new MapData
         {
             Id = MapService.Id,
             Name = MapService.Name,
@@ -49,7 +41,5 @@ public class WorldManager(IMapRepository mapRepository, WorldSpatial worldSpatia
             UsePadded = MapService.UsePadded,
             BorderBlocked = MapService.BorderBlocked
         };
-        
-        await mapRepository.AddFromDataAsync(mapData);
     }
 }

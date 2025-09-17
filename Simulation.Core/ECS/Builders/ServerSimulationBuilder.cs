@@ -1,8 +1,5 @@
 using Arch.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Simulation.Core.ECS.Staging;
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Builders;
@@ -10,13 +7,18 @@ namespace Simulation.Core.ECS.Builders;
 public class ServerSimulationBuilder : ISimulationBuilder<float>
 {
     private WorldOptions? _worldOptions;
+    private MapService? _mapService;
     private IServiceProvider? _rootServices;
     
-    private readonly List<(Type type, SyncOptions options)> _syncRegistrations = [];
-
     public ISimulationBuilder<float> WithWorldOptions(WorldOptions options)
     {
         _worldOptions = options;
+        return this;
+    }
+    
+    public ISimulationBuilder<float> WithMapService(MapService service)
+    {
+        _mapService = service;
         return this;
     }
 
@@ -26,15 +28,21 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
         return this;
     }
     
-    public (PipelineSystems Systems, World World) Build()
+    public (GroupSystems Systems, World World, WorldManager WorldManager) Build()
     {
-        if (_worldOptions is null || _rootServices is null)
-            throw new InvalidOperationException("WorldOptions e RootServices devem ser fornecidos.");
+        if (_worldOptions is null || _mapService is null || _rootServices is null)
+            throw new InvalidOperationException("WorldOptions, MapService e RootServices devem ser fornecidos.");
         
-        // registra pipeline e provider no container
-        var pipeline = new PipelineSystems(_rootServices, _worldOptions, isServer: true);
+        var world = World.Create(
+            chunkSizeInBytes: _worldOptions.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: _worldOptions.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: _worldOptions.ArchetypeCapacity,
+            entityCapacity: _worldOptions.EntityCapacity);
+        
+        var worldManager = new WorldManager(_mapService);
+        var pipeline = new GroupSystems(_rootServices, world, worldManager, isServer: true);
         
         pipeline.Initialize();
-        return (pipeline, pipeline.World);
+        return (pipeline, world, worldManager);
     }
 }

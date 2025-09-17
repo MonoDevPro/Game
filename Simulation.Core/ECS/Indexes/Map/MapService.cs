@@ -1,5 +1,4 @@
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Data;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Indexes.Map;
@@ -86,23 +85,50 @@ public class MapService
 
         var expected = w * h;
 
-        var tiles = data.TilesRowMajor;
+        // defensivo: nunca trabalhar com null
+        var tiles = data.TilesRowMajor ?? [];
         if (tiles.Length != expected)
         {
-            // fallback: fill floor
             var fallbackTiles = new TileType[expected];
             Array.Fill(fallbackTiles, TileType.Floor);
             tiles = fallbackTiles;
         }
 
-        var collision = data.CollisionRowMajor;
+        var collision = data.CollisionRowMajor ?? [];
         if (collision.Length != expected)
         {
             collision = new byte[expected]; // default = 0 -> no collision
         }
 
-        return new MapService(data.Id, data.Name, w, h, data.UsePadded, data.BorderBlocked);
+        // cria a instância e popula os arrays internos
+        var ms = new MapService(data.Id, data.Name ?? string.Empty, w, h, data.UsePadded, data.BorderBlocked);
+
+        // copia os dados reais para o armazenamento interno (considera padded/compact)
+        ms.PopulateFromRowMajor(tiles, collision);
+
+        // reaplica border blocking depois de popular, garantindo consistência
+        if (ms.BorderBlocked)
+        {
+            var coll = ms.CollisionMask;
+            int width = ms.Width;
+            int height = ms.Height;
+            // top/bottom
+            for (int x = 0; x < width; x++)
+            {
+                coll[ms.StorageIndex(x, 0)] = 1;
+                coll[ms.StorageIndex(x, height - 1)] = 1;
+            }
+            // left/right
+            for (int y = 0; y < height; y++)
+            {
+                coll[ms.StorageIndex(0, y)] = 1;
+                coll[ms.StorageIndex(width - 1, y)] = 1;
+            }
+        }
+
+        return ms;
     }
+
 
     // helpers
     private int LinearPos(int x, int y) => y * Width + x;
@@ -207,5 +233,33 @@ public class MapService
         if (x + 1 < Width) yield return (x + 1, y);
         if (y > 0) yield return (x, y - 1);
         if (y + 1 < Height) yield return (x, y + 1);
+    }
+    
+    public long CountBlockedCells(bool parallel = false)
+    {
+        var arr = CollisionMask;
+        if (arr.Length == 0) return 0L;
+
+        if (!parallel)
+        {
+            int cnt = 0;
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i] != 0) cnt++;
+            }
+            return cnt;
+        }
+        // Versão paralela que soma em um long de forma segura
+        long total = 0;
+        Parallel.For(0, arr.Length,
+            () => 0L,
+            (i, state, local) =>
+            {
+                if (arr[i] != 0) local++;
+                return local;
+            },
+            local => Interlocked.Add(ref total, local)
+        );
+        return total;
     }
 }

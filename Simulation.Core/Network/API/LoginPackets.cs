@@ -1,5 +1,5 @@
 using MemoryPack;
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.Network.API;

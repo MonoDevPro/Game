@@ -1,4 +1,5 @@
-using Simulation.Core.ECS.Data;
+
+using Simulation.Core.ECS.Components;
 
 namespace Simulation.Core.Persistence.Models;
 

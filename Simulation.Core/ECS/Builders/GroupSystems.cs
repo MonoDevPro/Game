@@ -4,50 +4,41 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Pipeline;
 using Simulation.Core.ECS.Staging;
-using Simulation.Core.ECS.Systems;
 using Simulation.Core.Network.Contracts;
-using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Builders;
 
-/// <summary>
-/// Uma classe que gere a execução de um grupo de sistemas (pipeline),
-/// implementando a interface ISystem<float> para ter um ciclo de vida completo.
-/// Esta classe encapsula um Group<float> para orquestrar as chamadas.
-/// </summary>
-public class PipelineSystems : ISystem<float>
+public class GroupSystems : ISystem<float>
 {
     // O grupo interno que contém todos os sistemas da pipeline.
-    private readonly Group<float> _systems;
-    public readonly World World;
+    private readonly Group<float> _groupSystems;
 
-    public PipelineSystems(IServiceProvider provider, WorldOptions options, bool isServer)
+    public GroupSystems(IServiceProvider provider, World world, WorldManager worldManager, bool isServer)
     {
-        World = World.Create(
-            chunkSizeInBytes: options.ChunkSizeInBytes,
-            minimumAmountOfEntitiesPerChunk: options.MinimumAmountOfEntitiesPerChunk,
-            archetypeCapacity: options.ArchetypeCapacity,
-            entityCapacity: options.EntityCapacity);
+        _groupSystems = new Group<float>(isServer ? "ServerSystems" : "ClientSystems");
         
         var systemServices = new ServiceCollection();
-        systemServices.AddSingleton(World);
+        systemServices.AddSingleton(_groupSystems);
+        systemServices.AddSingleton(world);
+        systemServices.AddSingleton(worldManager.WorldSpatial);
+        systemServices.AddSingleton(worldManager.MapService);
+        
+        systemServices.AddSingleton(provider.GetRequiredService<ILoggerFactory>());
+        systemServices.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
         systemServices.AddSingleton(provider.GetRequiredService<IWorldStaging>());
         systemServices.AddSingleton(provider.GetRequiredService<INetworkManager>());
-        systemServices.AddSingleton(provider.GetRequiredService<WorldManager>());
+        
         var endpoint = provider
             .GetRequiredService<IChannelProcessorFactory>()
             .CreateOrGet(NetworkChannel.Simulation);
-        systemServices.AddSingleton<IChannelEndpoint>(endpoint);
-        systemServices.AddSingleton<Group<float>>(sp => new Group<float>(isServer ? "ServerSystems" : "ClientSystems"));
+        systemServices.AddSingleton(endpoint);
         
-        // Registro dos sistemas
         var ecsServiceProvider = systemServices.BuildServiceProvider();
         
-        // Cria a instância interna do grupo de sistemas.
-        _systems = ecsServiceProvider.GetRequiredService<Group<float>>();
-        
         // Regista os sistemas usando o método de extensão na instância interna.
-        _systems.RegisterAttributedSystems<Group<float>>(ecsServiceProvider, isServer);
+        _groupSystems.RegisterAttributedSystems(ecsServiceProvider, isServer);
+        
+        _groupSystems.RegisterAttributedSyncSystems(ecsServiceProvider);
     }
 
     /// <summary>
@@ -55,7 +46,7 @@ public class PipelineSystems : ISystem<float>
     /// </summary>
     public void Initialize()
     {
-        _systems.Initialize();
+        _groupSystems.Initialize();
     }
 
     /// <summary>
@@ -63,7 +54,7 @@ public class PipelineSystems : ISystem<float>
     /// </summary>
     public void BeforeUpdate(in float t)
     {
-        _systems.BeforeUpdate(in t);
+        _groupSystems.BeforeUpdate(in t);
     }
 
     /// <summary>
@@ -73,13 +64,13 @@ public class PipelineSystems : ISystem<float>
     public void Update(in float t)
     {
         // 1. Chama BeforeUpdate para todos os sistemas.
-        _systems.BeforeUpdate(in t);
+        _groupSystems.BeforeUpdate(in t);
         
         // 2. Chama Update para todos os sistemas.
-        _systems.Update(in t);
+        _groupSystems.Update(in t);
         
         // 3. Chama AfterUpdate para todos os sistemas.
-        _systems.AfterUpdate(in t);
+        _groupSystems.AfterUpdate(in t);
     }
     
     /// <summary>
@@ -87,7 +78,7 @@ public class PipelineSystems : ISystem<float>
     /// </summary>
     public void AfterUpdate(in float t)
     {
-        _systems.AfterUpdate(in t);
+        _groupSystems.AfterUpdate(in t);
     }
 
     /// <summary>
@@ -95,6 +86,6 @@ public class PipelineSystems : ISystem<float>
     /// </summary>
     public void Dispose()
     {
-        _systems.Dispose();
+        _groupSystems.Dispose();
     }
 }

@@ -1,5 +1,6 @@
 using Arch.Core;
 using Simulation.Core.ECS.Builders;
+using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS;
@@ -15,6 +16,13 @@ public interface ISimulationBuilder<TData> where TData : notnull
     ISimulationBuilder<TData> WithWorldOptions(WorldOptions options);
 
     /// <summary>
+    /// Fornece o serviço de mapas para o gerenciamento do mundo.
+    /// </summary>
+    /// <param name="service">O serviço de mapas a ser utilizado.</param>
+    /// <returns>O construtor de simulação para encadeamento.</returns>
+    ISimulationBuilder<float> WithMapService(MapService service);
+    
+    /// <summary>
     /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.
     /// </summary>
     ISimulationBuilder<TData> WithRootServices(IServiceProvider services);
@@ -23,5 +31,5 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// Constrói e retorna o grupo de sistemas (a pipeline) configurado.
     /// </summary>
     /// Um Group pronto a ser executado.
-    (PipelineSystems Systems, World World) Build();
+    (GroupSystems Systems, World World, WorldManager WorldManager) Build();
 }

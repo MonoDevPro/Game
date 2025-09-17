@@ -8,19 +8,24 @@ using Simulation.Core.ECS.Pipeline;
 namespace Simulation.Core.ECS.Systems;
 
  [PipelineSystem(SystemStage.Spatial)]
-public sealed partial class SpatialIndexSystem(World world, WorldManager worldManager) : BaseSystem<World, float>(world)
+public sealed partial class SpatialIndexSystem(World world, WorldSpatial spatial, MapService map) : BaseSystem<World, float>(world)
 {
-    private readonly WorldSpatial _worldSpatial = worldManager.WorldSpatial;
-    private readonly MapService? _mapService = worldManager.MapService;
-
+    [Query]
+    [All<SpatialUnindexed, SpatialIndexed>]
+    private void RemoveFromIndex(in Entity entity)
+    {
+        World.Remove<SpatialUnindexed>(entity);
+        spatial.Remove(entity);
+    }
+    
     [Query]
     [All<Position, LastKnownPosition, SpatialIndexed>]
     private void UpdateIndex(in Entity entity, ref Position currentPos, ref LastKnownPosition lastPos)
     {
-        if (currentPos.X != lastPos.X || currentPos.Y != lastPos.Y)
+        if (!currentPos.Equals(lastPos.Position))
         {
-            _worldSpatial.Update(entity, currentPos);
-            World.Set<LastKnownPosition>(entity, new LastKnownPosition(currentPos.X, currentPos.Y));
+            spatial.Update(entity, currentPos);
+            World.Set<LastKnownPosition>(entity, new LastKnownPosition(currentPos));
         }
     }
 
@@ -29,9 +34,10 @@ public sealed partial class SpatialIndexSystem(World world, WorldManager worldMa
     [None<SpatialIndexed>]
     private void AddToIndex(in Entity entity, ref Position pos)
     {
-        _worldSpatial.Add(entity, pos);
+        spatial.Add(entity, pos);
+        World.Add<LastKnownPosition>(entity, new LastKnownPosition(pos));
+
         World.Add<SpatialIndexed>(entity);
-        World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
     }
     
     [Query]
@@ -39,6 +45,6 @@ public sealed partial class SpatialIndexSystem(World world, WorldManager worldMa
     [None<LastKnownPosition>]
     private void AddLastKnownPosition(in Entity entity, ref Position pos)
     {
-        World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
+        World.Add<LastKnownPosition>(entity, new LastKnownPosition(pos));
     }
 }

@@ -1,7 +1,7 @@
 using MemoryPack;
 using Simulation.Core.Persistence.Models;
 
-namespace Simulation.Core.ECS.Data;
+namespace Simulation.Core.ECS.Components;
 
 /// <summary>
 /// Um componente que transporta os dados de um jogador, geralmente

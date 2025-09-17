@@ -38,7 +38,8 @@ public struct NeedDelete;
 public struct Indexed;
 public struct Unindexed;
 public struct SpatialIndexed;
-public readonly record struct LastKnownPosition(int X, int Y);
+public struct SpatialUnindexed;
+public readonly record struct LastKnownPosition(Position Position);
 
 // ---> Componentes de Combate
 public readonly record struct AttackAction(float CastTimeRemaining);

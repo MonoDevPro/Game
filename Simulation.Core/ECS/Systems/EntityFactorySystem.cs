@@ -1,7 +1,6 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Data;
 using Simulation.Core.ECS.Pipeline;
 
 namespace Simulation.Core.ECS.Systems;
@@ -59,7 +58,7 @@ public sealed class EntityFactorySystem(World world, Group<float> container): Ba
         ref var move = ref world.Get<MoveStats>(e);
         ref var health = ref world.Get<Health>(e);
 
-        return new Data.PlayerData
+        return new PlayerData
         {
             Id = id.Value,
             Name = playerInfo.Name,

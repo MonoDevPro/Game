@@ -1,4 +1,4 @@
-using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Components;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.Persistence.Contracts;
