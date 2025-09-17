@@ -1,6 +1,5 @@
 using Arch.Core;
-using Arch.System;
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.ECS.Builders;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS;
@@ -16,25 +15,13 @@ public interface ISimulationBuilder<TData> where TData : notnull
     ISimulationBuilder<TData> WithWorldOptions(WorldOptions options);
 
     /// <summary>
-    /// Fornece as opções de configuração do sistema espacial.
-    /// </summary>
-    ISimulationBuilder<TData> WithSpatialOptions(SpatialOptions options);
-    
-    /// <summary>
     /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.
     /// </summary>
     ISimulationBuilder<TData> WithRootServices(IServiceProvider services);
 
     /// <summary>
-    /// Registra um componente para ser sincronizado automaticamente pela rede.
-    /// </summary>
-    /// <typeparam name="T">O tipo do componente a ser sincronizado.</typeparam>
-    /// <param name="options">As opções de sincronização (autoridade, gatilho, etc.).</param>
-    ISimulationBuilder<TData> WithSynchronizedComponent<T>(SyncOptions options) where T : struct, IEquatable<T>;
-
-    /// <summary>
     /// Constrói e retorna o grupo de sistemas (a pipeline) configurado.
     /// </summary>
     /// Um Group pronto a ser executado.
-    (Group<TData> Group, World World) Build();
+    (PipelineSystems Systems, World World) Build();
 }

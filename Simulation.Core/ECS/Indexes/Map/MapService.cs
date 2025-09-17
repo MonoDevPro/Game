@@ -1,12 +1,12 @@
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Staging.Map;
+using Simulation.Core.ECS.Data;
 using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Indexes.Map;
 
 public class MapService
 {
-    public int MapId { get; init; }
+    public int Id { get; init; }
     public string Name { get; init; }
     public int Width { get; init; }
     public int Height { get; init; }
@@ -27,9 +27,9 @@ public class MapService
     public TileType[] Tiles { get; private set; }
     public byte[] CollisionMask { get; private set; } // 0=free, 1=blocked
 
-    private MapService(int mapId, string name, int width, int height, bool usePadded, bool borderBlocked = true)
+    private MapService(int id, string name, int width, int height, bool usePadded, bool borderBlocked = true)
     {
-        MapId = mapId;
+        Id = id;
         Name = name ?? string.Empty;
         Width = width;
         Height = height;
@@ -82,7 +82,7 @@ public class MapService
         int h = data.Height;
 
         if (w <= 0 || h <= 0)
-            throw new ArgumentException($"Invalid map dimensions in template MapId={data.MapId}: width={w}, height={h}");
+            throw new ArgumentException($"Invalid map dimensions in template Id={data.Id}: width={w}, height={h}");
 
         var expected = w * h;
 
@@ -101,7 +101,7 @@ public class MapService
             collision = new byte[expected]; // default = 0 -> no collision
         }
 
-        return new MapService(data.MapId, data.Name, w, h, data.UsePadded, data.BorderBlocked);
+        return new MapService(data.Id, data.Name, w, h, data.UsePadded, data.BorderBlocked);
     }
 
     // helpers

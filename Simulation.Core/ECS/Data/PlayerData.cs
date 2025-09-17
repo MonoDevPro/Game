@@ -1,7 +1,7 @@
 using MemoryPack;
 using Simulation.Core.Persistence.Models;
 
-namespace Simulation.Core.ECS.Staging.Player;
+namespace Simulation.Core.ECS.Data;
 
 /// <summary>
 /// Um componente que transporta os dados de um jogador, geralmente
@@ -26,7 +26,6 @@ public readonly partial record struct PlayerData
     public float MoveSpeed { get; init; }
     
     // --- Dados Quentes / de Estado (mudam a cada tick) ---
-    public int MapId { get; init; }
     public int PosX { get; init; }
     public int PosY { get; init; }
     public int DirX { get; init; }
@@ -50,7 +49,6 @@ public readonly partial record struct PlayerData
             AttackCastTime = model.AttackCastTime,
             AttackCooldown = model.AttackCooldown,
             MoveSpeed = model.MoveSpeed,
-            MapId = model.MapId,
             PosX = model.PosX,
             PosY = model.PosY,
             DirX = model.DirX,

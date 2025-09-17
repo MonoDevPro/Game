@@ -4,7 +4,6 @@ using Arch.System;
 using MemoryPack;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Indexes;
-using Simulation.Core.ECS.Indexes.Player;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
 

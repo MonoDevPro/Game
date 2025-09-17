@@ -18,7 +18,7 @@ namespace Server.Persistence.Migrations
 
             modelBuilder.Entity("Simulation.Core.Persistence.Models.MapModel", b =>
                 {
-                    b.Property<int>("MapId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -45,7 +45,7 @@ namespace Server.Persistence.Migrations
                     b.Property<int>("Width")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("MapId");
+                    b.HasKey("Id");
 
                     b.ToTable("MapModels");
                 });

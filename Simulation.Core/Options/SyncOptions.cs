@@ -1,3 +1,5 @@
+using Simulation.Core.Network.Contracts;
+
 namespace Simulation.Core.Options;
 
 public enum Authority { Server, Client }
@@ -16,4 +18,6 @@ public record SyncOptions
     public ushort SyncRateTicks { get; init; } = 0; // 0 = a cada tick (se o gatilho for OnTick)
     public bool SyncOnSpawn { get; init; } = true;
     public bool SyncOnDespawn { get; init; } = true;
+    
+    public NetworkDeliveryMethod DeliveryMethod { get; init; } = NetworkDeliveryMethod.ReliableOrdered;
 }

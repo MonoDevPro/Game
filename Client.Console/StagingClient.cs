@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
+using Simulation.Core.ECS.Data;
 using Simulation.Core.ECS.Staging;
-using Simulation.Core.ECS.Staging.Map;
-using Simulation.Core.ECS.Staging.Player;
 
 namespace Client.Console;
 
@@ -9,7 +8,6 @@ public class WorldStagingClient : IWorldStaging
 {
     private readonly ConcurrentQueue<PlayerData> _playerLogins = new();
     private readonly ConcurrentQueue<int> _playerLeaves = new();
-    private readonly ConcurrentQueue<MapData> _mapLoaded = new();
 
     public void Enqueue<T>(StagingQueue queue, T item)
     {
@@ -21,9 +19,6 @@ public class WorldStagingClient : IWorldStaging
             case StagingQueue.PlayerLeave when item is int id:
                 _playerLeaves.Enqueue(id);
                 break;
-            case StagingQueue.MapLoaded when item is MapData m:
-                _mapLoaded.Enqueue(m);
-                break;
             default:
                 throw new ArgumentException($"Tipo inválido {typeof(T).Name} para fila {queue}");
         }
@@ -34,9 +29,8 @@ public class WorldStagingClient : IWorldStaging
         object? result = null;
         bool ok = queue switch
         {
-            StagingQueue.PlayerLogin => _playerLogins.TryDequeue(out var p) ? (result = p) != null : false,
-            StagingQueue.PlayerLeave => _playerLeaves.TryDequeue(out var id) ? (result = id) != null : false,
-            StagingQueue.MapLoaded  => _mapLoaded.TryDequeue(out var m) ? (result = m) != null : false,
+            StagingQueue.PlayerLogin => _playerLogins.TryDequeue(out var p) && (result = p) != null,
+            StagingQueue.PlayerLeave => _playerLeaves.TryDequeue(out var id) && (result = id) != null,
             _ => false
         };
         if (ok && result is T cast)

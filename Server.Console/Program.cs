@@ -2,12 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Server.Console;
 using Server.Persistence;
 using Server.Persistence.Context;
 using Server.Persistence.Seeds;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
+using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.Options;
 using Simulation.Network;
 
@@ -23,6 +25,15 @@ var host = Host.CreateDefaultBuilder(args)
         
         services.AddPersistence(context.Configuration);
         
+        // Adiciona o WorldManager como Singleton
+        services.AddSingleton<WorldSpatial>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<SpatialOptions>>().Value;
+            return new WorldSpatial(minX: options.MinX, minY: options.MinY, width: options.Width, height: options.Height);
+        });
+        
+        services.AddSingleton<WorldManager>();
+        
         services.AddNetworking();
         
         services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
@@ -34,6 +45,10 @@ var host = Host.CreateDefaultBuilder(args)
 
 // 4. Aplicar Migrações e Seeding da Base de Dados
 await SeedDatabaseAsync(host.Services);
+
+// Inicia o WorldManager antes de correr o host
+var worldManager = host.Services.GetRequiredService<WorldManager>();
+await worldManager.InitializeAsync(1); // Carrega o mapa com ID 1
 
 // 5. Executar o Host
 await host.RunAsync();

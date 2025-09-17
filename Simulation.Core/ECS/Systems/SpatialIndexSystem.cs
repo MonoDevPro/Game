@@ -4,24 +4,22 @@ using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.ECS.Pipeline;
-using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Systems;
 
  [PipelineSystem(SystemStage.Spatial)]
-public sealed partial class SpatialIndexSystem(World world, SpatialOptions options) 
-    : BaseSystem<World, float>(world)
+public sealed partial class SpatialIndexSystem(World world, WorldManager worldManager) : BaseSystem<World, float>(world)
 {
-    // Propriedade pública para que outros sistemas possam acessar o índice espacial
-    public readonly QuadTreeSpatial SpatialIndex = new(0, 0, options.Width, options.Height);
-    
+    private readonly WorldSpatial _worldSpatial = worldManager.WorldSpatial;
+    private readonly MapService? _mapService = worldManager.MapService;
+
     [Query]
     [All<Position, LastKnownPosition, SpatialIndexed>]
     private void UpdateIndex(in Entity entity, ref Position currentPos, ref LastKnownPosition lastPos)
     {
         if (currentPos.X != lastPos.X || currentPos.Y != lastPos.Y)
         {
-            SpatialIndex.Update(entity, currentPos);
+            _worldSpatial.Update(entity, currentPos);
             World.Set<LastKnownPosition>(entity, new LastKnownPosition(currentPos.X, currentPos.Y));
         }
     }
@@ -31,7 +29,7 @@ public sealed partial class SpatialIndexSystem(World world, SpatialOptions optio
     [None<SpatialIndexed>]
     private void AddToIndex(in Entity entity, ref Position pos)
     {
-        SpatialIndex.Add(entity, pos);
+        _worldSpatial.Add(entity, pos);
         World.Add<SpatialIndexed>(entity);
         World.Add<LastKnownPosition>(entity, new LastKnownPosition { X = pos.X, Y = pos.Y });
     }

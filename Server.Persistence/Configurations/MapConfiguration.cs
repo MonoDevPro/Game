@@ -10,7 +10,7 @@ public class MapConfiguration : IEntityTypeConfiguration<MapModel>
 {
     public void Configure(EntityTypeBuilder<MapModel> builder)
     {
-        builder.HasKey(m => m.MapId);
+        builder.HasKey(m => m.Id);
         builder.Property(m => m.Name).IsRequired().HasMaxLength(150);
         
         // Comparer para TileType[]

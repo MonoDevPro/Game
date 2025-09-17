@@ -10,7 +10,7 @@ public static class DataSeeder
         for (int id = 1; id < 4; id++)
         {
             maps.Add(new MapModel
-                { MapId = id, Name = $"Default Map {id}", Width = 30, Height = 30, UsePadded = false, BorderBlocked = true });
+                { Id = id, Name = $"Default Map {id}", Width = 30, Height = 30, UsePadded = false, BorderBlocked = true });
         }
         foreach (var map in maps)
         {
@@ -31,9 +31,9 @@ public static class DataSeeder
     {
         var players = new List<PlayerModel>
         {
-            new() { Id = 1, Name = "Filipe", MapId = 1, PosX = 5, PosY = 5, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
-            new() { Id = 2, Name = "Rodorfo", MapId = 2, PosX = 8, PosY = 8, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
-            new() { Id = 3, Name = "Radouken", MapId = 3, PosX = 10, PosY = 10, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 1, Name = "Filipe", PosX = 5, PosY = 5, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 2, Name = "Rodorfo", PosX = 8, PosY = 8, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 3, Name = "Radouken", PosX = 10, PosY = 10, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
         };
         return players;
     }

@@ -1,6 +1,6 @@
 using Server.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Simulation.Core.ECS.Staging.Player;
+using Simulation.Core.ECS.Data;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 
@@ -45,9 +45,9 @@ public class PlayerRepository(SimulationDbContext context) : EFCoreRepository<in
         // Defaults iniciais simples; podem ser extraídos para config no futuro
         var player = new PlayerModel
         {
+            Id = 1,
             Name = name,
             PasswordHash = passwordHash,
-            MapId = 1,
             PosX = 1,
             PosY = 1,
             MoveSpeed = 1.0f,

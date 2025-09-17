@@ -11,7 +11,7 @@ namespace Simulation.Core.ECS.Indexes.Map;
 /// Object pooling para reduzir alocações em queries de alta frequência.
 /// **Não thread-safe** — assuma acesso de um único thread (ex.: thread principal).
 /// </summary>
-public class QuadTreeSpatial(int minX, int minY, int width, int height)
+public class WorldSpatial(int minX, int minY, int width, int height)
 {
     private class QuadTreeItem(Entity entity, Position pos) : IRectQuadStorable
     {

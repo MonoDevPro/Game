@@ -10,8 +10,11 @@ using Microsoft.Extensions.Hosting;
 using Arch.System;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Data;
+using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.ECS.Staging;
-using Simulation.Core.ECS.Staging.Player;
+using Simulation.Core.ECS.Systems;
+using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 using Simulation.Network;
 
@@ -27,6 +30,17 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddNetworking();
         
+        // Adiciona o WorldManager como Singleton
+        services.AddSingleton<WorldSpatial>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<SpatialOptions>>().Value;
+            return new WorldSpatial(minX: options.MinX, minY: options.MinY, width: options.Width, height: options.Height);
+        });
+        
+        services.AddSingleton<WorldManager>();
+        
+        services.AddSingleton<IMapRepository, MapRepository>();
+        
         services.AddSingleton<ISimulationBuilder<float>, ClientSimulationBuilder>();
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
@@ -41,38 +55,27 @@ logger.LogInformation("Cliente a iniciar...");
 
 var builder = host.Services.GetRequiredService<ISimulationBuilder<float>>();
 var worldOptions = host.Services.GetRequiredService<IOptions<WorldOptions>>().Value;
-var networkOptions = host.Services.GetRequiredService<IOptions<NetworkOptions>>().Value;
-
 
 var build = builder
     .WithWorldOptions(worldOptions)
     .WithRootServices(host.Services)
-    
-    // --- Regista os mesmos componentes que o servidor ---
-    // Isto é crucial para que o cliente saiba como desserializar os pacotes recebidos
-    // e para enviar os seus próprios componentes de "intenção".
-    .WithSynchronizedComponent<Position>(new SyncOptions { Authority = Authority.Server })
-    .WithSynchronizedComponent<Health>(new SyncOptions { Authority = Authority.Server })
-    //.WithSynchronizedComponent<StateComponent>(new SyncOptions { Authority = Authority.Server })
-    .WithSynchronizedComponent<Direction>(new SyncOptions { Authority = Authority.Server })
-    .WithSynchronizedComponent<InputComponent>(new SyncOptions { Authority = Authority.Client })
     .Build();
 
 logger.LogInformation("Pipeline de simulação do cliente construída. A entrar no loop principal.");
 
 bool registerMode = args.Any(a => a.Equals("--register", StringComparison.OrdinalIgnoreCase));
-new ClientGameLoop(build.World, build.Group, registerMode).Run();
+new ClientGameLoop(build.World, build.Systems, registerMode).Run();
 
 public class ClientGameLoop
 {
     private readonly World _world;
-    private readonly Group<float> _pipeline;
+    private readonly PipelineSystems _pipeline;
     private Entity? _localPlayer;
     private DateTime _lastStateLog = DateTime.UtcNow;
 
     private readonly bool _registerMode;
 
-    public ClientGameLoop(World world, Group<float> pipeline, bool registerMode)
+    public ClientGameLoop(World world, PipelineSystems pipeline, bool registerMode)
     {
         _world = world;
         _pipeline = pipeline;
@@ -85,7 +88,6 @@ public class ClientGameLoop
         var playerData = new PlayerData
         {
             Id = 1,
-            MapId = 1,
             Name = _registerMode ? "NewPlayer" : "ExistingPlayer",
             Gender = Gender.Male,
             Vocation = Vocation.Mage,
@@ -100,8 +102,7 @@ public class ClientGameLoop
             MoveSpeed = 0.5f
         };
         
-        var entity = _world.Create(new NewlyCreated());
-        _localPlayer = _world.CreatePlayerEntity(entity, playerData);
+        _localPlayer = EntityFactorySystem.CreatePlayerEntity(_world, playerData);
         
         while (true)
         {

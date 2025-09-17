@@ -1,6 +1,4 @@
-
-using Simulation.Core.ECS.Staging.Map;
-using Simulation.Core.ECS.Staging.Player;
+using Simulation.Core.ECS.Data;
 
 namespace Simulation.Core.ECS.Staging;
 
@@ -8,7 +6,6 @@ public enum StagingQueue
 {
     PlayerLogin,
     PlayerLeave,
-    MapLoaded
 }
 
 /// <summary>
@@ -21,5 +18,4 @@ public interface IWorldStaging
 
     // Operações de persistência assíncrona
     void StageSave(PlayerData data);
-    void StageSave(MapData data);
 }

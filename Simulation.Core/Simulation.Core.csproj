@@ -29,4 +29,8 @@
       <ProjectReference Include="..\thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="ECS\Systems\FactorySystem.cs" />
+    </ItemGroup>
+
 </Project>

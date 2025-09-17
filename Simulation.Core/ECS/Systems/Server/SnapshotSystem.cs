@@ -9,7 +9,7 @@ namespace Simulation.Core.ECS.Systems.Server;
 /// Futuro: exportar delta/snapshot para rollback, replay ou depuração.
 /// </summary>
  [PipelineSystem(SystemStage.Post, -10, server:true, client:false)]
- [DependsOn(typeof(SaveSystem), typeof(EntityDestructorSystem))]
+ [DependsOn(typeof(EntitySaveSystem), typeof(EntityDeleteSystem))]
 public sealed class SnapshotSystem(World world) : BaseSystem<World, float>(world)
 {
     private ulong _tick;

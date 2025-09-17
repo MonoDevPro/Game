@@ -1,5 +1,4 @@
-using Simulation.Core.ECS.Staging.Map;
-using Simulation.Core.ECS.Staging.Player;
+using Simulation.Core.ECS.Data;
 
 namespace Simulation.Core.Persistence.Models;
 
@@ -15,7 +14,7 @@ public static class ModelMappingExtensions
     {
         // Atualiza apenas os dados "quentes" que podem mudar durante o jogo.
         model.HealthCurrent = data.HealthCurrent;
-        model.MapId = data.MapId;
+        model.Id = data.Id;
         model.PosX = data.PosX;
         model.PosY = data.PosY;
         model.DirX = data.DirX;
@@ -40,7 +39,6 @@ public static class ModelMappingExtensions
             AttackCastTime = data.AttackCastTime,
             AttackCooldown = data.AttackCooldown,
             MoveSpeed = data.MoveSpeed,
-            MapId = data.MapId,
             PosX = data.PosX,
             PosY = data.PosY,
             DirX = data.DirX,
@@ -56,7 +54,7 @@ public static class ModelMappingExtensions
     {
         return new MapModel
         {
-            MapId = data.MapId,
+            Id = data.Id,
             Name = data.Name,
             Width = data.Width,
             Height = data.Height,

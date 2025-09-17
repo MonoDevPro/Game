@@ -18,7 +18,7 @@ public class NetworkManager : INetworkManager
     {
         _options = options;
         var router = new ChannelRouter();
-        Listener = new NetworkListener(router, options);
+        Listener = new NetworkListener(router, options, factory.CreateLogger<NetworkListener>());
         Net = new NetManager(Listener) { DisconnectTimeout = options.DisconnectTimeoutMs };
         
         ProcessorFactory = new ChannelProcessorFactory(Net, Listener, router, factory);

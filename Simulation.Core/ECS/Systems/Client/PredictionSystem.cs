@@ -9,7 +9,7 @@ namespace Simulation.Core.ECS.Systems.Client;
 /// Futuro: aplicar inputs locais, reconciliar contra estado autoritativo.
 /// </summary>
 [PipelineSystem(SystemStage.Logic, -10, server:false, client:true)]
-[DependsOn(typeof(NetworkSystem), typeof(EntityIndexSystem))]
+[DependsOn(typeof(NetworkSystem), typeof(IndexSystem))]
 public sealed class PredictionSystem(World world) : BaseSystem<World, float>(world)
 {
     public override void Update(in float t)

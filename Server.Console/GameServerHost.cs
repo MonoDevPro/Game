@@ -17,19 +17,10 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         using var scope = serviceProvider.CreateScope();
         var builder = scope.ServiceProvider.GetRequiredService<ISimulationBuilder<float>>();
         var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
-        var spatialOptions = scope.ServiceProvider.GetRequiredService<IOptions<SpatialOptions>>().Value;
 
         var (simulationPipeline, world) = builder
             .WithWorldOptions(worldOptions)
-            .WithSpatialOptions(spatialOptions)
             .WithRootServices(scope.ServiceProvider)
-            
-            .WithSynchronizedComponent<Position>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
-            .WithSynchronizedComponent<Health>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
-            .WithSynchronizedComponent<ActionComponent>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
-            .WithSynchronizedComponent<Direction>(new SyncOptions { Authority = Authority.Server, Trigger = SyncTrigger.OnChange })
-            .WithSynchronizedComponent<InputComponent>(new SyncOptions { Authority = Authority.Client })
-            
             .Build();
 
         while (!stoppingToken.IsCancellationRequested)

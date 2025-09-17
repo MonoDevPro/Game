@@ -10,11 +10,8 @@ public static class DataSeeder
     private static List<MapModel> GetMapSeed()
     {
         var maps = new List<MapModel>();
-        for (int id = 1; id < 4; id++)
-        {
             maps.Add(new MapModel
-                { MapId = id, Name = $"Default Map {id}", Width = 30, Height = 30, UsePadded = false, BorderBlocked = true });
-        }
+                { Id = 1, Name = "Default Map {1}", Width = 30, Height = 30, UsePadded = false, BorderBlocked = true });
         foreach (var map in maps)
         {
             int size = map.Width * map.Height;
@@ -34,9 +31,9 @@ public static class DataSeeder
     {
         var players = new List<PlayerModel>
         {
-            new() { Id = 1, Name = "Filipe", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Filipe"), MapId = 1, PosX = 5, PosY = 5, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
-            new() { Id = 2, Name = "Rodorfo", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Rodorfo"), MapId = 2, PosX = 8, PosY = 8, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
-            new() { Id = 3, Name = "Radouken", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Radouken"), MapId = 3, PosX = 10, PosY = 10, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 1, Name = "Filipe", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Filipe"), PosX = 5, PosY = 5, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 2, Name = "Rodorfo", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Rodorfo"), PosX = 8, PosY = 8, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
+            new() { Id = 3, Name = "Radouken", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Radouken"), PosX = 10, PosY = 10, MoveSpeed = 1.0f, AttackCastTime = 1.0f, AttackCooldown = 1.0f },
         };
         return players;
     }

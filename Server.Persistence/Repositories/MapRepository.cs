@@ -1,5 +1,5 @@
 using Server.Persistence.Context;
-using Simulation.Core.ECS.Staging.Map;
+using Simulation.Core.ECS.Data;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
 
@@ -17,5 +17,12 @@ public class MapRepository(SimulationDbContext context) : EFCoreRepository<int, 
         var mapModel = data.ToModel();
         await _context.MapModels.AddAsync(mapModel, ct);
         await _context.SaveChangesAsync(ct);
+    }
+    
+    public async Task<MapData?> GetMapAsync(int id, CancellationToken ct = default)
+    {
+        var mapModel = await GetAsync(id, ct);
+        if (mapModel == null) return null;
+        return MapData.FromModel(mapModel);
     }
 }

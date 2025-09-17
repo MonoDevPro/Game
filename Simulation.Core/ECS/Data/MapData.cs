@@ -1,7 +1,7 @@
 using MemoryPack;
 using Simulation.Core.Persistence.Models;
 
-namespace Simulation.Core.ECS.Staging.Map; // Mantido o namespace para consistência
+namespace Simulation.Core.ECS.Data; // Mantido o namespace para consistência
 
 /// <summary>
 /// Um componente que transporta os dados brutos de um mapa, geralmente
@@ -11,10 +11,10 @@ namespace Simulation.Core.ECS.Staging.Map; // Mantido o namespace para consistê
 [MemoryPackable]
 public readonly partial record struct MapData
 {
+    public int Id { get; init; }
     public string Name { get; init; }
     public TileType[] TilesRowMajor { get; init; }
     public byte[] CollisionRowMajor { get; init; }
-    public int MapId { get; init; }
     public int Width { get; init; }
     public int Height { get; init; }
     public bool UsePadded { get; init; }
@@ -48,7 +48,7 @@ public readonly partial record struct MapData
 
         return new MapData
         {
-            MapId = model.MapId,
+            Id = model.Id,
             Name = model.Name ?? string.Empty,
             Width = model.Width,
             Height = model.Height,

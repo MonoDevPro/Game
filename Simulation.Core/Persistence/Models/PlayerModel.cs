@@ -21,7 +21,6 @@ public class PlayerModel
     public float MoveSpeed;
     
     // --- Dados Quentes / de Estado (mudam a cada tick) ---
-    public int MapId;
     public int PosX;
     public int PosY;
     public int DirX;

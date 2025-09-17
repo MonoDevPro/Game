@@ -10,9 +10,8 @@ public static class PipelineAutoRegistrar
 
     // DependencyRules legacy removido; agora usamos DependsOnAttribute dinâmico.
 
-    public static void RegisterAttributedSystems<TGroup, TData>(this TGroup group, IServiceProvider provider, bool isServer, params Assembly[] assemblies)
-        where TGroup : Group<TData>
-        where TData : notnull
+    public static void RegisterAttributedSystems<TGroup>(this TGroup group, IServiceProvider provider, bool isServer, params Assembly[] assemblies)
+        where TGroup : Group<float>
     {
         if (assemblies.Length == 0)
             assemblies = [Assembly.GetExecutingAssembly()];
@@ -22,7 +21,7 @@ public static class PipelineAutoRegistrar
         {
             foreach (var t in asm.GetTypes())
             {
-                if (t.IsAbstract || !typeof(ISystem<TData>).IsAssignableFrom(t))
+                if (t.IsAbstract || !typeof(ISystem<float>).IsAssignableFrom(t))
                     continue;
                 var attr = t.GetCustomAttribute<PipelineSystemAttribute>();
                 if (attr == null) continue;
@@ -43,11 +42,11 @@ public static class PipelineAutoRegistrar
 
         foreach (var meta in ordered)
         {
-            ISystem<TData>? instance = provider.GetService(meta.ImplType) as ISystem<TData>;
+            ISystem<float>? instance = provider.GetService(meta.ImplType) as ISystem<float>;
             if (instance is null)
             {
                 // Fallback: tenta construir via ActivatorUtilities (suporta DI em ctor)
-                instance = ActivatorUtilities.CreateInstance(provider, meta.ImplType) as ISystem<TData>;
+                instance = ActivatorUtilities.CreateInstance(provider, meta.ImplType) as ISystem<float>;
             }
             if (instance is null)
                 throw new InvalidOperationException($"Sistema {meta.ImplType.Name} não pôde ser instanciado.");
