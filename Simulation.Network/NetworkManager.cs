@@ -24,6 +24,8 @@ public class NetworkManager : INetworkManager
         ProcessorFactory = new ChannelProcessorFactory(Net, Listener, router, factory);
     }
 
+    public NetworkAuthority Authority => _options.Authority;
+
     public void Initialize()
     {
         if (_options.Authority == NetworkAuthority.Server)

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Pipeline;
 using Simulation.Core.ECS.Staging;
+using Simulation.Core.ECS.Sync;
 using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.ECS.Builders;

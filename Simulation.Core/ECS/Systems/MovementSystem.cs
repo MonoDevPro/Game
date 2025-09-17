@@ -18,13 +18,13 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
 {
     // Inicia movimento: entidades com InputComponent e sem MoveAction (ou seja, não estão se movendo)
     [Query]
-    [All<InputComponent, Position, MoveStats, ActionComponent>]
+    [All<Input, Position, MoveStats, State>]
     [None<MoveAction>]
     private void StartMove(in Entity entity,
         ref Position pos,
-        ref InputComponent input,
+        ref Input input,
         ref MoveStats stats,
-        ref ActionComponent state)
+        ref State state)
     {
         try
         {
@@ -32,10 +32,10 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
             if ((state.Value & StateFlags.Dead) != 0) return;
 
             // precisa haver intenção de mover
-            if ((input.Intent & IntentFlags.Move) == 0) return;
+            if ((input.IntentState & IntentFlags.Move) == 0) return;
 
             // resolve direção a partir dos InputFlags
-            var (dx, dy) = ResolveDirection(input.Input);
+            var (dx, dy) = ResolveDirection(input.InputDir);
             if (dx == 0 && dy == 0) return; // sem direção
 
             // proteção contra speed inválido
@@ -73,7 +73,7 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
             var newState = state.Value;
             newState |= StateFlags.Running;
             newState &= ~StateFlags.Idle;
-            World.Set<ActionComponent>(entity, new ActionComponent { Value = newState });
+            World.Set<State>(entity, new State { Value = newState });
         }
         catch (Exception ex)
         {
@@ -83,12 +83,12 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
 
     // Atualiza movimento em progresso — delta time injetado como [Data] in float dt
     [Query]
-    [All<MoveAction, Position, MoveStats, ActionComponent>]
+    [All<MoveAction, Position, MoveStats, State>]
     private void UpdateMove(in Entity entity,
         ref MoveAction action,
         ref Position pos,
         ref MoveStats stats,
-        ref ActionComponent state,
+        ref State state,
         [Data] in float dt) // <-- alteração aqui
     {
         try
@@ -101,7 +101,7 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
                 sDead &= ~StateFlags.Running;
                 sDead |= StateFlags.Idle;
                 
-                state = new ActionComponent { Value = sDead };
+                state = new State { Value = sDead };
                 return;
             }
 
@@ -140,7 +140,7 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
                 var s = state.Value;
                 s &= ~StateFlags.Running;
                 s |= StateFlags.Idle;
-                World.Set<ActionComponent>(entity, new ActionComponent { Value = s });
+                World.Set<State>(entity, new State { Value = s });
             }
             else
             {
@@ -150,7 +150,7 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
                     var s = state.Value;
                     s |= StateFlags.Running;
                     s &= ~StateFlags.Idle;
-                    World.Set<ActionComponent>(entity, new ActionComponent { Value = s });
+                    World.Set<State>(entity, new State { Value = s });
                 }
             }
         }

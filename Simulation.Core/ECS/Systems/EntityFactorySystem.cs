@@ -43,7 +43,7 @@ public sealed class EntityFactorySystem(World world, Group<float> container): Ba
             new AttackStats { CastTime = playerData.AttackCastTime, Cooldown = playerData.AttackCooldown, Damage = playerData.AttackDamage, AttackRange = playerData.AttackRange },
             new MoveStats { Speed = playerData.MoveSpeed },
             new Health { Current = playerData.HealthCurrent, Max = playerData.HealthMax },
-            new ActionComponent { Value = StateFlags.Idle }
+            new State { Value = StateFlags.Idle }
         );
         return e;
     }

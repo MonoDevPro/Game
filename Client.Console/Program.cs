@@ -84,8 +84,8 @@ public class ClientGameLoop
             // Loga o estado do jogador local a cada 5 segundos
             if ((DateTime.UtcNow - _lastStateLog).TotalSeconds >= 0.5f)
             {
-                _world.Add<InputComponent>(_localPlayer.Value,
-                    new InputComponent(IntentFlags.Move, InputFlags.Left));
+                _world.Add<Input>(_localPlayer.Value,
+                    new Input(IntentFlags.Move, InputFlags.Left));
                 
                 if (_localPlayer.HasValue && _world.IsAlive(_localPlayer.Value))
                 {
