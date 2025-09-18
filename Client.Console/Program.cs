@@ -1,19 +1,17 @@
-﻿using Microsoft.Extensions.Logging;
-using Simulation.Core.ECS;
-using Simulation.Core.Options;
-using Microsoft.Extensions.Options;
-using Arch.Core;
+﻿using Arch.Core;
 using Client.Console;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.ECS.Staging;
 using Simulation.Core.ECS.Systems;
-using Simulation.Core.Persistence.Contracts;
-using Simulation.Core.Persistence.Models;
+using Simulation.Core.Options;
 using Simulation.Network;
 
 // --- Configuração do Host ---
@@ -57,51 +55,54 @@ logger.LogInformation("Pipeline de simulação do cliente construída. A entrar 
 
 new ClientGameLoop(build.World, build.Systems).Run();
 
-public class ClientGameLoop
+namespace Client.Console
 {
-    private readonly World _world;
-    private readonly GroupSystems _group;
-    private Entity? _localPlayer;
-    private DateTime _lastStateLog = DateTime.UtcNow;
-
-    public ClientGameLoop(World world, GroupSystems group)
+    public class ClientGameLoop
     {
-        _world = world;
-        _group = group;
-    }
+        private readonly World _world;
+        private readonly GroupSystems _group;
+        private Entity? _localPlayer;
+        private DateTime _lastStateLog = DateTime.UtcNow;
 
-    public void Run()
-    {
-        var players = DataSeeder.GetPlayerSeeds();
-        
-        var player = players.First(a => a.Id == 1);
-        _localPlayer = EntityFactorySystem.CreatePlayerEntity(_world, player);
-        
-        while (true)
+        public ClientGameLoop(World world, GroupSystems group)
         {
-            _group.Update(0.016f); // Aproximadamente 60 FPS
+            _world = world;
+            _group = group;
+        }
 
-            // Loga o estado do jogador local a cada 5 segundos
-            if ((DateTime.UtcNow - _lastStateLog).TotalSeconds >= 0.5f)
+        public void Run()
+        {
+            var players = DataSeeder.GetPlayerSeeds();
+        
+            var player = players.First(a => a.Id == 1);
+            _localPlayer = EntityFactorySystem.CreatePlayerEntity(_world, player);
+        
+            while (true)
             {
-                _world.Add<Input>(_localPlayer.Value,
-                    new Input(IntentFlags.Move, InputFlags.Left));
-                
-                if (_localPlayer.HasValue && _world.IsAlive(_localPlayer.Value))
-                {
-                    var position = _world.Get<Position>(_localPlayer.Value);
-                    var health = _world.Get<Health>(_localPlayer.Value);
-                    Console.WriteLine($"[Estado do Jogador] Posição: ({position.X}, {position.Y}), Vida: {health.Current}/{health.Max}");
-                }
-                else
-                {
-                    Console.WriteLine("Jogador local ainda não atribuído ou não existe.");
-                }
-                _lastStateLog = DateTime.UtcNow;
-            }
+                _group.Update(0.016f); // Aproximadamente 60 FPS
 
-            // Simula um atraso para evitar uso excessivo da CPU
-            Thread.Sleep(10);
+                // Loga o estado do jogador local a cada 5 segundos
+                if ((DateTime.UtcNow - _lastStateLog).TotalSeconds >= 0.5f)
+                {
+                    _world.Add<Input>(_localPlayer.Value,
+                        new Input(IntentFlags.Move, InputFlags.Left));
+                
+                    if (_localPlayer.HasValue && _world.IsAlive(_localPlayer.Value))
+                    {
+                        var position = _world.Get<Position>(_localPlayer.Value);
+                        var health = _world.Get<Health>(_localPlayer.Value);
+                        System.Console.WriteLine($"[Estado do Jogador] Posição: ({position.X}, {position.Y}), Vida: {health.Current}/{health.Max}");
+                    }
+                    else
+                    {
+                        System.Console.WriteLine("Jogador local ainda não atribuído ou não existe.");
+                    }
+                    _lastStateLog = DateTime.UtcNow;
+                }
+
+                // Simula um atraso para evitar uso excessivo da CPU
+                Thread.Sleep(10);
+            }
         }
     }
 }

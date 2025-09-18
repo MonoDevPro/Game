@@ -7,6 +7,7 @@ using Server.Persistence.Repositories;
 using Server.Persistence.Staging;
 using Simulation.Core.ECS.Staging;
 using Simulation.Core.Persistence.Contracts;
+using Simulation.Core.Persistence.Contracts.Repositories;
 using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence;
@@ -31,6 +32,7 @@ public static class ServicesPersistenceExtensions
         
     services.AddSingleton<IWorldStaging, WorldStaging>();
 
+        services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IMapRepository, MapRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         

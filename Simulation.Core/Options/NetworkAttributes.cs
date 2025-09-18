@@ -1,4 +1,5 @@
 // filepath: Simulation.Core/Options/SyncAttribute.cs
+
 using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.Options;

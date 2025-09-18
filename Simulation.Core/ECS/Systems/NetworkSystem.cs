@@ -9,7 +9,7 @@ namespace Simulation.Core.ECS.Systems;
 /// Sistema dedicado a processar todos os eventos de rede de entrada uma vez por frame.
 /// Deve ser o primeiro sistema a ser executado na pipeline.
 /// </summary>
- [PipelineSystem(SystemStage.Net)]
+[PipelineSystem(SystemStage.Net)]
 public class NetworkSystem(World world, INetworkManager networkManager) : BaseSystem<World, float>(world)
 {
     public override void Initialize()

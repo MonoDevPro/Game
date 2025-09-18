@@ -1,6 +1,7 @@
 using Server.Persistence.Context;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.Persistence.Contracts;
+using Simulation.Core.Persistence.Contracts.Repositories;
 using Simulation.Core.Persistence.Models;
 
 namespace Server.Persistence.Repositories;

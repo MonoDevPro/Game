@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Staging;
 using Simulation.Core.Persistence.Contracts;
+using Simulation.Core.Persistence.Contracts.Repositories;
 
 namespace Server.Persistence.Staging;
 

@@ -3,21 +3,14 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Pipeline;
+using System;
 
 namespace Simulation.Core.ECS.Systems;
 
-/// <summary>
-/// Movement system adaptado ao estilo de source generators do Arch:
-/// - [Query] + [All]/[None] para iniciar e para atualizar movimentos em progresso.
-/// - Preserva flags existentes no StateComponent (opera por bits).
-/// - O delta time é injetado pelo gerador via [Data] in float dt.
-/// </summary>
- [PipelineSystem(SystemStage.Movement)]
- [DependsOn(typeof(IndexSystem))]
+[PipelineSystem(SystemStage.Movement, server: true, client: false)]
+[DependsOn(typeof(IndexSystem))]
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
-    [All<MoveAction>]
-    
     // Inicia movimento: entidades com InputComponent e sem MoveAction (ou seja, não estão se movendo)
     [Query]
     [All<Input, Position, MoveStats, State>]
@@ -28,58 +21,39 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
         ref MoveStats stats,
         ref State state)
     {
-        try
+        if ((state.Value & StateFlags.Dead) != 0) return; // morto não se move
+        if ((input.IntentState & IntentFlags.Move) == 0) return; // sem intenção de mover
+
+        var (dx, dy) = ResolveDirection(input.InputDir);
+        if (dx == 0 && dy == 0) return; // sem direção
+
+        var speed = stats.Speed;
+        if (speed <= 0f) return;
+
+        // distância cartesiana entre tiles (1 para cardinal, ~1.414 para diagonal)
+        var distance = MathF.Sqrt(dx * dx + dy * dy);
+        if (distance <= 0f) return;
+
+        var target = new Position { X = pos.X + dx, Y = pos.Y + dy };
+        var duration = distance / speed;
+        if (duration <= 0f) duration = 0.0001f;
+
+        var action = new MoveAction
         {
-            // não mover se morto
-            if ((state.Value & StateFlags.Dead) != 0) return;
+            Start = pos,
+            Target = target,
+            Elapsed = 0f,
+            Duration = duration
+        };
 
-            // precisa haver intenção de mover
-            if ((input.IntentState & IntentFlags.Move) == 0) return;
+        World.Add<MoveAction, Direction>(entity, action, new Direction { X = dx, Y = dy });
 
-            // resolve direção a partir dos InputFlags
-            var (dx, dy) = ResolveDirection(input.InputDir);
-            if (dx == 0 && dy == 0) return; // sem direção
-
-            // proteção contra speed inválido
-            var speed = stats.Speed;
-            if (speed <= 0f) return;
-
-            // distância cartesiana entre tiles (1 para cardinal, ~=1.414 para diagonal)
-            var distance = MathF.Sqrt(dx * dx + dy * dy);
-            if (distance <= 0f) return;
-
-            // target tile (inteiro)
-            var target = new Position
-            {
-                X = pos.X + dx,
-                Y = pos.Y + dy
-            };
-
-            // duração da ação = distância / velocidade (tiles por segundo)
-            var duration = distance / speed;
-            if (duration <= 0f) duration = 0.0001f;
-
-            var action = new MoveAction
-            {
-                Start = pos,
-                Target = target,
-                Elapsed = 0f,
-                Duration = duration
-            };
-
-            // adiciona a action e atualiza direção/estado (manipula flags por bits)
-            World.Add<MoveAction>(entity, action);
-            World.Set<Direction>(entity, new Direction { X = dx, Y = dy });
-
-            // set Running bit, clear Idle bit (preserva outros bits)
-            var newState = state.Value;
-            newState |= StateFlags.Running;
-            newState &= ~StateFlags.Idle;
-            World.Set<State>(entity, new State { Value = newState });
-        }
-        catch (Exception ex)
+        // set Running bit, clear Idle bit (preserva outros bits) — faz World.Set só se mudar
+        var updatedState = ApplyFlags(state, set: StateFlags.Running, clear: StateFlags.Idle);
+        if (updatedState.Value != state.Value)
         {
-            try { Console.WriteLine($"StartMove error: {ex.Message}"); } catch { /* ignored */ }
+            World.Set<State>(entity, updatedState);
+            state = updatedState;
         }
     }
 
@@ -91,74 +65,65 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
         ref Position pos,
         ref MoveStats stats,
         ref State state,
-        [Data] in float dt) // <-- alteração aqui
+        [Data] in float dt)
     {
-        try
+        // se está morto, cancela movimento e seta Idle (preserva outros bits)
+        if ((state.Value & StateFlags.Dead) != 0)
         {
-            // se está morto, cancela movimento e seta Idle (preserva outros bits)
-            if ((state.Value & StateFlags.Dead) != 0)
+            World.Remove<MoveAction>(entity);
+
+            var updatedDead = ApplyFlags(state, set: StateFlags.Idle, clear: StateFlags.Running);
+            if (updatedDead.Value != state.Value)
             {
-                World.Remove<MoveAction>(entity);
-                var sDead = state.Value;
-                sDead &= ~StateFlags.Running;
-                sDead |= StateFlags.Idle;
-                
-                state = new State { Value = sDead };
-                return;
+                World.Set<State>(entity, updatedDead);
+                state = updatedDead;
             }
 
-            // avança tempo usando dt
-            var elapsed = action.Elapsed;
-            elapsed += dt * stats.Speed; // escala por speed
-            if (elapsed < 0f) 
-                elapsed = 0f;
-            
-            World.Set<MoveAction>(entity, action with { Elapsed = elapsed });
-            
-            var t = action.Duration > 0f ? MathF.Min(1f, action.Elapsed / action.Duration) : 1f;
+            return;
+        }
 
-            // interpola (float) e arredonda para inteiro a atribuir Position
-            var fx = Lerp(action.Start.X, action.Target.X, t);
-            var fy = Lerp(action.Start.Y, action.Target.Y, t);
+        // avança tempo usando dt (elapsed em segundos — NOTA: usar dt, não dt * speed)
+        var elapsed = action.Elapsed + dt;
+        if (elapsed < 0f) elapsed = 0f;
 
-            var newPos = new Position
+        World.Set<MoveAction>(entity, action with { Elapsed = elapsed });
+
+        var t = action.Duration > 0f ? MathF.Min(1f, elapsed / action.Duration) : 1f;
+
+        // interpola (float) e arredonda para inteiro a atribuir Position
+        var fx = Lerp(action.Start.X, action.Target.X, t);
+        var fy = Lerp(action.Start.Y, action.Target.Y, t);
+
+        var newPos = new Position
+        {
+            X = (int)MathF.Round(fx),
+            Y = (int)MathF.Round(fy)
+        };
+
+        if (newPos.X != pos.X || newPos.Y != pos.Y)
+            World.Set<Position>(entity, newPos);
+
+        if (t >= 1f)
+        {
+            // movimento completo
+            World.Remove<MoveAction>(entity);
+
+            var finishedState = ApplyFlags(state, set: StateFlags.Idle, clear: StateFlags.Running);
+            if (finishedState.Value != state.Value)
             {
-                X = (int)MathF.Round(fx),
-                Y = (int)MathF.Round(fy)
-            };
-
-            // atualiza somente se mudou
-            if (newPos.X != pos.X || newPos.Y != pos.Y)
-            {
-                World.Set<Position>(entity, newPos);
-            }
-
-            if (t >= 1f)
-            {
-                // movimento completo
-                World.Remove<MoveAction>(entity);
-
-                // set Idle bit, clear Running bit (preserva outros bits)
-                var s = state.Value;
-                s &= ~StateFlags.Running;
-                s |= StateFlags.Idle;
-                World.Set<State>(entity, new State { Value = s });
-            }
-            else
-            {
-                // garante flag Running
-                if ((state.Value & StateFlags.Running) == 0)
-                {
-                    var s = state.Value;
-                    s |= StateFlags.Running;
-                    s &= ~StateFlags.Idle;
-                    World.Set<State>(entity, new State { Value = s });
-                }
+                World.Set<State>(entity, finishedState);
+                state = finishedState;
             }
         }
-        catch (Exception ex)
+        else
         {
-            try { Console.WriteLine($"UpdateMove error: {ex.Message}"); } catch { }
+            // garante flag Running (somente se ainda não estiver setada)
+            if ((state.Value & StateFlags.Running) == 0)
+            {
+                var runningState = ApplyFlags(state, set: StateFlags.Running, clear: StateFlags.Idle);
+                World.Set<State>(entity, runningState);
+                state = runningState;
+            }
         }
     }
 
@@ -177,4 +142,11 @@ public partial class MovementSystem(World world) : BaseSystem<World, float>(worl
     }
 
     private static float Lerp(int a, int b, float t) => a + (b - a) * t;
+
+    // ------- helpers de flags --------
+    private static State ApplyFlags(State current, StateFlags set, StateFlags clear)
+    {
+        var newVal = (current.Value | set) & ~clear;
+        return new State { Value = newVal };
+    }
 }

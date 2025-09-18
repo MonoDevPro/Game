@@ -13,10 +13,10 @@ namespace Simulation.Core.ECS.Indexes.Map;
 /// </summary>
 public class WorldSpatial(int minX, int minY, int width, int height)
 {
-    private class QuadTreeItem(Entity entity, Position pos) : IRectQuadStorable
+    private class QuadTreeItem(Entity entity, Rectangle bounds) : IRectQuadStorable
     {
         public Entity Entity { get; } = entity;
-        public Rectangle Rect { get; set; } = new(pos.X, pos.Y, 1, 1); // Assumindo tamanho 1x1
+        public Rectangle Rect { get; set; } = bounds;
     }
 
     private readonly QuadTreeRect<QuadTreeItem> _qtree = new(new Rectangle(minX, minY, width, height));
@@ -27,10 +27,10 @@ public class WorldSpatial(int minX, int minY, int width, int height)
     private static readonly Stack<List<QuadTreeItem>> ItemListPool = new();
     private const int PoolLimit = 20;
 
-    public void Add(Entity entity, Position position)
+    public void Add(Entity entity, Rectangle bounds)
     {
         if (_items.ContainsKey(entity)) return;
-        var item = new QuadTreeItem(entity, position);
+        var item = new QuadTreeItem(entity, bounds);
         _items[entity] = item;
         _qtree.Add(item);
     }
@@ -46,8 +46,23 @@ public class WorldSpatial(int minX, int minY, int width, int height)
         if (!_items.TryGetValue(entity, out var item))
             return false;
         
-        item.Rect = new Rectangle(position.X, position.Y, 1, 1);
+        if (item.Rect.X == position.X && item.Rect.Y == position.Y)
+            return true; // sem movimento
+        
+        item.Rect = item.Rect with { X = position.X, Y = position.Y };
         return _qtree.Move(item);
+    }
+    
+    public void Update(Entity entity, Rectangle bounds)
+    {
+        if (!_items.TryGetValue(entity, out var item))
+            return;
+
+        if (_qtree.Remove(item))
+        {
+            item.Rect = bounds;
+            _qtree.Add(item);
+        }
     }
 
     public void Query(Position center, int radius, List<Entity> results)
@@ -128,7 +143,6 @@ public class WorldSpatial(int minX, int minY, int width, int height)
 
     private static void ReturnPooledItemList(List<QuadTreeItem> list)
     {
-        if (list == null) return;
         if (ItemListPool.Count < PoolLimit)
         {
             list.Clear();

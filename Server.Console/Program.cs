@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Server.Authentication;
 using Server.Console;
 using Server.Persistence;
 using Server.Persistence.Context;
 using Server.Persistence.Seeds;
+using Simulation.Core.Auth;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.Options;
@@ -16,15 +18,25 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
         services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
+        services.Configure<AuthOptions>(context.Configuration.GetSection(AuthOptions.SectionName));
         
         services.AddLogging(configure => configure.AddConsole());
         
+        services.AddSingleton(TimeProvider.System);
+        
+        // 1. Registar o AuthService
+        services.AddSingleton<AuthService>();
+        
+        // 2. Configurar a Persistência de Dados
         services.AddPersistence(context.Configuration);
         
+        // 3. Configurar os Serviços de Rede.
         services.AddNetworking();
         
+        // 4. Configurar os Serviços do Mundo do Jogo e ECS
         services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
 
+        // 5. Registar o GameServerHost como um Hosted Service
         services.AddHostedService<GameServerHost>();
         
     })

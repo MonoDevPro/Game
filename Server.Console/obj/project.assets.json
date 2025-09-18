@@ -1726,6 +1726,19 @@
           "bin/placeholder/QuadTrees.dll": {}
         }
       },
+      "Server.Authentication/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Simulation.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Server.Authentication.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Server.Authentication.dll": {}
+        }
+      },
       "Server.Persistence/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -4252,6 +4265,11 @@
       "path": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
       "msbuildProject": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
     },
+    "Server.Authentication/1.0.0": {
+      "type": "project",
+      "path": "../Server.Authentication/Server.Authentication.csproj",
+      "msbuildProject": "../Server.Authentication/Server.Authentication.csproj"
+    },
     "Server.Persistence/1.0.0": {
       "type": "project",
       "path": "../Server.Persistence/Server.Persistence.csproj",
@@ -4275,6 +4293,7 @@
       "Microsoft.Extensions.Hosting >= 10.0.0-rc.1.25451.107",
       "Microsoft.Extensions.Logging >= 10.0.0-rc.1.25451.107",
       "Microsoft.Extensions.Logging.Console >= 10.0.0-rc.1.25451.107",
+      "Server.Authentication >= 1.0.0",
       "Server.Persistence >= 1.0.0",
       "Simulation.Core >= 1.0.0",
       "Simulation.Network >= 1.0.0"
@@ -4306,6 +4325,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj": {
+              "projectPath": "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj"
+            },
             "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj": {
               "projectPath": "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj"
             },

@@ -1,4 +1,4 @@
-namespace Simulation.Core.Persistence.Contracts;
+namespace Simulation.Core.Persistence.Contracts.Commons;
 
 public interface IRepositoryAsync<in TKey, TEntity>  : IAsyncDisposable
     where TKey : notnull
@@ -12,7 +12,7 @@ public interface IRepositoryAsync<in TKey, TEntity>  : IAsyncDisposable
     Task<IReadOnlyList<TEntity>> FindAsync(ISpecification<TEntity> spec, CancellationToken ct = default);
     
     // Write
-    Task AddAsync(TKey id, TEntity entity, CancellationToken ct = default);
+    Task AddAsync(TEntity entity, CancellationToken ct = default);
     Task<bool> UpdateAsync(TKey id, TEntity entity, CancellationToken ct = default);
     Task<bool> RemoveAsync(TKey id, CancellationToken ct = default);
 }

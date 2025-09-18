@@ -6,6 +6,7 @@ namespace Server.Persistence.Context;
 
 public class SimulationDbContext(DbContextOptions<SimulationDbContext> options) : DbContext(options)
 {
+    public DbSet<AccountModel> AccountModels { get; set; } // Authentication
     public DbSet<PlayerModel> PlayerModels { get; set; }
     public DbSet<MapModel> MapModels { get; set; }
 

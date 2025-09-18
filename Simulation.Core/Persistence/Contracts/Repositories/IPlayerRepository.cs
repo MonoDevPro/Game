@@ -1,6 +1,6 @@
 using Simulation.Core.ECS.Components;
 
-namespace Simulation.Core.Persistence.Contracts;
+namespace Simulation.Core.Persistence.Contracts.Repositories;
 
 /// <summary>
 /// Contrato para o repositório de jogadores, estendendo o repositório genérico

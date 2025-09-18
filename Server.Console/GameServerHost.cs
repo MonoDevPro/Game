@@ -9,6 +9,7 @@ using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.ECS.Systems;
 using Simulation.Core.Options;
 using Simulation.Core.Persistence.Contracts;
+using Simulation.Core.Persistence.Contracts.Repositories;
 using Simulation.Core.Persistence.Models;
 
 namespace Server.Console;
@@ -21,12 +22,13 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         
         // Cria scope de forma assíncrona (await using) para permitir DisposeAsync nos serviços.
         await using var scope = serviceProvider.CreateAsyncScope();
+        
+        // ECS Builder e Opções do Mundo
         var builder = scope.ServiceProvider.GetRequiredService<ISimulationBuilder<float>>();
         var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
-        
-        // Carregar o Mapa (LoadMapServiceAsync também usa CreateAsyncScope internamente)
+        // Carregar o mapa (ID 1 por agora)
         var mapService = await LoadMapServiceAsync(serviceProvider, mapId: 1);
-
+        // Construir o mundo e os sistemas
         var (groupSystems, world, worldManager) = builder
             .WithMapService(mapService)
             .WithWorldOptions(worldOptions)
@@ -41,7 +43,9 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             return;
         }
         
-        EntityFactorySystem.CreatePlayerEntity(world, playerData.Value);
+        var data = playerData.Value with{ MoveSpeed = 1.5f, PosX = 5, PosY = 5};
+        
+        EntityFactorySystem.CreatePlayerEntity(world, data);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -49,7 +53,7 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             await Task.Delay(15, stoppingToken);
         }
     }
-    
+
     static async Task<MapService> LoadMapServiceAsync(IServiceProvider services, int mapId)
     {
         await using var scope = services.CreateAsyncScope();

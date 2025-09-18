@@ -1,6 +1,7 @@
 using System.Reflection;
 using Arch.System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Simulation.Core.ECS.Pipeline;
 
@@ -51,6 +52,10 @@ public static class PipelineAutoRegistrar
             if (instance is null)
                 throw new InvalidOperationException($"Sistema {meta.ImplType.Name} não pôde ser instanciado.");
             group.Add(instance);
+            
+            var systemLoggerType = typeof(ILogger<>).MakeGenericType(meta.ImplType);
+            var logger = provider.GetService(systemLoggerType) as ILogger;
+            logger?.LogInformation("Sistema {System} registado na pipeline no estágio {Stage}.", meta.ImplType.Name, meta.Attr.Stage);
         }
     }
 

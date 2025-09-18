@@ -35,7 +35,7 @@ public class ComponentReceiverSystem<T> : BaseSystem<World, float> where T : str
             if (!index.TryGetPlayerEntity(packet.PlayerId, out var playerEntity)) 
                 return;
             
-            Console.WriteLine($"[Receiver] Recebido {typeof(T).Name} para PlayerId {packet.PlayerId} (Entity {playerEntity})");
+            Console.WriteLine($"[Receiver] Recebido {typeof(T).Name} para PlayerId {packet.PlayerId} (Entity {playerEntity}), Data: {packet.Data.ToString()}");
             
             // Garante que o componente exista e aplica o valor recebido.
             ref var component = ref world.AddOrGet<T>(playerEntity);
