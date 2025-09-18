@@ -9,19 +9,19 @@ public class PacketProcessor(NetworkListener listener, ILogger<PacketProcessor>?
 {
     private delegate void UntypedPacketHandler(INetPeerAdapter fromPeer, NetPacketReader reader);
 
-    private readonly Dictionary<Type, byte> _typeToId = new();
-    private readonly Dictionary<byte, UntypedPacketHandler> _idToHandler = new();
-    private byte _nextId = 1;
+    private readonly Dictionary<ulong, UntypedPacketHandler> _idToHandler = new();
 
     public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
     {
-        var packetType = typeof(T);
-        if (_typeToId.ContainsKey(packetType)) return;
-
-        var packetId = _nextId++;
-        _typeToId[packetType] = packetId;
-
-        _idToHandler[packetId] = (fromPeer, reader) =>
+        var hash = GetHash<T>();
+        
+        if (_idToHandler.ContainsKey(hash))
+        {
+            logger?.LogWarning("O handler para o pacote {PacketType} já foi registado.", typeof(T).Name);
+            return;
+        }
+        
+        _idToHandler[hash] = (fromPeer, reader) =>
         {
             try
             {
@@ -30,7 +30,7 @@ public class PacketProcessor(NetworkListener listener, ILogger<PacketProcessor>?
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "Erro ao desserializar ou manipular o pacote {PacketType}", packetType.Name);
+                logger?.LogError(ex, "Erro ao desserializar ou manipular o pacote {PacketType}", typeof(T).Name);
             }
         };
     }
@@ -38,23 +38,36 @@ public class PacketProcessor(NetworkListener listener, ILogger<PacketProcessor>?
     public void HandleData(NetPeer fromPeer, NetPacketReader dataReader)
     {
         if (dataReader.AvailableBytes < 1) return;
-        var packetId = dataReader.GetByte();
+        var packetId = dataReader.GetULong();
         if (_idToHandler.TryGetValue(packetId, out var handler))
             handler(listener.ConnectedPeers[fromPeer.Id], dataReader);
         else
             logger?.LogWarning("Nenhum handler registado para o PacketID {PacketId}", packetId);
     }
     
-    public byte GetPacketId(Type type)
+    public ulong GetPacketId<T>() where T : struct, IPacket
     {
-        if (_typeToId.TryGetValue(type, out var id))
-            return id;
-        logger?.LogCritical($"O tipo de pacote {type.Name} não foi registado.");
-        throw new InvalidOperationException($"O tipo de pacote {type.Name} não foi registado.");
+        var hash = GetHash<T>();
+        return hash;
     }
 
     public bool IsRegistered<T>() where T : struct, IPacket
     {
-        return _typeToId.ContainsKey(typeof(T));
+        var hash = GetHash<T>();
+        return _idToHandler.ContainsKey(hash);
     }
+    
+    private ulong GetHash<T>() => PacketProcessor.HashCache<T>.Id;
+    
+    private static class HashCache<T>
+    {
+        public static readonly ulong Id;
+        static HashCache()
+        {
+            ulong num1 = 14695981039346656037;
+            foreach (ulong num2 in typeof (T).ToString())
+                num1 = (num1 ^ num2) * 1099511628211UL /*0x0100000001B3*/;
+            Id = num1;
+        }
+    } 
 }

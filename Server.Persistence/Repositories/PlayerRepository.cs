@@ -18,9 +18,7 @@ public class PlayerRepository(SimulationDbContext context) : EFCoreRepository<in
         var playerModel = await _context.PlayerModels.FindAsync([data.Id], cancellationToken: ct);
 
         if (playerModel == null)
-        {
             return false; // Jogador não encontrado
-        }
 
         // Usa o método de extensão para mapear os dados
         playerModel.UpdateFromData(data);
@@ -32,34 +30,21 @@ public class PlayerRepository(SimulationDbContext context) : EFCoreRepository<in
         return true;
     }
 
-    public async Task<PlayerModel?> GetByNameAsync(string name, CancellationToken ct = default)
+    public async Task<PlayerData?> GetPlayerByName(string name, CancellationToken ct = default)
     {
-        return await _context.PlayerModels
+        var playerModel = await _context.PlayerModels
             .AsQueryable()
             .Where(p => p.Name == name)
             .FirstOrDefaultAsync(ct);
+        
+        if (playerModel == null) return null;
+        return PlayerData.FromModel(playerModel);
     }
 
-    public async Task<PlayerModel> CreateWithDefaultsAsync(string name, string passwordHash, CancellationToken ct = default)
+    public async Task<PlayerData?> GetPlayerById(int id, CancellationToken ct = default)
     {
-        // Defaults iniciais simples; podem ser extraídos para config no futuro
-        var player = new PlayerModel
-        {
-            Id = 1,
-            Name = name,
-            PasswordHash = passwordHash,
-            PosX = 1,
-            PosY = 1,
-            MoveSpeed = 1.0f,
-            AttackCastTime = 1.0f,
-            AttackCooldown = 1.0f,
-            HealthMax = 100,
-            HealthCurrent = 100,
-            AttackDamage = 10,
-            AttackRange = 1
-        };
-        _context.PlayerModels.Add(player);
-        await _context.SaveChangesAsync(ct);
-        return player;
+        var playerModel = await _context.PlayerModels.FindAsync([id], cancellationToken: ct);
+        if (playerModel == null) return null;
+        return PlayerData.FromModel(playerModel);
     }
 }

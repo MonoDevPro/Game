@@ -14,7 +14,7 @@ public class PacketSender(NetManager manager, PacketProcessor processor)
     
     private void WritePacketToWriter<T>(NetDataWriter writer, T packet) where T : struct, IPacket
     {
-        var packetId = processor.GetPacketId(typeof(T));
+        var packetId = processor.GetPacketId<T>();
         writer.Put(packetId);
         writer.Put(MemoryPackSerializer.Serialize(packet)); 
     }

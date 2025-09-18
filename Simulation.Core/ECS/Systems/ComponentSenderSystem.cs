@@ -41,6 +41,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
     private ulong _tickCounter = 0;
 
     // Queries reutilizadas para minimizar custo.
+    private readonly Query _onChangeEnsureShadow;
     private readonly Query _onChangeQuery;
     private readonly Query _onTickQuery;
     private readonly Query _oneShotQuery;
@@ -53,6 +54,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
         _channelEndpoint = channelEndpoint;
         _attribute = attribute;
 
+        _onChangeEnsureShadow = world.Query(new QueryDescription().WithAll<PlayerId, T>().WithNone<Shadow<T>>());
         _onChangeQuery = world.Query(new QueryDescription().WithAll<PlayerId, T, Shadow<T>>());
         _onTickQuery   = world.Query(new QueryDescription().WithAll<PlayerId, T>());
         _oneShotQuery  = world.Query(new QueryDescription().WithAll<PlayerId, T>());
@@ -66,8 +68,27 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
         _tickCounter++;
 
         if (_attribute.Trigger.HasFlag(SyncTrigger.OneShot))  SyncOneShot();
-        if (_attribute.Trigger.HasFlag(SyncTrigger.OnChange)) SyncOnChange();
+        if (_attribute.Trigger.HasFlag(SyncTrigger.OnChange)) EnsureShadowExists(); SyncOnChange();
         if (_attribute.Trigger.HasFlag(SyncTrigger.OnTick))   SyncOnTick();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void EnsureShadowExists()
+    {
+        foreach (ref var chunk in _onChangeEnsureShadow.GetChunkIterator())
+        {
+            ref var entityFirstElement = ref chunk.Entity(0);
+            ref var playerIdFirstElement = ref chunk.GetFirst<PlayerId>();
+            ref var componentFirstElement = ref chunk.GetFirst<T>();
+
+            foreach (var entityIndex in chunk)
+            {
+                ref readonly var entity = ref Unsafe.Add(ref entityFirstElement, entityIndex);
+                ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
+                ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
+                World.Add<Shadow<T>>(entity, new Shadow<T>(component));
+            }
+        }
     }
 
     /// <summary>
@@ -148,9 +169,29 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
     /// <summary>
     /// Cria o pacote e envia via endpoint usando o método de entrega definido.
     /// </summary>
+    /// <summary>
+    /// Método auxiliar para criar e enviar o pacote, respeitando o SyncTarget.
+    /// </summary>
     private void SendComponentUpdate(int playerId, T component, NetworkDeliveryMethod method)
     {
         var packet = new ComponentSyncPacket<T>(playerId, _tickCounter, component);
-        _channelEndpoint.SendToAll(packet, method);
+
+        // Decide como enviar com base no atributo
+        switch (_attribute.Target)
+        {
+            // Envia apenas para o jogador dono da entidade
+            case SyncTarget.Unicast:
+                if (_attribute.Authority == Authority.Client)
+                    _channelEndpoint.SendToServer(packet, method);
+                else
+                    _channelEndpoint.SendToPeerId(playerId, packet, method);
+                break;
+
+            // Envia para todos os jogadores (comportamento padrão)
+            case SyncTarget.Broadcast:
+            default:
+                _channelEndpoint.SendToAll(packet, method);
+                break;
+        }
     }
 }

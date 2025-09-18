@@ -13,9 +13,11 @@ namespace Simulation.Core.ECS.Systems;
 /// - O delta time é injetado pelo gerador via [Data] in float dt.
 /// </summary>
  [PipelineSystem(SystemStage.Movement)]
- [DependsOn(typeof(IndexSystem))]
+ [DependsOn(typeof(SpatialIndexSystem))]
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
+    [All<MoveAction>]
+    
     // Inicia movimento: entidades com InputComponent e sem MoveAction (ou seja, não estão se movendo)
     [Query]
     [All<Input, Position, MoveStats, State>]

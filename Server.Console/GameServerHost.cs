@@ -2,9 +2,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Server.Persistence.Seeds;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Indexes.Map;
+using Simulation.Core.ECS.Systems;
 using Simulation.Core.Options;
 using Simulation.Core.Persistence.Contracts;
 using Simulation.Core.Persistence.Models;
@@ -30,6 +32,16 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             .WithWorldOptions(worldOptions)
             .WithRootServices(scope.ServiceProvider)
             .Build();
+        
+        var repository = scope.ServiceProvider.GetRequiredService<IPlayerRepository>();
+        var playerData = await repository.GetPlayerByName("Filipe", stoppingToken);
+        if (playerData == null)
+        {
+            logger.LogError("Jogador 'Filipe' não encontrado na base de dados. Encerrando o servidor.");
+            return;
+        }
+        
+        EntityFactorySystem.CreatePlayerEntity(world, playerData.Value);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -41,59 +53,59 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
     static async Task<MapService> LoadMapServiceAsync(IServiceProvider services, int mapId)
     {
         await using var scope = services.CreateAsyncScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var mapRepository = scope.ServiceProvider.GetRequiredService<IMapRepository>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        var mapRepository = scope.ServiceProvider.GetRequiredService<IMapRepository>();
 
-    logger.LogInformation("A carregar o mapa com ID {MapId}...", mapId);
+        logger.LogInformation("A carregar o mapa com ID {MapId}...", mapId);
 
-    var mapData = await mapRepository.GetMapAsync(mapId);
-    if (mapData == null)
-        throw new InvalidOperationException("MapData não encontrado no repositório.");
+        var mapData = await mapRepository.GetMapAsync(mapId);
+        if (mapData == null)
+            throw new InvalidOperationException("MapData não encontrado no repositório.");
 
-    var mapService = MapService.CreateFromTemplate(mapData.Value);
+        var mapService = MapService.CreateFromTemplate(mapData.Value);
 
-    // --- Preparar dados para log (sem usar MapData.ToString) ---
-    int tilesLen = mapData.Value.TilesRowMajor?.Length ?? 0;
-    int collLen = mapData.Value.CollisionRowMajor?.Length ?? 0;
+        // --- Preparar dados para log (sem usar MapData.ToString) ---
+        int tilesLen = mapData.Value.TilesRowMajor?.Length ?? 0;
+        int collLen = mapData.Value.CollisionRowMajor?.Length ?? 0;
 
-    // Preview dos primeiros N tiles (do row-major original, mais legível)
-    const int previewCount = 8;
-    string tilesPreview;
-    if (tilesLen == 0)
-    {
-        tilesPreview = "(none)";
-    }
-    else
-    {
-        var tiles = mapData.Value.TilesRowMajor ?? Array.Empty<TileType>();
-        var previewSeq = tiles
-            .Take(Math.Min(previewCount, tiles.Length))
-            .Select(t => t.ToString());
+        // Preview dos primeiros N tiles (do row-major original, mais legível)
+        const int previewCount = 8;
+        string tilesPreview;
+        if (tilesLen == 0)
+        {
+            tilesPreview = "(none)";
+        }
+        else
+        {
+            var tiles = mapData.Value.TilesRowMajor ?? Array.Empty<TileType>();
+            var previewSeq = tiles
+                .Take(Math.Min(previewCount, tiles.Length))
+                .Select(t => t.ToString());
         
-        tilesPreview = string.Join(", ", previewSeq);
-        if (tilesLen > previewCount) tilesPreview += ", ...";
-    }
+            tilesPreview = string.Join(", ", previewSeq);
+            if (tilesLen > previewCount) tilesPreview += ", ...";
+        }
 
-    // Conta todas as células bloqueadas usando o método que você adicionou.
-    // Se o mapa for muito grande e você preferir amostragem, passe parallel:true ou
-    // use CountBlockedCellsSample (se implementar).
-    long blockedCells = mapService.CountBlockedCells(parallel: false);
+        // Conta todas as células bloqueadas usando o método que você adicionou.
+        // Se o mapa for muito grande e você preferir amostragem, passe parallel:true ou
+        // use CountBlockedCellsSample (se implementar).
+        long blockedCells = mapService.CountBlockedCells(parallel: false);
 
-    // Log estruturado com todos os campos importantes
-    logger.LogInformation(
-        "Mapa carregado: Name={MapName}, Id={MapId}, Size={Width}x{Height}, UsePadded={UsePadded}, BorderBlocked={BorderBlocked}, TilesLength={TilesLength}, CollisionLength={CollisionLength}, TilesPreview=[{TilesPreview}], BlockedCells={BlockedCells}",
-        mapService.Name,
-        mapService.Id,
-        mapService.Width,
-        mapService.Height,
-        mapService.UsePadded,
-        mapService.BorderBlocked,
-        tilesLen,
-        collLen,
-        tilesPreview,
-        blockedCells
-    );
+        // Log estruturado com todos os campos importantes
+        logger.LogInformation(
+            "Mapa carregado: Name={MapName}, Id={MapId}, Size={Width}x{Height}, UsePadded={UsePadded}, BorderBlocked={BorderBlocked}, TilesLength={TilesLength}, CollisionLength={CollisionLength}, TilesPreview=[{TilesPreview}], BlockedCells={BlockedCells}",
+            mapService.Name,
+            mapService.Id,
+            mapService.Width,
+            mapService.Height,
+            mapService.UsePadded,
+            mapService.BorderBlocked,
+            tilesLen,
+            collLen,
+            tilesPreview,
+            blockedCells
+        );
 
-    return mapService;
+        return mapService;
     }
 }

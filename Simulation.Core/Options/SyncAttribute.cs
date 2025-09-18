@@ -9,10 +9,12 @@ namespace Simulation.Core.Options;
 /// </summary>
 public enum Authority { Server, Client }
 
-/// <summary>
-/// Modo de envio (futuro: Unicast ou Broadcast explícito).
-/// </summary>
-public enum SendMode { Unicast, Broadcast }
+// Nova enum para o alvo do envio
+public enum SyncTarget : byte
+{
+    Broadcast, // Envia para todos (padrão)
+    Unicast    // Envia apenas para o dono da entidade
+}
 
 /// <summary>
 /// Flags que definem quando o componente deve ser sincronizado.
@@ -24,37 +26,20 @@ public enum SyncTrigger : byte
     OnChange = 1 << 0, // Envia quando houver mudança detectada
     OnTick   = 1 << 1, // Envia em intervalos de tick (respeitando SyncRateTicks)
     OneShot  = 1 << 2, // Envia uma única vez e remove
+    //OnAdd    = 1 << 3,  // Envia quando o componente é adicionado (novo)
+    //OnRemove = 1 << 4   // Envia quando o componente é removido
 }
 
 /// <summary>
 /// Atributo aplicado a structs que devem ser sincronizados via rede.
 /// Controla autoridade, gatilhos e parâmetros de transmissão.
 /// </summary>
-[AttributeUsage(AttributeTargets.Struct)]
+[AttributeUsage(AttributeTargets.Struct, Inherited = false, AllowMultiple = false)]
 public sealed class SyncAttribute : Attribute
 {
-    /// <summary>
-    /// Lado que possui a fonte autoritativa do valor (define onde o sender será registrado).
-    /// </summary>
     public Authority Authority { get; init; } = Authority.Server;
-
-    /// <summary>
-    /// Gatilhos de sincronização combinados (OnChange, OnTick, OneShot).
-    /// </summary>
     public SyncTrigger Trigger { get; init; } = SyncTrigger.OnChange;
-
-    /// <summary>
-    /// Intervalo em ticks para SyncTrigger.OnTick (0 ou 1 = todo tick).
-    /// </summary>
+    public SyncTarget Target { get; init; } = SyncTarget.Broadcast; // Definindo um padrão explícito
     public ushort SyncRateTicks { get; init; } = 0;
-
-    /// <summary>
-    /// Modo de envio planejado (atualmente sem lógica diferenciada implementada).
-    /// </summary>
-    public SendMode SendMode { get; init; } = SendMode.Unicast;
-
-    /// <summary>
-    /// Método de entrega na camada de transporte.
-    /// </summary>
     public NetworkDeliveryMethod DeliveryMethod { get; init; } = NetworkDeliveryMethod.ReliableOrdered;
 }

@@ -39,7 +39,7 @@ public class GroupSystems : ISystem<float>
         // Regista os sistemas usando o método de extensão na instância interna.
         _groupSystems.RegisterAttributedSystems(ecsServiceProvider, isServer);
         
-        _groupSystems.RegisterAttributedSyncSystems(ecsServiceProvider);
+        _groupSystems.RegisterAttributedSyncSystems(ecsServiceProvider, isServer);
     }
 
     /// <summary>

@@ -13,8 +13,6 @@ internal class ChannelEndpoint(
     ILogger<ChannelEndpoint> logger)
     : IChannelEndpoint
 {
-    private delegate void UntypedPacketHandler(NetPeer fromPeer, NetPacketReader reader);
-
     public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
         => processor.RegisterHandler(handler);
     

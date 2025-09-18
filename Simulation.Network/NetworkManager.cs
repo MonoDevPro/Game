@@ -20,6 +20,7 @@ public class NetworkManager : INetworkManager
         var router = new ChannelRouter();
         Listener = new NetworkListener(router, options, factory.CreateLogger<NetworkListener>());
         Net = new NetManager(Listener) { DisconnectTimeout = options.DisconnectTimeoutMs };
+        Net.ChannelsCount = (byte)Enum.GetValues(typeof(NetworkChannel)).Length;
         
         ProcessorFactory = new ChannelProcessorFactory(Net, Listener, router, factory);
     }

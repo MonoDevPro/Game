@@ -2,8 +2,8 @@ namespace Simulation.Core.Network.Contracts;
 
 public enum NetworkChannel : byte
 {
-    Authentication = 1,
-    Simulation = 2,
+    Authentication = 0,
+    Simulation = 1,
 }
 
 /// <summary>Sending method type</summary>
