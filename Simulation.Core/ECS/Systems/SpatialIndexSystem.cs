@@ -24,7 +24,12 @@ public sealed partial class SpatialIndexSystem(World world, WorldSpatial spatial
     {
         if (!currentPos.Equals(lastPos.Position))
         {
-            spatial.Update(entity, currentPos);
+            if (!spatial.Move(entity, currentPos) || map.IsBlocked(currentPos))
+            {
+                // Reverte para a última posição válida se a nova for inválida
+                currentPos = lastPos.Position;
+            }
+            
             World.Set<LastKnownPosition>(entity, new LastKnownPosition(currentPos));
         }
     }

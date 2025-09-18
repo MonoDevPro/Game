@@ -41,15 +41,13 @@ public class WorldSpatial(int minX, int minY, int width, int height)
             _qtree.Remove(item);
     }
 
-    public void Update(Entity entity, Position newPosition)
+    public bool Move(Entity entity, Position position)
     {
-        if (_items.TryGetValue(entity, out var item))
-        {
-            // A forma mais segura de atualizar é remover e adicionar novamente
-            _qtree.Remove(item);
-            item.Rect = new Rectangle(newPosition.X, newPosition.Y, 1, 1);
-            _qtree.Add(item);
-        }
+        if (!_items.TryGetValue(entity, out var item))
+            return false;
+        
+        item.Rect = new Rectangle(position.X, position.Y, 1, 1);
+        return _qtree.Move(item);
     }
 
     public void Query(Position center, int radius, List<Entity> results)
