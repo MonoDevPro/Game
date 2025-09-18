@@ -1,10 +1,11 @@
+using Microsoft.Extensions.Options;
 using Simulation.Core.Options;
 
 namespace Server.Authentication.Session;
 
 public record SessionInfo(Guid Token, int AccountId, DateTime CreatedAt, DateTime ExpiresAt, int PeerId);
 
-public class SessionManager(AuthOptions options, TimeProvider time)
+public class SessionManager(IOptions<AuthOptions> options, TimeProvider time)
 {
     private readonly Dictionary<Guid, SessionInfo> _sessions = new();
     private readonly Dictionary<int, Guid> _peerToToken = new();
@@ -13,7 +14,7 @@ public class SessionManager(AuthOptions options, TimeProvider time)
     {
         var token = Guid.NewGuid();
         var now = time.GetUtcNow();
-        var info = new SessionInfo(token, accountId, now.DateTime, now.DateTime.AddMinutes(options.DefaultSessionLifetimeMinutes), peerId);
+        var info = new SessionInfo(token, accountId, now.DateTime, now.DateTime.AddMinutes(options.Value.DefaultSessionLifetimeMinutes), peerId);
         _sessions[token] = info;
         _peerToToken[peerId] = token;
         return token;

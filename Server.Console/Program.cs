@@ -2,11 +2,11 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Server.Authentication;
+using Server.Authentication.Session;
 using Server.Console;
 using Server.Persistence;
 using Server.Persistence.Context;
 using Server.Persistence.Seeds;
-using Simulation.Core.Auth;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.Options;
@@ -26,6 +26,7 @@ var host = Host.CreateDefaultBuilder(args)
         
         // 1. Registar o AuthService
         services.AddSingleton<AuthService>();
+        services.AddSingleton<SessionManager>();
         
         // 2. Configurar a Persistência de Dados
         services.AddPersistence(context.Configuration);

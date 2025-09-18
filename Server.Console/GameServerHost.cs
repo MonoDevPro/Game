@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Server.Authentication;
 using Server.Persistence.Seeds;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Components;
@@ -34,7 +35,6 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             .WithWorldOptions(worldOptions)
             .WithRootServices(scope.ServiceProvider)
             .Build();
-        
         var repository = scope.ServiceProvider.GetRequiredService<IPlayerRepository>();
         var playerData = await repository.GetPlayerByName("Filipe", stoppingToken);
         if (playerData == null)
@@ -42,14 +42,18 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             logger.LogError("Jogador 'Filipe' não encontrado na base de dados. Encerrando o servidor.");
             return;
         }
-        
         var data = playerData.Value with{ MoveSpeed = 1.5f, PosX = 5, PosY = 5};
-        
         EntityFactorySystem.CreatePlayerEntity(world, data);
+        
+        // AuthService
+        var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            authService.AuthUpdate(0.016f);
+            
             groupSystems.Update(0.016f);
+            
             await Task.Delay(15, stoppingToken);
         }
     }

@@ -15,7 +15,7 @@ public class QueuedHostedService(IServiceProvider serviceProvider, IBackgroundTa
             var workItem = await taskQueue.DequeueAsync(stoppingToken);
 
             // O escopo é criado AQUI, de forma padronizada para cada item da fila.
-            using var scope = serviceProvider.CreateScope();
+            await using var scope = serviceProvider.CreateAsyncScope();
             try
             {
                 await workItem(scope.ServiceProvider, stoppingToken);
