@@ -9,7 +9,6 @@ namespace Simulation.Core.ECS.Systems.Client;
 /// <summary>
 /// Sistema de "renderização" que usa o Source Generator do Arch.
 /// </summary>
- [PipelineSystem(SystemStage.Rendering)]
 public partial class RenderSystem(World world) : BaseSystem<World, float>(world)
 {
     // A query é definida diretamente no método.

@@ -3,10 +3,10 @@ using Arch.Core;
 using Arch.System;
 using MemoryPack;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.Network;
 
-namespace Simulation.Core.ECS.Systems;
+namespace Simulation.Core.ECS.Sync;
 
 /// <summary>
 /// Estrutura sombra para armazenar o último valor enviado de um componente
@@ -26,18 +26,18 @@ public readonly partial record struct ComponentSyncPacket<T>(int PlayerId, ulong
 
 /// <summary>
 /// Sistema que envia para a rede valores de componentes <typeparamref name="T"/> baseando-se
-/// no <see cref="SyncAttribute"/> associado ao tipo:
-///  - <see cref="SyncTrigger.OnChange"/>: envia somente quando detecta diferença em relação ao Shadow.
-///  - <see cref="SyncTrigger.OnTick"/>: envia a cada N ticks (SyncRateTicks) ou todo tick se 0/1.
-///  - <see cref="SyncTrigger.OneShot"/>: envia uma vez e remove o componente.
+/// no <see cref="SyncOptions"/> associado ao tipo:
+///  - <see cref="SyncFrequency.OnChange"/>: envia somente quando detecta diferença em relação ao Shadow.
+///  - <see cref="SyncFrequency.OnTick"/>: envia a cada N ticks (SyncRateTicks) ou todo tick se 0/1.
+///  - <see cref="SyncFrequency.OneShot"/>: envia uma vez e remove o componente.
 /// 
 /// Este sistema é registrado automaticamente somente no lado que detém a Authority declarada.
 /// </summary>
 /// <typeparam name="T">Tipo de componente sincronizado.</typeparam>
-public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struct, IEquatable<T>
+public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEquatable<T>
 {
     private readonly IChannelEndpoint _channelEndpoint;
-    private readonly SyncAttribute _attribute;
+    private readonly SyncOptions _options;
     private ulong _tickCounter = 0;
 
     // Queries reutilizadas para minimizar custo.
@@ -49,10 +49,10 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
     /// <summary>
     /// Constrói o sistema configurando queries conforme a composição de entidades.
     /// </summary>
-    public ComponentSenderSystem(World world, IChannelEndpoint channelEndpoint, SyncAttribute attribute) : base(world)
+    public NetworkOutbox(World world, IChannelEndpoint channelEndpoint, SyncOptions options) : base(world)
     {
         _channelEndpoint = channelEndpoint;
-        _attribute = attribute;
+        _options = options;
 
         _onChangeEnsureShadow = world.Query(new QueryDescription().WithAll<PlayerId, T>().WithNone<Shadow<T>>());
         _onChangeQuery = world.Query(new QueryDescription().WithAll<PlayerId, T, Shadow<T>>());
@@ -67,9 +67,9 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
     {
         _tickCounter++;
 
-        if (_attribute.Trigger.HasFlag(SyncTrigger.OneShot))  SyncOneShot();
-        if (_attribute.Trigger.HasFlag(SyncTrigger.OnChange)) EnsureShadowExists(); SyncOnChange();
-        if (_attribute.Trigger.HasFlag(SyncTrigger.OnTick))   SyncOnTick();
+        if (_options.Frequency.HasFlag(SyncFrequency.OneShot))  SyncOneShot();
+        if (_options.Frequency.HasFlag(SyncFrequency.OnChange)) EnsureShadowExists(); SyncOnChange();
+        if (_options.Frequency.HasFlag(SyncFrequency.OnTick))   SyncOnTick();
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,7 +112,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
                 if (component.Equals(shadow.Value)) 
                     continue;
 
-                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
                 shadow = new Shadow<T>(component);
             }
         }
@@ -124,7 +124,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SyncOnTick()
     {
-        if (_attribute.SyncRateTicks > 1 && _tickCounter % _attribute.SyncRateTicks != 0) 
+        if (_options.SyncRateTicks > 1 && _tickCounter % _options.SyncRateTicks != 0) 
             return;
         
         foreach (ref var chunk in _onTickQuery.GetChunkIterator())
@@ -137,7 +137,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
             }
         }
     }
@@ -160,7 +160,7 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendComponentUpdate(playerId.Value, component, _attribute.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
                 World.Remove<T>(entity);
             }
         }
@@ -177,11 +177,11 @@ public class ComponentSenderSystem<T> : BaseSystem<World, float> where T : struc
         var packet = new ComponentSyncPacket<T>(playerId, _tickCounter, component);
 
         // Decide como enviar com base no atributo
-        switch (_attribute.Target)
+        switch (_options.Target)
         {
             // Envia apenas para o jogador dono da entidade
             case SyncTarget.Unicast:
-                if (_attribute.Authority == Authority.Client)
+                if (_options.Authority == Authority.Client)
                     _channelEndpoint.SendToServer(packet, method);
                 else
                     _channelEndpoint.SendToPeerId(playerId, packet, method);

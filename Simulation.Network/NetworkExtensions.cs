@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network;
 

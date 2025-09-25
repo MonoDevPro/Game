@@ -1,6 +1,6 @@
 using Simulation.Core.ECS.Components;
 
-namespace Simulation.Core.Ports;
+namespace Simulation.Core.Ports.ECS;
 
 public interface IWorldSaver
 {

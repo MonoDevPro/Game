@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.Network;
 
 namespace Server.Console;
 
@@ -19,18 +20,20 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         // ECS Builder e Opções do Mundo
         var builder = scope.ServiceProvider.GetRequiredService<ISimulationBuilder<float>>();
         var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
-        var mapService = scope.ServiceProvider.GetRequiredService<MapService>();
         var authorityOptions = scope.ServiceProvider.GetRequiredService<IOptions<AuthorityOptions>>().Value;
         
-        var (groupSystems, world, worldManager) = builder
+        var groupSystems = builder
             .WithAuthorityOptions(authorityOptions)
-            .WithMapService(mapService)
             .WithWorldOptions(worldOptions)
             .WithRootServices(scope.ServiceProvider)
             .Build();
         
+        var networkManager = scope.ServiceProvider.GetRequiredService<INetworkManager>();
+        
         while (!stoppingToken.IsCancellationRequested)
         {
+            networkManager.PollEvents();
+            
             groupSystems.Update(0.016f);
             
             await Task.Delay(15, stoppingToken);

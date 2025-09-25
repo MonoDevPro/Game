@@ -1,6 +1,6 @@
 using System.Net;
 using LiteNetLib;
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network;
 

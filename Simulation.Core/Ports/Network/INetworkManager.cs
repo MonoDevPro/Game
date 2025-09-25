@@ -1,6 +1,6 @@
 using Simulation.Core.Options;
 
-namespace Simulation.Core.Network.Contracts;
+namespace Simulation.Core.Ports.Network;
 
 /// <summary>
 /// Abstração para o manager de rede; expõe operações de inicialização, envio, broadcast e consulta de peers.

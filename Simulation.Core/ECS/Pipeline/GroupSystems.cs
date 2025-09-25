@@ -2,38 +2,104 @@ using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Services;
 using Simulation.Core.ECS.Sync;
+using Simulation.Core.ECS.Systems;
+using Simulation.Core.ECS.Systems.Resources;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.ECS;
+using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.ECS.Pipeline;
 
 public class GroupSystems : ISystem<float>
 {
-    // O grupo interno que contém todos os sistemas da pipeline.
     private readonly Group<float> _groupSystems;
+    private readonly IServiceProvider _internalProvider;
 
-    public GroupSystems(ILoggerFactory factoryLogger, World world, WorldManager worldManager, AuthorityOptions authorityOptions)
+    public GroupSystems(IServiceProvider externalProvider, IChannelEndpoint endpoint, AuthorityOptions authorityOptions, WorldOptions worldOptions)
     {
         bool isServer = authorityOptions.Authority == Authority.Server;
+        var groupName = isServer ? "ServerSystems" : "ClientSystems";
         
-        _groupSystems = new Group<float>(isServer ? "ServerSystems" : "ClientSystems");
+        var world = World.Create(
+            chunkSizeInBytes: worldOptions.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: worldOptions.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: worldOptions.ArchetypeCapacity,
+            entityCapacity: worldOptions.EntityCapacity);
         
-        var systemServices = new ServiceCollection();
-        systemServices.AddSingleton(factoryLogger);
-        systemServices.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
-        systemServices.AddSingleton(worldManager.NetworkManager);
-        systemServices.AddSingleton(worldManager.SimulationEndpoint);
-        systemServices.AddSingleton(worldManager.WorldSpatial);
-        systemServices.AddSingleton(worldManager.MapService);
-        systemServices.AddSingleton(worldManager.WorldSaver);
-        systemServices.AddSingleton(worldManager.WorldStaging);
-        systemServices.AddSingleton(_groupSystems);
-        systemServices.AddSingleton(world);
+        _groupSystems = new Group<float>(groupName);
+        
+        var internalCollection = new ServiceCollection();
+        
+        if (isServer)
+            RegisterServerResources(world, externalProvider, internalCollection);
+            
+        _internalProvider = internalCollection.BuildServiceProvider();
+        
+        if (isServer)
+            AddServerSystems(world, endpoint);
+        
+    }
+    
+    private void RegisterServerResources(World world, IServiceProvider externalProvider, IServiceCollection internalCollection)
+    {
+        var loggerFactory = externalProvider.GetRequiredService<ILoggerFactory>();
+        
+        var worldSaver = externalProvider.GetRequiredService<IWorldSaver>();
+        var mapService = externalProvider.GetRequiredService<MapService>();
+        
+        var playerIndex = new PlayerIndexResource(world);
+        var playerSave = new PlayerSaveResource(world, worldSaver);
+        var spatialIndex = new SpatialIndexResource(mapService);
+        var playerFactory = new PlayerFactoryResource(world, playerIndex, spatialIndex);
+        
+        internalCollection.AddSingleton(loggerFactory);
+        internalCollection.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+        internalCollection.AddSingleton<IPlayerIndex>(playerIndex);
+        internalCollection.AddSingleton<ISpatialIndex>(spatialIndex);
+        
+        internalCollection.AddSingleton(playerIndex);
+        internalCollection.AddSingleton(playerFactory);
+        internalCollection.AddSingleton(playerSave);
+        internalCollection.AddSingleton(spatialIndex);
+    }
+    
+    private void AddServerSystems(World world, IChannelEndpoint endpoint)
+    {
+        // Receive systems (inbox)
+        AddInboxSync<Input>();
+        
+        // Game logic systems
+        AddSystem<MovementSystem>(world);
+        
+        // Send systems (outbox)
+        AddOutboxSync<State>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
+        AddOutboxSync<Position>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
+        AddOutboxSync<Direction>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
+        AddOutboxSync<Health>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
 
-        var ecsServiceProvider = systemServices.BuildServiceProvider();
+        return;
         
-        _groupSystems.RegisterAttributedSystems(ecsServiceProvider, isServer);
-        _groupSystems.RegisterAttributedSyncSystems(ecsServiceProvider, isServer);
+        void AddInboxSync<T>() where T : struct, IEquatable<T>
+        {
+            var networkInbox = new NetworkInbox<T>();
+            endpoint.RegisterHandler<ComponentSyncPacket<T>>((peer, packet) => { networkInbox.Enqueue(packet); });
+            AddSystem<NetworkComponentApplySystem<T>>(world, new NetworkInbox<T>());
+        }
+        
+        void AddSystem<TSystem>(params object[] args) where TSystem : BaseSystem<World, float>
+        {
+            var system = ActivatorUtilities.CreateInstance(_internalProvider, typeof(TSystem), args) as ISystem<float>;
+            _groupSystems.Add(system);
+        }
+        
+        void AddOutboxSync<T>(SyncOptions options) where T : struct, IEquatable<T>
+        {
+            AddSystem<NetworkOutbox<T>>(world, endpoint, options);
+        }
+        
     }
 
     /// <summary>

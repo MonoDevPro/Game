@@ -1,35 +1,35 @@
 using Arch.Core;
-using Arch.System;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Pipeline;
 
-namespace Simulation.Core.ECS.Systems;
+namespace Simulation.Core.ECS.Systems.Resources;
 
-[PipelineSystem(SystemStage.Logic, 0)]
-public sealed class EntityFactorySystem(World world, Group<float> container): BaseSystem<World, float>(world)
+public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex)
 {
-    private readonly IndexSystem _indexSystem = container.Get<IndexSystem>();
-    public bool TryCreate(PlayerData data, out Entity? entity)
+    public bool TryCreatePlayer(PlayerData data)
     {
-        if (_indexSystem.TryGetPlayerEntity(data.Id, out _))
+        if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
         {
-            entity = null;
-            return false; // Jogador já está online
+            world.Destroy(entity);
+            playerIndex.Unindex(data.Id);
+            spatialIndex.Remove(entity);
         }
         
-        entity = CreatePlayerEntity(World, data);
+        entity = CreatePlayerEntity(world, data);
+        playerIndex.Index(data.Id, entity);
+        spatialIndex.Add(entity, new Position(data.PosX, data.PosY));
         return true;
     }
     
-    public bool TryDestroy(int playerId, out PlayerData data)
+    public bool TryDestroyPlayer(int playerId, out PlayerData data)
     {
         data = default;
-        if (!_indexSystem.TryGetPlayerEntity(playerId, out var entity))
+        if (!playerIndex.TryGetPlayerEntity(playerId, out var entity))
             return false; // Jogador não encontrado
         
-        World.Add<Unindexed, NeedSave, NeedDelete>(entity);
-        
-        data = ExtractPlayerData(World, entity);
+        data = ExtractPlayerData(world, entity);
+        world.Destroy(entity);
+        playerIndex.Unindex(playerId);
+        spatialIndex.Remove(entity);
         return true;
     }
     

@@ -1,7 +1,9 @@
-using Simulation.Core.Network.Contracts;
-using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Components;
+
+// ---> Requests <---
+public readonly record struct SpawnPlayerRequest(PlayerData Player);
+public readonly record struct DespawnPlayerRequest(int PlayerId);
 
 // ---> Flags <---
 [Flags] public enum InputFlags : byte {None=0, Up=1<<0, Down=1<<1, Left=1<<2, Right=1<<3}
@@ -9,19 +11,10 @@ namespace Simulation.Core.ECS.Components;
 [Flags] public enum StateFlags : byte {None=0, Idle=1<<0, Running=1<<1, Attacking=1<<2, Dead=1<<3 }
 
 // ---> Synced Components <---
-[Sync(Authority = Authority.Client, Trigger = SyncTrigger.OneShot, DeliveryMethod = NetworkDeliveryMethod.ReliableOrdered)]
 public readonly record struct Input(IntentFlags IntentState, InputFlags InputDir);
-
-[Sync(Authority = Authority.Server, Trigger = SyncTrigger.OnChange, DeliveryMethod = NetworkDeliveryMethod.ReliableOrdered)]
 public readonly record struct State(StateFlags Value);
-
-[Sync(Authority = Authority.Server, Trigger = SyncTrigger.OnChange, SyncRateTicks = 20 ,DeliveryMethod = NetworkDeliveryMethod.ReliableOrdered)]
 public readonly record struct Position(int X, int Y);
-
-[Sync(Authority = Authority.Server, Trigger = SyncTrigger.OnChange, DeliveryMethod = NetworkDeliveryMethod.ReliableOrdered)]
 public readonly record struct Direction(int X, int Y);
-
-[Sync(Authority = Authority.Server, Trigger = SyncTrigger.OnChange, DeliveryMethod = NetworkDeliveryMethod.ReliableOrdered)]
 public readonly record struct Health(int Current, int Max);
 
 
@@ -31,13 +24,7 @@ public readonly record struct PlayerInfo(string Name, Gender Gender, Vocation Vo
 
 // Saving
 public struct NeedSave;
-public struct NeedDelete;
 
-// Indexing
-public struct Indexed;
-public struct Unindexed;
-public struct SpatialIndexed;
-public struct SpatialUnindexed;
 public readonly record struct LastKnownPosition(Position Position);
 
 // ---> Componentes de Combate

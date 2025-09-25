@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Simulation.Core.Network.Contracts;
+namespace Simulation.Core.Ports.Network;
 
 /// <summary>
 /// Define um contrato para um repositório que armazena e gere os peers conectados.

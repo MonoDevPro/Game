@@ -1,7 +1,7 @@
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.Network;
 using Simulation.Network.Channel;
 
 namespace Simulation.Network;

@@ -1,6 +1,6 @@
 // filepath: Simulation.Core/Options/SyncAttribute.cs
 
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.Options;
 
@@ -16,7 +16,7 @@ public enum SyncTarget : byte
 /// Combináveis via bitwise.
 /// </summary>
 [Flags]
-public enum SyncTrigger : byte 
+public enum SyncFrequency : byte 
 {
     OnChange = 1 << 0, // Envia quando houver mudança detectada
     OnTick   = 1 << 1, // Envia em intervalos de tick (respeitando SyncRateTicks)
@@ -27,12 +27,9 @@ public enum SyncTrigger : byte
 /// Atributo aplicado a structs que devem ser sincronizados via rede.
 /// Controla autoridade, gatilhos e parâmetros de transmissão.
 /// </summary>
-[AttributeUsage(AttributeTargets.Struct, Inherited = false, AllowMultiple = false)]
-public sealed class SyncAttribute : Attribute
-{
-    public Authority Authority { get; init; } = Authority.Server;
-    public SyncTrigger Trigger { get; init; } = SyncTrigger.OnChange;
-    public SyncTarget Target { get; init; } = SyncTarget.Broadcast; // Definindo um padrão explícito
-    public ushort SyncRateTicks { get; init; } = 0;
-    public NetworkDeliveryMethod DeliveryMethod { get; init; } = NetworkDeliveryMethod.ReliableOrdered;
-}
+public record SyncOptions(
+    Authority Authority,
+    SyncFrequency Frequency,
+    SyncTarget Target,
+    NetworkDeliveryMethod DeliveryMethod,
+    ushort SyncRateTicks = 0);

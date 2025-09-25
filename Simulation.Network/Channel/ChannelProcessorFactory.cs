@@ -1,6 +1,6 @@
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.Ports.Network;
 using Simulation.Network.Packet;
 
 namespace Simulation.Network.Channel;

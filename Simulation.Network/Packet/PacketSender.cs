@@ -1,7 +1,7 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 using MemoryPack;
-using Simulation.Core.Network.Contracts;
+using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network.Packet;
 

@@ -1,4 +1,4 @@
-namespace Simulation.Core.Network.Contracts;
+namespace Simulation.Core.Ports.Network;
 
 public interface IChannelProcessorFactory
 {

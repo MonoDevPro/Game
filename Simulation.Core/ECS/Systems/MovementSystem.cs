@@ -2,13 +2,9 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Pipeline;
-using System;
 
 namespace Simulation.Core.ECS.Systems;
 
-[PipelineSystem(SystemStage.Movement, server: true, client: false)]
-[DependsOn(typeof(IndexSystem))]
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {
     // Inicia movimento: entidades com InputComponent e sem MoveAction (ou seja, não estão se movendo)

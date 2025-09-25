@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Pipeline;
+using Simulation.Core.ECS.Systems.Resources;
 
 namespace Simulation.Core.ECS.Systems.Client;
 
@@ -8,8 +9,6 @@ namespace Simulation.Core.ECS.Systems.Client;
 /// Placeholder para predição de movimento/estado do cliente.
 /// Futuro: aplicar inputs locais, reconciliar contra estado autoritativo.
 /// </summary>
-[PipelineSystem(SystemStage.Logic, -10, server:false, client:true)]
-[DependsOn(typeof(NetworkSystem), typeof(IndexSystem))]
 public sealed class PredictionSystem(World world) : BaseSystem<World, float>(world)
 {
     public override void Update(in float t)

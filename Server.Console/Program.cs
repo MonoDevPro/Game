@@ -1,14 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Server.Console;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Server.Console;
 using Simulation.Core.ECS;
-using Simulation.Core.ECS.Adapters;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
-using Simulation.Core.Ports;
+using Simulation.Core.Ports.ECS;
 using Simulation.Network;
 
 var host = Host.CreateDefaultBuilder(args)
@@ -47,11 +46,14 @@ var host = Host.CreateDefaultBuilder(args)
 
 await host.RunAsync();
 
-public class WorldSaver : IWorldSaver
+namespace Server.Console
 {
-    public void StageSave(PlayerData data)
+    public class WorldSaver : IWorldSaver
     {
-        // Implementar a lógica de salvamento do mundo aqui
-        Console.WriteLine($"Salvando dados do jogador: {data.Id}");
+        public void StageSave(PlayerData data)
+        {
+            // Implementar a lógica de salvamento do mundo aqui
+            System.Console.WriteLine($"Salvando dados do jogador: {data.Id}");
+        }
     }
 }
