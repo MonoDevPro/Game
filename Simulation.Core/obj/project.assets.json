@@ -6683,11 +6683,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
+      "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj",
       "projectName": "Simulation.Core",
-      "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
+      "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj",
       "packagesPath": "/home/filipe/.nuget/packages/",
-      "outputPath": "/home/filipe/Game/Simulation.Core/obj/",
+      "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/filipe/.nuget/NuGet/NuGet.Config"
@@ -6703,8 +6703,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
-              "projectPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
+            "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
+              "projectPath": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
             }
           }
         }

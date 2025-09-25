@@ -2,8 +2,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Indexes;
 using Simulation.Core.ECS.Pipeline;
+using Simulation.Core.Ports;
 
 namespace Simulation.Core.ECS.Systems;
 

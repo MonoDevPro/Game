@@ -1,3 +1,6 @@
 [submodule "thirdparty/QuadTrees"]
 	path = thirdparty/QuadTrees
 	url = https://github.com/MonoDevPro/QuadTrees.git
+[submodule "GameAPI"]
+	path = GameAPI
+	url = https://github.com/MonoDevPro/GameAPI

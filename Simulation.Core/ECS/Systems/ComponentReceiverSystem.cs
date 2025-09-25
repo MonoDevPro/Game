@@ -1,8 +1,8 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Indexes;
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
+using Simulation.Core.Ports;
 
 namespace Simulation.Core.ECS.Systems;
 

@@ -1,75 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/filipe/Game/Server.Console/Server.Console.csproj": {}
+    "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj": {}
   },
   "projects": {
-    "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj": {
+    "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj",
-        "projectName": "Server.Authentication",
-        "projectPath": "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj",
-        "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/Server.Authentication/obj/",
-        "projectStyle": "PackageReference",
-        "configFilePaths": [
-          "/home/filipe/.nuget/NuGet/NuGet.Config"
-        ],
-        "originalTargetFrameworks": [
-          "net8.0"
-        ],
-        "sources": {
-          "/usr/lib64/dotnet/library-packs": {},
-          "https://api.nuget.org/v3/index.json": {}
-        },
-        "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
-            "projectReferences": {
-              "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj": {
-                "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj"
-              }
-            }
-          }
-        },
-        "warningProperties": {
-          "warnAsError": [
-            "NU1605"
-          ]
-        }
-      },
-      "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.115/PortableRuntimeIdentifierGraph.json"
-        }
-      }
-    },
-    "/home/filipe/Game/Server.Console/Server.Console.csproj": {
-      "version": "1.0.0",
-      "restore": {
-        "projectUniqueName": "/home/filipe/Game/Server.Console/Server.Console.csproj",
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj",
         "projectName": "Server.Console",
-        "projectPath": "/home/filipe/Game/Server.Console/Server.Console.csproj",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj",
         "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/Server.Console/obj/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/Server.Console/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/filipe/.nuget/NuGet/NuGet.Config"
@@ -85,17 +27,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj": {
-                "projectPath": "/home/filipe/Game/Server.Authentication/Server.Authentication.csproj"
+              "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj"
               },
-              "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj": {
-                "projectPath": "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj"
-              },
-              "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj": {
-                "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj"
-              },
-              "/home/filipe/Game/Simulation.Network/Simulation.Network.csproj": {
-                "projectPath": "/home/filipe/Game/Simulation.Network/Simulation.Network.csproj"
+              "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj"
               }
             }
           }
@@ -153,108 +89,14 @@
         }
       }
     },
-    "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj": {
+    "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj",
-        "projectName": "Server.Persistence",
-        "projectPath": "/home/filipe/Game/Server.Persistence/Server.Persistence.csproj",
-        "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/Server.Persistence/obj/",
-        "projectStyle": "PackageReference",
-        "configFilePaths": [
-          "/home/filipe/.nuget/NuGet/NuGet.Config"
-        ],
-        "originalTargetFrameworks": [
-          "net8.0"
-        ],
-        "sources": {
-          "/usr/lib64/dotnet/library-packs": {},
-          "https://api.nuget.org/v3/index.json": {}
-        },
-        "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
-            "projectReferences": {
-              "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj": {
-                "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj"
-              }
-            }
-          }
-        },
-        "warningProperties": {
-          "warnAsError": [
-            "NU1605"
-          ]
-        }
-      },
-      "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
-          "dependencies": {
-            "BCrypt.Net-Next": {
-              "target": "Package",
-              "version": "[4.0.3, )"
-            },
-            "Microsoft.EntityFrameworkCore": {
-              "target": "Package",
-              "version": "[8.0.19, )"
-            },
-            "Microsoft.EntityFrameworkCore.Design": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[8.0.19, )"
-            },
-            "Microsoft.EntityFrameworkCore.InMemory": {
-              "target": "Package",
-              "version": "[8.0.19, )"
-            },
-            "Microsoft.EntityFrameworkCore.Sqlite": {
-              "target": "Package",
-              "version": "[8.0.19, )"
-            },
-            "Microsoft.Extensions.DependencyInjection.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.2, )"
-            },
-            "Microsoft.Extensions.Hosting.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.1, )"
-            },
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.3, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.115/PortableRuntimeIdentifierGraph.json"
-        }
-      }
-    },
-    "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj": {
-      "version": "1.0.0",
-      "restore": {
-        "projectUniqueName": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj",
         "projectName": "Simulation.Core",
-        "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj",
         "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/Simulation.Core/obj/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/filipe/.nuget/NuGet/NuGet.Config"
@@ -270,8 +112,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
-                "projectPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
+              "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"
               }
             }
           }
@@ -355,14 +197,14 @@
         }
       }
     },
-    "/home/filipe/Game/Simulation.Network/Simulation.Network.csproj": {
+    "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/filipe/Game/Simulation.Network/Simulation.Network.csproj",
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj",
         "projectName": "Simulation.Network",
-        "projectPath": "/home/filipe/Game/Simulation.Network/Simulation.Network.csproj",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj",
         "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/Simulation.Network/obj/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Network/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/filipe/.nuget/NuGet/NuGet.Config"
@@ -378,8 +220,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj": {
-                "projectPath": "/home/filipe/Game/Simulation.Core/Simulation.Core.csproj"
+              "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj"
               }
             }
           }
@@ -435,14 +277,14 @@
         }
       }
     },
-    "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
+    "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
         "projectName": "QuadTrees",
-        "projectPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
         "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/Game/thirdparty/QuadTrees/QuadTrees/obj/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/obj/",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "configFilePaths": [

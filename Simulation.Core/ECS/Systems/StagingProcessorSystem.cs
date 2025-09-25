@@ -1,14 +1,15 @@
 using Arch.Core;
 using Arch.System;
+using Simulation.Core.ECS.Adapters;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Pipeline;
-using Simulation.Core.ECS.Staging;
+using Simulation.Core.Ports;
 
 namespace Simulation.Core.ECS.Systems;
 
 [PipelineSystem(SystemStage.Staging)]
 [DependsOn(typeof(NetworkSystem))]
-public class StagingProcessorSystem(Group<float> container, World world, IWorldStaging staging) : BaseSystem<World, float>(world)
+public class StagingProcessorSystem(Group<float> container, World world, WorldStaging staging) : BaseSystem<World, float>(world)
 {
     private readonly EntityFactorySystem _factorySystem = container.Get<EntityFactorySystem>();
     

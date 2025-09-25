@@ -7,7 +7,7 @@ namespace Simulation.Core.Network.Contracts;
 /// </summary>
 public interface INetworkManager
 {
-    NetworkAuthority Authority { get; }
+    Authority Authority { get; }
     
     /// <summary>Inicializa o manager (decide StartServer/StartClient com base nas options).</summary>
     void Initialize();

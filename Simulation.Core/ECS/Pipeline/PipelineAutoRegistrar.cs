@@ -1,4 +1,5 @@
 using System.Reflection;
+using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

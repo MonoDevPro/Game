@@ -10,37 +10,39 @@ public class NetworkManager : INetworkManager
 {
     private NetManager Net { get; }
     private NetworkListener Listener { get; }
-    private readonly NetworkOptions _options;
+    private readonly NetworkOptions _netOptions;
+    private readonly AuthorityOptions _authorityOptions;
 
     public readonly ChannelProcessorFactory ProcessorFactory;
 
-    public NetworkManager(NetworkOptions options, ILoggerFactory factory)
+    public NetworkManager(NetworkOptions netOptions, AuthorityOptions authorityOptions, ILoggerFactory factory)
     {
-        _options = options;
+        _netOptions = netOptions;
+        _authorityOptions = authorityOptions;
         var router = new ChannelRouter();
-        Listener = new NetworkListener(router, options, factory.CreateLogger<NetworkListener>());
-        Net = new NetManager(Listener) { DisconnectTimeout = options.DisconnectTimeoutMs };
+        Listener = new NetworkListener(router, netOptions, factory.CreateLogger<NetworkListener>());
+        Net = new NetManager(Listener) { DisconnectTimeout = netOptions.DisconnectTimeoutMs };
         Net.ChannelsCount = (byte)Enum.GetValues(typeof(NetworkChannel)).Length;
         
         ProcessorFactory = new ChannelProcessorFactory(Net, Listener, router, factory);
     }
 
-    public NetworkAuthority Authority => _options.Authority;
+    public Authority Authority => _authorityOptions.Authority;
 
     public void Initialize()
     {
-        if (_options.Authority == NetworkAuthority.Server)
+        if (_authorityOptions.Authority == Authority.Server)
             StartServer();
         else
             StartClient();
     }
 
-    public void StartServer() => Net.Start(_options.ServerPort);
+    public void StartServer() => Net.Start(_netOptions.ServerPort);
 
     public void StartClient()
     {
         Net.Start();
-        Net.Connect(_options.ServerAddress, _options.ServerPort, _options.ConnectionKey);
+        Net.Connect(_netOptions.ServerAddress, _netOptions.ServerPort, _netOptions.ConnectionKey);
     }
 
     public void PollEvents() => Net.PollEvents();

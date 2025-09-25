@@ -1,7 +1,9 @@
 using MemoryPack;
-using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Components;
+
+public enum Gender : int { None, Male, Female }
+public enum Vocation : int { None, Mage, Archer }
 
 /// <summary>
 /// Um componente que transporta os dados de um jogador, geralmente
@@ -31,29 +33,4 @@ public readonly partial record struct PlayerData
     public int DirX { get; init; }
     public int DirY { get; init; }
     public int HealthCurrent { get; init; }
-
-    /// <summary>
-    /// Construtor de fábrica para criar um PlayerData a partir de um PlayerModel.
-    /// </summary>
-    public static PlayerData FromModel(PlayerModel model)
-    {
-        return new PlayerData
-        {
-            Id = model.Id,
-            Name = model.Name ?? string.Empty,
-            Gender = model.Gender,
-            Vocation = model.Vocation,
-            HealthMax = model.HealthMax,
-            AttackDamage = model.AttackDamage,
-            AttackRange = model.AttackRange,
-            AttackCastTime = model.AttackCastTime,
-            AttackCooldown = model.AttackCooldown,
-            MoveSpeed = model.MoveSpeed,
-            PosX = model.PosX,
-            PosY = model.PosY,
-            DirX = model.DirX,
-            DirY = model.DirY,
-            HealthCurrent = model.HealthCurrent
-        };
-    }
 }

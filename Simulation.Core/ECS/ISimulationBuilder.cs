@@ -1,6 +1,7 @@
 using Arch.Core;
 using Simulation.Core.ECS.Builders;
-using Simulation.Core.ECS.Indexes.Map;
+using Simulation.Core.ECS.Pipeline;
+using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS;
@@ -10,6 +11,11 @@ namespace Simulation.Core.ECS;
 /// </summary>
 public interface ISimulationBuilder<TData> where TData : notnull
 {
+    /// <summary>
+    /// Fornece as opções de configuração de autoridade.
+    /// </summary>
+    ISimulationBuilder<float> WithAuthorityOptions(AuthorityOptions options);
+    
     /// <summary>
     /// Fornece as opções de configuração do mundo ECS.
     /// </summary>

@@ -4,12 +4,6 @@ using Simulation.Core.Network.Contracts;
 
 namespace Simulation.Core.Options;
 
-/// <summary>
-/// Define quem tem autoridade sobre o estado do componente.
-/// Server = origem autoritativa normalmente; Client = entrada ou estado local.
-/// </summary>
-public enum Authority { Server, Client }
-
 // Nova enum para o alvo do envio
 public enum SyncTarget : byte
 {
@@ -27,8 +21,6 @@ public enum SyncTrigger : byte
     OnChange = 1 << 0, // Envia quando houver mudança detectada
     OnTick   = 1 << 1, // Envia em intervalos de tick (respeitando SyncRateTicks)
     OneShot  = 1 << 2, // Envia uma única vez e remove
-    //OnAdd    = 1 << 3,  // Envia quando o componente é adicionado (novo)
-    //OnRemove = 1 << 4   // Envia quando o componente é removido
 }
 
 /// <summary>

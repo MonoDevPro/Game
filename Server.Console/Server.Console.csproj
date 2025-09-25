@@ -14,8 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Server.Authentication\Server.Authentication.csproj" />
-      <ProjectReference Include="..\Server.Persistence\Server.Persistence.csproj" />
       <ProjectReference Include="..\Simulation.Core\Simulation.Core.csproj" />
       <ProjectReference Include="..\Simulation.Network\Simulation.Network.csproj" />
     </ItemGroup>

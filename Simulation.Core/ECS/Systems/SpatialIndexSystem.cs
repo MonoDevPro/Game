@@ -3,8 +3,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Indexes.Map;
 using Simulation.Core.ECS.Pipeline;
+using Simulation.Core.ECS.Services;
 
 namespace Simulation.Core.ECS.Systems;
 

@@ -1,6 +1,5 @@
 using Simulation.Core.Network.Contracts;
 using Simulation.Core.Options;
-using Simulation.Core.Persistence.Models;
 
 namespace Simulation.Core.ECS.Components;
 
