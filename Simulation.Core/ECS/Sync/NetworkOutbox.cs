@@ -67,9 +67,17 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
     {
         _tickCounter++;
 
-        if (_options.Frequency.HasFlag(SyncFrequency.OneShot))  SyncOneShot();
-        if (_options.Frequency.HasFlag(SyncFrequency.OnChange)) EnsureShadowExists(); SyncOnChange();
-        if (_options.Frequency.HasFlag(SyncFrequency.OnTick))   SyncOnTick();
+        if (_options.Frequency.HasFlag(SyncFrequency.OneShot))  
+            SyncOneShot();
+            
+        if (_options.Frequency.HasFlag(SyncFrequency.OnChange)) 
+        {
+            EnsureShadowExists(); 
+            SyncOnChange();
+        }
+        
+        if (_options.Frequency.HasFlag(SyncFrequency.OnTick))   
+            SyncOnTick();
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

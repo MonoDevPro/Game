@@ -1,14 +1,14 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resources;
-using Simulation.Core.ECS.Sync;
-using Simulation.Core.ECS.Systems;
 using Simulation.Core.Options;
-using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.ECS.Pipeline;
 
+/// <summary>
+/// Main ECS pipeline that orchestrates system execution.
+/// Focuses purely on execution logic, delegating registration to SystemRegistry.
+/// </summary>
 public class GroupSystems : ISystem<float>
 {
     private readonly World _world;
@@ -24,42 +24,12 @@ public class GroupSystems : ISystem<float>
         var groupName = isServer ? "ServerSystems" : "ClientSystems";
         _groupSystems = new Group<float>(groupName);
         
+        // Use SystemRegistry to handle all system registration logic
+        var systemRegistry = new SystemRegistry(_world, _resources, _groupSystems);
         if (isServer)
-            AddServerSystems(world);
-    }
-    
-    private void AddServerSystems(World world)
-    {
-        // Receive systems (inbox)
-        AddInboxSync<Input>();
-        
-        // Game logic systems
-        AddSystem<MovementSystem>(world);
-        
-        // Send systems (outbox)
-        AddOutboxSync<State>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
-        AddOutboxSync<Position>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
-        AddOutboxSync<Direction>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
-        AddOutboxSync<Health>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0));
-        
-        return;
-    }
-    
-    private void AddSystem<TSystem>(params object[] args) where TSystem : BaseSystem<World, float>
-    {
-        var system = Activator.CreateInstance(typeof(TSystem), args) as ISystem<float>;
-        _groupSystems.Add(system);
-    }
-    
-    private void AddInboxSync<T>() where T : struct, IEquatable<T>
-    {
-        var networkInbox = new NetworkInbox<T>();
-        _resources.NetworkEndpoint.RegisterHandler<ComponentSyncPacket<T>>((peer, packet) => { networkInbox.Enqueue(packet); });
-        AddSystem<NetworkComponentApplySystem<T>>(_world, new NetworkInbox<T>(), _resources.PlayerIndex);
-    }
-    private void AddOutboxSync<T>(SyncOptions options) where T : struct, IEquatable<T>
-    {
-        AddSystem<NetworkOutbox<T>>(_world, _resources.NetworkEndpoint, options);
+            systemRegistry.RegisterServerSystems();
+        else
+            systemRegistry.RegisterClientSystems();
     }
 
     /// <summary>
