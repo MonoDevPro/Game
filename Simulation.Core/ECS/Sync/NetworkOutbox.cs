@@ -3,6 +3,7 @@ using Arch.Core;
 using Arch.System;
 using MemoryPack;
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Resource;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 
@@ -36,7 +37,7 @@ public readonly partial record struct ComponentSyncPacket<T>(int PlayerId, ulong
 /// <typeparam name="T">Tipo de componente sincronizado.</typeparam>
 public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEquatable<T>
 {
-    private readonly IChannelEndpoint _channelEndpoint;
+    private readonly PlayerNetResource _resource;
     private readonly SyncOptions _options;
     private ulong _tickCounter = 0;
 
@@ -49,9 +50,9 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
     /// <summary>
     /// Constrói o sistema configurando queries conforme a composição de entidades.
     /// </summary>
-    public NetworkOutbox(World world, IChannelEndpoint channelEndpoint, SyncOptions options) : base(world)
+    public NetworkOutbox(World world, PlayerNetResource resource, SyncOptions options) : base(world)
     {
-        _channelEndpoint = channelEndpoint;
+        _resource = resource;
         _options = options;
 
         _onChangeEnsureShadow = world.Query(new QueryDescription().WithAll<PlayerId, T>().WithNone<Shadow<T>>());
@@ -182,15 +183,15 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
             // Envia apenas para o jogador dono da entidade
             case SyncTarget.Unicast:
                 if (_options.Authority == Authority.Client)
-                    _channelEndpoint.SendToServer(packet, method);
+                    _resource.SendToServer(packet, method);
                 else
-                    _channelEndpoint.SendToPeerId(playerId, packet, method);
+                    _resource.SendToPlayer(playerId, packet, method);
                 break;
 
             // Envia para todos os jogadores (comportamento padrão)
             case SyncTarget.Broadcast:
             default:
-                _channelEndpoint.SendToAll(packet, method);
+                _resource.BroadcastToAll(packet, method);
                 break;
         }
     }

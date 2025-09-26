@@ -34,6 +34,12 @@ public class PacketProcessor(NetworkListener listener, ILogger<PacketProcessor>?
             }
         };
     }
+    
+    public bool UnregisterHandler<T>() where T : struct, IPacket
+    {
+        var hash = GetHash<T>();
+        return _idToHandler.Remove(hash);
+    }
 
     public void HandleData(NetPeer fromPeer, NetPacketReader dataReader)
     {

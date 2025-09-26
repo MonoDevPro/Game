@@ -1,43 +1,37 @@
 using Arch.Core;
+using Arch.LowLevel;
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Components.Data;
 
-namespace Simulation.Core.ECS.Resources;
+namespace Simulation.Core.ECS.Resource;
 
-public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex)
+public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex, PlayerSaveResource saveResource)
 {
-    public bool TryCreatePlayer(PlayerData data)
+    private readonly Resources<string> _playerNames = new();
+    
+    public bool TryCreatePlayer(in PlayerData data)
     {
         if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
-        {
-            world.Destroy(entity);
-            playerIndex.Unindex(data.Id);
-            spatialIndex.Remove(entity);
-        }
+            TryDestroyPlayer(data.Id);
         
-        entity = CreatePlayerEntity(world, data);
-        playerIndex.Index(data.Id, entity);
-        spatialIndex.Add(entity, new Position(data.PosX, data.PosY));
-        return true;
+        return CreatePlayerEntity(data);
     }
     
-    public bool TryDestroyPlayer(int playerId, out PlayerData data)
+    public bool TryDestroyPlayer(int playerId)
     {
-        data = default;
         if (!playerIndex.TryGetPlayerEntity(playerId, out var entity))
             return false; // Jogador não encontrado
-        
-        data = ExtractPlayerData(world, entity);
-        world.Destroy(entity);
-        playerIndex.Unindex(playerId);
-        spatialIndex.Remove(entity);
-        return true;
+
+        return DestroyPlayerEntity(entity);
     }
     
-    public static Entity CreatePlayerEntity(World world, PlayerData playerData)
+    public bool CreatePlayerEntity(in PlayerData playerData)
     {
+        var nameHandler = _playerNames.Add(playerData.Name);
+        
         var e = world.Create(
             new PlayerId { Value = playerData.Id },
-            new PlayerInfo { Name = playerData.Name, Gender = playerData.Gender, Vocation = playerData.Vocation },
+            new PlayerInfo { Name = nameHandler, Gender = playerData.Gender, Vocation = playerData.Vocation },
             new Position { X = playerData.PosX, Y = playerData.PosY },
             new Direction { X = playerData.DirX, Y = playerData.DirY },
             new AttackStats { CastTime = playerData.AttackCastTime, Cooldown = playerData.AttackCooldown, Damage = playerData.AttackDamage, AttackRange = playerData.AttackRange },
@@ -45,10 +39,25 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
             new Health { Current = playerData.HealthCurrent, Max = playerData.HealthMax },
             new State { Value = StateFlags.Idle }
         );
-        return e;
+        
+        playerIndex.Index(playerData.Id, e);
+        spatialIndex.Add(e, new Position(playerData.PosX, playerData.PosY));
+        return true;
     }
 
-    public static PlayerData ExtractPlayerData(World world, Entity e)
+    private bool DestroyPlayerEntity(Entity entity)
+    {
+        var data = ExtractPlayerData(entity);
+        var playerId = data.Id;
+        
+        _playerNames.Remove(world.Get<PlayerInfo>(entity).Name);
+        world.Destroy(entity);
+        playerIndex.Unindex(playerId);
+        spatialIndex.Remove(entity);
+        return true;
+    }
+    
+    private PlayerData ExtractPlayerData(Entity e)
     {
         ref var id = ref world.Get<PlayerId>(e);
         ref var playerInfo = ref world.Get<PlayerInfo>(e);
@@ -61,7 +70,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return new PlayerData
         {
             Id = id.Value,
-            Name = playerInfo.Name,
+            Name = _playerNames.Get(playerInfo.Name),
             Gender = playerInfo.Gender,
             Vocation = playerInfo.Vocation,
             PosX = pos.X,

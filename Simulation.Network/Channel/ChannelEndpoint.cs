@@ -21,6 +21,11 @@ internal class ChannelEndpoint(
     
     public bool IsRegisteredHandler<T>() where T : struct, IPacket
         => processor.IsRegistered<T>();
+
+    public bool UnregisterHandler<T>() where T : struct, IPacket
+    {
+        return processor.UnregisterHandler<T>();
+    }
     
     public void SendToPeer<T>(INetPeerAdapter peer, T packet, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
         => sender.SendToPeer(listener.ConnectedPeers[peer.Id].Peer, channel, packet, deliveryMethod.ToLite());

@@ -1,7 +1,6 @@
-using System.Text;
 using MemoryPack;
 
-namespace Simulation.Core.ECS.Components; // Mantido o namespace para consistência
+namespace Simulation.Core.ECS.Components.Data; // Mantido o namespace para consistência
 
 public enum TileType : byte { Empty = 0, Floor = 1, Wall = 2, TreeStump = 3 }
 

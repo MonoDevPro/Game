@@ -1,4 +1,6 @@
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Components.Data;
+using MapData = Simulation.Core.ECS.Components.Data.MapData;
 
 namespace Simulation.Core.ECS.Services;
 

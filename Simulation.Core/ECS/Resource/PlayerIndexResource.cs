@@ -1,8 +1,7 @@
 using Arch.Core;
-using Arch.LowLevel;
 using Simulation.Core.Ports.ECS;
 
-namespace Simulation.Core.ECS.Resources;
+namespace Simulation.Core.ECS.Resource;
 
 /// <summary>
 /// Recurso que expõe o índice de jogadores como interface injetável.

@@ -6,7 +6,7 @@ using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Services;
 using Simulation.Core.Ports.ECS;
 
-namespace Simulation.Core.ECS.Resources;
+namespace Simulation.Core.ECS.Resource;
 
 /// <summary>
 /// Resource que encapsula o índice espacial (QuadTree) e regras de mapa (colisão/bordas).
@@ -33,8 +33,16 @@ public sealed class SpatialIndexResource(MapService map) : ISpatialIndex
 
     public void Add(in Entity entity, in Position pos)
     {
-        if (_items.ContainsKey(entity)) return;
         var rect = new Rectangle(pos.X, pos.Y, 0, 0);
+        
+        if (_items.TryGetValue(entity, out var value))
+        {
+            if (value.Rect == rect) return;
+            value.Rect = rect;
+            _qtree.Move(value);
+            return;
+        }
+        
         var item = new QuadTreeItem(entity, rect);
         _items[entity] = item;
         _qtree.Add(item);
@@ -43,9 +51,7 @@ public sealed class SpatialIndexResource(MapService map) : ISpatialIndex
     public void Remove(in Entity entity)
     {
         if (_items.Remove(entity, out var item))
-        {
             _qtree.Remove(item);
-        }
     }
 
     public bool Move(in Entity entity, in Position newPos)

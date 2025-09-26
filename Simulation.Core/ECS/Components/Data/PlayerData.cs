@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Simulation.Core.ECS.Components;
+namespace Simulation.Core.ECS.Components.Data;
 
 public enum Gender : int { None, Male, Female }
 public enum Vocation : int { None, Mage, Archer }

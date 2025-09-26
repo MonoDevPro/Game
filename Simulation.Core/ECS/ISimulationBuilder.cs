@@ -1,7 +1,4 @@
-using Arch.Core;
-using Simulation.Core.ECS.Builders;
-using Simulation.Core.ECS.Pipeline;
-using Simulation.Core.ECS.Services;
+using Arch.System;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS;
@@ -30,5 +27,5 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// Constrói e retorna o grupo de sistemas (a pipeline) configurado.
     /// </summary>
     /// Um Group pronto a ser executado.
-    GroupSystems Build();
+    Group<float> Build();
 }

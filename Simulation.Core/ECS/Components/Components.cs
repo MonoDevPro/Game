@@ -1,26 +1,12 @@
 
+using Arch.LowLevel;
+using Simulation.Core.ECS.Components.Data;
+
 namespace Simulation.Core.ECS.Components;
-
-// ---> Requests <---
-public readonly record struct SpawnPlayerRequest(PlayerData Player);
-public readonly record struct DespawnPlayerRequest(int PlayerId);
-
-// ---> Flags <---
-[Flags] public enum InputFlags : byte {None=0, Up=1<<0, Down=1<<1, Left=1<<2, Right=1<<3}
-[Flags] public enum IntentFlags : byte {None=0, Move=1<<0, Attack=1<<1 }
-[Flags] public enum StateFlags : byte {None=0, Idle=1<<0, Running=1<<1, Attacking=1<<2, Dead=1<<3 }
-
-// ---> Synced Components <---
-public readonly record struct Input(IntentFlags IntentState, InputFlags InputDir);
-public readonly record struct State(StateFlags Value);
-public readonly record struct Position(int X, int Y);
-public readonly record struct Direction(int X, int Y);
-public readonly record struct Health(int Current, int Max);
-
 
 // Player
 public readonly record struct PlayerId(int Value);
-public readonly record struct PlayerInfo(string Name, Gender Gender, Vocation Vocation);
+public readonly record struct PlayerInfo(Handle<string> Name, Gender Gender, Vocation Vocation);
 
 // Saving
 public struct NeedSave;
