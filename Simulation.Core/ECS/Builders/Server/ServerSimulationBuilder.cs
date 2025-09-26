@@ -21,7 +21,6 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
         {
             resources.PlayerNet.RegisterComponentUpdate<Input>(),
             resources.PlayerNet.RegisterComponentUpdate<Direction>(),
-            resources.PlayerNet.RegisterComponentUpdate<DespawnPlayerRequest>(),
         };
         return new Group<float>("Net Update Systems", syncSystems);
     }
