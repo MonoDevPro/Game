@@ -6,7 +6,7 @@ using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Services;
 using Simulation.Core.Ports.ECS;
 
-namespace Simulation.Core.ECS.Systems.Resources;
+namespace Simulation.Core.ECS.Resources;
 
 /// <summary>
 /// Resource que encapsula o índice espacial (QuadTree) e regras de mapa (colisão/bordas).

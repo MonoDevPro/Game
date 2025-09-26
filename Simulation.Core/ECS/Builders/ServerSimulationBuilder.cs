@@ -1,6 +1,11 @@
+using Arch.Core;
+using Arch.LowLevel;
 using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.ECS.Pipeline;
+using Simulation.Core.ECS.Resources;
+using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
+using Simulation.Core.Ports.ECS;
 using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.ECS.Builders;
@@ -32,14 +37,20 @@ public class ServerSimulationBuilder : ISimulationBuilder<float>
     public GroupSystems Build()
     {
         if (_authorityOptions is null || _worldOptions is null || _rootServices is null)
-            throw new InvalidOperationException("AuthorityOptions, WorldOptions, MapService e RootServices devem ser fornecidos.");
+            throw new InvalidOperationException("AuthorityOptions, WorldOptions e RootServices devem ser fornecidos.");
+
+        // 1) Criar World fora do ECS pipeline
+        var world = World.Create(
+            chunkSizeInBytes: _worldOptions.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: _worldOptions.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: _worldOptions.ArchetypeCapacity,
+            entityCapacity: _worldOptions.EntityCapacity);
+
+        // 2) Resolver dependências externas (apenas aqui)
+        var resourceContext = new ResourceContext(_rootServices, world);
         
-        var endpoint = 
-            _rootServices.GetRequiredService<IChannelProcessorFactory>()
-            .CreateOrGet(NetworkChannel.Simulation);
-        
-        var pipeline = new GroupSystems(_rootServices, endpoint, _authorityOptions, _worldOptions);
-        
+        // 5) Construir pipeline sem IServiceProvider no hot path
+        var pipeline = new GroupSystems(world, resourceContext, _authorityOptions);
         pipeline.Initialize();
         return pipeline;
     }

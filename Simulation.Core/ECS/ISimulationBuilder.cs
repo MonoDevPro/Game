@@ -14,7 +14,7 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// <summary>
     /// Fornece as opções de configuração de autoridade.
     /// </summary>
-    ISimulationBuilder<float> WithAuthorityOptions(AuthorityOptions options);
+    ISimulationBuilder<TData> WithAuthorityOptions(AuthorityOptions options);
     
     /// <summary>
     /// Fornece as opções de configuração do mundo ECS.

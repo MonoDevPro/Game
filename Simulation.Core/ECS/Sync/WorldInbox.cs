@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Systems.Resources;
+using Simulation.Core.ECS.Resources;
 using Simulation.Core.Ports.ECS;
 
 namespace Simulation.Core.ECS.Sync;

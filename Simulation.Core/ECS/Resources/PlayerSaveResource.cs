@@ -1,7 +1,7 @@
 using Arch.Core;
 using Simulation.Core.Ports.ECS;
 
-namespace Simulation.Core.ECS.Systems.Resources;
+namespace Simulation.Core.ECS.Resources;
 
 public class PlayerSaveResource(World world, IWorldSaver saver)
 {

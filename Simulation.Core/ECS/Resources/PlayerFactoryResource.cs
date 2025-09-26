@@ -1,7 +1,7 @@
 using Arch.Core;
 using Simulation.Core.ECS.Components;
 
-namespace Simulation.Core.ECS.Systems.Resources;
+namespace Simulation.Core.ECS.Resources;
 
 public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex)
 {
