@@ -12,7 +12,7 @@ namespace Simulation.Core.ECS.Pipeline;
 /// Responsible for registering and configuring systems in the ECS pipeline.
 /// Separates system registration logic from GroupSystems execution logic.
 /// </summary>
-public class SystemRegistry
+public partial class SystemRegistry
 {
     private readonly World _world;
     private readonly ResourceContext _resources;
@@ -60,21 +60,21 @@ public class SystemRegistry
 
     /// <summary>
     /// Registers server output systems that synchronize state to clients.
-    /// Uses the new SyncOptionsBuilder to reduce boilerplate.
+    /// Uses predefined presets for consistency and reduced configuration.
     /// </summary>
     private void RegisterServerOutputSystems()
     {
         // State sync with reliable delivery for important state changes
-        RegisterOutboxSync<State>(SyncOptionsBuilder.ServerBroadcast().Build());
+        RegisterOutboxSync<State>(SyncPresets.ServerStateSync);
 
         // Position sync with unreliable high-frequency updates for smoother movement
-        RegisterOutboxSync<Position>(SyncOptionsBuilder.PositionSync().Build());
+        RegisterOutboxSync<Position>(SyncPresets.PositionSync);
 
         // Direction sync for character facing
-        RegisterOutboxSync<Direction>(SyncOptionsBuilder.ServerBroadcast().Build());
+        RegisterOutboxSync<Direction>(SyncPresets.ServerStateSync);
 
         // Health sync with reliable delivery for critical information
-        RegisterOutboxSync<Health>(SyncOptionsBuilder.ServerBroadcast().Build());
+        RegisterOutboxSync<Health>(SyncPresets.CriticalStateSync);
     }
 
     /// <summary>
@@ -101,8 +101,9 @@ public class SystemRegistry
 
     /// <summary>
     /// Registers an outbox synchronization system for sending component updates.
+    /// Made public for extension method access.
     /// </summary>
-    private void RegisterOutboxSync<T>(SyncOptions options) where T : struct, IEquatable<T>
+    public void RegisterOutboxSync<T>(SyncOptions options) where T : struct, IEquatable<T>
     {
         RegisterSystem<NetworkOutbox<T>>(_world, _resources.NetworkEndpoint, options);
     }
