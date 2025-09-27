@@ -3,16 +3,17 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Simulation.Core.ECS;
+using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 
-namespace Server.Console;
+namespace Simulation.Client;
 
-public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServerHost> logger) : BackgroundService
+public class GameClientHost(IServiceProvider serviceProvider, ILogger<GameClientHost> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Game Server Host está a iniciar.");
+        logger.LogInformation("Game Client Host está a iniciar.");
         
         await using var scope = serviceProvider.CreateAsyncScope();
         
@@ -31,6 +32,8 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
         
         networkManager.Start();
         
+        logger.LogInformation("Cliente conectando ao servidor...");
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             networkManager.PollEvents();
@@ -39,5 +42,7 @@ public class GameServerHost(IServiceProvider serviceProvider, ILogger<GameServer
             
             await Task.Delay(15, stoppingToken);
         }
+        
+        logger.LogInformation("Game Client Host está a parar.");
     }
 }

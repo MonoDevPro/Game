@@ -15,8 +15,8 @@ public class NetworkListener : INetEventListener, IPeerRepository
         private readonly ILogger<NetworkListener> _logger;
         private readonly Dictionary<int, NetPeerAdapter> _connectedPeers = new();
 
-        public event Action<INetPeerAdapter> PeerConnected;
-        public event Action<INetPeerAdapter> PeerDisconnected;
+        public event Action<INetPeerAdapter> PeerConnected = delegate { };
+        public event Action<INetPeerAdapter> PeerDisconnected = delegate { };
 
         public NetworkListener(PacketProcessor packetProcessor, NetworkOptions options, ILogger<NetworkListener> logger)
         {
