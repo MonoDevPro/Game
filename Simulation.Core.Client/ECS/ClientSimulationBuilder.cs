@@ -31,7 +31,7 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<Input>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<Input>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }

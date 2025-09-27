@@ -21,7 +21,6 @@ public sealed class ClientResourceContext : ResourceContext
     {
         PlayerIndex = new PlayerIndexResource(world);
         SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
-        PlayerNet = new PlayerNetResource(world, PlayerIndex, 
-            provider.GetRequiredService<IChannelProcessorFactory>().CreateOrGet(NetworkChannel.Simulation));
+        PlayerNet = new PlayerNetResource(world, PlayerIndex, provider.GetRequiredService<INetworkManager>());
     }
 }

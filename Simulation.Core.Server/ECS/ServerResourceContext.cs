@@ -27,6 +27,6 @@ public sealed class ServerResourceContext : ResourceContext
         SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
         PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex, PlayerSave);
         PlayerNet = new PlayerNetResource(world, PlayerIndex, 
-            provider.GetRequiredService<IChannelProcessorFactory>().CreateOrGet(NetworkChannel.Simulation));
+            provider.GetRequiredService<INetworkManager>());
     }
 }

@@ -29,10 +29,10 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<State>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Position>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Health>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<State>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
+            resources.PlayerNet.RegisterComponentPost<Position>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
+            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
+            resources.PlayerNet.RegisterComponentPost<Health>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }

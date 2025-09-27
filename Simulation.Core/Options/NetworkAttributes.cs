@@ -32,4 +32,5 @@ public record SyncOptions(
     SyncFrequency Frequency,
     SyncTarget Target,
     NetworkDeliveryMethod DeliveryMethod,
-    ushort SyncRateTicks = 0);
+    NetworkChannel Channel,
+    ushort SyncRateTicks);

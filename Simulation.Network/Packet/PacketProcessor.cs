@@ -5,65 +5,55 @@ using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network.Packet;
 
-public class PacketProcessor(NetworkListener listener, ILogger<PacketProcessor>? logger)
-{
-    private delegate void UntypedPacketHandler(INetPeerAdapter fromPeer, NetPacketReader reader);
-
-    private readonly Dictionary<ulong, UntypedPacketHandler> _idToHandler = new();
-
-    public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
+public class PacketProcessor
     {
-        var hash = GetHash<T>();
-        
-        if (_idToHandler.ContainsKey(hash))
+        private delegate void UntypedPacketHandler(INetPeerAdapter fromPeer, NetPacketReader reader);
+        private readonly Dictionary<ulong, UntypedPacketHandler> _idToHandler = new();
+        private readonly ILogger<PacketProcessor> _logger;
+
+        public PacketProcessor(ILogger<PacketProcessor> logger) // Construtor simplificado
         {
-            logger?.LogWarning("O handler para o pacote {PacketType} já foi registado.", typeof(T).Name);
-            return;
+            _logger = logger;
+        }
+
+        public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
+        {
+            var hash = GetHash<T>();
+            if (_idToHandler.ContainsKey(hash))
+            {
+                _logger.LogWarning("Handler for packet {PacketType} is already registered.", typeof(T).Name);
+                return;
+            }
+            
+            _idToHandler[hash] = (fromPeer, reader) =>
+            {
+                try
+                {
+                    var packet = MemoryPackSerializer.Deserialize<T>(reader.GetRemainingBytesSegment());
+                    handler(fromPeer, packet);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deserializing or handling packet {PacketType}", typeof(T).Name);
+                }
+            };
         }
         
-        _idToHandler[hash] = (fromPeer, reader) =>
+        // ALTERADO: Aceita o INetPeerAdapter
+        public void HandleData(NetPeer fromPeer, NetPacketReader dataReader, INetPeerAdapter fromPeerAdapter)
         {
-            try
-            {
-                var packet = MemoryPackSerializer.Deserialize<T>(reader.GetRemainingBytesSegment());
-                handler(fromPeer, packet);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "Erro ao desserializar ou manipular o pacote {PacketType}", typeof(T).Name);
-            }
-        };
-    }
-    
-    public bool UnregisterHandler<T>() where T : struct, IPacket
-    {
-        var hash = GetHash<T>();
-        return _idToHandler.Remove(hash);
-    }
+            if (dataReader.AvailableBytes < sizeof(ulong)) return;
+            var packetId = dataReader.GetULong();
+            if (_idToHandler.TryGetValue(packetId, out var handler))
+                handler(fromPeerAdapter, dataReader);
+            else
+                _logger.LogWarning("No handler registered for PacketID {PacketId} from Peer {PeerId}", packetId, fromPeer.Id);
+        }
 
-    public void HandleData(NetPeer fromPeer, NetPacketReader dataReader)
-    {
-        if (dataReader.AvailableBytes < 1) return;
-        var packetId = dataReader.GetULong();
-        if (_idToHandler.TryGetValue(packetId, out var handler))
-            handler(listener.ConnectedPeers[fromPeer.Id], dataReader);
-        else
-            logger?.LogWarning("Nenhum handler registado para o PacketID {PacketId}", packetId);
-    }
-    
-    public ulong GetPacketId<T>() where T : struct, IPacket
-    {
-        var hash = GetHash<T>();
-        return hash;
-    }
-
-    public bool IsRegistered<T>() where T : struct, IPacket
-    {
-        var hash = GetHash<T>();
-        return _idToHandler.ContainsKey(hash);
-    }
-    
-    private ulong GetHash<T>() => PacketProcessor.HashCache<T>.Id;
+        // O resto da classe (GetPacketId, UnregisterHandler, HashCache) permanece o mesmo.
+        public bool UnregisterHandler<T>() where T : struct, IPacket => _idToHandler.Remove(GetHash<T>());
+        public ulong GetPacketId<T>() where T : struct, IPacket => GetHash<T>();
+        private ulong GetHash<T>() => HashCache<T>.Id;
     
     private static class HashCache<T>
     {

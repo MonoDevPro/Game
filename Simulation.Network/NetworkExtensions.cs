@@ -15,7 +15,6 @@ public static class NetworkServiceCollectionExtensions
             sp.GetRequiredService<IOptions<AuthorityOptions>>().Value,
             sp.GetRequiredService<ILoggerFactory>()));
         services.AddSingleton<INetworkManager>(sp => sp.GetRequiredService<NetworkManager>());
-        services.AddSingleton<IChannelProcessorFactory>(sp => sp.GetRequiredService<NetworkManager>().ProcessorFactory);
         return services;
     }
 }

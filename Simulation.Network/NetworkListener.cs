@@ -4,64 +4,69 @@ using LiteNetLib;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
-using Simulation.Network.Channel;
+using Simulation.Network.Packet;
 
 namespace Simulation.Network;
 
-public class NetworkListener(ChannelRouter router, NetworkOptions options, ILogger<NetworkListener> logger) : INetEventListener, IPeerRepository
-{
-    private readonly Dictionary<int, NetPeerAdapter> _connectedPeers = new Dictionary<int, NetPeerAdapter>();
-    internal IReadOnlyDictionary<int, NetPeerAdapter> ConnectedPeers => _connectedPeers;
-
-    internal INetEventListener NetEventListener => this;
-
-    void INetEventListener.OnPeerConnected(NetPeer peer)
+public class NetworkListener : INetEventListener, IPeerRepository
     {
-        _connectedPeers[peer.Id] = new NetPeerAdapter(peer);
-        logger.LogInformation("Peer connected: {PeerId} - {EndPoint}", peer.Id, peer.Address);
-    }
+        private readonly PacketProcessor _packetProcessor; // ALTERADO: Injetar PacketProcessor
+        private readonly NetworkOptions _options;
+        private readonly ILogger<NetworkListener> _logger;
+        private readonly Dictionary<int, NetPeerAdapter> _connectedPeers = new();
 
-    void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
-    {
-        _connectedPeers.Remove(peer.Id);
-        logger.LogInformation("Peer disconnected: {PeerId} - {EndPoint} - Reason: {Reason}", peer.Id, peer.Address, disconnectInfo.Reason);
-    }
+        public event Action<INetPeerAdapter> PeerConnected;
+        public event Action<INetPeerAdapter> PeerDisconnected;
 
-    void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode)
-    { }
-
-    void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
-    {
-        router.Handle(peer, reader, channelNumber);
-        reader.Recycle();
-    }
-
-    void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType) 
-    { }
-
-    void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency) 
-    { }
-
-    void INetEventListener.OnConnectionRequest(ConnectionRequest request)
-    {
-        request.AcceptIfKey(options.ConnectionKey);
-    }
-
-    public bool TryGetPeer(int peerId, out INetPeerAdapter? peer)
-    {
-        if (_connectedPeers.TryGetValue(peerId, out var netPeer))
+        public NetworkListener(PacketProcessor packetProcessor, NetworkOptions options, ILogger<NetworkListener> logger)
         {
-            peer = netPeer;
-            return true;
+            _packetProcessor = packetProcessor; // ALTERADO
+            _options = options;
+            _logger = logger;
         }
-        peer = null;
-        return false;
-    }
+        
+        // ... métodos de IPeerRepository (GetAllPeers, TryGetPeer, etc.) permanecem os mesmos ...
+        public IEnumerable<INetPeerAdapter> GetAllPeers() => _connectedPeers.Values;
+        public bool TryGetPeer(int peerId, out INetPeerAdapter? peer)
+        {
+            if (_connectedPeers.TryGetValue(peerId, out var netPeer)) { peer = netPeer; return true; }
+            peer = null; return false;
+        }
+        public int PeerCount => _connectedPeers.Count;
 
-    public IEnumerable<INetPeerAdapter> GetAllPeers()
-    {
-        return _connectedPeers.Values;
-    }
+        // Implementação de INetEventListener
+        void INetEventListener.OnPeerConnected(NetPeer peer)
+        {
+            var adapter = new NetPeerAdapter(peer);
+            _connectedPeers[peer.Id] = adapter;
+            PeerConnected?.Invoke(adapter); // Disparar evento
+            _logger.LogInformation("Peer connected: {PeerId} - {EndPoint}", peer.Id, peer.Address);
+        }
 
-    public int PeerCount => _connectedPeers.Count;
-}
+        void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        {
+            if (_connectedPeers.Remove(peer.Id, out var adapter))
+            {
+                PeerDisconnected?.Invoke(adapter); // Disparar evento
+                _logger.LogInformation("Peer disconnected: {PeerId} - Reason: {Reason}", peer.Id, disconnectInfo.Reason);
+            }
+        }
+
+        void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
+        {
+            // Roteamento removido, chama o processador diretamente.
+            // O channelNumber é ignorado aqui, pois a lógica está no tipo do pacote.
+            _packetProcessor.HandleData(peer, reader, _connectedPeers[peer.Id]);
+            reader.Recycle();
+        }
+
+        void INetEventListener.OnConnectionRequest(ConnectionRequest request)
+        {
+            request.AcceptIfKey(_options.ConnectionKey);
+        }
+
+        // Outros métodos de INetEventListener (OnNetworkError, etc.) podem permanecer vazios ou com logging.
+        void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode) { }
+        void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType) { }
+        void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency) { }
+    }

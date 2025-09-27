@@ -5,55 +5,59 @@ using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network.Packet;
 
-public class PacketSender(NetManager manager, PacketProcessor processor)
+public class PacketSender
 {
-    // Thread-local NetDataWriter to avoid allocation churn on hot-path.
-    private static readonly ThreadLocal<NetDataWriter> ThreadWriter =
-        new(() => new NetDataWriter());
-    private NetDataWriter Writer => ThreadWriter.Value!;
-    
+    private readonly NetManager _manager;
+    private readonly PacketProcessor _processor;
+    private readonly ThreadLocal<NetDataWriter> _threadWriter = new(() => new NetDataWriter());
+
+    public PacketSender(NetManager manager, PacketProcessor processor)
+    {
+        _manager = manager;
+        _processor = processor;
+    }
+        
     private void WritePacketToWriter<T>(NetDataWriter writer, T packet) where T : struct, IPacket
     {
-        var packetId = processor.GetPacketId<T>();
+        writer.Reset();
+        var packetId = _processor.GetPacketId<T>();
         writer.Put(packetId);
         writer.Put(MemoryPackSerializer.Serialize(packet)); 
     }
 
-    private void Send<T>(NetPeer peer, NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
+    // Método base privado alterado para consistência
+    private void Send<T>(NetPeer peer, T packet, byte channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
     {
         if (peer is not { ConnectionState: ConnectionState.Connected }) return;
+            
+        var writer = _threadWriter.Value!;
+        WritePacketToWriter(writer, packet);
+        peer.Send(writer, channel, deliveryMethod);
+    }
         
-        Writer.Reset();
-        WritePacketToWriter(Writer, packet);
-        peer.Send(Writer, (byte)channel, deliveryMethod);
-    }
-    
-    public void SendToServer<T>(NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
+    public void SendToServer<T>(T packet, NetworkChannel channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
+        => Send(_manager.FirstPeer, packet, (byte)channel, deliveryMethod);
+
+    public void SendToPeer<T>(NetPeer peer, T packet, NetworkChannel channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
+        => Send(peer, packet, (byte)channel, deliveryMethod);
+            
+    public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
     {
-        Send(manager.FirstPeer, channel, packet, deliveryMethod);
+        if (_manager.GetPeerById(peerId) is { ConnectionState: ConnectionState.Connected } peer)
+            Send(peer, packet, (byte)channel, deliveryMethod);
     }
 
-    public void SendToPeer<T>(NetPeer peer, NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
+    public void SendToAll<T>(T packet, NetworkChannel channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
     {
-        Send(peer, channel, packet, deliveryMethod);
-    }
-    public void SendToPeerId<T>(int peerId, NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
-    {
-        if (manager.GetPeerById(peerId) is not { ConnectionState: ConnectionState.Connected } peer) return;
-        Send(peer, channel, packet, deliveryMethod);
+        var writer = _threadWriter.Value!;
+        WritePacketToWriter(writer, packet);
+        _manager.SendToAll(writer, (byte)channel, deliveryMethod);
     }
 
-    public void SendToAll<T>(NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
+    public void SendToAllExcept<T>(NetPeer excludePeer, T packet, NetworkChannel channel, DeliveryMethod deliveryMethod) where T : struct, IPacket
     {
-        Writer.Reset();
-        WritePacketToWriter(Writer, packet);
-        manager.SendToAll(Writer, (byte)channel, deliveryMethod);
-    }
-
-    public void SendToAllExcept<T>(NetPeer excludePeer, NetworkChannel channel, T packet, DeliveryMethod deliveryMethod) where T : struct, IPacket
-    {
-        Writer.Reset();
-        WritePacketToWriter(Writer, packet);
-        manager.SendToAll(Writer, (byte)channel, deliveryMethod, excludePeer);
+        var writer = _threadWriter.Value!;
+        WritePacketToWriter(writer, packet);
+        _manager.SendToAll(writer, (byte)channel, deliveryMethod, excludePeer);
     }
 }
