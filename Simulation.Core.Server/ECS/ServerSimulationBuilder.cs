@@ -1,12 +1,12 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Builders.Commons;
+using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Systems;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
+using Simulation.Core.Server.ECS.Systems;
 
-namespace Simulation.Core.ECS.Builders.Server;
+namespace Simulation.Core.Server.ECS;
 
 public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ServerResourceContext>
 {
@@ -29,10 +29,10 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<State>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Position>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Health>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<State>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<Position>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<Health>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }

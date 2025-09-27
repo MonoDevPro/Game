@@ -10,12 +10,3 @@ public class ConcurrentInbox<T> where T : notnull
     
     public bool TryDequeue(out T item) => _queue.TryDequeue(out item!);
 }
-
-public class Box<T> where T : notnull
-{
-    private readonly Queue<T> _queue = new();
-    
-    public void Enqueue(T item) => _queue.Enqueue(item);
-    
-    public bool TryDequeue(out T item) => _queue.TryDequeue(out item!);
-}

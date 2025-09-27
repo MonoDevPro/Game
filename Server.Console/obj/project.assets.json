@@ -1548,6 +1548,20 @@
           "bin/placeholder/Simulation.Core.dll": {}
         }
       },
+      "Simulation.Core.Server/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Simulation.Core": "1.0.0",
+          "Simulation.Network": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Simulation.Core.Server.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Simulation.Core.Server.dll": {}
+        }
+      },
       "Simulation.Network/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -3861,6 +3875,11 @@
       "path": "../Simulation.Core/Simulation.Core.csproj",
       "msbuildProject": "../Simulation.Core/Simulation.Core.csproj"
     },
+    "Simulation.Core.Server/1.0.0": {
+      "type": "project",
+      "path": "../Simulation.Core.Server/Simulation.Core.Server.csproj",
+      "msbuildProject": "../Simulation.Core.Server/Simulation.Core.Server.csproj"
+    },
     "Simulation.Network/1.0.0": {
       "type": "project",
       "path": "../Simulation.Network/Simulation.Network.csproj",
@@ -3874,8 +3893,7 @@
       "Microsoft.Extensions.Hosting >= 10.0.0-rc.1.25451.107",
       "Microsoft.Extensions.Logging >= 10.0.0-rc.1.25451.107",
       "Microsoft.Extensions.Logging.Console >= 10.0.0-rc.1.25451.107",
-      "Simulation.Core >= 1.0.0",
-      "Simulation.Network >= 1.0.0"
+      "Simulation.Core.Server >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -3904,11 +3922,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj": {
-              "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core/Simulation.Core.csproj"
-            },
-            "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj": {
-              "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Network/Simulation.Network.csproj"
+            "/home/filipe/GameOpen/GameSimulation/Simulation.Core.Server/Simulation.Core.Server.csproj": {
+              "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.Core.Server/Simulation.Core.Server.csproj"
             }
           }
         }

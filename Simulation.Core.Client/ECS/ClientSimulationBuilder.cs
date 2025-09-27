@@ -1,12 +1,11 @@
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.ECS.Builders.Commons;
-using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Systems;
 using Simulation.Core.Options;
+using Simulation.Core.ECS.Builders;
 using Simulation.Core.Ports.Network;
+using Simulation.Core.ECS.Components;
 
-namespace Simulation.Core.ECS.Builders.Client;
+namespace Simulation.Core.Client.ECS;
 
 public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ClientResourceContext>
 {
@@ -32,8 +31,7 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<Input>(new SyncOptions(Authority.Client, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
-            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(Authority.Server, SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
+            resources.PlayerNet.RegisterComponentPost<Input>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, 0)),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }
@@ -42,7 +40,6 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var systems = new ISystem<float>[]
         {
-            new MovementSystem(world),
         };
         
         return new Group<float>("Main Systems", systems);

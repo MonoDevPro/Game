@@ -8,7 +8,8 @@ namespace Simulation.Core.Options;
 public enum SyncTarget : byte
 {
     Broadcast, // Envia para todos (padrão)
-    Unicast    // Envia apenas para o dono da entidade
+    Unicast,   // Envia apenas para o dono da entidade
+    Server,    // Envia apenas para o servidor
 }
 
 /// <summary>
@@ -16,7 +17,7 @@ public enum SyncTarget : byte
 /// Combináveis via bitwise.
 /// </summary>
 [Flags]
-public enum SyncFrequency : byte 
+public enum SyncFrequency : byte
 {
     OnChange = 1 << 0, // Envia quando houver mudança detectada
     OnTick   = 1 << 1, // Envia em intervalos de tick (respeitando SyncRateTicks)
@@ -28,7 +29,6 @@ public enum SyncFrequency : byte
 /// Controla autoridade, gatilhos e parâmetros de transmissão.
 /// </summary>
 public record SyncOptions(
-    Authority Authority,
     SyncFrequency Frequency,
     SyncTarget Target,
     NetworkDeliveryMethod DeliveryMethod,

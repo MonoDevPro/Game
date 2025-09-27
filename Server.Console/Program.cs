@@ -4,12 +4,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
-using Simulation.Core.ECS.Builders.Server;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Components.Data;
 using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.ECS;
+using Simulation.Core.Server.ECS;
 using Simulation.Network;
 
 var host = Host.CreateDefaultBuilder(args)

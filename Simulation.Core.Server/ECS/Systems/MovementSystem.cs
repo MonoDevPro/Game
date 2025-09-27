@@ -3,7 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
 
-namespace Simulation.Core.ECS.Systems;
+namespace Simulation.Core.Server.ECS.Systems;
 
 public partial class MovementSystem(World world) : BaseSystem<World, float>(world)
 {

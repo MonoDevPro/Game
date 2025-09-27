@@ -182,13 +182,13 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
         {
             // Envia apenas para o jogador dono da entidade
             case SyncTarget.Unicast:
-                if (_options.Authority == Authority.Client)
-                    _resource.SendToServer(packet, method);
-                else
-                    _resource.SendToPlayer(playerId, packet, method);
+                _resource.SendToPlayer(playerId, packet, method);
                 break;
 
             // Envia para todos os jogadores (comportamento padrão)
+            case SyncTarget.Server:
+                _resource.SendToServer(packet, method);
+                break;
             case SyncTarget.Broadcast:
             default:
                 _resource.BroadcastToAll(packet, method);

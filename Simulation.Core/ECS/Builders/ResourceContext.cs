@@ -1,6 +1,6 @@
 using Arch.Core;
 
-namespace Simulation.Core.ECS.Builders.Commons;
+namespace Simulation.Core.ECS.Builders;
 
 public class ResourceContext(IServiceProvider rootProvider, World world)
 {

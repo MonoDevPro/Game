@@ -5,7 +5,7 @@ using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resource;
 using Simulation.Core.Ports.ECS;
 
-namespace Simulation.Core.ECS.Sync;
+namespace Simulation.Core.Server.ECS.Systems;
 
 public sealed class WorldInboxSystem(World world, PlayerFactoryResource playerFactoryResource) : BaseSystem<World, float>(world), IWorldInbox
 {

@@ -2,7 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Simulation.Core.Options;
 
-namespace Simulation.Core.ECS.Builders.Commons;
+namespace Simulation.Core.ECS.Builders;
 
 /// <summary>
 /// Base class for simulation builders that eliminates code duplication
