@@ -2,39 +2,40 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Resource;
 
 namespace Simulation.Core.Server.ECS.Systems;
 
-public partial class MoveSystem(World world) : BaseSystem<World, float>(world)
+public partial class MoveSystem(World world, SpatialIndexResource spatial) : BaseSystem<World, float>(world)
 {
-    
-    // Inicia um passo de movimento (1 tile) a partir da intenção.
     [Query]
-    [All<MoveIntent, MoveStats>]
+    [All<MoveIntent>]
     [None<MoveTarget, AttackTarget>]
-    private void StartMove(in Entity entity, ref Position pos, ref MoveIntent intent, ref MoveStats stats)
+    private void CheckMovementIntent(in Entity entity, ref MoveIntent intent, ref Position pos, ref MoveStats stats, ref PlayerState state)
     {
         var dx = intent.Direction.X;
         var dy = intent.Direction.Y;
-        if ((dx | dy) == 0) return;           // sem direção
-        if (stats.Speed <= 0f) return;        // sem velocidade
-
+        if ((dx | dy) == 0)  { World.Remove<MoveIntent>(entity); return; }
+        
         // Distância cartesiana entre tiles (1 para cardinais, ~1.414 para diagonais)
         var distance = MathF.Sqrt(dx * dx + dy * dy);
-        if (distance <= 0f) return;
-
+        if (distance <= 0f) { World.Remove<MoveIntent>(entity); return; }
+        
         var target = new Position(pos.X + dx, pos.Y + dy);
+        if (!spatial.CanMove(entity, target)) { World.Remove<MoveIntent>(entity); return; }
+        
         var duration = distance / stats.Speed;                // Speed em tiles/seg
         if (duration <= 0f) duration = 0.0001f;
-
+        
         World.Add<MoveTarget, MoveTimer>(entity, 
-            new MoveTarget(pos, target),
+            new MoveTarget(pos, target), 
             new MoveTimer { Elapsed = 0f, Duration = duration });
-
-        // Consome a intenção
+        
+        state = new PlayerState(Flags: state.Flags | StateFlags.Moving);
+        
         World.Remove<MoveIntent>(entity);
     }
-
+    
     // Interpola posição durante o movimento (inteiros via arredondamento).
     [Query]
     [All<MoveTarget, MoveTimer>]
@@ -55,12 +56,13 @@ public partial class MoveSystem(World world) : BaseSystem<World, float>(world)
 
     [Query]
     [All<MoveTarget, MoveTimer>]
-    private void CompleteMove(in Entity entity, ref MoveTarget mt, ref MoveTimer timer, ref Position pos)
+    private void CompleteMove(in Entity entity, ref MoveTarget mt, ref MoveTimer timer, ref Position pos, ref PlayerState state)
     {
         if (timer.Elapsed < timer.Duration) return;
 
         pos = mt.Target;
 
         World.Remove<MoveTarget, MoveTimer>(entity);
+        state = new PlayerState(Flags: state.Flags & ~StateFlags.Moving);
     }
 }

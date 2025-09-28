@@ -49,7 +49,7 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
         var systems = new ISystem<float>[]
         {
             new WorldInboxSystem(world, resources.PlayerFactory, resources.PlayerSave),
-            new MoveSystem(world),
+            new MoveSystem(world, resources.SpatialIndex),
             new AttackSystem(world),
         };
         

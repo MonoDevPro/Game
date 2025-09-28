@@ -53,9 +53,12 @@ public sealed class SpatialIndexResource(MapService map) : ISpatialIndex
         if (_items.Remove(entity, out var item))
             _qtree.Remove(item);
     }
-
-    public bool Move(in Entity entity, in Position newPos)
+    
+    public bool CanMove(in Entity entity, in Position newPos)
     {
+        if (!map.InBounds(newPos)) 
+            return false;
+        
         // Validação centralizada com o mapa
         if (map.IsBlocked(newPos)) return false;
 
@@ -64,6 +67,14 @@ public sealed class SpatialIndexResource(MapService map) : ISpatialIndex
 
         if (item.Rect.X == newPos.X && item.Rect.Y == newPos.Y)
             return true; // sem movimento
+
+        return true;
+    }
+
+    public bool Move(in Entity entity, in Position newPos)
+    {
+        if (!_items.TryGetValue(entity, out var item))
+            return false;
 
         item.Rect = item.Rect with { X = newPos.X, Y = newPos.Y };
         return _qtree.Move(item);

@@ -19,6 +19,8 @@ public interface ISpatialIndex
     /// Remove a entidade do índice espacial.
     /// </summary>
     void Remove(in Entity entity);
+    
+    bool CanMove(in Entity entity, in Position newPos);
 
     /// <summary>
     /// Tenta mover a entidade para a nova posição, respeitando colisões/bordas do mapa.

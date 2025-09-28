@@ -11,7 +11,7 @@ public partial class AttackSystem(World world) : BaseSystem<World, float>(world)
     [Query]
     [All<AttackIntent, AttackStats>]
     [None<AttackCooldown, MoveTarget>]
-    private void StartAttack(in Entity entity, ref AttackIntent intent, ref Position pos, ref AttackStats stats)
+    private void StartAttack(in Entity entity, ref AttackIntent intent, ref Position pos, ref AttackStats stats, ref PlayerState state)
     {
         var dx = intent.Direction.X;
         var dy = intent.Direction.Y;
@@ -29,6 +29,8 @@ public partial class AttackSystem(World world) : BaseSystem<World, float>(world)
         World.Add<AttackTarget, AttackTimer>(entity, 
             new AttackTarget(pos, target),
             new AttackTimer { Elapsed = 0f, Duration = cast });
+        
+        state = new PlayerState(Flags: state.Flags | StateFlags.Attacking);
 
         // Consome a intenção
         World.Remove<AttackIntent>(entity);
@@ -38,10 +40,12 @@ public partial class AttackSystem(World world) : BaseSystem<World, float>(world)
     [Query]
     [All<AttackTarget, AttackTimer>]
     private void UpdateAttack(in Entity entity, ref AttackTimer timer, ref AttackTarget atk, ref AttackStats stats,
-        [Data] in float dt)
+        [Data] in float dt, ref PlayerState state)
     {
         timer = timer with { Elapsed = MathF.Max(0f, timer.Elapsed + dt) };
         if (timer.Elapsed < timer.Duration) return;
+        
+        state = new PlayerState(Flags: state.Flags & ~StateFlags.Attacking);
 
         // Cast completo: resolve dano
         ResolveDamage(entity, atk, stats);
