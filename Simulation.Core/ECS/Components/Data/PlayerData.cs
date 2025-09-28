@@ -2,8 +2,8 @@ using MemoryPack;
 
 namespace Simulation.Core.ECS.Components.Data;
 
-public enum Gender : int { None, Male, Female }
-public enum Vocation : int { None, Mage, Archer }
+public enum Gender : byte { None, Male, Female }
+public enum Vocation : byte { None, Mage, Archer }
 
 /// <summary>
 /// Um componente que transporta os dados de um jogador, geralmente

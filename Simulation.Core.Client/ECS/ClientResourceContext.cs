@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Resource;
 using Simulation.Core.ECS.Services;
+using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.Client.ECS;

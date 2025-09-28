@@ -10,6 +10,7 @@ using Simulation.Core.ECS.Services;
 using Simulation.Core.Options;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Client.ECS;
+using Simulation.Core.ECS.Utils;
 using Simulation.Network;
 
 var host = Host.CreateDefaultBuilder(args)

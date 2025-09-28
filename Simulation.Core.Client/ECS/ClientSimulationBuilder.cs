@@ -18,7 +18,6 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var syncSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentUpdate<State>(),
             resources.PlayerNet.RegisterComponentUpdate<Position>(),
             resources.PlayerNet.RegisterComponentUpdate<Direction>(),
             resources.PlayerNet.RegisterComponentUpdate<Health>(),
@@ -29,9 +28,17 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
 
     protected override ISystem<float> RegisterComponentPost(World world, ClientResourceContext resources)
     {
+        var syncOnChangeOption = new SyncOptions(
+            SyncFrequency.OneShot, 
+            SyncTarget.Server, 
+            NetworkDeliveryMethod.ReliableOrdered, 
+            NetworkChannel.Simulation, 
+            0);
+        
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<Input>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
+            resources.PlayerNet.RegisterComponentPost<MoveIntent>(syncOnChangeOption),
+            resources.PlayerNet.RegisterComponentPost<AttackIntent>(syncOnChangeOption),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }

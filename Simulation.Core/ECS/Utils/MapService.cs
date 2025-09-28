@@ -1,8 +1,8 @@
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Components.Data;
-using MapData = Simulation.Core.ECS.Components.Data.MapData;
+using Simulation.Core.ECS.Services;
 
-namespace Simulation.Core.ECS.Services;
+namespace Simulation.Core.ECS.Utils;
 
 public class MapService
 {

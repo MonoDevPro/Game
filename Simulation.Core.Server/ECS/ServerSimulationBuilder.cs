@@ -19,20 +19,27 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var syncSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentUpdate<Input>(),
-            resources.PlayerNet.RegisterComponentUpdate<Direction>(),
+            resources.PlayerNet.RegisterComponentUpdate<MoveIntent>(),
+            resources.PlayerNet.RegisterComponentUpdate<AttackIntent>(),
         };
         return new Group<float>("Net Update Systems", syncSystems);
     }
 
     protected override ISystem<float> RegisterComponentPost(World world, ServerResourceContext resources)
     {
+        var syncOnChangeOption = new SyncOptions(
+            SyncFrequency.OneShot, 
+            SyncTarget.Server, 
+            NetworkDeliveryMethod.ReliableOrdered, 
+            NetworkChannel.Simulation, 
+            0);
+        
         var postSystems = new ISystem<float>[]
         {
-            resources.PlayerNet.RegisterComponentPost<State>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
-            resources.PlayerNet.RegisterComponentPost<Position>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
-            resources.PlayerNet.RegisterComponentPost<Direction>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
-            resources.PlayerNet.RegisterComponentPost<Health>(new SyncOptions(SyncFrequency.OnChange, SyncTarget.Broadcast, NetworkDeliveryMethod.ReliableOrdered, NetworkChannel.Simulation, 0)),
+            resources.PlayerNet.RegisterComponentPost<PlayerState>(syncOnChangeOption),
+            resources.PlayerNet.RegisterComponentPost<Position>(syncOnChangeOption),
+            resources.PlayerNet.RegisterComponentPost<Direction>(syncOnChangeOption),
+            resources.PlayerNet.RegisterComponentPost<Health>(syncOnChangeOption),
         };
         return new Group<float>("Net Post Systems", postSystems);
     }
@@ -41,7 +48,9 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var systems = new ISystem<float>[]
         {
-            new MovementSystem(world),
+            new WorldInboxSystem(world, resources.PlayerFactory, resources.PlayerSave),
+            new MoveSystem(world),
+            new AttackSystem(world),
         };
         
         return new Group<float>("Main Systems", systems);

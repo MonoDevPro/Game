@@ -3,7 +3,7 @@ using Arch.Core;
 using QuadTrees;
 using QuadTrees.QTreeRect;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Services;
+using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 
 namespace Simulation.Core.ECS.Resource;

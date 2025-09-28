@@ -5,24 +5,31 @@ using Simulation.Core.ECS.Components.Data;
 
 namespace Simulation.Core.ECS.Resource;
 
-public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex, PlayerSaveResource saveResource)
+public sealed class PlayerFactoryResource(World world, PlayerIndexResource playerIndex, SpatialIndexResource spatialIndex)
 {
     private readonly Resources<string> _playerNames = new();
     
     public bool TryCreatePlayer(in PlayerData data)
     {
-        if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
-            TryDestroyPlayer(data.Id);
+        PlayerData playerData = data;
         
-        return CreatePlayerEntity(data);
+        if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
+        {
+            TryDestroyPlayer(data.Id, out var existData); // Remove jogador existente com o mesmo ID
+            playerData = existData; // Mantém os dados do jogador existente
+        }
+        
+        return CreatePlayerEntity(playerData);
     }
     
-    public bool TryDestroyPlayer(int playerId)
+    public bool TryDestroyPlayer(int playerId, out PlayerData data)
     {
+        data = default;
         if (!playerIndex.TryGetPlayerEntity(playerId, out var entity))
             return false; // Jogador não encontrado
-
-        return DestroyPlayerEntity(entity);
+        
+        data = DestroyPlayerEntity(entity);
+        return true;
     }
     
     public bool CreatePlayerEntity(in PlayerData playerData)
@@ -31,13 +38,15 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         
         var e = world.Create(
             new PlayerId { Value = playerData.Id },
-            new PlayerInfo { Name = nameHandler, Gender = playerData.Gender, Vocation = playerData.Vocation },
+            new PlayerName { Value = nameHandler },
+            new PlayerGender { Value = playerData.Gender },
+            new PlayerVocation { Value = playerData.Vocation },
             new Position { X = playerData.PosX, Y = playerData.PosY },
             new Direction { X = playerData.DirX, Y = playerData.DirY },
             new AttackStats { CastTime = playerData.AttackCastTime, Cooldown = playerData.AttackCooldown, Damage = playerData.AttackDamage, AttackRange = playerData.AttackRange },
             new MoveStats { Speed = playerData.MoveSpeed },
             new Health { Current = playerData.HealthCurrent, Max = playerData.HealthMax },
-            new State { Value = StateFlags.Idle }
+            new PlayerState { Flags = StateFlags.Idle }
         );
         
         playerIndex.Index(playerData.Id, e);
@@ -45,22 +54,24 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return true;
     }
 
-    private bool DestroyPlayerEntity(Entity entity)
+    private PlayerData DestroyPlayerEntity(Entity entity)
     {
         var data = ExtractPlayerData(entity);
         var playerId = data.Id;
         
-        _playerNames.Remove(world.Get<PlayerInfo>(entity).Name);
+        _playerNames.Remove(world.Get<PlayerName>(entity).Value);
         world.Destroy(entity);
         playerIndex.Unindex(playerId);
         spatialIndex.Remove(entity);
-        return true;
+        return data;
     }
     
     private PlayerData ExtractPlayerData(Entity e)
     {
         ref var id = ref world.Get<PlayerId>(e);
-        ref var playerInfo = ref world.Get<PlayerInfo>(e);
+        ref var playerName = ref world.Get<PlayerName>(e);
+        ref var playerGender = ref world.Get<PlayerGender>(e);
+        ref var playerVocation = ref world.Get<PlayerVocation>(e);
         ref var pos = ref world.Get<Position>(e);
         ref var dir = ref world.Get<Direction>(e);
         ref var attack = ref world.Get<AttackStats>(e);
@@ -70,9 +81,9 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return new PlayerData
         {
             Id = id.Value,
-            Name = _playerNames.Get(playerInfo.Name),
-            Gender = playerInfo.Gender,
-            Vocation = playerInfo.Vocation,
+            Name = _playerNames.Get(playerName.Value),
+            Gender = playerGender.Value,
+            Vocation = playerVocation.Value,
             PosX = pos.X,
             PosY = pos.Y,
             DirX = dir.X,

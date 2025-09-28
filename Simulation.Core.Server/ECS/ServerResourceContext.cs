@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Resource;
 using Simulation.Core.ECS.Services;
+using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Ports.Network;
 
@@ -25,7 +26,7 @@ public sealed class ServerResourceContext : ResourceContext
         PlayerSave = new PlayerSaveResource(world, provider.GetRequiredService<IWorldSaver>());
         PlayerIndex = new PlayerIndexResource(world);
         SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
-        PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex, PlayerSave);
+        PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex);
         PlayerNet = new PlayerNetResource(world, PlayerIndex, 
             provider.GetRequiredService<INetworkManager>());
     }
