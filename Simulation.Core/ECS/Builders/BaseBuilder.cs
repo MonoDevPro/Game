@@ -33,7 +33,7 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
         return this;
     }
 
-    public Group<float> Build()
+    public SystemGroup Build()
     {
         ValidateRequiredDependencies();
 
@@ -44,7 +44,7 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
         var resourceContext = CreateResourceContext(world);
 
         // Build pipeline without IServiceProvider in hot path
-        var pipeline = new Group<float>("Simulation Systems");
+        var pipeline = new SystemGroup("Simulation Systems", world);
 
         pipeline.Add(RegisterComponentUpdate(world, resourceContext));
         pipeline.Add(CreateSystems(world, resourceContext));

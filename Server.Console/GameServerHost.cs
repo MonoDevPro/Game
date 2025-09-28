@@ -7,6 +7,9 @@ using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Components.Data;
+using Simulation.Core.Ports.ECS;
 
 namespace Server.Console;
 
@@ -41,7 +44,7 @@ public class GameServerHost(
         // Inicia o gerenciador de rede para aceitar conexões.
         networkManager.Start();
         logger.LogInformation("Servidor iniciado e aguardando conexões.");
-
+        
         try
         {
             var stopwatch = new Stopwatch();

@@ -19,7 +19,7 @@ public sealed class WorldInboxSystem(World world, PlayerFactoryResource playerFa
     public override void Update(in float dt)
     {
         while (_spawns.TryDequeue(out var spawn))
-            playerFactoryResource.TryCreatePlayer(spawn.Player);
+            playerFactoryResource.TryCreatePlayer(spawn.Player, out _);
 
         while (_leaves.TryDequeue(out var leave))
         {

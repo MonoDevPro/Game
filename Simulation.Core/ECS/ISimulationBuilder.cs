@@ -27,5 +27,5 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// Constrói e retorna o grupo de sistemas (a pipeline) configurado.
     /// </summary>
     /// Um Group pronto a ser executado.
-    Group<float> Build();
+    SystemGroup Build();
 }

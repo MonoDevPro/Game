@@ -1,5 +1,6 @@
 using Arch.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Resource;
 using Simulation.Core.ECS.Services;
@@ -20,6 +21,7 @@ public sealed class ServerResourceContext : ResourceContext
     public readonly SpatialIndexResource SpatialIndex;
     public readonly PlayerFactoryResource PlayerFactory;
     public readonly PlayerNetResource PlayerNet;
+    public readonly ILoggerFactory LoggerFactory;
 
     public ServerResourceContext(IServiceProvider provider, World world) : base(provider, world)
     {
@@ -29,5 +31,6 @@ public sealed class ServerResourceContext : ResourceContext
         PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex);
         PlayerNet = new PlayerNetResource(world, PlayerIndex, 
             provider.GetRequiredService<INetworkManager>());
+        LoggerFactory = provider.GetRequiredService<ILoggerFactory>();
     }
 }

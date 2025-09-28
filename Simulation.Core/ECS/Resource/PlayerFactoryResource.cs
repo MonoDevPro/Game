@@ -9,7 +9,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
 {
     private readonly Resources<string> _playerNames = new();
     
-    public bool TryCreatePlayer(in PlayerData data)
+    public bool TryCreatePlayer(in PlayerData data, out Entity e)
     {
         PlayerData playerData = data;
         
@@ -19,7 +19,8 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
             playerData = existData; // Mantém os dados do jogador existente
         }
         
-        return CreatePlayerEntity(playerData);
+        e = CreatePlayerEntity(playerData);
+        return true;
     }
     
     public bool TryDestroyPlayer(int playerId, out PlayerData data)
@@ -32,7 +33,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return true;
     }
     
-    public bool CreatePlayerEntity(in PlayerData playerData)
+    public Entity CreatePlayerEntity(in PlayerData playerData)
     {
         var nameHandler = _playerNames.Add(playerData.Name);
         
@@ -51,7 +52,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         
         playerIndex.Index(playerData.Id, e);
         spatialIndex.Add(e, new Position(playerData.PosX, playerData.PosY));
-        return true;
+        return e;
     }
 
     private PlayerData DestroyPlayerEntity(Entity entity)

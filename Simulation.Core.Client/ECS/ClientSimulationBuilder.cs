@@ -1,5 +1,6 @@
 using Arch.Core;
 using Arch.System;
+using Microsoft.Extensions.Logging;
 using Simulation.Core.Options;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.Ports.Network;
@@ -21,6 +22,7 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
             resources.PlayerNet.RegisterComponentUpdate<Position>(),
             resources.PlayerNet.RegisterComponentUpdate<Direction>(),
             resources.PlayerNet.RegisterComponentUpdate<Health>(),
+            resources.PlayerNet.RegisterComponentUpdate<PlayerState>(), // passa a receber estado publicado pelo servidor
         };
         
         return new Group<float>("Net Update Systems", syncSystems);
@@ -47,6 +49,7 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var systems = new ISystem<float>[]
         {
+            new DevTestSpawnSystem(world, resources.PlayerFactory, new Logger<DevTestSpawnSystem>(resources.LoggerFactory)),
         };
         
         return new Group<float>("Main Systems", systems);

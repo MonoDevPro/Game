@@ -11,11 +11,13 @@ public partial class MoveSystem(World world, SpatialIndexResource spatial) : Bas
     [Query]
     [All<MoveIntent>]
     [None<MoveTarget, AttackTarget>]
-    private void CheckMovementIntent(in Entity entity, ref MoveIntent intent, ref Position pos, ref MoveStats stats, ref PlayerState state)
+    private void CheckMovementIntent(in Entity entity, ref Direction direction, ref MoveIntent intent, ref Position pos, ref MoveStats stats, ref PlayerState state)
     {
         var dx = intent.Direction.X;
         var dy = intent.Direction.Y;
         if ((dx | dy) == 0)  { World.Remove<MoveIntent>(entity); return; }
+        
+        direction = intent.Direction;
         
         // Distância cartesiana entre tiles (1 para cardinais, ~1.414 para diagonais)
         var distance = MathF.Sqrt(dx * dx + dy * dy);
