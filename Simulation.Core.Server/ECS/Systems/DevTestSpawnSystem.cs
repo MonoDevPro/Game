@@ -21,16 +21,20 @@ public sealed class DevTestSpawnSystem(World world, PlayerFactoryResource player
         {
             _lastLogTime = 0f;
             
-            if (World.IsAlive(_playerEntity) && !World.Has<MoveIntent, MoveTimer>(_playerEntity))
+            /*if (World.IsAlive(_playerEntity) && !World.Has<MoveIntent, MoveTimer>(_playerEntity))
             {
                 var moveIntent = new MoveIntent(new Direction(1, 1));
                 World.Add(_playerEntity, moveIntent);
                 
                 var position = World.Get<Position>(_playerEntity);
                 var direction = World.Get<Direction>(_playerEntity);
-                logger.LogInformation("DevTestSpawnSystem: Player Position - X: {PosX}, Y: {PosY}", position.X, position.Y);
-                logger.LogInformation("DevTestSpawnSystem: Player Direction - X: {DirX}, Y: {DirY}", direction.X, direction.Y);
-            }
+            
+            }*/
+            
+            var position = World.Get<Position>(_playerEntity);
+            var direction = World.Get<Direction>(_playerEntity);
+            logger.LogInformation("DevTestSpawnSystem: Player Position - X: {PosX}, Y: {PosY}", position.X, position.Y);
+            logger.LogInformation("DevTestSpawnSystem: Player Direction - X: {DirX}, Y: {DirY}", direction.X, direction.Y);
             
         }
         

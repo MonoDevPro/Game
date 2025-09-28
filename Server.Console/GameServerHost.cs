@@ -17,61 +17,45 @@ namespace Server.Console;
 /// Hospeda a execução do servidor do jogo, gerenciando o ciclo de vida da simulação e da rede.
 /// </summary>
 public class GameServerHost(
-    ILogger<GameServerHost> logger,
-    ISimulationBuilder<float> simulationBuilder,
-    INetworkManager networkManager,
-    IOptions<WorldOptions> worldOptions,
-    IOptions<AuthorityOptions> authorityOptions,
-    IServiceScopeFactory serviceScopeFactory)
+    IServiceProvider serviceProvider,
+    ILogger<GameServerHost> logger)
     : BackgroundService
 {
-    private const float FixedDeltaTime = 0.016f; // Aproximadamente 60 updates por segundo (tick rate)
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Game Server Host está a iniciar.");
-
-        // Cria um escopo de serviço para a execução do host.
-        await using var scope = serviceScopeFactory.CreateAsyncScope();
         
-        // Constrói os sistemas ECS com as dependências injetadas.
-        var groupSystems = simulationBuilder
-            .WithAuthorityOptions(authorityOptions.Value)
-            .WithWorldOptions(worldOptions.Value)
+        await using var scope = serviceProvider.CreateAsyncScope();
+        
+        // ECS Builder e Opções do Mundo
+        var builder = scope.ServiceProvider.GetRequiredService<ISimulationBuilder<float>>();
+        var worldOptions = scope.ServiceProvider.GetRequiredService<IOptions<WorldOptions>>().Value;
+        var authorityOptions = scope.ServiceProvider.GetRequiredService<IOptions<AuthorityOptions>>().Value;
+        
+        var groupSystems = builder
+            .WithAuthorityOptions(authorityOptions)
+            .WithWorldOptions(worldOptions)
             .WithRootServices(scope.ServiceProvider)
             .Build();
-
+        
+        var networkManager = scope.ServiceProvider.GetRequiredService<INetworkManager>();
+        
         // Inicia o gerenciador de rede para aceitar conexões.
         networkManager.Start();
-        logger.LogInformation("Servidor iniciado e aguardando conexões.");
-        
+        logger.LogInformation("Servidor de rede iniciado em {Authority}", networkManager.Authority);
         try
         {
-            var stopwatch = new Stopwatch();
-            var accumulator = 0.0;
-            stopwatch.Start();
-
             while (!stoppingToken.IsCancellationRequested)
             {
-                var elapsedTime = stopwatch.Elapsed.TotalSeconds;
-                stopwatch.Restart();
-                accumulator += elapsedTime;
-
                 // Processa todos os eventos de rede (novas conexões, dados recebidos, desconexões).
                 networkManager.PollEvents();
-
+                
                 // Garante que a simulação avance em passos de tempo fixos.
                 // Essencial para um servidor autoritativo ter um comportamento determinístico.
-                while (accumulator >= FixedDeltaTime)
-                {
-                    groupSystems.BeforeUpdate(FixedDeltaTime);
-                    groupSystems.Update(FixedDeltaTime);
-                    groupSystems.AfterUpdate(FixedDeltaTime);
-                    accumulator -= FixedDeltaTime;
-                }
-
+                groupSystems.Update(0.016f);
+                
                 // Libera o thread para outras tarefas, evitando consumo de 100% da CPU.
-                await Task.Yield();
+                await Task.Delay(15, stoppingToken);
             }
         }
         catch (OperationCanceledException)

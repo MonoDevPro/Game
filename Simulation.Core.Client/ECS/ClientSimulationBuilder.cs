@@ -50,6 +50,8 @@ public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : Bas
         var systems = new ISystem<float>[]
         {
             new DevTestSpawnSystem(world, resources.PlayerFactory, new Logger<DevTestSpawnSystem>(resources.LoggerFactory)),
+            new Systems.ClientInputSystem(world, resources.PlayerIndex, new Logger<Systems.ClientInputSystem>(resources.LoggerFactory)),
+            new Systems.ClientLogSystem(world, resources.PlayerIndex, new Logger<Systems.ClientLogSystem>(resources.LoggerFactory)),
         };
         
         return new Group<float>("Main Systems", systems);

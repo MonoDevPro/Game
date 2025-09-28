@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://cqd358filrk2x"]
+
+[ext_resource type="Script" uid="uid://cvt4cob72qk0i" path="res://Scripts/PlayerView.cs" id="1_bo1nx"]
+[ext_resource type="Script" uid="uid://bkiqj6u0h2qjd" path="res://Scripts/GodotInputSystem.cs" id="2_8gbba"]
+
+[node name="Main" type="Node2D"]
+
+[node name="PlayerView" type="Node2D" parent="."]
+script = ExtResource("1_bo1nx")
+
+[node name="GodotInputSystem" type="Node" parent="."]
+script = ExtResource("2_8gbba")

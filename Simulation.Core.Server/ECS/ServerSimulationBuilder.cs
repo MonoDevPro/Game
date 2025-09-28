@@ -54,6 +54,7 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
             new WorldInboxSystem(world, resources.PlayerFactory, resources.PlayerSave),
             new MoveSystem(world, resources.SpatialIndex),
             new AttackSystem(world),
+            new HealthTickSystem(world),
         };
         
         return new Group<float>("Main Systems", systems);
