@@ -12,6 +12,10 @@ public partial class PlayerView : Node2D
     private Entity _entity;
     private bool _hasEntity;
     private Position _lastPos;
+    
+    public override void _Ready()
+    {
+    }
 
     public override void _Process(double delta)
     {

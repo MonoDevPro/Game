@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Simulatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "Simulation.API\src\Web\Web.csproj", "{003247DA-E19A-47C5-B5B1-A7E4F279F827}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Models", "Simulation.API\src\Application.Models\Application.Models.csproj", "{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Abstractions", "Simulation.API\src\Application.Abstractions\Application.Abstractions.csproj", "{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

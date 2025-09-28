@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Application.Models.Options;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.Options;

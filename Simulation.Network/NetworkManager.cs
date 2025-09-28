@@ -1,6 +1,6 @@
+using Application.Models.Options;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 using Simulation.Network.Packet;
 

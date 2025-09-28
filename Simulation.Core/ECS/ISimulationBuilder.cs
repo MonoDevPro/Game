@@ -1,5 +1,4 @@
-using Arch.System;
-using Simulation.Core.Options;
+using Application.Models.Options;
 
 namespace Simulation.Core.ECS;
 

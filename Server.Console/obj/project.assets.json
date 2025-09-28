@@ -2586,6 +2586,16 @@
           }
         }
       },
+      "Application.Abstractions/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Application.Abstractions.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Application.Abstractions.dll": {}
+        }
+      },
       "QuadTrees/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v3.1",
@@ -2600,6 +2610,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "Application.Abstractions": "1.0.0",
           "Arch": "2.1.0",
           "Arch.EventBus": "1.0.2",
           "Arch.LowLevel": "1.1.5",
@@ -7954,6 +7965,11 @@
         "zeroallocjobscheduler.nuspec"
       ]
     },
+    "Application.Abstractions/1.0.0": {
+      "type": "project",
+      "path": "../Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj",
+      "msbuildProject": "../Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj"
+    },
     "QuadTrees/1.0.0": {
       "type": "project",
       "path": "../thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj",
@@ -8020,7 +8036,13 @@
         "warnAsError": [
           "NU1605"
         ]
-      }
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net8.0": {
@@ -8054,12 +8076,26 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.14, 8.0.14]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.linux-x64",
+            "version": "[8.0.14, 8.0.14]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.14, 8.0.14]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.115/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/9.0.104/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

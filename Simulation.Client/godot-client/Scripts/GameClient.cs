@@ -2,6 +2,8 @@ using Godot;
 using System;
 using Arch.Core;
 using System.Diagnostics;
+using Application.Models.Options;
+using GodotClient.API;
 using Simulation.Core.ECS;
 using Simulation.Core.Options;
 using Microsoft.Extensions.Logging;
@@ -27,6 +29,8 @@ public partial class GameClient : Node
     private readonly Stopwatch _stopwatch = new();
     private double _accumulator;
     private const float FixedDt = 0.016f; // ~60Hz
+    
+    private bool _initialized;
 
     public override void _EnterTree()
     {
@@ -35,19 +39,71 @@ public partial class GameClient : Node
 
     public override void _Ready()
     {
-        GD.Print("[GameClient] Initializing...");
+        GD.Print("[GameClient] Waiting for config...");
+        
+        //GetNode<ApiClient>("/root/ApiClient")?.FetchConfig();
+        
+        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        // Se já estiver carregada, inicializa imediatamente
+        if (cfg.IsReady)
+        {
+            InitializeClient(cfg);
+            return;
+        }
+        
+        // Conectar sinal Godot (vai rodar no main thread)
+        cfg.Connect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
+        // Opcional: conectar também ao evento C#
+        cfg.ConfigAvailable += OnConfigAvailable;
+        
+        // Opcional: iniciar uma fetch aqui se você controlar o fluxo
+        
+    }
+    
+    private void OnConfigUpdated()
+    {
+        // desconecta o sinal para evitar múltiplas chamadas
+        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        cfg.Disconnect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
+        cfg.ConfigAvailable -= OnConfigAvailable;
+
+        InitializeClient(cfg);
+    }
+    
+    private void OnConfigAvailable()
+    {
+        // caso queira suportar a notificação por C# event
+        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        cfg.ConfigAvailable -= OnConfigAvailable;
+        // Use CallDeferred para garantir a chamada segura no main thread do Godot
+        CallDeferred(nameof(InitializeClientDeferred));
+    }
+
+    private void InitializeClientDeferred()
+    {
+        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        InitializeClient(cfg);
+    }
+    
+    private void InitializeClient(ConfigManager configManager)
+    {
+        if (_initialized) return;
+        _initialized = true;
+
+        GD.Print("[GameClient] Initializing with config...",
+            " World:", configManager.World,
+            " Network:", configManager.Network,
+            " Authority:", configManager.Authority);
 
         var sc = new ServiceCollection();
 
         // Logging
         sc.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Information));
 
-        // Options (programáticos para o Godot)
-        var configManager = GetNode<ConfigManager>("/root/ConfigManager");
-        var worldOptions = configManager.World;
-        var netOptions = configManager.Network;
-        var authorityOptions = configManager.Authority;
-        
+        var worldOptions = configManager.World ?? new WorldOptions();
+        var netOptions = configManager.Network ?? new NetworkOptions();
+        var authorityOptions = configManager.Authority ?? new AuthorityOptions();
+
         sc.AddSingleton<IOptions<WorldOptions>>(_ => Options.Create(worldOptions));
         sc.AddSingleton<IOptions<NetworkOptions>>(_ => Options.Create(netOptions));
         sc.AddSingleton<IOptions<AuthorityOptions>>(_ => Options.Create(authorityOptions));
@@ -93,12 +149,14 @@ public partial class GameClient : Node
 
         _stopwatch.Restart();
         _accumulator = 0.0;
-
+        
         GD.Print("[GameClient] Initialized and connected (attempting) to server.");
     }
 
     public override void _Process(double delta)
     {
+        if (!_initialized) return;
+        
         // Processa eventos de rede
         _net.PollEvents();
 

@@ -1,6 +1,6 @@
+using Application.Models.Options;
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.Options;
 
 namespace Simulation.Core.ECS.Builders;
 

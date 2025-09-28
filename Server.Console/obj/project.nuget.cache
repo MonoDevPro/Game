@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "VB9DCVeqK04=",
+  "dgSpecHash": "cnNyEeEb05o=",
   "success": true,
   "projectFilePath": "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj",
   "expectedPackageFiles": [
@@ -140,7 +140,10 @@
     "/home/filipe/.nuget/packages/system.threading.timer/4.3.0/system.threading.timer.4.3.0.nupkg.sha512",
     "/home/filipe/.nuget/packages/system.xml.readerwriter/4.3.0/system.xml.readerwriter.4.3.0.nupkg.sha512",
     "/home/filipe/.nuget/packages/system.xml.xdocument/4.3.0/system.xml.xdocument.4.3.0.nupkg.sha512",
-    "/home/filipe/.nuget/packages/zeroallocjobscheduler/1.1.2/zeroallocjobscheduler.1.1.2.nupkg.sha512"
+    "/home/filipe/.nuget/packages/zeroallocjobscheduler/1.1.2/zeroallocjobscheduler.1.1.2.nupkg.sha512",
+    "/home/filipe/.nuget/packages/microsoft.netcore.app.ref/8.0.14/microsoft.netcore.app.ref.8.0.14.nupkg.sha512",
+    "/home/filipe/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.14/microsoft.aspnetcore.app.ref.8.0.14.nupkg.sha512",
+    "/home/filipe/.nuget/packages/microsoft.netcore.app.host.linux-x64/8.0.14/microsoft.netcore.app.host.linux-x64.8.0.14.nupkg.sha512"
   ],
   "logs": []
 }

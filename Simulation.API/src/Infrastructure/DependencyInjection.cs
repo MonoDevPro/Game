@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Application.Models.Options;
 
 namespace GameWeb.Infrastructure;
 
@@ -19,6 +20,11 @@ public static class DependencyInjection
 {
     public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
     {
+        builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
+        builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
+        builder.Services.Configure<AuthorityOptions>(builder.Configuration.GetSection(AuthorityOptions.SectionName));
+        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+        
         var connectionString = builder.Configuration.GetConnectionString("GameWebDb");
         Guard.Against.Null(connectionString, message: "Connection string 'GameWebDb' not found.");
         
@@ -38,10 +44,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
-
-        // Bind JWT options
-        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-
+        
         // Authentication & Authorization
         var jwtSection = builder.Configuration.GetSection("Jwt");
         var issuer = jwtSection["Issuer"];

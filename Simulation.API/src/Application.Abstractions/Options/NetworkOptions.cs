@@ -1,4 +1,4 @@
-namespace Simulation.Core.Options;
+namespace Application.Models.Options;
 
 public class NetworkOptions
 {
@@ -12,7 +12,7 @@ public class NetworkOptions
     public override string ToString()
     {
         return $"ServerAddress={ServerAddress}, " +
-               $"ServerPort={ServerPort}, ConnectionKey={ConnectionKey}], " +
+               $"ServerPort={ServerPort}, ConnectionKey={ConnectionKey}, " +
                $"DisconnectTimeoutMs={DisconnectTimeoutMs}";
     }
 }

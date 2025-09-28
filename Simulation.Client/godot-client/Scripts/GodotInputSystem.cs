@@ -8,6 +8,10 @@ public partial class GodotInputSystem : Node
 {
     private Entity _entity;
     private bool _hasEntity;
+    
+    public override void _Ready()
+    {
+    }
 
     public override void _Process(double delta)
     {
