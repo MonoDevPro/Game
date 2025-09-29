@@ -1,11 +1,12 @@
+using Application.Models;
+using Application.Models.Commands;
+using Application.Models.Models;
 using GameWeb.Application.Characters.Specifications;
 using GameWeb.Application.Common.Interfaces;
 using GameWeb.Domain.Entities;
 using GameWeb.Domain.Events;
 
 namespace GameWeb.Application.Characters.Commands.DeleteCharacter;
-
-public record DeleteCharacterCommand(int CharacterId) : ICommand<int>;
 
 public class DeleteCharacterCommandHandler(
     IRepository<Character> characterRepo, 

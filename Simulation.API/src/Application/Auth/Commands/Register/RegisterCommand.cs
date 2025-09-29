@@ -1,10 +1,8 @@
-using Application.Models;
+using Application.Models.Models;
 using GameWeb.Application.Common.Interfaces;
 using ValidationException = GameWeb.Application.Common.Exceptions.ValidationException;
 
 namespace GameWeb.Application.Auth.Commands.Register;
-
-public record RegisterCommand(string UserName, string Email, string Password) : ICommand<AuthResponse>;
 
 public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {

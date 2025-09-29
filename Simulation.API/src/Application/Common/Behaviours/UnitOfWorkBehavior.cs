@@ -1,5 +1,7 @@
+using Application.Models;
 using GameWeb.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
+using ICommand = System.Windows.Input.ICommand;
 
 namespace GameWeb.Application.Common.Behaviours;
 

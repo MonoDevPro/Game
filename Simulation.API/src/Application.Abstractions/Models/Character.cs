@@ -1,4 +1,6 @@
-namespace Application.Models;
+using GameWeb.Domain.Enums;
+
+namespace Application.Models.Models;
 
 public record CharacterDto(
     int Id,

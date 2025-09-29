@@ -123,6 +123,125 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
+            "projectReferences": {
+              "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Domain/Domain.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Domain/Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ],
+          "warnNotAsError": [
+            "NU1901",
+            "NU1902",
+            "NU1903",
+            "NU1904"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "centralPackageVersions": {
+            "Ardalis.GuardClauses": "4.6.0",
+            "AutoMapper": "13.0.1",
+            "Azure.Extensions.AspNetCore.Configuration.Secrets": "1.3.2",
+            "Azure.Identity": "1.13.1",
+            "coverlet.collector": "6.0.2",
+            "FluentValidation.AspNetCore": "11.3.0",
+            "FluentValidation.DependencyInjectionExtensions": "11.11.0",
+            "MediatR": "12.4.1",
+            "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
+            "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "9.0.0",
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "9.0.0",
+            "Microsoft.AspNetCore.Identity.UI": "9.0.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "9.0.0",
+            "Microsoft.AspNetCore.OpenApi": "9.0.0",
+            "Microsoft.Data.SqlClient": "5.2.2",
+            "Microsoft.EntityFrameworkCore": "9.0.0",
+            "Microsoft.EntityFrameworkCore.Design": "9.0.0",
+            "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
+            "Microsoft.EntityFrameworkCore.Sqlite": "9.0.0",
+            "Microsoft.EntityFrameworkCore.Tools": "9.0.0",
+            "Microsoft.Extensions.Configuration.EnvironmentVariables": "9.0.0",
+            "Microsoft.Extensions.Configuration.Json": "9.0.0",
+            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "9.0.0",
+            "Microsoft.Extensions.Hosting": "9.0.0",
+            "Microsoft.NET.Test.Sdk": "17.11.1",
+            "Moq": "4.20.72",
+            "NSwag.AspNetCore": "14.6.0",
+            "NSwag.MSBuild": "14.6.0",
+            "nunit": "3.14.0",
+            "NUnit.Analyzers": "3.10.0",
+            "NUnit3TestAdapter": "4.6.0",
+            "Respawn": "6.2.1",
+            "Shouldly": "4.3.0",
+            "System.Configuration.ConfigurationManager": "9.0.0",
+            "System.IdentityModel.Tokens.Jwt": "8.14.0"
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.14, 8.0.14]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.14, 8.0.14]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/9.0.104/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Domain/Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Domain/Domain.csproj",
+        "projectName": "GameWeb.Domain",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Domain/Domain.csproj",
+        "packagesPath": "/home/filipe/.nuget/packages/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/artifacts/obj/Domain/",
+        "projectStyle": "PackageReference",
+        "centralPackageVersionsManagementEnabled": true,
+        "configFilePaths": [
+          "/home/filipe/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/usr/lib64/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {}
           }
         },
@@ -148,6 +267,13 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "MediatR": {
+              "target": "Package",
+              "version": "[12.4.1, )",
+              "versionCentrallyManaged": true
+            }
+          },
           "centralPackageVersions": {
             "Ardalis.GuardClauses": "4.6.0",
             "AutoMapper": "13.0.1",

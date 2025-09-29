@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using Application.Models;
-using GameWeb.Application.Characters.Models;
+using Application.Models.Commands;
+using Application.Models.Models;
 using GameWeb.Application.Characters.Specifications;
 using GameWeb.Application.Common.Interfaces;
 using GameWeb.Domain.Entities;
@@ -10,11 +10,10 @@ using GameWeb.Domain.ValueObjects;
 
 namespace GameWeb.Application.Characters.Commands.CreateCharacter;
 
-public record CreateCharacterCommand(string Name, Gender Gender, Vocation Vocation) : ICommand<CharacterDto>;
-
 public partial class CreateCharacterCommandValidator : AbstractValidator<CreateCharacterCommand>
 {
-    [GeneratedRegex("^[a-zA-Z][a-zA-Z0-9_]*$")] private static partial Regex NameRegex();
+    [GeneratedRegex("^[a-zA-Z][a-zA-Z0-9_]*$", RegexOptions.Compiled)] 
+    private static partial Regex NameRegex();
     private const int MaxCharactersPerUser = 3;
     private const int MinNameLength = 3;
     private const int MaxNameLength = 20;

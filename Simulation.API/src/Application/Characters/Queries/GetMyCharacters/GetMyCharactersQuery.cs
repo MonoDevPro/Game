@@ -1,11 +1,12 @@
 using Application.Models;
+using Application.Models.Models;
+using Application.Models.Queries;
 using GameWeb.Application.Characters.Specifications;
 using GameWeb.Application.Common.Interfaces;
 using GameWeb.Domain.Entities;
 
 namespace GameWeb.Application.Characters.Queries.GetMyCharacters;
 
-public record GetMyCharactersQuery : IQuery<List<CharacterDto>>;
 
 public class GetMyCharactersQueryHandler(
     IRepository<Character> characterRepo, 

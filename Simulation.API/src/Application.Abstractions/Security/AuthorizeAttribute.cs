@@ -1,4 +1,4 @@
-﻿namespace GameWeb.Application.Common.Security;
+﻿namespace Application.Models.Security;
 
 /// <summary>
 /// Specifies the class this attribute is applied to requires authorization.

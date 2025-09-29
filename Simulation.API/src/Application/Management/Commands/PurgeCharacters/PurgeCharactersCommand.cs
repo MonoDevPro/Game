@@ -1,14 +1,10 @@
+using Application.Models.Commands;
 using GameWeb.Application.Common.Interfaces;
-using GameWeb.Application.Common.Security;
 using GameWeb.Application.Management.Specifications;
-using GameWeb.Domain.Constants;
 using GameWeb.Domain.Entities;
 using GameWeb.Domain.Events;
 
 namespace GameWeb.Application.Management.Commands.PurgeCharacters;
-
-[Authorize(Policy = Policies.CanPurge)]
-public record PurgeCharactersCommand(bool? IsActive = null) : ICommand<int>;
 
 public class PurgeCharactersCommandHandler(IRepository<Character> characterRepo)
     : IRequestHandler<PurgeCharactersCommand, int>

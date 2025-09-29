@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
+using Application.Models.Security;
 using Microsoft.Extensions.Logging;
 using GameWeb.Application.Common.Exceptions;
 using GameWeb.Application.Common.Interfaces;
-using GameWeb.Application.Common.Security;
 
 namespace GameWeb.Application.Common.Behaviours;
 

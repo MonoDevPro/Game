@@ -12,26 +12,24 @@ namespace GameWeb.Web.Endpoints;
 
 public class Options : EndpointGroupBase
 {
-    public override string? GroupName => "Options";
-
     public override void Map(RouteGroupBuilder group)
     {
-        group.MapGet(GetOptions)
+        group.MapGet(GetClientOptions,"/client")
             .AllowAnonymous()
-            .WithSummary("Register a new user and receive a JWT access token");
+            .WithSummary("Get the client configuration options.");
     }
 
-    private Task<ConfigDto> GetOptions(
+    private Task<IResult> GetClientOptions(
         IOptions<AuthorityOptions> authority,
         IOptions<NetworkOptions> network,
         IOptions<WorldOptions> world,
         CancellationToken ct)
-    {
+    { 
         var configDto = new ConfigDto(
             authority.Value,
             network.Value,
             world.Value);
 
-        return Task.FromResult<ConfigDto>(configDto);
+        return Task.FromResult<IResult>(TypedResults.Ok(configDto));
     }
 }

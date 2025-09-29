@@ -17,7 +17,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
+                "$ref": "#/components/schemas/RegisterCommand"
               }
             }
           },
@@ -293,22 +293,15 @@
         ]
       }
     },
-    "/api/Options": {
+    "/api/Options/client": {
       "get": {
         "tags": [
           "Options"
         ],
-        "operationId": "GetOptions",
+        "operationId": "GetClientOptions",
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConfigDto"
-                }
-              }
-            }
+            "description": ""
           }
         }
       }
@@ -316,7 +309,7 @@
   },
   "components": {
     "schemas": {
-      "RegisterRequest": {
+      "RegisterCommand": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -387,84 +380,6 @@
           2,
           3
         ]
-      },
-      "ConfigDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "authority": {
-            "$ref": "#/components/schemas/AuthorityOptions"
-          },
-          "network": {
-            "$ref": "#/components/schemas/NetworkOptions"
-          },
-          "world": {
-            "$ref": "#/components/schemas/WorldOptions"
-          }
-        }
-      },
-      "AuthorityOptions": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "authority": {
-            "$ref": "#/components/schemas/Authority"
-          }
-        }
-      },
-      "Authority": {
-        "type": "integer",
-        "description": "",
-        "x-enumNames": [
-          "Server",
-          "Client"
-        ],
-        "enum": [
-          0,
-          1
-        ]
-      },
-      "NetworkOptions": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "serverAddress": {
-            "type": "string"
-          },
-          "serverPort": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "connectionKey": {
-            "type": "string"
-          },
-          "disconnectTimeoutMs": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "WorldOptions": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "chunkSizeInBytes": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "minimumAmountOfEntitiesPerChunk": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "archetypeCapacity": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "entityCapacity": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
       }
     },
     "securitySchemes": {

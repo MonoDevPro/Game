@@ -1,4 +1,6 @@
-namespace GameWeb.Application.Common.Interfaces;
+using MediatR;
+
+namespace Application.Models;
 
 /// <summary>
 /// Marcador para comandos (alteram estado) – usado para behaviors condicionais como UnitOfWork.

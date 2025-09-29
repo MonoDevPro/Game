@@ -10,7 +10,6 @@ namespace GodotClient.API;
 public partial class ApiClient : Node
 {
     private const string ApiBaseUrl = "http://localhost:5000/api";
-    
     private HttpRequest _http;
     private JsonSerializerOptions _jsonOptions;
 
@@ -28,7 +27,16 @@ public partial class ApiClient : Node
 
     public void FetchConfig()
     {
-        _http.Request($"{ApiBaseUrl}/options", null, HttpClient.Method.Get);
+        _http.Request($"{ApiBaseUrl}/options/client", null, HttpClient.Method.Get);
+    }
+    
+    public void FetchRegister()
+    {
+        
+    }
+    
+    public void FetchLogin()
+    {
     }
 
     private void OnRequestCompleted(long result, long responseCode, string[] headers, byte[]? body)

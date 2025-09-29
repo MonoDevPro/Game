@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Application.Models.Models;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using GameWeb.Application.Common.Interfaces;

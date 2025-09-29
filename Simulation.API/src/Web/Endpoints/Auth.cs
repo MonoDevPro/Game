@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Application.Models;
+using Application.Models.Models;
 using GameWeb.Application.Auth.Commands.Register;
 using GameWeb.Application.Common.Interfaces;
 using GameWeb.Infrastructure.Identity;
@@ -30,19 +31,14 @@ public class Auth : EndpointGroupBase
             .WithSummary("Issue a fresh JWT for the current user (e.g., after selecting an active character)");
     }
 
-    public record RegisterRequest(string UserName, string Email, string Password);
-
     private async Task<IResult> Register(
-        RegisterRequest request,
+        RegisterCommand request,
         ISender sender,
         CancellationToken ct)
     {
-        var command = new RegisterCommand(request.UserName, request.Email, request.Password);
-        var result = await sender.Send(command, ct);
+        var result = await sender.Send(request, ct);
         return TypedResults.Ok(result);
     }
-
-    public record LoginRequest(string UserNameOrEmail, string Password);
 
     private async Task<IResult> Login(
         LoginRequest request,

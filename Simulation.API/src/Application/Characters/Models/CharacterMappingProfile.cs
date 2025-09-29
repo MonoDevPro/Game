@@ -1,4 +1,5 @@
 using Application.Models;
+using Application.Models.Models;
 using GameWeb.Domain.Entities;
 
 namespace GameWeb.Application.Characters.Models;

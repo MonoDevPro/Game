@@ -41,7 +41,6 @@ public partial class GameClient : Node
     {
         GD.Print("[GameClient] Waiting for config...");
         
-        //GetNode<ApiClient>("/root/ApiClient")?.FetchConfig();
         
         var cfg = GetNode<ConfigManager>("/root/ConfigManager");
         // Se já estiver carregada, inicializa imediatamente
@@ -55,9 +54,6 @@ public partial class GameClient : Node
         cfg.Connect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
         // Opcional: conectar também ao evento C#
         cfg.ConfigAvailable += OnConfigAvailable;
-        
-        // Opcional: iniciar uma fetch aqui se você controlar o fluxo
-        
     }
     
     private void OnConfigUpdated()
