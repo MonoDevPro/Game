@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using GameWeb.Application.Common.Models;
 
 namespace GameWeb.Application.Common.Interfaces;
 
@@ -9,16 +8,6 @@ namespace GameWeb.Application.Common.Interfaces;
 /// </summary>
 public interface IIdentityService
 {
-    /// <summary>
-    /// Verifica se um nome de utilizador já está em uso.
-    /// </summary>
-    Task<bool> IsUserNameInUseAsync(string userName, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Verifica se um endereço de e-mail já está em uso.
-    /// </summary>
-    Task<bool> IsEmailInUseAsync(string email, CancellationToken cancellationToken);
-    
     /// <summary>
     /// Gets the username for a specified user ID.
     /// </summary>

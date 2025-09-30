@@ -15,8 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Simulation.API\src\Application.Abstractions\Application.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Simulation.Core\Simulation.Core.csproj" />
     <ProjectReference Include="..\..\Simulation.Core.Client\Simulation.Core.Client.csproj" />
     <ProjectReference Include="..\..\Simulation.Network\Simulation.Network.csproj" />
   </ItemGroup>

@@ -1,5 +1,3 @@
-using Application.Models.Commands;
-using Application.Models.Queries;
 using GameWeb.Application.Management.Commands.PurgeCharacters;
 using GameWeb.Application.Management.Queries.GetAllCharacters;
 using GameWeb.Domain.Constants;
@@ -11,7 +9,7 @@ public class Management : EndpointGroupBase
     public override void Map(RouteGroupBuilder group)
     {
         // Define um prefixo e segurança para TODO o grupo administrativo
-        group.RequireAuthorization(Policies.CanManageUsers); // Opcional, pode ser na camada do CQRS
+        group.RequireAuthorization(Policies.CanReadCharacters); // Opcional, pode ser na camada do CQRS
 
         // Cria um subgrupo para manter as rotas de personagens organizadas
         var charactersGroup = group.MapGroup("/characters");

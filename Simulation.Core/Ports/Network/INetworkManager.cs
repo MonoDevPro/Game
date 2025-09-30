@@ -1,4 +1,4 @@
-using Application.Models.Options;
+using Application.Abstractions.Options;
 using Simulation.Core.Options;
 
 namespace Simulation.Core.Ports.Network;

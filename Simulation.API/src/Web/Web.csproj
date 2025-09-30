@@ -33,6 +33,11 @@
     <Folder Include="wwwroot\api\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="MemoryPack.Core">
+      <HintPath>..\..\..\..\..\.nuget\packages\memorypack.core\1.21.4\lib\net8.0\MemoryPack.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
   <!-- Auto-generated Open API specification and Angular TypeScript clients -->
   <PropertyGroup>

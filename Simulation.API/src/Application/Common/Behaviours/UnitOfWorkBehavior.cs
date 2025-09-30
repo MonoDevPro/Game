@@ -1,4 +1,4 @@
-using Application.Models;
+using Application.Abstractions;
 using GameWeb.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 using ICommand = System.Windows.Input.ICommand;

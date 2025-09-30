@@ -10,6 +10,9 @@ namespace GameWeb.Infrastructure.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+    public DbSet<Map> Maps => Set<Map>();
+    public DbSet<Player> Players => Set<Player>();
+    
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -18,7 +21,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<ApplicationUser>()
             .HasMany(u => u.Characters)
             .WithOne()
-            .HasForeignKey(c => c.OwnerId)
+            .HasForeignKey(c => c.UserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
         

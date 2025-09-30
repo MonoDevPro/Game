@@ -1,4 +1,4 @@
-using Application.Models.Options;
+using Application.Abstractions.Options;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.Ports.Network;

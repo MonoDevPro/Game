@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace Application.Models;
+namespace Application.Abstractions;
 
 /// <summary>
 /// Marcador para comandos (alteram estado) – usado para behaviors condicionais como UnitOfWork.

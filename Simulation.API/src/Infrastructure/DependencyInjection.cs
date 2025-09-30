@@ -12,7 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Application.Models.Options;
+using Application.Abstractions.Options;
+using GameWeb.Application.Characters.Services;
+using GameWeb.Application.Maps.Services;
 
 namespace GameWeb.Infrastructure;
 
@@ -37,10 +39,11 @@ public static class DependencyInjection
         {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
             options.UseSqlite(connectionString);
-            options.ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning));
         });
         
-        builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+        builder.Services.AddScoped<IMapRepository, MapRepository>();
+        builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
+        
         builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
@@ -89,16 +92,16 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddClaimsPrincipalFactory<CustomClaimsPrincipalFactory>()
+            .AddUserValidator<CustomUserNameValidator>()
             .AddSignInManager();
-            // .AddApiEndpoints(); // Keep Identity UI endpoints out when using custom JWT endpoints
 
         builder.Services.AddTransient<IIdentityService, IdentityService>();
         builder.Services.AddTransient<ITokenService, JwtTokenService>();
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy(Policies.CanPurge, policy => policy.RequireRole(Roles.Administrator));
-            options.AddPolicy(Policies.CanManageUsers, policy => policy.RequireRole(Roles.Administrator));
+            options.AddPolicy(Policies.CanDeleteCharacters, policy => policy.RequireRole(Roles.Administrator));
+            options.AddPolicy(Policies.CanReadCharacters, policy => policy.RequireRole(Roles.Administrator));
         });
     }
 }

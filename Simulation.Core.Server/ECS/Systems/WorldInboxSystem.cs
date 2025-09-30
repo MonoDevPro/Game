@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
+using Application.Abstractions;
 using Arch.Core;
 using Arch.System;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Components.Data;
 using Simulation.Core.ECS.Resource;
 using Simulation.Core.Ports.ECS;
 
@@ -23,7 +23,7 @@ public sealed class WorldInboxSystem(World world, PlayerFactoryResource playerFa
 
         while (_leaves.TryDequeue(out var leave))
         {
-            if (playerFactoryResource.TryDestroyPlayer(leave.PlayerId, out PlayerData data))
+            if (playerFactoryResource.TryDestroyPlayer(leave.PlayerId, out PlayerData? data) && data is not null)
                 playerSaveResource.SavePlayer(data);
         }
     }

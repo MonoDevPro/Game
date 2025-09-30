@@ -1,7 +1,6 @@
 using System;
 using Arch.Core;
 using Arch.System;
-using Microsoft.Extensions.Logging;
 using Simulation.Core.Client.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
@@ -19,8 +18,7 @@ namespace GodotClient;
 /// </summary>
 public sealed class GodotClientSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ClientResourceContext>
 {
-    protected override ClientResourceContext CreateResourceContext(World world)
-        => new ClientResourceContext(rootProvider, world);
+    protected override ClientResourceContext CreateResourceContext(World world) => new(rootProvider, world);
 
     protected override ISystem<float> RegisterComponentUpdate(World world, ClientResourceContext resources)
     {
@@ -55,7 +53,6 @@ public sealed class GodotClientSimulationBuilder(IServiceProvider rootProvider) 
     {
         var systems = new ISystem<float>[]
         {
-            new DevTestSpawnSystem(world, resources.PlayerFactory, new Logger<DevTestSpawnSystem>(resources.LoggerFactory)),
         };
         return new Group<float>("Main Systems", systems);
     }

@@ -1,12 +1,9 @@
-using Application.Models.Commands;
-using Application.Models.Queries;
 using GameWeb.Application.Management.Commands.PurgeCharacters;
 using GameWeb.Application.Management.Queries.GetAllCharacters;
 using GameWeb.Domain.Constants;
 
 namespace GameWeb.Web.Endpoints;
 
-// TODO: Finalizar este endpoint para uso interno
 public class Internal : EndpointGroupBase
 {
     public override void Map(RouteGroupBuilder group)

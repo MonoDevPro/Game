@@ -1,7 +1,7 @@
+using Application.Abstractions;
 using Arch.Core;
 using Arch.LowLevel;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Components.Data;
 
 namespace Simulation.Core.ECS.Resource;
 
@@ -9,21 +9,21 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
 {
     private readonly Resources<string> _playerNames = new();
     
-    public bool TryCreatePlayer(in PlayerData data, out Entity e)
+    public bool TryCreatePlayer(PlayerData data, out Entity e)
     {
         PlayerData playerData = data;
         
         if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
         {
-            TryDestroyPlayer(data.Id, out var existData); // Remove jogador existente com o mesmo ID
-            playerData = existData; // Mantém os dados do jogador existente
+            if (TryDestroyPlayer(data.Id, out var existData) && existData is not null) // Remove jogador existente com o mesmo ID
+                playerData = existData; // Mantém os dados do jogador existente
         }
         
         e = CreatePlayerEntity(playerData);
         return true;
     }
     
-    public bool TryDestroyPlayer(int playerId, out PlayerData data)
+    public bool TryDestroyPlayer(int playerId, out PlayerData? data)
     {
         data = default;
         if (!playerIndex.TryGetPlayerEntity(playerId, out var entity))
@@ -33,7 +33,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return true;
     }
     
-    public Entity CreatePlayerEntity(in PlayerData playerData)
+    public Entity CreatePlayerEntity(PlayerData playerData)
     {
         var nameHandler = _playerNames.Add(playerData.Name);
         

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
-using Application.Models.Security;
 using Microsoft.Extensions.Logging;
 using GameWeb.Application.Common.Exceptions;
 using GameWeb.Application.Common.Interfaces;
+using GameWeb.Application.Common.Security;
 
 namespace GameWeb.Application.Common.Behaviours;
 
@@ -35,9 +35,7 @@ public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRe
 
         // If no authorize requirements, continue
         if (!metadata.HasRequirements)
-        {
             return await next();
-        }
 
         // Must be authenticated
         if (_user.Id == null)
@@ -73,7 +71,6 @@ public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRe
 
         // Policy-based authorization
         if (metadata.Policies != null && metadata.Policies.Count > 0)
-        {
             foreach (var policy in metadata.Policies)
             {
                 var authorized = await _identityService.AuthorizeAsync(_user.Id, policy, cancellationToken).ConfigureAwait(false);
@@ -84,7 +81,6 @@ public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRe
                     throw new ForbiddenAccessException();
                 }
             }
-        }
 
         // Authorized
         return await next();

@@ -1,6 +1,6 @@
 using System.Security.Claims;
+using GameWeb.Application.Common;
 using GameWeb.Application.Common.Interfaces;
-using GameWeb.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
@@ -15,16 +15,6 @@ public class IdentityService(
     IAuthorizationService authorizationService)
     : IIdentityService
 {
-    public async Task<bool> IsUserNameInUseAsync(string userName, CancellationToken cancellationToken)
-    {
-        return await userManager.FindByNameAsync(userName) is not null;
-    }
-
-    public async Task<bool> IsEmailInUseAsync(string email, CancellationToken cancellationToken)
-    {
-        return await userManager.FindByEmailAsync(email) is not null;
-    }
-
     /// <inheritdoc />
     public async Task<string?> GetUserNameAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -60,9 +50,7 @@ public class IdentityService(
     {
         var user = await userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return false;
-        }
 
         var principal = await userClaimsPrincipalFactory.CreateAsync(user);
         var result = await authorizationService.AuthorizeAsync(principal, policyName);
@@ -79,7 +67,6 @@ public class IdentityService(
         return user != null ? await DeleteUserAsync(user, cancellationToken) : Result.Success();
     }
     
-    /// <inheritdoc />
     public async Task<Result> DeleteUserAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         var result = await userManager.DeleteAsync(user);
@@ -104,9 +91,7 @@ public class IdentityService(
     {
         var user = await userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return Result.Failure([$"User with ID '{userId}' not found."]);
-        }
 
         // Primeiro, removemos claims existentes do mesmo tipo para evitar duplicatas.
         var existingClaims = await userManager.GetClaimsAsync(user);
@@ -116,9 +101,7 @@ public class IdentityService(
         {
             var removeResult = await userManager.RemoveClaimAsync(user, claimToRemove);
             if (!removeResult.Succeeded)
-            {
                 return removeResult.ToApplicationResult();
-            }
         }
 
         var addResult = await userManager.AddClaimAsync(user, new Claim(claimType, claimValue));

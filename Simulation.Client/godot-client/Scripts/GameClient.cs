@@ -2,14 +2,12 @@ using Godot;
 using System;
 using Arch.Core;
 using System.Diagnostics;
-using Application.Models.Options;
-using GodotClient.API;
+using Application.Abstractions;
+using Application.Abstractions.Options;
 using Simulation.Core.ECS;
-using Simulation.Core.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Simulation.Core.ECS.Components.Data;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Ports.Network;
@@ -52,8 +50,6 @@ public partial class GameClient : Node
         
         // Conectar sinal Godot (vai rodar no main thread)
         cfg.Connect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
-        // Opcional: conectar também ao evento C#
-        cfg.ConfigAvailable += OnConfigAvailable;
     }
     
     private void OnConfigUpdated()
@@ -61,23 +57,7 @@ public partial class GameClient : Node
         // desconecta o sinal para evitar múltiplas chamadas
         var cfg = GetNode<ConfigManager>("/root/ConfigManager");
         cfg.Disconnect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
-        cfg.ConfigAvailable -= OnConfigAvailable;
 
-        InitializeClient(cfg);
-    }
-    
-    private void OnConfigAvailable()
-    {
-        // caso queira suportar a notificação por C# event
-        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
-        cfg.ConfigAvailable -= OnConfigAvailable;
-        // Use CallDeferred para garantir a chamada segura no main thread do Godot
-        CallDeferred(nameof(InitializeClientDeferred));
-    }
-
-    private void InitializeClientDeferred()
-    {
-        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
         InitializeClient(cfg);
     }
     
@@ -85,11 +65,6 @@ public partial class GameClient : Node
     {
         if (_initialized) return;
         _initialized = true;
-
-        GD.Print("[GameClient] Initializing with config...",
-            " World:", configManager.World,
-            " Network:", configManager.Network,
-            " Authority:", configManager.Authority);
 
         var sc = new ServiceCollection();
 
@@ -152,9 +127,6 @@ public partial class GameClient : Node
     public override void _Process(double delta)
     {
         if (!_initialized) return;
-        
-        // Processa eventos de rede
-        _net.PollEvents();
 
         // Fixed-step ECS update
         var elapsed = _stopwatch.Elapsed.TotalSeconds;
@@ -162,6 +134,9 @@ public partial class GameClient : Node
         _accumulator += elapsed;
         while (_accumulator >= FixedDt)
         {
+            // Processa eventos de rede
+            _net.PollEvents();
+            
             _group.BeforeUpdate(FixedDt);
             _group.Update(FixedDt);
             _group.AfterUpdate(FixedDt);
@@ -173,12 +148,12 @@ public partial class GameClient : Node
     {
         try
         {
-            _net?.Stop();
+            _net.Stop();
         }
         catch { /* ignore */ }
         try
         {
-            _group?.Dispose();
+            _group.Dispose();
         }
         catch { /* ignore */ }
         GD.Print("[GameClient] Shutdown complete.");

@@ -1,5 +1,4 @@
-using Simulation.Core.ECS.Components;
-using PlayerData = Simulation.Core.ECS.Components.Data.PlayerData;
+using Application.Abstractions;
 
 namespace Simulation.Core.Ports.ECS;
 

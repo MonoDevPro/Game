@@ -13,11 +13,11 @@
         ],
         "operationId": "PostApiAuthRegister",
         "requestBody": {
-          "x-name": "request",
+          "x-name": "req",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterCommand"
+                "$ref": "#/components/schemas/RegisterRequest"
               }
             }
           },
@@ -170,6 +170,69 @@
         ]
       }
     },
+    "/api/Client/options": {
+      "get": {
+        "tags": [
+          "Client"
+        ],
+        "operationId": "GetClientOptions",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Client/map/{id}/meta": {
+      "get": {
+        "tags": [
+          "Client"
+        ],
+        "operationId": "GetMapMeta",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Client/map/{id}": {
+      "get": {
+        "tags": [
+          "Client"
+        ],
+        "operationId": "GetMapBinary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Internal/internal": {
       "get": {
         "tags": [
@@ -292,24 +355,11 @@
           }
         ]
       }
-    },
-    "/api/Options/client": {
-      "get": {
-        "tags": [
-          "Options"
-        ],
-        "operationId": "GetClientOptions",
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
-      "RegisterCommand": {
+      "RegisterRequest": {
         "type": "object",
         "additionalProperties": false,
         "properties": {

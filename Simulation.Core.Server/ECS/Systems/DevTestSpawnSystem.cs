@@ -1,8 +1,8 @@
+using Application.Abstractions;
 using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Components.Data;
 using Simulation.Core.ECS.Resource;
 
 namespace Simulation.Core.Server.ECS.Systems;

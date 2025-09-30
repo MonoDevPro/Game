@@ -1,7 +1,7 @@
 using System;
-using Application.Models.Models;
-using Application.Models.Options;
+using Application.Abstractions.Options;
 using Godot;
+using GodotClient.API;
 
 namespace GodotClient;
 
@@ -13,10 +13,12 @@ public sealed partial class ConfigManager : Node
     public NetworkOptions? Network { get; private set; }
     public AuthorityOptions? Authority { get; private set; }
 
-    // C# event opcional para quem preferir subscribe sem usar sinais Godot
-    public event Action? ConfigAvailable;
-
     public bool IsReady => World != null && Network != null && Authority != null;
+    
+    public override void _Ready()
+    {
+        GetNode<ApiClient>("$ApiClient").FetchConfig();
+    }
 
     public void UpdateFromDto(ConfigDto dto)
     {
@@ -26,7 +28,5 @@ public sealed partial class ConfigManager : Node
 
         // Emite sinal Godot
         EmitSignal(nameof(ConfigUpdated));
-        // Dispara também o evento C#
-        ConfigAvailable?.Invoke();
     }
 }

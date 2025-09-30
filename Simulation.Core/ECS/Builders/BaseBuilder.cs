@@ -1,4 +1,4 @@
-using Application.Models.Options;
+using Application.Abstractions.Options;
 using Arch.Core;
 using Arch.System;
 

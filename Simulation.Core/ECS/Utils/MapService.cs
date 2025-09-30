@@ -1,5 +1,5 @@
+using Application.Abstractions;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.ECS.Components.Data;
 using Simulation.Core.ECS.Services;
 
 namespace Simulation.Core.ECS.Utils;

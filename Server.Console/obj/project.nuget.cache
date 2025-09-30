@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "5K++PIaprJg=",
+  "dgSpecHash": "5f6PNChjlYc=",
   "success": true,
   "projectFilePath": "/home/filipe/GameOpen/GameSimulation/Server.Console/Server.Console.csproj",
   "expectedPackageFiles": [
@@ -10,6 +10,7 @@
     "/home/filipe/.nuget/packages/arch.relationships/1.0.1/arch.relationships.1.0.1.nupkg.sha512",
     "/home/filipe/.nuget/packages/arch.system/1.1.0/arch.system.1.1.0.nupkg.sha512",
     "/home/filipe/.nuget/packages/arch.system.sourcegenerator/2.1.0/arch.system.sourcegenerator.2.1.0.nupkg.sha512",
+    "/home/filipe/.nuget/packages/automapper/13.0.1/automapper.13.0.1.nupkg.sha512",
     "/home/filipe/.nuget/packages/bcrypt.net-next/4.0.3/bcrypt.net-next.4.0.3.nupkg.sha512",
     "/home/filipe/.nuget/packages/collections.pooled/2.0.0-preview.27/collections.pooled.2.0.0-preview.27.nupkg.sha512",
     "/home/filipe/.nuget/packages/communitytoolkit.highperformance/8.2.2/communitytoolkit.highperformance.8.2.2.nupkg.sha512",

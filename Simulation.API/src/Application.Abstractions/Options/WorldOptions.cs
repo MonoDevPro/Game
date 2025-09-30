@@ -1,4 +1,4 @@
-namespace Application.Models.Options;
+namespace Application.Abstractions.Options;
 public class WorldOptions
 {
     public const string SectionName = "World";

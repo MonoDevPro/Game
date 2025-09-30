@@ -1,5 +1,5 @@
+using Application.Abstractions;
 using Arch.LowLevel;
-using Simulation.Core.ECS.Components.Data;
 
 namespace Simulation.Core.ECS.Components;
 

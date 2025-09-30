@@ -1,10 +1,16 @@
+using System.Linq;
 using System.Security.Claims;
-using Application.Models;
-using Application.Models.Models;
-using GameWeb.Application.Auth.Commands.Register;
+using System.Threading;
+using System.Threading.Tasks;
+using Application.Abstractions.Auth;
 using GameWeb.Application.Common.Interfaces;
 using GameWeb.Infrastructure.Identity;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
+using LoginRequest = Application.Abstractions.Auth.LoginRequest;
+using RegisterRequest = Application.Abstractions.Auth.RegisterRequest;
 
 namespace GameWeb.Web.Endpoints;
 
@@ -30,14 +36,20 @@ public class Auth : EndpointGroupBase
             .RequireAuthorization()
             .WithSummary("Issue a fresh JWT for the current user (e.g., after selecting an active character)");
     }
-
+    
     private async Task<IResult> Register(
-        RegisterCommand request,
-        ISender sender,
+        RegisterRequest req,
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService,
         CancellationToken ct)
     {
-        var result = await sender.Send(request, ct);
-        return TypedResults.Ok(result);
+        var user = new ApplicationUser { UserName = req.UserName, Email = req.Email, EmailConfirmed = false };
+        var result = await userManager.CreateAsync(user, req.Password);
+        if (!result.Succeeded)
+            return TypedResults.BadRequest(result.ToApplicationResult());
+        
+        var accessToken = await tokenService.IssueAccessTokenAsync(user.Id, ct);
+        return TypedResults.Ok(new AuthResponse(user.Id, accessToken));
     }
 
     private async Task<IResult> Login(
@@ -58,7 +70,7 @@ public class Auth : EndpointGroupBase
             return TypedResults.Unauthorized();
 
         var token = await tokenService.IssueAccessTokenAsync(user.Id, ct);
-        return TypedResults.Ok(new AuthResponse(token));
+        return TypedResults.Ok(new AuthResponse(user.Id, token));
     }
 
     private IResult Me(ClaimsPrincipal user)
@@ -87,6 +99,6 @@ public class Auth : EndpointGroupBase
             return TypedResults.Unauthorized();
 
         var token = await tokenService.IssueAccessTokenAsync(userId, ct);
-        return TypedResults.Ok(new AuthResponse(token));
+        return TypedResults.Ok(new AuthResponse(userId, token));
     }
 }

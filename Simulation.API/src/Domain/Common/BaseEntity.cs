@@ -7,7 +7,7 @@ namespace GameWeb.Domain.Common;
 /// </summary>
 public abstract class BaseEntity
 {
-    public int Id { get; private set; } // identidade
+    public int Id { get; set; } // identidade
     public bool IsActive { get; set; } = true; // ativo ou inativo
     
     private readonly List<BaseEvent> _domainEvents = []; // eventos de domínio :contentReference[oaicite:9]{index=9}
