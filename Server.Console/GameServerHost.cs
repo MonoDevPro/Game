@@ -5,6 +5,7 @@ using Simulation.Core.ECS;
 using Simulation.Core.Ports.Network;
 using GameWeb.Application.Common.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Server.Console.Services;
 
 namespace Server.Console;
 
@@ -37,6 +38,7 @@ public class GameServerHost(
         
         // Inicia o gerenciador de rede para aceitar conexões.
         networkManager.Start();
+        
         logger.LogInformation("Servidor de rede iniciado em {Authority}", networkManager.Authority);
         try
         {
