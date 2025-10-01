@@ -21,7 +21,7 @@ public class CustomExceptionHandler : IExceptionHandler
             };
     }
 
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken ct)
     {
         var exceptionType = exception.GetType();
 

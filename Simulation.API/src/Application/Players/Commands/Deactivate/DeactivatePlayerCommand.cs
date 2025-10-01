@@ -16,7 +16,7 @@ public class DeactivatePlayerCommandHandler(
             .FindAsync([request.Id], cancellationToken);
         
         if (player == null || player.UserId != user.Id) 
-            throw new NotFoundException(nameof(Player), request.Id.ToString());
+            throw new GameWeb.Application.Common.Exceptions.NotFoundException(nameof(Player), request.Id.ToString());
         
         player.IsActive = false;
         return player.Id;

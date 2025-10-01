@@ -1,4 +1,4 @@
-﻿global using Ardalis.GuardClauses;
+﻿global using GameWeb.Application.Common.Exceptions;
 global using AutoMapper;
 global using AutoMapper.QueryableExtensions;
 global using Microsoft.EntityFrameworkCore;
