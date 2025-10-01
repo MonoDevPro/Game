@@ -5,7 +5,6 @@ using Simulation.Core.ECS;
 using Simulation.Core.Ports.Network;
 using GameWeb.Application.Common.Options;
 using Microsoft.Extensions.DependencyInjection;
-using Server.Console.Services;
 
 namespace Server.Console;
 
