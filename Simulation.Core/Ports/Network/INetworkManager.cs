@@ -1,5 +1,4 @@
-using Application.Abstractions.Options;
-using Simulation.Core.Options;
+using GameWeb.Application.Common.Options;
 
 namespace Simulation.Core.Ports.Network;
 
@@ -7,8 +6,7 @@ public interface IPacket;
 
 public enum NetworkChannel : byte
 {
-    Authentication = 0,
-    Simulation = 1,
+    Simulation = 0,
 }
 
 public delegate void PacketHandler<in T>(INetPeerAdapter fromPeer, T packet) 

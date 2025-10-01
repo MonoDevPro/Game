@@ -1,5 +1,5 @@
-using Application.Abstractions;
 using Arch.LowLevel;
+using GameWeb.Application.Players.Models;
 
 namespace Simulation.Core.ECS.Components;
 
@@ -19,8 +19,8 @@ public readonly record struct Position(int X, int Y);
 public readonly record struct Health(int Current, int Max);
 public readonly record struct Direction(int X, int Y);
 
-// Requests
-public readonly record struct SpawnPlayerRequest(PlayerData Player);
+// ---> Requests
+public readonly record struct SpawnPlayerRequest(PlayerDto Player);
 public readonly record struct DespawnPlayerRequest(int PlayerId);
 
 // ---> Movimento

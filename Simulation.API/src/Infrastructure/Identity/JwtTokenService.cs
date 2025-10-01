@@ -1,11 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Application.Abstractions.Options;
-using GameWeb.Application.Common.Interfaces;
+using GameWeb.Infrastructure.Identity.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using JwtOptions = GameWeb.Application.Common.Options.JwtOptions;
 
 namespace GameWeb.Infrastructure.Identity;
 

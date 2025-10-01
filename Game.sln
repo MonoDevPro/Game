@@ -33,8 +33,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Simulatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "Simulation.API\src\Web\Web.csproj", "{003247DA-E19A-47C5-B5B1-A7E4F279F827}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Abstractions", "Simulation.API\src\Application.Abstractions\Application.Abstractions.csproj", "{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,10 +84,6 @@ Global
 		{003247DA-E19A-47C5-B5B1-A7E4F279F827}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{003247DA-E19A-47C5-B5B1-A7E4F279F827}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{003247DA-E19A-47C5-B5B1-A7E4F279F827}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 
@@ -104,6 +98,5 @@ Global
 		{1E2AE643-9F0C-4679-B009-FF941102888B} = {7A743B42-FC9C-4106-8CB2-25D3FAAD65D0}
 		{06532310-A568-42DC-9012-AAE8CD978B6B} = {7A743B42-FC9C-4106-8CB2-25D3FAAD65D0}
 		{003247DA-E19A-47C5-B5B1-A7E4F279F827} = {7A743B42-FC9C-4106-8CB2-25D3FAAD65D0}
-		{1DFA1486-AB21-4C59-BCD3-3B1072DF10FD} = {7A743B42-FC9C-4106-8CB2-25D3FAAD65D0}
 	EndGlobalSection
 EndGlobal

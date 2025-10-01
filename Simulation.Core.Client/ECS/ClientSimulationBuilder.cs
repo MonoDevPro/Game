@@ -1,10 +1,10 @@
 using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Options;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.Ports.Network;
 using Simulation.Core.ECS.Components;
+using Simulation.Core.ECS.Sync;
 
 namespace Simulation.Core.Client.ECS;
 

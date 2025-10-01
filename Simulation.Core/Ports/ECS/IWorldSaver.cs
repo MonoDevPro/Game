@@ -1,8 +1,9 @@
-using Application.Abstractions;
+
+using GameWeb.Application.Players.Models;
 
 namespace Simulation.Core.Ports.ECS;
 
 public interface IWorldSaver
 {
-    void StageSave(PlayerData data);
+    void StageSave(PlayerDto dto);
 }

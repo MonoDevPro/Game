@@ -1,8 +1,8 @@
-using Application.Abstractions.Options;
 using LiteNetLib;
+using Simulation.Network.Packet;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.Ports.Network;
-using Simulation.Network.Packet;
+using GameWeb.Application.Common.Options;
 
 namespace Simulation.Network;
 
@@ -10,8 +10,9 @@ public class NetworkManager : INetworkManager, IDisposable
     {
         private readonly NetManager _net;
         private readonly NetworkListener _listener;
-        private readonly PacketProcessor _packetProcessor;
         private readonly PacketSender _packetSender;
+        private readonly PacketProcessor _packetProcessor;
+        
         private readonly NetworkOptions _netOptions;
         private readonly AuthorityOptions _authorityOptions;
 

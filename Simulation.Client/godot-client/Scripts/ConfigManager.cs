@@ -1,5 +1,4 @@
-using System;
-using Application.Abstractions.Options;
+using GameWeb.Application.Common.Options;
 using Godot;
 using GodotClient.API;
 
@@ -20,7 +19,7 @@ public sealed partial class ConfigManager : Node
         GetNode<ApiClient>("$ApiClient").FetchConfig();
     }
 
-    public void UpdateFromDto(ConfigDto dto)
+    public void UpdateFromDto(OptionsDto dto)
     {
         World = dto.World;
         Network = dto.Network;

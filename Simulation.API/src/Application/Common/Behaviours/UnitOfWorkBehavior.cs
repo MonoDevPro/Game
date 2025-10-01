@@ -1,7 +1,5 @@
-using Application.Abstractions;
 using GameWeb.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
-using ICommand = System.Windows.Input.ICommand;
 
 namespace GameWeb.Application.Common.Behaviours;
 
@@ -16,7 +14,7 @@ public class UnitOfWorkBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        var isCommand = request is ICommand || request is ICommand<TResponse>;
+        var isCommand = request is Interfaces.ICommand || request is Interfaces.ICommand<TResponse>;
 
         if (!isCommand)
             return await next();

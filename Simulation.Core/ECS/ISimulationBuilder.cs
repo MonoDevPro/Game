@@ -1,4 +1,4 @@
-using Application.Abstractions.Options;
+using GameWeb.Application.Common.Options;
 
 namespace Simulation.Core.ECS;
 

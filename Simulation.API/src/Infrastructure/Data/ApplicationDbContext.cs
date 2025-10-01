@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GameWeb.Infrastructure.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : IdentityDbContext<ApplicationUser>(options)
+    : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
     public DbSet<Map> Maps => Set<Map>();
     public DbSet<Player> Players => Set<Player>();

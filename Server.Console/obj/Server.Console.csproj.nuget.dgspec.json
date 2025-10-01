@@ -100,14 +100,14 @@
         }
       }
     },
-    "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj": {
+    "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application/Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj",
-        "projectName": "Application.Abstractions",
-        "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj",
+        "projectUniqueName": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application/Application.csproj",
+        "projectName": "GameWeb.Application",
+        "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application/Application.csproj",
         "packagesPath": "/home/filipe/.nuget/packages/",
-        "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/artifacts/obj/Application.Abstractions/",
+        "outputPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/artifacts/obj/Application/",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
         "configFilePaths": [
@@ -153,14 +153,34 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Ardalis.GuardClauses": {
+              "target": "Package",
+              "version": "[4.6.0, )",
+              "versionCentrallyManaged": true
+            },
             "AutoMapper": {
               "target": "Package",
               "version": "[13.0.1, )",
               "versionCentrallyManaged": true
             },
+            "FluentValidation.DependencyInjectionExtensions": {
+              "target": "Package",
+              "version": "[11.11.0, )",
+              "versionCentrallyManaged": true
+            },
             "MemoryPack": {
               "target": "Package",
               "version": "[1.21.4, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[8.0.0, )",
               "versionCentrallyManaged": true
             }
           },
@@ -174,22 +194,22 @@
             "FluentValidation.DependencyInjectionExtensions": "11.11.0",
             "MediatR": "12.4.1",
             "MemoryPack": "1.21.4",
-            "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
-            "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "9.0.0",
-            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "9.0.0",
-            "Microsoft.AspNetCore.Identity.UI": "9.0.0",
-            "Microsoft.AspNetCore.Mvc.Testing": "9.0.0",
-            "Microsoft.AspNetCore.OpenApi": "9.0.0",
+            "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.0",
+            "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "8.0.0",
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "8.0.0",
+            "Microsoft.AspNetCore.Identity.UI": "8.0.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
             "Microsoft.Data.SqlClient": "5.2.2",
-            "Microsoft.EntityFrameworkCore": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Design": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Sqlite": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Tools": "9.0.0",
-            "Microsoft.Extensions.Configuration.EnvironmentVariables": "9.0.0",
-            "Microsoft.Extensions.Configuration.Json": "9.0.0",
-            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "9.0.0",
-            "Microsoft.Extensions.Hosting": "9.0.0",
+            "Microsoft.EntityFrameworkCore": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Design": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Relational": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Sqlite": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Tools": "8.0.0",
+            "Microsoft.Extensions.Configuration.EnvironmentVariables": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.NET.Test.Sdk": "17.11.1",
             "Moq": "4.20.72",
             "NSwag.AspNetCore": "14.6.0",
@@ -297,22 +317,22 @@
             "FluentValidation.DependencyInjectionExtensions": "11.11.0",
             "MediatR": "12.4.1",
             "MemoryPack": "1.21.4",
-            "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
-            "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "9.0.0",
-            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "9.0.0",
-            "Microsoft.AspNetCore.Identity.UI": "9.0.0",
-            "Microsoft.AspNetCore.Mvc.Testing": "9.0.0",
-            "Microsoft.AspNetCore.OpenApi": "9.0.0",
+            "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.0",
+            "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "8.0.0",
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "8.0.0",
+            "Microsoft.AspNetCore.Identity.UI": "8.0.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
             "Microsoft.Data.SqlClient": "5.2.2",
-            "Microsoft.EntityFrameworkCore": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Design": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Sqlite": "9.0.0",
-            "Microsoft.EntityFrameworkCore.Tools": "9.0.0",
-            "Microsoft.Extensions.Configuration.EnvironmentVariables": "9.0.0",
-            "Microsoft.Extensions.Configuration.Json": "9.0.0",
-            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "9.0.0",
-            "Microsoft.Extensions.Hosting": "9.0.0",
+            "Microsoft.EntityFrameworkCore": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Design": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Relational": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Sqlite": "8.0.0",
+            "Microsoft.EntityFrameworkCore.Tools": "8.0.0",
+            "Microsoft.Extensions.Configuration.EnvironmentVariables": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.NET.Test.Sdk": "17.11.1",
             "Moq": "4.20.72",
             "NSwag.AspNetCore": "14.6.0",
@@ -455,8 +475,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj": {
-                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application.Abstractions/Application.Abstractions.csproj"
+              "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application/Application.csproj": {
+                "projectPath": "/home/filipe/GameOpen/GameSimulation/Simulation.API/src/Application/Application.csproj"
               },
               "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj": {
                 "projectPath": "/home/filipe/GameOpen/GameSimulation/thirdparty/QuadTrees/QuadTrees/QuadTrees.csproj"

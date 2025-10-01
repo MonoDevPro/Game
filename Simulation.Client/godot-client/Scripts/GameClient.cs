@@ -2,8 +2,9 @@ using Godot;
 using System;
 using Arch.Core;
 using System.Diagnostics;
-using Application.Abstractions;
-using Application.Abstractions.Options;
+using GameWeb.Application.Common.Options;
+using GameWeb.Application.Maps.Models;
+using GameWeb.Application.Players.Models;
 using Simulation.Core.ECS;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,7 +84,7 @@ public partial class GameClient : Node
         sc.AddSingleton(TimeProvider.System);
 
         // Mapa (template simples como no headless client)
-        var mapData = new MapData
+        var mapData = new MapDto
         {
             Id = 1,
             Name = "ClientMap",
@@ -163,9 +164,9 @@ public partial class GameClient : Node
 
     private sealed class ClientWorldSaver : IWorldSaver
     {
-        public void StageSave(PlayerData data)
+        public void StageSave(PlayerDto dto)
         {
-            GD.Print($"[ClientWorldSaver] StageSave called for player {data.Id}, but no action is taken on the client.");
+            GD.Print($"[ClientWorldSaver] StageSave called for player {dto.Id}, but no action is taken on the client.");
         }
     }
 }

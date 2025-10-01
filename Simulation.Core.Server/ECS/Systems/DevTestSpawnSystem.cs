@@ -1,6 +1,6 @@
-using Application.Abstractions;
 using Arch.Core;
 using Arch.System;
+using GameWeb.Application.Players.Models;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resource;
@@ -40,7 +40,7 @@ public sealed class DevTestSpawnSystem(World world, PlayerFactoryResource player
         
         if (_spawned) return;
 
-        var player = new PlayerData
+        var player = new PlayerDto
         {
             Id = 999,
             Name = "TestPlayer",

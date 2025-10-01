@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Simulation.Core.ECS;
 using Simulation.Core.Ports.Network;
-using Application.Abstractions.Options;
+using GameWeb.Application.Common.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Server.Console;

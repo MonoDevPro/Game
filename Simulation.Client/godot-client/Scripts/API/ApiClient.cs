@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Application.Abstractions.Auth;
-using Application.Abstractions.Options;
+using GameWeb.Application.Auth;
+using GameWeb.Application.Common.Options;
 using Godot;
 
 namespace GodotClient.API;
@@ -15,7 +15,7 @@ public partial class ApiClient : Node
     [Export] public string ApiBaseUrl { get; set; } = "http://localhost:5000/api";
 
     private HttpRequest _http = default!;
-    private JsonSerializerOptions _jsonOptions = default!;
+    private JsonSerializerOptions _jsonOptions = null!;
 
     private enum PendingRequest { None, FetchConfig, Register, Login }
     private PendingRequest _lastRequest = PendingRequest.None;
@@ -41,8 +41,7 @@ public partial class ApiClient : Node
 
     public override void _ExitTree()
     {
-        if (_http != null)
-            _http.RequestCompleted -= OnRequestCompleted;
+        _http.RequestCompleted -= OnRequestCompleted;
     }
 
     // Headers padrão + Authorization quando houver JWT.
@@ -144,7 +143,7 @@ public partial class ApiClient : Node
                 case PendingRequest.FetchConfig:
                     if (hasJsonBody)
                     {
-                        var cfg = JsonSerializer.Deserialize<ConfigDto>(text, _jsonOptions);
+                        var cfg = JsonSerializer.Deserialize<OptionsDto>(text, _jsonOptions);
                         if (cfg != null)
                         {
                             // Melhor: emitir um sinal/evento ao invés de GetNode fixo

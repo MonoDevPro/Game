@@ -25,7 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Simulation.API\src\Application.Abstractions\Application.Abstractions.csproj" />
+      <ProjectReference Include="..\Simulation.API\src\Application\Application.csproj" />
       <ProjectReference Include="..\thirdparty\QuadTrees\QuadTrees\QuadTrees.csproj" />
     </ItemGroup>
 

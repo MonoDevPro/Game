@@ -1,4 +1,5 @@
 ﻿using GameWeb.Application.Common;
+using GameWeb.Application.Common.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace GameWeb.Infrastructure.Identity;

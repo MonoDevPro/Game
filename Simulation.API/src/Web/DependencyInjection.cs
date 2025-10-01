@@ -1,5 +1,6 @@
 ﻿using Azure.Identity;
 using GameWeb.Application.Common.Interfaces;
+using GameWeb.Application.Common.Options;
 using GameWeb.Infrastructure.Data;
 using GameWeb.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,18 @@ namespace GameWeb.Web;
 
 public static class DependencyInjection
 {
+    public static void AddGameOptions(this IHostApplicationBuilder builder)
+    {
+        builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
+        builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
+        builder.Services.Configure<AuthorityOptions>(builder.Configuration.GetSection(AuthorityOptions.SectionName));
+        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+        
+        builder.Services.Configure<AuthorityOptions>(builder.Configuration.GetSection(AuthorityOptions.SectionName));
+        builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
+        builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
+    }
+    
     public static void AddWebServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();

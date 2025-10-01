@@ -4,7 +4,7 @@ using Arch.System;
 using Simulation.Core.Client.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.Options;
+using Simulation.Core.ECS.Sync;
 using Simulation.Core.Ports.Network;
 
 namespace GodotClient;

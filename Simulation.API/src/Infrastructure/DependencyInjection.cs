@@ -12,9 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Application.Abstractions.Options;
-using GameWeb.Application.Characters.Services;
-using GameWeb.Application.Maps.Services;
+using GameWeb.Infrastructure.Identity.Contracts;
 
 namespace GameWeb.Infrastructure;
 
@@ -22,11 +20,6 @@ public static class DependencyInjection
 {
     public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
     {
-        builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
-        builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
-        builder.Services.Configure<AuthorityOptions>(builder.Configuration.GetSection(AuthorityOptions.SectionName));
-        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-        
         var connectionString = builder.Configuration.GetConnectionString("GameWebDb");
         Guard.Against.Null(connectionString, message: "Connection string 'GameWebDb' not found.");
         
@@ -41,8 +34,7 @@ public static class DependencyInjection
             options.UseSqlite(connectionString);
         });
         
-        builder.Services.AddScoped<IMapRepository, MapRepository>();
-        builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
+        builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         
         builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
@@ -100,8 +92,8 @@ public static class DependencyInjection
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy(Policies.CanDeleteCharacters, policy => policy.RequireRole(Roles.Administrator));
-            options.AddPolicy(Policies.CanReadCharacters, policy => policy.RequireRole(Roles.Administrator));
+            options.AddPolicy(Policies.CanDeletePlayers, policy => policy.RequireRole(Roles.Administrator));
+            options.AddPolicy(Policies.CanReadPlayers, policy => policy.RequireRole(Roles.Administrator));
         });
     }
 }

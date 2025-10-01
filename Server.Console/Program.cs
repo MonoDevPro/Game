@@ -1,11 +1,10 @@
-﻿using Application.Abstractions;
-using Application.Abstractions.Options;
+﻿using GameWeb.Application.Common.Options;
+using GameWeb.Application.Players.Models;
 using Server.Console;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS;
-using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Server.ECS;
 using Simulation.Network;
@@ -26,7 +25,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddNetworking();
         
         services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
-
+        
         services.AddHostedService<GameServerHost>();
         
         // TODO: Falta obter isso da api pra funcionar e rodar.
@@ -41,10 +40,10 @@ namespace Server.Console
 {
     public class WorldSaver : IWorldSaver
     {
-        public void StageSave(PlayerData data)
+        public void StageSave(PlayerDto dto)
         {
             // Implementar a lógica de salvamento do mundo aqui
-            System.Console.WriteLine($"Salvando dados do jogador: {data.Id}");
+            System.Console.WriteLine($"Salvando dados do jogador: {dto.Id}");
         }
     }
 }

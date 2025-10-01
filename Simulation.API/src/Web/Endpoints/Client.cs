@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
-using Application.Abstractions.Options;
-using GameWeb.Application.Common.Interfaces;
-using GameWeb.Application.Maps.Services;
-using MemoryPack;
+using GameWeb.Application.Common.Options;
+using GameWeb.Application.Maps.Models;
+using GameWeb.Application.Maps.Queries;
 using Microsoft.Extensions.Options;
+using MemoryPack;
 
 namespace GameWeb.Web.Endpoints;
 
@@ -30,22 +30,19 @@ public class Client : EndpointGroupBase
         IOptions<WorldOptions> world,
         CancellationToken ct)
     {
-        var configDto = new ConfigDto(authority.Value, network.Value, world.Value);
+        var configDto = new OptionsDto(authority.Value, network.Value, world.Value);
         return Task.FromResult<IResult>(TypedResults.Ok(configDto));
     }
 
     // --- map metadata ---
     private async Task<IResult> GetMapMeta(
         int id,
-        IMapRepository maps,          // injetar seu serviço/repositório real
+        ISender sender,
         CancellationToken ct)
     {
-        var map = await maps.GetMapAsync(id, ct);
-        if (map is null) return TypedResults.NotFound();
-        var data = map;
-
+        var data = await sender.Send<MapDto>(new GetMapQuery(id), ct);
         // compute checksum quickly (e.g., SHA256 of binary MemoryPack)
-        var bytes = MemoryPackSerializer.Serialize(map);
+        var bytes = MemoryPackSerializer.Serialize(data);
         var sha = ComputeSha256(bytes);
         var meta = new
         {
@@ -64,14 +61,13 @@ public class Client : EndpointGroupBase
     // --- download binary (MemoryPack) ---
     private async Task<IResult> GetMapBinary(
         int id,
+        ISender sender,
         HttpRequest req,
-        IMapRepository maps,
         CancellationToken ct)
     {
-        var map = await maps.GetMapAsync(id, ct);
-        if (map is null) return TypedResults.NotFound();
+        var data = await sender.Send<MapDto>(new GetMapQuery(id), ct);
 
-        var bytes = MemoryPackSerializer.Serialize(map);
+        var bytes = MemoryPackSerializer.Serialize(data);
         var sha = ComputeSha256(bytes);
         var etag = $"\"{sha}\"";
 

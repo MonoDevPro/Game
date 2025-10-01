@@ -1,5 +1,5 @@
-﻿using Application.Abstractions;
-using AutoMapper;
+﻿using AutoMapper;
+using GameWeb.Application.Maps.Models;
 using GameWeb.Domain.Constants;
 using GameWeb.Domain.Entities;
 using GameWeb.Infrastructure.Identity;
@@ -63,7 +63,7 @@ public class ApplicationDbContextInitialiser(
         // default map
         
         if (!context.Maps.Any())
-            context.Maps.Add(map.Map<Map>(new MapData
+            context.Maps.Add(map.Map<Map>(new MapDto
             {
                 Id = 1,
                 Name = "TestMap",

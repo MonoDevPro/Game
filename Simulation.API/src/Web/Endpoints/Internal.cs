@@ -1,5 +1,5 @@
-using GameWeb.Application.Management.Commands.PurgeCharacters;
-using GameWeb.Application.Management.Queries.GetAllCharacters;
+using GameWeb.Application.Admin.Commands.Purge;
+using GameWeb.Application.Admin.Queries.Read;
 using GameWeb.Domain.Constants;
 
 namespace GameWeb.Web.Endpoints;
@@ -16,7 +16,7 @@ public class Internal : EndpointGroupBase
             .WithSummary("Get a character selected and details by ID (Internal only).");
     }
 
-    public async Task<IResult> GetSelectedCharacter(ISender sender, [AsParameters] GetAllCharactersQuery query)
+    public async Task<IResult> GetSelectedCharacter(ISender sender, [AsParameters] ReadAllPlayersQuery query)
     {
         var result = await sender.Send(query);
         return TypedResults.Ok(result);
@@ -24,7 +24,7 @@ public class Internal : EndpointGroupBase
 
     public async Task<IResult> PurgeCharacters(ISender sender, bool? isActive = null)
     {
-        var command = new PurgeCharactersCommand(isActive);
+        var command = new PurgeInactivePlayersCommand(isActive);
         var result = await sender.Send(command);
         return TypedResults.Ok(new { PurgedCount = result });
     }

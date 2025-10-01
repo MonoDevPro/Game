@@ -1,4 +1,4 @@
-using Application.Abstractions;
+using GameWeb.Application.Maps.Models;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Services;
 
@@ -76,18 +76,18 @@ public class MapService
     }
 
     // Factory
-    public static MapService CreateFromTemplate(MapData data)
+    public static MapService CreateFromTemplate(MapDto dto)
     {
-        int w = data.Width;
-        int h = data.Height;
+        int w = dto.Width;
+        int h = dto.Height;
 
         if (w <= 0 || h <= 0)
-            throw new ArgumentException($"Invalid map dimensions in template Id={data.Id}: width={w}, height={h}");
+            throw new ArgumentException($"Invalid map dimensions in template Id={dto.Id}: width={w}, height={h}");
 
         var expected = w * h;
 
         // defensivo: nunca trabalhar com null
-        var tiles = data.TilesRowMajor ?? [];
+        var tiles = dto.TilesRowMajor ?? [];
         if (tiles.Length != expected)
         {
             var fallbackTiles = new TileType[expected];
@@ -95,14 +95,14 @@ public class MapService
             tiles = fallbackTiles;
         }
 
-        var collision = data.CollisionRowMajor ?? [];
+        var collision = dto.CollisionRowMajor ?? [];
         if (collision.Length != expected)
         {
             collision = new byte[expected]; // default = 0 -> no collision
         }
 
         // cria a instância e popula os arrays internos
-        var ms = new MapService(data.Id, data.Name ?? string.Empty, w, h, data.UsePadded, data.BorderBlocked);
+        var ms = new MapService(dto.Id, dto.Name ?? string.Empty, w, h, dto.UsePadded, dto.BorderBlocked);
 
         // copia os dados reais para o armazenamento interno (considera padded/compact)
         ms.PopulateFromRowMajor(tiles, collision);

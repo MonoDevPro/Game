@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using GameWeb.Application.Common.Models;
 
 namespace GameWeb.Application.Common.Interfaces;
 
@@ -51,40 +52,5 @@ public interface IIdentityService
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The result of the deletion operation.</returns>
     Task<Result> DeleteUserAsync(string userId, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Gets the value of a specific claim for a user.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="claimType">The type of the claim to retrieve.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The value of the first claim of the specified type, or null if not found.</returns>
-    Task<string?> GetClaimValueAsync(string userId, string claimType, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Adds or updates a claim for a user. If a claim with the same type exists, it's replaced.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="claimType">The type of the claim.</param>
-    /// <param name="claimValue">The value of the claim.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The result of the operation.</returns>
-    Task<Result> SetClaimAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Removes a claim of a specific type from a user.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="claimType">The type of the claim to remove.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The result of the operation.</returns>
-    Task<Result> RemoveClaimAsync(string userId, string claimType, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Retrieves all claims for a specified user.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A list of claims for the user.</returns>
-    Task<IList<Claim>> GetUserClaimsAsync(string userId, CancellationToken cancellationToken);
+    
 }

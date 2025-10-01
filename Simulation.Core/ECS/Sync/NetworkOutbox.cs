@@ -4,7 +4,6 @@ using Arch.System;
 using MemoryPack;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resource;
-using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.ECS.Sync;
@@ -113,7 +112,7 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
                 if (component.Equals(shadow.Value)) 
                     continue;
 
-                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.Channel, _options.DeliveryMethod);
                 shadow = new Shadow<T>(component);
             }
         }
@@ -138,7 +137,7 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.Channel, _options.DeliveryMethod);
             }
         }
     }
@@ -161,7 +160,7 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
                 ref var playerId = ref Unsafe.Add(ref playerIdFirstElement, entityIndex);
                 ref var component = ref Unsafe.Add(ref componentFirstElement, entityIndex);
 
-                SendComponentUpdate(playerId.Value, component, _options.DeliveryMethod);
+                SendComponentUpdate(playerId.Value, component, _options.Channel, _options.DeliveryMethod);
                 World.Remove<T>(entity);
             }
         }
@@ -173,7 +172,7 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
     /// <summary>
     /// Método auxiliar para criar e enviar o pacote, respeitando o SyncTarget.
     /// </summary>
-    private void SendComponentUpdate(int playerId, T component, NetworkDeliveryMethod method)
+    private void SendComponentUpdate(int playerId, T component, NetworkChannel channel = NetworkChannel.Simulation, NetworkDeliveryMethod method = NetworkDeliveryMethod.ReliableOrdered)
     {
         var packet = new ComponentSyncPacket<T>(playerId, _tickCounter, component);
 
@@ -182,16 +181,16 @@ public class NetworkOutbox<T> : BaseSystem<World, float> where T : struct, IEqua
         {
             // Envia apenas para o jogador dono da entidade
             case SyncTarget.Unicast:
-                _resource.SendToPlayer(playerId, packet, method);
+                _resource.SendToPlayer(playerId, packet, channel, method);
                 break;
 
             // Envia para todos os jogadores (comportamento padrão)
             case SyncTarget.Server:
-                _resource.SendToServer(packet, method);
+                _resource.SendToServer(packet, channel, method);
                 break;
             case SyncTarget.Broadcast:
             default:
-                _resource.BroadcastToAll(packet, method);
+                _resource.BroadcastToAll(packet, channel, method);
                 break;
         }
     }

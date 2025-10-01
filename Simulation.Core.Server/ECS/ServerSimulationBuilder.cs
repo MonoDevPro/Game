@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
-using Simulation.Core.Options;
+using Simulation.Core.ECS.Sync;
 using Simulation.Core.Ports.Network;
 using Simulation.Core.Server.ECS.Systems;
 

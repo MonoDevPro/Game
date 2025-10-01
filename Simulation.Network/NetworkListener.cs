@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Sockets;
-using Application.Abstractions.Options;
+using GameWeb.Application.Common.Options;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
-using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 using Simulation.Network.Packet;
 

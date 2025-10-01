@@ -1,6 +1,6 @@
-using Application.Abstractions;
 using Arch.Core;
 using Arch.LowLevel;
+using GameWeb.Application.Players.Models;
 using Simulation.Core.ECS.Components;
 
 namespace Simulation.Core.ECS.Resource;
@@ -9,21 +9,21 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
 {
     private readonly Resources<string> _playerNames = new();
     
-    public bool TryCreatePlayer(PlayerData data, out Entity e)
+    public bool TryCreatePlayer(PlayerDto dto, out Entity e)
     {
-        PlayerData playerData = data;
+        PlayerDto playerDto = dto;
         
-        if (playerIndex.TryGetPlayerEntity(data.Id, out var entity))
+        if (playerIndex.TryGetPlayerEntity(dto.Id, out var entity))
         {
-            if (TryDestroyPlayer(data.Id, out var existData) && existData is not null) // Remove jogador existente com o mesmo ID
-                playerData = existData; // Mantém os dados do jogador existente
+            if (TryDestroyPlayer(dto.Id, out var existData) && existData is not null) // Remove jogador existente com o mesmo ID
+                playerDto = existData; // Mantém os dados do jogador existente
         }
         
-        e = CreatePlayerEntity(playerData);
+        e = CreatePlayerEntity(playerDto);
         return true;
     }
     
-    public bool TryDestroyPlayer(int playerId, out PlayerData? data)
+    public bool TryDestroyPlayer(int playerId, out PlayerDto? data)
     {
         data = default;
         if (!playerIndex.TryGetPlayerEntity(playerId, out var entity))
@@ -33,29 +33,29 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return true;
     }
     
-    public Entity CreatePlayerEntity(PlayerData playerData)
+    public Entity CreatePlayerEntity(PlayerDto playerDto)
     {
-        var nameHandler = _playerNames.Add(playerData.Name);
+        var nameHandler = _playerNames.Add(playerDto.Name);
         
         var e = world.Create(
-            new PlayerId { Value = playerData.Id },
+            new PlayerId { Value = playerDto.Id },
             new PlayerName { Value = nameHandler },
-            new PlayerGender { Value = playerData.Gender },
-            new PlayerVocation { Value = playerData.Vocation },
-            new Position { X = playerData.PosX, Y = playerData.PosY },
-            new Direction { X = playerData.DirX, Y = playerData.DirY },
-            new AttackStats { CastTime = playerData.AttackCastTime, Cooldown = playerData.AttackCooldown, Damage = playerData.AttackDamage, AttackRange = playerData.AttackRange },
-            new MoveStats { Speed = playerData.MoveSpeed },
-            new Health { Current = playerData.HealthCurrent, Max = playerData.HealthMax },
+            new PlayerGender { Value = playerDto.Gender },
+            new PlayerVocation { Value = playerDto.Vocation },
+            new Position { X = playerDto.PosX, Y = playerDto.PosY },
+            new Direction { X = playerDto.DirX, Y = playerDto.DirY },
+            new AttackStats { CastTime = playerDto.AttackCastTime, Cooldown = playerDto.AttackCooldown, Damage = playerDto.AttackDamage, AttackRange = playerDto.AttackRange },
+            new MoveStats { Speed = playerDto.MoveSpeed },
+            new Health { Current = playerDto.HealthCurrent, Max = playerDto.HealthMax },
             new PlayerState { Flags = StateFlags.Idle }
         );
         
-        playerIndex.Index(playerData.Id, e);
-        spatialIndex.Add(e, new Position(playerData.PosX, playerData.PosY));
+        playerIndex.Index(playerDto.Id, e);
+        spatialIndex.Add(e, new Position(playerDto.PosX, playerDto.PosY));
         return e;
     }
 
-    private PlayerData DestroyPlayerEntity(Entity entity)
+    private PlayerDto DestroyPlayerEntity(Entity entity)
     {
         var data = ExtractPlayerData(entity);
         var playerId = data.Id;
@@ -67,7 +67,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         return data;
     }
     
-    private PlayerData ExtractPlayerData(Entity e)
+    private PlayerDto ExtractPlayerData(Entity e)
     {
         ref var id = ref world.Get<PlayerId>(e);
         ref var playerName = ref world.Get<PlayerName>(e);
@@ -79,7 +79,7 @@ public sealed class PlayerFactoryResource(World world, PlayerIndexResource playe
         ref var move = ref world.Get<MoveStats>(e);
         ref var health = ref world.Get<Health>(e);
 
-        return new PlayerData
+        return new PlayerDto
         {
             Id = id.Value,
             Name = _playerNames.Get(playerName.Value),

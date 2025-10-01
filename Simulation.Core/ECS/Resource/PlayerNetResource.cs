@@ -1,6 +1,5 @@
 using Arch.Core;
 using Simulation.Core.ECS.Sync;
-using Simulation.Core.Options;
 using Simulation.Core.Ports.Network;
 
 namespace Simulation.Core.ECS.Resource;
@@ -9,19 +8,19 @@ public class PlayerNetResource(World world, PlayerIndexResource playerIndexResou
 {
     private readonly HashSet<Type> _registeredSyncs = [];
     
-    public void SendToPlayer<T>(int playerId, in T message, NetworkDeliveryMethod delivery) where T : struct, IPacket
+    public void SendToPlayer<T>(int playerId, in T message, NetworkChannel channel = NetworkChannel.Simulation,  NetworkDeliveryMethod delivery = NetworkDeliveryMethod.ReliableOrdered) where T : struct, IPacket
     {
-        networkManager.SendToPeerId(playerId, message, NetworkChannel.Simulation, delivery);
+        networkManager.SendToPeerId(playerId, message, channel, delivery);
     }
     
-    public void SendToServer<T>(in T message, NetworkDeliveryMethod delivery) where T : struct, IPacket
+    public void SendToServer<T>(in T message, NetworkChannel channel = NetworkChannel.Simulation, NetworkDeliveryMethod delivery = NetworkDeliveryMethod.ReliableOrdered) where T : struct, IPacket
     {
-        networkManager.SendToServer(message, NetworkChannel.Simulation, delivery);
+        networkManager.SendToServer(message, channel, delivery);
     }
     
-    public void BroadcastToAll<T>(in T message, NetworkDeliveryMethod delivery) where T : struct, IPacket
+    public void BroadcastToAll<T>(in T message, NetworkChannel channel = NetworkChannel.Simulation, NetworkDeliveryMethod delivery = NetworkDeliveryMethod.ReliableOrdered) where T : struct, IPacket
     {
-        networkManager.SendToAll(message, NetworkChannel.Simulation, delivery);
+        networkManager.SendToAll(message, channel, delivery);
     }
     
     public NetworkComponentApplySystem<T> RegisterComponentUpdate<T>() where T : struct, IEquatable<T>

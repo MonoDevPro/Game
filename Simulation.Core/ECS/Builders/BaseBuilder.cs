@@ -1,6 +1,6 @@
-using Application.Abstractions.Options;
 using Arch.Core;
 using Arch.System;
+using GameWeb.Application.Common.Options;
 
 namespace Simulation.Core.ECS.Builders;
 
