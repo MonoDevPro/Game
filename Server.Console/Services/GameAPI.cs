@@ -103,14 +103,14 @@ public class GameAPI : IGameAPI
         try
         {
             // HEAD é mais leve — só headers
-            using var request = new HttpRequestMessage(HttpMethod.Head, $"/client/map/{mapId}/meta");
+            using var request = new HttpRequestMessage(HttpMethod.Head, $"maps/{mapId}/meta");
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
 
             // Se o endpoint HEAD não estiver implementado, o servidor pode responder 405 ou devolver um GET
             if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
             {
                 _logger.LogDebug("HEAD not allowed for meta endpoint; falling back to GET for map {MapId}.", mapId);
-                using var fallback = await _httpClient.GetAsync($"/client/map/{mapId}/meta", ct);
+                using var fallback = await _httpClient.GetAsync($"maps/{mapId}/meta", ct);
                 fallback.EnsureSuccessStatusCode();
                 var metaFallback = await fallback.Content.ReadFromJsonAsync<MapMetaDto>(ct);
                 return NormalizeEtag(metaFallback?.ETag);
