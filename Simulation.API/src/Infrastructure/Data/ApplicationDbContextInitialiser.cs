@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using GameWeb.Application.Common.Options;
 using GameWeb.Application.Maps.Models;
 using GameWeb.Domain.Constants;
 using GameWeb.Domain.Entities;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameWeb.Infrastructure.Data;
 
@@ -28,6 +30,7 @@ public class ApplicationDbContextInitialiser(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
+    IOptions<MapOptions> mapOptions,
     IMapper map)
 {
     public async Task InitialiseAsync()
@@ -60,28 +63,52 @@ public class ApplicationDbContextInitialiser(
 
     public async Task TrySeedAsync()
     {
-        // default map
-        
-        if (!context.Maps.Any())
-            context.Maps.Add(map.Map<Map>(new MapDto
-            {
-                Id = 1,
-                Name = "TestMap",
-                Width = 100,
-                Height = 100,
-                BorderBlocked = true,
-                CollisionRowMajor = new byte[100 * 100],
-                TilesRowMajor = new TileType[100 * 100],
-                UsePadded = false
-            }));
-        
-        // Default roles
-        var administratorRole = new IdentityRole(Roles.Administrator);
+        // 1) Seed maps from appsettings (idempotent / upsert)
+        var configured = mapOptions.Value.Maps ?? Array.Empty<MapInfo>();
 
+        foreach (var m in configured)
+        {
+            var existing = await context.Maps.FindAsync(m.Id);
+            if (existing == null)
+            {
+                // Criar novo mapa com valores iniciais. Ajuste Width/Height conforme necessário.
+                var dto = new MapDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Width = m.Width,
+                    Height = m.Height,
+                    BorderBlocked = m.BorderBlocked,
+                    UsePadded = m.UsePadded,
+                    CollisionRowMajor = new byte[m.Width * m.Height],
+                    TilesRowMajor = new TileType[m.Width * m.Height],
+                };
+
+                context.Maps.Add(map.Map<Map>(dto));
+            }
+            else
+            {
+                // Política conservadora: atualiza somente dados "não-destrutivos"
+                var changed = false;
+                if (existing.Name != m.Name) { existing.Name = m.Name; changed = true; }
+                if (existing.Width != m.Width)  { existing.Width = m.Width; changed = true; }
+                if (existing.Height != m.Height){ existing.Height = m.Height; changed = true; }
+                if (existing.UsePadded != m.UsePadded) { existing.UsePadded = m.UsePadded; changed = true; }
+                if (existing.BorderBlocked != m.BorderBlocked) { existing.BorderBlocked = m.BorderBlocked; changed = true; }
+
+                // Se você alterar Width/Height, considere também redefinir Collision/Tiles se isto fizer sentido.
+                if (changed)
+                    context.Maps.Update(existing);
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        // 2) Default roles & users (mantém seu código original)
+        var administratorRole = new IdentityRole(Roles.Administrator);
         if (roleManager.Roles.All(r => r.Name != administratorRole.Name))
             await roleManager.CreateAsync(administratorRole);
 
-        // Default users
         var administrator = new ApplicationUser { UserName = "administrator@localhost", Email = "administrator@localhost" };
 
         if (userManager.Users.All(u => u.UserName != administrator.UserName))

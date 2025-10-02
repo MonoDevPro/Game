@@ -1,4 +1,4 @@
-namespace GameWeb.Application.Common.Options;
+namespace Simulation.Core;
 
 public enum Authority
 {

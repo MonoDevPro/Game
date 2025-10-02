@@ -1,4 +1,5 @@
 using GameWeb.Application;
+using GameWeb.Application.Common.Options;
 using GameWeb.Infrastructure;
 using GameWeb.Infrastructure.Data;
 using GameWeb.Web;
@@ -13,6 +14,10 @@ foreach (var kv in builder.Configuration.AsEnumerable().Where(k => k.Key?.Starts
 
 // também printar EnvironmentName e ContentRoot para checar caminho
 Console.WriteLine($"ENV: {builder.Environment.EnvironmentName}; ContentRoot: {builder.Environment.ContentRootPath}");
+
+builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
+builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
+builder.Services.Configure<MapOptions>(builder.Configuration.GetSection(MapOptions.SectionName));
 
 // Add services to the container.
 builder.AddKeyVaultIfConfigured();

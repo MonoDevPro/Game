@@ -1,4 +1,4 @@
-namespace GameWeb.Application.Common.Options;
+namespace GameWeb.Infrastructure.Identity;
 
 public class JwtOptions
 {

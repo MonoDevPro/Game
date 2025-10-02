@@ -2,36 +2,22 @@ using System.Security.Cryptography;
 using GameWeb.Application.Common.Options;
 using GameWeb.Application.Maps.Models;
 using GameWeb.Application.Maps.Queries;
-using Microsoft.Extensions.Options;
 using MemoryPack;
+using Microsoft.Extensions.Options;
 
 namespace GameWeb.Web.Endpoints;
 
-public class Client : EndpointGroupBase
+public class Maps : EndpointGroupBase
 {
     public override void Map(RouteGroupBuilder group)
     {
-        group.MapGet(GetClientOptions, "/options")
-            .AllowAnonymous()
-            .WithSummary("Get the client configuration options.");
-
-        group.MapGet(GetMapMeta, "/map/{id:int}/meta")
+        group.MapGet(GetMapMeta, "/{id:int}/meta")
             .AllowAnonymous()
             .WithSummary("Get map metadata (size, format, checksum).");
 
-        group.MapGet(GetMapBinary, "/map/{id:int}")
+        group.MapGet(GetMapBinary, "/{id:int}")
             .AllowAnonymous()
             .WithSummary("Download map as MemoryPack binary (application/octet-stream).");
-    }
-
-    private Task<IResult> GetClientOptions(
-        IOptions<AuthorityOptions> authority,
-        IOptions<NetworkOptions> network,
-        IOptions<WorldOptions> world,
-        CancellationToken ct)
-    {
-        var configDto = new OptionsDto(authority.Value, network.Value, world.Value);
-        return Task.FromResult<IResult>(TypedResults.Ok(configDto));
     }
 
     // --- map metadata ---
@@ -44,17 +30,15 @@ public class Client : EndpointGroupBase
         // compute checksum quickly (e.g., SHA256 of binary MemoryPack)
         var bytes = MemoryPackSerializer.Serialize(data);
         var sha = ComputeSha256(bytes);
-        var meta = new
-        {
+        var meta = new MapMetaDto(
             data.Id,
             data.Name,
             data.Width,
             data.Height,
-            Format = "memorypack",
-            Size = bytes.Length,
-            Checksum = sha,
-            ETag = $"\"{sha}\""
-        };
+            "memorypack",
+            bytes.Length,
+            sha,
+            $"\"{sha}\"");
         return TypedResults.Ok(meta);
     }
 
@@ -63,8 +47,12 @@ public class Client : EndpointGroupBase
         int id,
         ISender sender,
         HttpRequest req,
+        IOptions<MapOptions> mapOptions,
         CancellationToken ct)
     {
+        if (id < 1 || id > mapOptions.Value.MapCount)
+            return TypedResults.NotFound($"Map ID {id} is out of range.");
+        
         var data = await sender.Send<MapDto>(new GetMapQuery(id), ct);
 
         var bytes = MemoryPackSerializer.Serialize(data);

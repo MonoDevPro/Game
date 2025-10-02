@@ -5,7 +5,6 @@ using GameWeb.Infrastructure.Identity.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using JwtOptions = GameWeb.Application.Common.Options.JwtOptions;
 
 namespace GameWeb.Infrastructure.Identity;
 

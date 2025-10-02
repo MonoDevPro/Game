@@ -1,7 +1,4 @@
 ﻿using GameWeb.Application.Common.Options;
-using GameWeb.Application.Maps.Models;
-using GameWeb.Application.Players.Models;
-using MemoryPack;
 using Server.Console;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,57 +6,35 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Server.Console.Services;
+using Simulation.Core;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Server.ECS;
 using Simulation.Network;
 
-var ApiServiceCollection = new ServiceCollection();
-
-// Registra o IHttpClientFactory e configura um cliente HTTP nomeado "ApiClient"
-ApiServiceCollection.AddHttpClient<IMapApiClient, MapApiClient>(client =>
-    {
-        // Obtém a URL base da API do appsettings.json
-        client.BaseAddress = new Uri("http://localhost:5000/api/"); // Fallback para dev
-    })
-    .AddPolicyHandler(GetRetryPolicy()); // Adiciona a política de resiliência
-var apiServiceProvider = ApiServiceCollection.BuildServiceProvider();
-
-var mapApiClient = apiServiceProvider.GetRequiredService<IMapApiClient>();
-
-// Exemplo de uso do cliente HTTP para buscar um mapa
-var mapIdToLoad = 1; // ID do mapa que deseja carregar
-byte[]? mapData = await mapApiClient.GetMapBinaryByIdAsync(mapIdToLoad);
-MapDto? mapDto;
-
-if (mapData != null)
+var apiServiceCollection = new ServiceCollection();
+apiServiceCollection.AddLogging(configure => configure.AddConsole());
+apiServiceCollection.AddSingleton<MapRepository>();
+apiServiceCollection.AddHttpClient<IGameAPI, GameAPI>(client =>
 {
-    var map = MemoryPackSerializer.Deserialize<MapDto>(mapData);
-    if (map == null)
-    {
-        Console.WriteLine("Falha ao desserializar os dados do mapa.");
-        return;
-    }
-    
-    mapDto = map;
-    Console.WriteLine($"Mapa '{map.Name}' (ID: {map.Id}) carregado com sucesso.");
-}
-else
-{
-    Console.WriteLine("Não foi possível carregar o mapa.");
-    // Dependendo do design, talvez queira parar o servidor aqui.
-    return;
-}
+    client.BaseAddress = new Uri("http://localhost:5000/api/"); // Fallback para dev
+}).AddPolicyHandler(GetRetryPolicy()); // Adiciona a política de resiliência
+
+var apiServiceProvider = apiServiceCollection.BuildServiceProvider();
+
+var options = await GetOptionsAsync(apiServiceProvider);
+await PreloadMapsAsync(apiServiceProvider, options.Map);
+var mapService = await GetMapServiceAsync(apiServiceProvider, 1);
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.Configure<WorldOptions>(context.Configuration.GetSection(WorldOptions.SectionName));
-        services.Configure<NetworkOptions>(context.Configuration.GetSection(NetworkOptions.SectionName));
-        services.Configure<AuthorityOptions>(context.Configuration.GetSection(AuthorityOptions.SectionName));
-        
         services.AddLogging(configure => configure.AddConsole());
+        
+        services.AddSingleton(new AuthorityOptions { Authority = Authority.Server });
+        services.AddSingleton(options.Network);
+        services.AddSingleton(options.World);
         
         services.AddSingleton(TimeProvider.System);
         
@@ -69,7 +44,7 @@ var host = Host.CreateDefaultBuilder(args)
         
         services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
         
-        services.AddSingleton(MapService.CreateFromTemplate(mapDto));
+        services.AddSingleton(mapService);
         
         services.AddHostedService<GameServerHost>();
         
@@ -86,16 +61,36 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 }
 
-namespace Server.Console
+static async Task<OptionsDto> GetOptionsAsync(IServiceProvider provider)
 {
-    public class WorldSaver : IWorldSaver
+    var api = provider.GetRequiredService<IGameAPI>();
+    var options = await api.GetOptionsAsync();
+    if (options == null)
+        throw new Exception($"Failed to load game options from API.");
+    return options;
+}
+
+static async Task PreloadMapsAsync(IServiceProvider services, MapOptions options)
+{
+    if (options.Maps.Length == 0)
+        throw new Exception("No maps configured in game options.");
+    
+    var mapRepo = services.GetRequiredService<MapRepository>();
+    foreach (var mapInfo in options.Maps)
     {
-        public void StageSave(PlayerDto dto)
-        {
-            // Implementar a lógica de salvamento do mundo aqui
-            System.Console.WriteLine($"Salvando dados do jogador: {dto.Id}");
-        }
+        var mapService = await mapRepo.GetMapService(mapInfo.Id);
+        if (mapService == null)
+            throw new Exception($"Failed to load map with ID {mapInfo}");
     }
+}
+
+static async Task<MapService> GetMapServiceAsync(IServiceProvider services, int mapId)
+{
+    var mapRepo = services.GetRequiredService<MapRepository>();
+    var mapService = await mapRepo.GetMapService(mapId);
     
+    if (mapService == null)
+        throw new Exception($"Failed to load map with ID {mapId}");
     
+    return mapService;
 }

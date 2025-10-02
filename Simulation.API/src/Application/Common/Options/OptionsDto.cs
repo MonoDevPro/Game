@@ -1,3 +1,3 @@
 namespace GameWeb.Application.Common.Options;
 
-public record OptionsDto(AuthorityOptions Authority, NetworkOptions Network, WorldOptions World);
+public record OptionsDto(NetworkOptions Network, WorldOptions World, MapOptions Map);

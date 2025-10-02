@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using GameWeb.Application.Common.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Simulation.Core;
 using Simulation.Core.Ports.Network;
 
 namespace Simulation.Network;

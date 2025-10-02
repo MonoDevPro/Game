@@ -6,75 +6,12 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/api/Client/options": {
+    "/api/Admin/characters/all": {
       "get": {
         "tags": [
-          "Client"
+          "Admin"
         ],
-        "operationId": "GetClientOptions",
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/Client/map/{id}/meta": {
-      "get": {
-        "tags": [
-          "Client"
-        ],
-        "operationId": "GetMapMeta",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/Client/map/{id}": {
-      "get": {
-        "tags": [
-          "Client"
-        ],
-        "operationId": "GetMapBinary",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/Internal/internal": {
-      "get": {
-        "tags": [
-          "Internal"
-        ],
-        "operationId": "GetSelectedCharacter",
+        "operationId": "GetAllPlayers",
         "parameters": [
           {
             "name": "IsActive",
@@ -116,59 +53,12 @@
         ]
       }
     },
-    "/api/Management/characters/all": {
-      "get": {
-        "tags": [
-          "Management"
-        ],
-        "operationId": "GetAllCharacters",
-        "parameters": [
-          {
-            "name": "IsActive",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "nullable": true
-            },
-            "x-position": 1
-          },
-          {
-            "name": "PageNumber",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 2
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 3
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "Bearer": []
-          }
-        ]
-      }
-    },
-    "/api/Management/characters/purge": {
+    "/api/Admin/characters/purge": {
       "delete": {
         "tags": [
-          "Management"
+          "Admin"
         ],
-        "operationId": "PurgeCharacters",
+        "operationId": "PurgeInactivePlayers",
         "parameters": [
           {
             "name": "isActive",
@@ -190,6 +80,69 @@
             "Bearer": []
           }
         ]
+      }
+    },
+    "/api/Options": {
+      "get": {
+        "tags": [
+          "Options"
+        ],
+        "operationId": "GetOptions",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Maps/{id}/meta": {
+      "get": {
+        "tags": [
+          "Maps"
+        ],
+        "operationId": "GetMapMeta",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Maps/{id}": {
+      "get": {
+        "tags": [
+          "Maps"
+        ],
+        "operationId": "GetMapBinary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
       }
     },
     "/api/Players": {
