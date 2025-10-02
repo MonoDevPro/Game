@@ -21,15 +21,17 @@ public class Maps : EndpointGroupBase
     }
 
     // --- map metadata ---
-    private async Task<IResult> GetMapMeta(
-        int id,
-        ISender sender,
-        CancellationToken ct)
+    private async Task<IResult> GetMapMeta(int id, ISender sender, HttpRequest req, CancellationToken ct)
     {
         var data = await sender.Send<MapDto>(new GetMapQuery(id), ct);
-        // compute checksum quickly (e.g., SHA256 of binary MemoryPack)
         var bytes = MemoryPackSerializer.Serialize(data);
         var sha = ComputeSha256(bytes);
+        var etag = $"\"{sha}\"";
+
+        // adiciona header ETag na resposta
+        req.HttpContext.Response.Headers["ETag"] = etag;
+        req.HttpContext.Response.Headers["Cache-Control"] = "public, max-age=3600";
+
         var meta = new MapMetaDto(
             data.Id,
             data.Name,
@@ -38,7 +40,8 @@ public class Maps : EndpointGroupBase
             "memorypack",
             bytes.Length,
             sha,
-            $"\"{sha}\"");
+            etag);
+
         return TypedResults.Ok(meta);
     }
 
