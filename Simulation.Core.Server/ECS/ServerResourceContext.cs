@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Resource;
-using Simulation.Core.ECS.Services;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
 using Simulation.Core.Ports.Network;
@@ -21,7 +20,9 @@ public sealed class ServerResourceContext : ResourceContext
     public readonly SpatialIndexResource SpatialIndex;
     public readonly PlayerFactoryResource PlayerFactory;
     public readonly PlayerNetResource PlayerNet;
-    public readonly ILoggerFactory LoggerFactory;
+    
+    private readonly ILoggerFactory _loggerFactory;
+    public ILogger<T> GetLogger<T>() => _loggerFactory.CreateLogger<T>();
 
     public ServerResourceContext(IServiceProvider provider, World world) : base(provider, world)
     {
@@ -29,8 +30,7 @@ public sealed class ServerResourceContext : ResourceContext
         PlayerIndex = new PlayerIndexResource(world);
         SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
         PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex);
-        PlayerNet = new PlayerNetResource(world, PlayerIndex, 
-            provider.GetRequiredService<INetworkManager>());
-        LoggerFactory = provider.GetRequiredService<ILoggerFactory>();
+        PlayerNet = new PlayerNetResource(world, PlayerIndex, provider.GetRequiredService<INetworkManager>());
+        _loggerFactory = provider.GetRequiredService<ILoggerFactory>();
     }
 }

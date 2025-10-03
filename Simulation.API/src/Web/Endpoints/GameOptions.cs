@@ -19,10 +19,9 @@ public class Options : EndpointGroupBase
     private Task<IResult> GetOptions(
         IOptions<NetworkOptions> network,
         IOptions<WorldOptions> world,
-        IOptions<MapOptions> map,
         CancellationToken ct)
     {
-        var configDto = new OptionsDto(network.Value, world.Value, map.Value);
+        var configDto = new OptionsDto(network.Value, world.Value);
         return Task.FromResult<IResult>(TypedResults.Ok(configDto));
     }
 }

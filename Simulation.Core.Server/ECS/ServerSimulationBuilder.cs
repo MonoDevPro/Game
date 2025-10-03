@@ -1,7 +1,5 @@
 using Arch.Core;
 using Arch.System;
-using Microsoft.Extensions.Logging;
-using Simulation.Core.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Sync;
@@ -50,7 +48,7 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
     {
         var systems = new ISystem<float>[]
         {
-            new DevTestSpawnSystem(world, resources.PlayerFactory, new Logger<DevTestSpawnSystem>(resources.LoggerFactory)), // Spawna 1 player de teste
+            new DevTestSpawnSystem(world, resources.PlayerFactory, resources.GetLogger<DevTestSpawnSystem>()), // Spawna 1 player de teste
             new WorldInboxSystem(world, resources.PlayerFactory, resources.PlayerSave),
             new MoveSystem(world, resources.SpatialIndex),
             new AttackSystem(world),

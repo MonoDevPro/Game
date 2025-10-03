@@ -17,7 +17,6 @@ Console.WriteLine($"ENV: {builder.Environment.EnvironmentName}; ContentRoot: {bu
 
 builder.Services.Configure<NetworkOptions>(builder.Configuration.GetSection(NetworkOptions.SectionName));
 builder.Services.Configure<WorldOptions>(builder.Configuration.GetSection(WorldOptions.SectionName));
-builder.Services.Configure<MapOptions>(builder.Configuration.GetSection(MapOptions.SectionName));
 
 // Add services to the container.
 builder.AddKeyVaultIfConfigured();

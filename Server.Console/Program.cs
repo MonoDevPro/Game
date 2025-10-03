@@ -1,4 +1,6 @@
-﻿using GameWeb.Application.Common.Options;
+﻿using System.Net.Http.Headers;
+using GameWeb.Application.Common.Options;using GameWeb.Application.Maps.Models;
+using Microsoft.Extensions.Configuration;
 using Server.Console;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -6,98 +8,141 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
-using Server.Console.Services;
 using Simulation.Core;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
+using Simulation.Core.Server.API;
 using Simulation.Core.Server.ECS;
+using Simulation.Core.Server.Map;
 using Simulation.Network;
 
-var apiServiceCollection = new ServiceCollection();
-apiServiceCollection.AddLogging(configure => configure.AddConsole());
-apiServiceCollection.AddSingleton<MapRepository>();
-apiServiceCollection.AddHttpClient<IGameAPI, GameAPI>(client =>
+// ---------------------------
+// 1) Bootstrap temporário: cria um ServiceProvider mínimo para buscar Options do API.
+// ---------------------------
+
+static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(ILogger? logger = null)
 {
-    client.BaseAddress = new Uri("http://localhost:5000/api/"); // Fallback para dev
-}).AddPolicyHandler(GetRetryPolicy()); // Adiciona a política de resiliência
-
-var apiServiceProvider = apiServiceCollection.BuildServiceProvider();
-
-var options = await GetOptionsAsync(apiServiceProvider);
-await PreloadMapsAsync(apiServiceProvider, options.Map);
-var mapService = await GetMapServiceAsync(apiServiceProvider, 1);
-
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices((context, services) =>
-    {
-        services.AddLogging(configure => configure.AddConsole());
-        
-        services.AddSingleton(TimeProvider.System);
-
-        services.AddSingleton<MapOptions>(options.Map);
-        services.AddSingleton<WorldOptions>(options.World);
-        services.AddSingleton<NetworkOptions>(options.Network);
-        services.AddSingleton<AuthorityOptions>(new AuthorityOptions { Authority = Authority.Server });
-        
-        services.AddSingleton<IOptions<MapOptions>>(sp => Options.Create(sp.GetRequiredService<MapOptions>()));
-        services.AddSingleton<IOptions<WorldOptions>>(sp => Options.Create(sp.GetRequiredService<WorldOptions>()));
-        services.AddSingleton<IOptions<NetworkOptions>>(sp => Options.Create(sp.GetRequiredService<NetworkOptions>()));
-        services.AddSingleton<IOptions<AuthorityOptions>>(sp => Options.Create(sp.GetRequiredService<AuthorityOptions>()));
-        
-        services.AddSingleton<IWorldSaver, WorldSaver>();
-        
-        services.AddNetworking();
-        
-        services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
-        
-        services.AddSingleton(mapService);
-        
-        services.AddHostedService<GameServerHost>();
-        
-    })
-    .Build();
-
-await host.RunAsync();
-
-// Define uma política de retentativa simples: tentar 3 vezes com um pequeno atraso
-static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-{
+    // Exponential backoff com jitter para evitar bursts
+    var jitterer = new Random();
     return HttpPolicyExtensions
-        .HandleTransientHttpError() // Lida com erros de rede, 5xx e 408
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(3, // 3 tentativas
+            retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitterer.Next(0, 200)),
+            onRetry: (outcome, timespan, retryCount, ctx) =>
+            {
+                logger?.LogWarning("Retry {RetryCount} after {Delay} due to {Reason}", retryCount, timespan, outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString());
+            });
 }
 
-static async Task<OptionsDto> GetOptionsAsync(IServiceProvider provider)
+// Cria um provider mínimo para chamar a API e obter OptionsDto.
+// Usamos um provider separado E descartável para não misturar estados com o host principal.
+static IServiceProvider BuildBootstrapProvider()
 {
-    var api = provider.GetRequiredService<IGameAPI>();
+    var sc = new ServiceCollection();
+    sc.AddLogging(cfg => cfg.AddConsole());
+    sc.AddMemoryCache(options => { options.SizeLimit = 1024; });
+    sc.AddSingleton<MapRepository>(); // repositório de mapas
+    sc.AddSingleton<MapServiceFactory>(); // fábrica de MapService
+    sc.AddHttpClient<IGameAPI, GameAPI>(client =>
+        {
+            client.BaseAddress = new Uri("http://localhost:5000/api/"); // fallback dev
+            client.DefaultRequestHeaders.UserAgent.Add(ProductInfoHeaderValue.Parse("GameServer/1.0"));
+        })
+        .AddPolicyHandler((sp, req) => GetRetryPolicy(sp.GetService<ILoggerFactory>()?.CreateLogger("Bootstrap") ?? null));
+
+    return sc.BuildServiceProvider();
+}
+
+static async Task<OptionsDto> FetchOptionsDtoAsync(IServiceProvider bootstrap)
+{
+    var logger = bootstrap.GetRequiredService<ILoggerFactory>().CreateLogger("Bootstrap");
+    var api = bootstrap.GetRequiredService<IGameAPI>();
+
+    logger.LogInformation("Fetching OptionsDto from Game API...");
     var options = await api.GetOptionsAsync();
     if (options == null)
-        throw new Exception($"Failed to load game options from API.");
+    {
+        logger.LogCritical("Failed to load game options from API (null).");
+        throw new Exception("Failed to load game options from API.");
+    }
+
+    logger.LogInformation("OptionsDto fetched. WorldOptions: {WorldOptions}, NetworkOptions: {NetworkOptions}",
+        options.World.ToString(),
+        options.Network.ToString());
     return options;
 }
 
-static async Task PreloadMapsAsync(IServiceProvider services, MapOptions options)
+static async Task<MapService?> LoadMapServiceAsync(int mapId, IServiceProvider provider, CancellationToken ct = default)
 {
-    if (options.Maps.Length == 0)
-        throw new Exception("No maps configured in game options.");
-    
-    var mapRepo = services.GetRequiredService<MapRepository>();
-    foreach (var mapInfo in options.Maps)
+    // Antes de iniciar o host (StartAsync dos hosted services), fazemos o preload de mapas
+    using (var scope = provider.CreateScope())
     {
-        var mapService = await mapRepo.GetMapService(mapInfo.Id);
+        var sp = scope.ServiceProvider;
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Bootstrap.Preload");
+        var mapRepo = sp.GetRequiredService<MapRepository>();
+    
+        logger.LogInformation("Preloading map {MapId}...", mapId);
+        var mapService = await mapRepo.GetMapService(mapId); // força preload do mapa na memória
+    
         if (mapService == null)
-            throw new Exception($"Failed to load map with ID {mapInfo}");
+        {
+            logger.LogCritical("Failed to preload map {MapId}. Cannot start server.", mapId);
+            return mapService;
+        }
+
+        logger.LogInformation("Map {MapId} preloaded successfully.", mapId);
+        return mapService;
     }
 }
 
-static async Task<MapService> GetMapServiceAsync(IServiceProvider services, int mapId)
+// ---------------------------
+// 2) Main: construir host com as options já resolvidas e inicializar recursos (preload).
+// ---------------------------
+
+var bootstrapProvider = BuildBootstrapProvider();
+OptionsDto optionsDto;
+MapService mapService;
+using (bootstrapProvider as IDisposable) // garante disposal ao terminar
 {
-    var mapRepo = services.GetRequiredService<MapRepository>();
-    var mapService = await mapRepo.GetMapService(mapId);
+    optionsDto = await FetchOptionsDtoAsync(bootstrapProvider);
+    var mapInstanceInfo = new MapInstanceInfo { MapId = 1 };
     
-    if (mapService == null)
-        throw new Exception($"Failed to load map with ID {mapId}");
-    
-    return mapService;
+    mapService = await LoadMapServiceAsync(mapInstanceInfo.MapId, bootstrapProvider) ?? throw new Exception("Failed to load map service.");
 }
+
+// Agora constrói o host principal com as opções resolvidas
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((ctx, services) =>
+    {
+        // logging
+        services.AddLogging(cfg => cfg.AddConsole());
+
+        // Registra HttpClient para IGameAPI no host principal também
+        services.AddHttpClient<IGameAPI, GameAPI>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000/api/");
+                client.DefaultRequestHeaders.UserAgent.Add(ProductInfoHeaderValue.Parse("GameServer/1.0"));
+            })
+            .AddPolicyHandler((sp, req) => GetRetryPolicy(new Logger<GameAPI>(sp.GetRequiredService<ILoggerFactory>())));
+        
+        services.AddSingleton<IOptions<WorldOptions>>(sp => Options.Create(optionsDto.World ?? new WorldOptions()));
+        services.AddSingleton<IOptions<NetworkOptions>>(sp => Options.Create(optionsDto.Network ?? new NetworkOptions()));
+        services.AddSingleton<IOptions<AuthorityOptions>>(sp => Options.Create(new AuthorityOptions { Authority = Authority.Server }));
+
+        // Outros serviços do app
+        services.AddSingleton(TimeProvider.System);
+        
+        services.AddSingleton<IWorldSaver, WorldSaver>();
+        services.AddSingleton<MapService>(mapService);
+
+        services.AddNetworking();
+        services.AddSingleton<ISimulationBuilder<float>, ServerSimulationBuilder>();
+
+        // Hosted service (GameServerHost) - ele deverá resolver MapService via MapRepository no StartAsync
+        services.AddHostedService<GameServerHost>();
+    })
+    .Build();
+
+// Finalmente inicia o host (start dos hosted services)
+await host.RunAsync();

@@ -50,10 +50,9 @@ public class Maps : EndpointGroupBase
         int id,
         ISender sender,
         HttpRequest req,
-        IOptions<MapOptions> mapOptions,
         CancellationToken ct)
     {
-        if (id < 1 || id > mapOptions.Value.MapCount)
+        if (id < 1)
             return TypedResults.NotFound($"Map ID {id} is out of range.");
         
         var data = await sender.Send<MapDto>(new GetMapQuery(id), ct);
@@ -64,9 +63,7 @@ public class Maps : EndpointGroupBase
 
         // If-None-Match handling (cache)
         if (req.Headers.TryGetValue("If-None-Match", out var ifNone) && ifNone.ToString().Contains(sha))
-        {
             return TypedResults.StatusCode(StatusCodes.Status304NotModified);
-        }
 
         var headers = new HeaderDictionary
         {

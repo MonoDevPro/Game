@@ -30,7 +30,6 @@ public class ApplicationDbContextInitialiser(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
-    IOptions<MapOptions> mapOptions,
     IMapper map)
 {
     public async Task InitialiseAsync()
@@ -64,42 +63,35 @@ public class ApplicationDbContextInitialiser(
     public async Task TrySeedAsync()
     {
         // 1) Seed maps from appsettings (idempotent / upsert)
-        var configured = mapOptions.Value.Maps ?? Array.Empty<MapInfo>();
+        var configured = new List<MapDto>();
+        configured.Add(new MapDto
+        {
+            Id = 1,
+            Name = "Default Map 1",
+            Width = 100,
+            Height = 100,
+            BorderBlocked = true,
+            UsePadded = false,
+            CollisionRowMajor = new byte[100 * 100],
+            TilesRowMajor = new TileType[100 * 100],
+        });
+        configured.Add(new MapDto
+        {
+            Id = 2,
+            Name = "Default Map 2",
+            Width = 100,
+            Height = 100,
+            BorderBlocked = true,
+            UsePadded = false,
+            CollisionRowMajor = new byte[100 * 100],
+            TilesRowMajor = new TileType[100 * 100],
+        });
 
         foreach (var m in configured)
         {
             var existing = await context.Maps.FindAsync(m.Id);
             if (existing == null)
-            {
-                // Criar novo mapa com valores iniciais. Ajuste Width/Height conforme necessário.
-                var dto = new MapDto
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Width = m.Width,
-                    Height = m.Height,
-                    BorderBlocked = m.BorderBlocked,
-                    UsePadded = m.UsePadded,
-                    CollisionRowMajor = new byte[m.Width * m.Height],
-                    TilesRowMajor = new TileType[m.Width * m.Height],
-                };
-
-                context.Maps.Add(map.Map<Map>(dto));
-            }
-            else
-            {
-                // Política conservadora: atualiza somente dados "não-destrutivos"
-                var changed = false;
-                if (existing.Name != m.Name) { existing.Name = m.Name; changed = true; }
-                if (existing.Width != m.Width)  { existing.Width = m.Width; changed = true; }
-                if (existing.Height != m.Height){ existing.Height = m.Height; changed = true; }
-                if (existing.UsePadded != m.UsePadded) { existing.UsePadded = m.UsePadded; changed = true; }
-                if (existing.BorderBlocked != m.BorderBlocked) { existing.BorderBlocked = m.BorderBlocked; changed = true; }
-
-                // Se você alterar Width/Height, considere também redefinir Collision/Tiles se isto fizer sentido.
-                if (changed)
-                    context.Maps.Update(existing);
-            }
+                context.Maps.Add(map.Map<Map>(m));
         }
 
         await context.SaveChangesAsync();

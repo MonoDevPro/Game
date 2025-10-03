@@ -1,7 +1,7 @@
 using GameWeb.Application.Players.Models;
 using Simulation.Core.Ports.ECS;
 
-namespace Server.Console.Services;
+namespace Simulation.Core.Server.API;
 
 public class WorldSaver : IWorldSaver
 {

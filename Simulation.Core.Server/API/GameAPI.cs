@@ -4,7 +4,7 @@ using GameWeb.Application.Common.Options;
 using GameWeb.Application.Maps.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Server.Console.Services;
+namespace Simulation.Core.Server.API;
 
 public interface IGameAPI
 {
