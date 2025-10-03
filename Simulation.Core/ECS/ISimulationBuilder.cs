@@ -1,4 +1,5 @@
 using GameWeb.Application.Common.Options;
+using Simulation.Core.ECS.Utils;
 
 namespace Simulation.Core.ECS;
 
@@ -17,6 +18,8 @@ public interface ISimulationBuilder<TData> where TData : notnull
     /// </summary>
     ISimulationBuilder<TData> WithWorldOptions(WorldOptions options);
 
+    ISimulationBuilder<TData> WithMapService(MapService service);
+    
     /// <summary>
     /// Fornece o contentor de serviços da aplicação principal para resolver dependências externas.
     /// </summary>

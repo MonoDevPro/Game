@@ -15,7 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Simulation.Core.Client\Simulation.Core.Client.csproj" />
+    <ProjectReference Include="..\..\Simulation.Core\Simulation.Core.csproj" />
     <ProjectReference Include="..\..\Simulation.Network\Simulation.Network.csproj" />
   </ItemGroup>
+
 </Project>

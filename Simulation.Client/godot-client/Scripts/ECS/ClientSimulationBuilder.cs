@@ -1,18 +1,20 @@
+using System;
 using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Builders;
-using Simulation.Core.Ports.Network;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Sync;
+using Simulation.Core.ECS.Utils;
+using Simulation.Core.Ports.Network;
 
-namespace Simulation.Core.Client.ECS;
+namespace GodotClient.ECS;
 
 public sealed class ClientSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ClientResourceContext>
 {
-    protected override ClientResourceContext CreateResourceContext(World world)
+    protected override ClientResourceContext CreateResourceContext(World world, MapService? service)
     {
-        return new ClientResourceContext(rootProvider, world);
+        return new ClientResourceContext(rootProvider, world, MapService?? throw new ArgumentNullException(nameof(MapService)));
     }
 
     protected override ISystem<float> RegisterComponentUpdate(World world, ClientResourceContext resources)

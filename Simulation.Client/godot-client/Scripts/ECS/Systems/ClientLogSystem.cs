@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resource;
 
-namespace Simulation.Core.Client.ECS.Systems;
+namespace GodotClient.ECS.Systems;
 
 /// <summary>
 /// Sistema de testes no cliente que registra mudanças de estado, vida e posição do jogador.

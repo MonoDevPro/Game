@@ -1,10 +1,11 @@
+using System;
 using Arch.Core;
 using Arch.System;
 using Microsoft.Extensions.Logging;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Resource;
 
-namespace Simulation.Core.Client.ECS.Systems;
+namespace GodotClient.ECS.Systems;
 
 /// <summary>
 /// Sistema de testes no cliente que publica intents de movimento e ataque periodicamente.

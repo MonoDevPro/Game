@@ -1,3 +1,4 @@
+using System;
 using Arch.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -6,7 +7,7 @@ using Simulation.Core.ECS.Resource;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.Network;
 
-namespace Simulation.Core.Client.ECS;
+namespace GodotClient.ECS;
 
 /// <summary>
 /// Contexto de containers Resources<T> do Arch.LowLevel para tipos gerenciados
@@ -20,10 +21,10 @@ public sealed class ClientResourceContext : ResourceContext
     public readonly PlayerFactoryResource PlayerFactory;
     public readonly ILoggerFactory LoggerFactory;
 
-    public ClientResourceContext(IServiceProvider provider, World world) : base(provider, world)
+    public ClientResourceContext(IServiceProvider provider, World world, MapService service) : base(provider, world)
     {
         PlayerIndex = new PlayerIndexResource(world);
-        SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
+        SpatialIndex = new SpatialIndexResource(service);
         PlayerNet = new PlayerNetResource(world, PlayerIndex, provider.GetRequiredService<INetworkManager>());
         PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex);
         LoggerFactory = provider.GetRequiredService<ILoggerFactory>();

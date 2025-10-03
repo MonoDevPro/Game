@@ -3,6 +3,7 @@ using Arch.System;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Sync;
+using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.Network;
 using Simulation.Core.Server.ECS.Systems;
 
@@ -10,9 +11,9 @@ namespace Simulation.Core.Server.ECS;
 
 public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ServerResourceContext>
 {
-    protected override ServerResourceContext CreateResourceContext(World world)
+    protected override ServerResourceContext CreateResourceContext(World world, MapService? mapService)
     {
-        return new ServerResourceContext(rootProvider, world);
+        return new ServerResourceContext(rootProvider, world, mapService ?? throw new ArgumentNullException(nameof(mapService)));
     }
 
     protected override ISystem<float> RegisterComponentUpdate(World world, ServerResourceContext resources)

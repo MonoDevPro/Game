@@ -1,10 +1,11 @@
 using System;
 using Arch.Core;
 using Arch.System;
-using Simulation.Core.Client.ECS;
+using GodotClient.ECS;
 using Simulation.Core.ECS.Builders;
 using Simulation.Core.ECS.Components;
 using Simulation.Core.ECS.Sync;
+using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.Network;
 
 namespace GodotClient;
@@ -18,7 +19,7 @@ namespace GodotClient;
 /// </summary>
 public sealed class GodotClientSimulationBuilder(IServiceProvider rootProvider) : BaseSimulationBuilder<ClientResourceContext>
 {
-    protected override ClientResourceContext CreateResourceContext(World world) => new(rootProvider, world);
+    protected override ClientResourceContext CreateResourceContext(World world, MapService? mapService) => new(rootProvider, world, mapService ?? throw new ArgumentNullException(nameof(mapService)));
 
     protected override ISystem<float> RegisterComponentUpdate(World world, ClientResourceContext resources)
     {

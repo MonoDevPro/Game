@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using GameWeb.Application.Common.Options;
+using Simulation.Core.ECS.Utils;
 
 namespace Simulation.Core.ECS.Builders;
 
@@ -13,6 +14,7 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
 {
     protected AuthorityOptions? AuthorityOptions;
     protected WorldOptions? WorldOptions;
+    protected MapService? MapService;
     protected IServiceProvider? RootServices;
 
     public ISimulationBuilder<float> WithAuthorityOptions(AuthorityOptions options)
@@ -24,6 +26,12 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
     public ISimulationBuilder<float> WithWorldOptions(WorldOptions options)
     {
         WorldOptions = options;
+        return this;
+    }
+    
+    public ISimulationBuilder<float> WithMapService(MapService service)
+    {
+        MapService = service;
         return this;
     }
 
@@ -41,7 +49,7 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
         var world = CreateWorld();
 
         // Resolve external dependencies (only here)
-        var resourceContext = CreateResourceContext(world);
+        var resourceContext = CreateResourceContext(world, MapService);
 
         // Build pipeline without IServiceProvider in hot path
         var pipeline = new SystemGroup("Simulation Systems", world);
@@ -79,7 +87,7 @@ public abstract class BaseSimulationBuilder<TContext> : ISimulationBuilder<float
     /// Creates the resource context with all necessary dependencies.
     /// Can be overridden by derived classes for specialized resource creation.
     /// </summary>
-    protected abstract TContext CreateResourceContext(World world);
+    protected abstract TContext CreateResourceContext(World world, MapService? mapService);
     protected abstract ISystem<float> RegisterComponentUpdate(World world, TContext resources);
     protected abstract ISystem<float> RegisterComponentPost(World world, TContext resources);
     protected abstract ISystem<float> CreateSystems(World world, TContext resources);

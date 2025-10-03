@@ -24,11 +24,11 @@ public sealed class ServerResourceContext : ResourceContext
     private readonly ILoggerFactory _loggerFactory;
     public ILogger<T> GetLogger<T>() => _loggerFactory.CreateLogger<T>();
 
-    public ServerResourceContext(IServiceProvider provider, World world) : base(provider, world)
+    public ServerResourceContext(IServiceProvider provider, World world, MapService service) : base(provider, world)
     {
         PlayerSave = new PlayerSaveResource(world, provider.GetRequiredService<IWorldSaver>());
         PlayerIndex = new PlayerIndexResource(world);
-        SpatialIndex = new SpatialIndexResource(provider.GetRequiredService<MapService>());
+        SpatialIndex = new SpatialIndexResource(service);
         PlayerFactory = new PlayerFactoryResource(world, PlayerIndex, SpatialIndex);
         PlayerNet = new PlayerNetResource(world, PlayerIndex, provider.GetRequiredService<INetworkManager>());
         _loggerFactory = provider.GetRequiredService<ILoggerFactory>();

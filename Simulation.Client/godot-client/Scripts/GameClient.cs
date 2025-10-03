@@ -83,6 +83,18 @@ public partial class GameClient : Node
         // Relógio do sistema (caso necessário por algum serviço)
         sc.AddSingleton(TimeProvider.System);
 
+        // World saver vazio no cliente
+        sc.AddSingleton<IWorldSaver, ClientWorldSaver>();
+
+        // Networking + ECS Builder (lado do cliente)
+        sc.AddNetworking();
+        // sc.AddSingleton<ISimulationBuilder<float>, ClientSimulationBuilder>();
+        sc.AddSingleton<ISimulationBuilder<float>, GodotClientSimulationBuilder>();
+
+        _services = sc.BuildServiceProvider();
+        
+        
+        
         // Mapa (template simples como no headless client)
         var mapData = new MapDto
         {
@@ -95,17 +107,6 @@ public partial class GameClient : Node
             TilesRowMajor = new TileType[100 * 100],
             UsePadded = false
         };
-        sc.AddSingleton(MapService.CreateFromTemplate(mapData));
-
-        // World saver vazio no cliente
-        sc.AddSingleton<IWorldSaver, ClientWorldSaver>();
-
-        // Networking + ECS Builder (lado do cliente)
-        sc.AddNetworking();
-        // sc.AddSingleton<ISimulationBuilder<float>, ClientSimulationBuilder>();
-        sc.AddSingleton<ISimulationBuilder<float>, GodotClientSimulationBuilder>();
-
-        _services = sc.BuildServiceProvider();
 
         // Construir pipeline ECS
         var builder = _services.GetRequiredService<ISimulationBuilder<float>>();
@@ -113,6 +114,7 @@ public partial class GameClient : Node
             .WithAuthorityOptions(authorityOptions)
             .WithWorldOptions(worldOptions)
             .WithRootServices(_services)
+            .WithMapService(MapService.CreateFromTemplate(mapData))
             .Build();
 
         // Iniciar rede (conecta ao servidor)
