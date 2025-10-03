@@ -74,7 +74,7 @@ public partial class ApiClient : Node
         }
 
         _lastRequest = PendingRequest.FetchConfig;
-        var err = _http.Request($"{ApiBaseUrl}/options/client", BuildHeaders(), HttpClient.Method.Get);
+        var err = _http.Request($"{ApiBaseUrl}/options", BuildHeaders(), HttpClient.Method.Get);
         if (err != Error.Ok)
         {
             GD.PrintErr($"[ApiClient] Falha ao iniciar FetchConfig: {err}");
@@ -147,7 +147,7 @@ public partial class ApiClient : Node
                         if (cfg != null)
                         {
                             // Melhor: emitir um sinal/evento ao invés de GetNode fixo
-                            GetNode<ConfigManager>("/root/ConfigManager").UpdateFromDto(cfg);
+                            GetNode<ConfigManager>("%ConfigManager").UpdateFromDto(cfg);
                             GD.Print("[ApiClient] Config aplicada.");
                         }
                         else

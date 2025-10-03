@@ -19,6 +19,9 @@ public partial class PlayerView : Node2D
 
     public override void _Process(double delta)
     {
+        if (!GameClient.Instance.Initialized)
+            return;
+        
         var gc = GameClient.Instance;
         var world = gc.World;
 

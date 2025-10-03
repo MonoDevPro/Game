@@ -9,12 +9,15 @@
 [node name="Main" type="Node"]
 
 [node name="ApiClient" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("1_jjvhh")
 
 [node name="ConfigManager" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("1_kry3j")
 
 [node name="GameClient" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("2_kry3j")
 
 [node name="GodotInputSystem" type="Node" parent="GameClient"]

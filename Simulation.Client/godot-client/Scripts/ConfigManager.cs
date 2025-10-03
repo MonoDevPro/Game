@@ -18,7 +18,7 @@ public sealed partial class ConfigManager : Node
     
     public override void _Ready()
     {
-        GetNode<ApiClient>("$ApiClient").FetchConfig();
+        GetNode<ApiClient>("%ApiClient").FetchConfig();
     }
 
     public void UpdateFromDto(OptionsDto dto)

@@ -15,6 +15,9 @@ public partial class GodotInputSystem : Node
 
     public override void _Process(double delta)
     {
+        if (!GameClient.Instance.Initialized)
+            return;
+        
         var gc = GameClient.Instance;
         var world = gc.World;
 

@@ -30,7 +30,7 @@ public partial class GameClient : Node
     private double _accumulator;
     private const float FixedDt = 0.016f; // ~60Hz
     
-    private bool _initialized;
+    public bool Initialized { get; private set; }
 
     public override void _EnterTree()
     {
@@ -41,8 +41,7 @@ public partial class GameClient : Node
     {
         GD.Print("[GameClient] Waiting for config...");
         
-        
-        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        var cfg = GetNode<ConfigManager>("%ConfigManager");
         // Se já estiver carregada, inicializa imediatamente
         if (cfg.IsReady)
         {
@@ -57,7 +56,7 @@ public partial class GameClient : Node
     private void OnConfigUpdated()
     {
         // desconecta o sinal para evitar múltiplas chamadas
-        var cfg = GetNode<ConfigManager>("/root/ConfigManager");
+        var cfg = GetNode<ConfigManager>("%ConfigManager");
         cfg.Disconnect(ConfigManager.SignalName.ConfigUpdated, Callable.From(OnConfigUpdated));
 
         InitializeClient(cfg);
@@ -65,8 +64,8 @@ public partial class GameClient : Node
     
     private void InitializeClient(ConfigManager configManager)
     {
-        if (_initialized) return;
-        _initialized = true;
+        if (Initialized) return;
+        Initialized = true;
 
         var sc = new ServiceCollection();
 
@@ -128,7 +127,7 @@ public partial class GameClient : Node
 
     public override void _Process(double delta)
     {
-        if (!_initialized) return;
+        if (!Initialized) return;
 
         // Fixed-step ECS update
         var elapsed = _stopwatch.Elapsed.TotalSeconds;

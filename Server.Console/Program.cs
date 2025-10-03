@@ -3,6 +3,7 @@ using Server.Console;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
 using Server.Console.Services;
@@ -32,11 +33,17 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddLogging(configure => configure.AddConsole());
         
-        services.AddSingleton(new AuthorityOptions { Authority = Authority.Server });
-        services.AddSingleton(options.Network);
-        services.AddSingleton(options.World);
-        
         services.AddSingleton(TimeProvider.System);
+
+        services.AddSingleton<MapOptions>(options.Map);
+        services.AddSingleton<WorldOptions>(options.World);
+        services.AddSingleton<NetworkOptions>(options.Network);
+        services.AddSingleton<AuthorityOptions>(new AuthorityOptions { Authority = Authority.Server });
+        
+        services.AddSingleton<IOptions<MapOptions>>(sp => Options.Create(sp.GetRequiredService<MapOptions>()));
+        services.AddSingleton<IOptions<WorldOptions>>(sp => Options.Create(sp.GetRequiredService<WorldOptions>()));
+        services.AddSingleton<IOptions<NetworkOptions>>(sp => Options.Create(sp.GetRequiredService<NetworkOptions>()));
+        services.AddSingleton<IOptions<AuthorityOptions>>(sp => Options.Create(sp.GetRequiredService<AuthorityOptions>()));
         
         services.AddSingleton<IWorldSaver, WorldSaver>();
         

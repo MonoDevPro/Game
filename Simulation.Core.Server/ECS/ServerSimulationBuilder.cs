@@ -39,8 +39,8 @@ public sealed class ServerSimulationBuilder(IServiceProvider rootProvider) : Bas
         var postSystems = new ISystem<float>[]
         {
             resources.PlayerNet.RegisterComponentPost<PlayerState>(syncOnChangeOption),
-            resources.PlayerNet.RegisterComponentPost<Position>(syncOnChangeOption),
             resources.PlayerNet.RegisterComponentPost<Direction>(syncOnChangeOption),
+            resources.PlayerNet.RegisterComponentPost<Position>(syncOnChangeOption),
             resources.PlayerNet.RegisterComponentPost<Health>(syncOnChangeOption),
         };
         return new Group<float>("Net Post Systems", postSystems);
