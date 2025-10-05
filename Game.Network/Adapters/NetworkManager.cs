@@ -1,0 +1,86 @@
+using Game.Abstractions.Network;
+using LiteNetLib;
+using Microsoft.Extensions.Logging;
+
+namespace Game.Network.Adapters;
+
+public class NetworkManager : INetworkManager, IDisposable
+{
+    private readonly NetworkOptions _netOptions;
+    private readonly NetManager _net;
+    private readonly NetworkListener _listener;
+    private readonly PacketSender _packetSender;
+    private readonly PacketProcessor _packetProcessor;
+
+    public NetworkManager(ILogger<NetworkManager> logger,
+        NetworkOptions netOptions,
+        NetManager net,
+        NetworkListener listener,
+        PacketSender packetSender,
+        PacketProcessor packetProcessor)
+    {
+        _netOptions = netOptions;
+        _net = net;
+        _listener = listener;
+        _packetSender = packetSender;
+        _packetProcessor = packetProcessor;
+        
+        listener.PeerConnected += peer => OnPeerConnected?.Invoke(peer);
+        listener.PeerDisconnected += peer => OnPeerDisconnected?.Invoke(peer);
+    }
+
+    public event Action<INetPeerAdapter> OnPeerConnected = delegate { };
+        public event Action<INetPeerAdapter> OnPeerDisconnected = delegate { };
+
+        public bool IsRunning => _net.IsRunning;
+        public IPeerRepository Peers => _listener;
+
+        public void Start()
+        {
+            if (_netOptions.IsServer)
+            {
+                _net.Start(_netOptions.ServerPort);
+            }
+            else
+            {
+                _net.Start();
+                _net.Connect(_netOptions.ServerAddress, _netOptions.ServerPort, _netOptions.ConnectionKey);
+            }
+        }
+
+        public void Stop() => _net.Stop();
+
+        public void PollEvents() => _net.PollEvents();
+
+        public void RegisterPacketHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
+            => _packetProcessor.RegisterHandler(handler);
+
+        public bool UnregisterPacketHandler<T>() where T : struct, IPacket
+            => _packetProcessor.UnregisterHandler<T>();
+
+        public void SendToServer<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+            => _packetSender.SendToServer(packet, channel, deliveryMethod.ToLite());
+
+        public void SendToPeer<T>(INetPeerAdapter peer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+        {
+            if (peer is NetPeerAdapter adapter)
+                _packetSender.SendToPeer(adapter.Peer, packet, channel, deliveryMethod.ToLite());
+        }
+        
+        public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+            => _packetSender.SendToPeerId(peerId, packet, channel, deliveryMethod.ToLite());
+        
+        public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+            => _packetSender.SendToAll(packet, channel, deliveryMethod.ToLite());
+        
+        public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+        {
+            if (excludePeer is NetPeerAdapter adapter)
+                _packetSender.SendToAllExcept(adapter.Peer, packet, channel, deliveryMethod.ToLite());
+        }
+
+        public void Dispose()
+        {
+            Stop();
+        }
+    }

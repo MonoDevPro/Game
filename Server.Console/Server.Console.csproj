@@ -23,7 +23,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Simulation.Core.Server\Simulation.Core.Server.csproj" />
+      <Folder Include="Services\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Simulation.Core\Simulation.Core.csproj" />
+      <ProjectReference Include="..\Simulation.Network\Simulation.Network.csproj" />
     </ItemGroup>
 
 </Project>

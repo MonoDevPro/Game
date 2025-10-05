@@ -1,0 +1,7 @@
+﻿services:
+  game.server:
+    image: game.server
+    build:
+      context: .
+      dockerfile: Game.Server/Dockerfile
+

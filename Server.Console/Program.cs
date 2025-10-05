@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
+using Server.Console.Services.API;
+using Server.Console.Services.ECS;
+using Server.Console.Services.Map;
 using Simulation.Core;
 using Simulation.Core.ECS;
 using Simulation.Core.ECS.Utils;
 using Simulation.Core.Ports.ECS;
-using Simulation.Core.Server.API;
-using Simulation.Core.Server.ECS;
-using Simulation.Core.Server.Map;
 using Simulation.Network;
 
 // ---------------------------
