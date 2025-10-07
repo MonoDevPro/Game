@@ -1,7 +1,9 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Domain.VOs;
 using Game.ECS.Components;
+using Game.ECS.Systems.Common;
 
 namespace Game.ECS.Systems;
 
@@ -17,8 +19,8 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         if ((input.Flags & InputFlags.Sprint) != 0)
             actualSpeed *= 1.5f;
         
-        vel.Value = new Coordinate(
-            X: (int)(input.Movement.X * actualSpeed), 
-            Y: (int)(input.Movement.Y * actualSpeed));
+        vel.Value = new Vector2F(
+            input.Movement.X * actualSpeed,
+            input.Movement.Y * actualSpeed);
     }
 }

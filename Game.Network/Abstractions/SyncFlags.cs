@@ -1,15 +1,6 @@
-using System.Runtime.InteropServices;
-using Game.ECS.Systems;
+using Game.Domain.Enums;
 
-namespace Game.ECS.Components;
-
-/// <summary>
-/// Marca entidade como dirty para sincronização
-/// Autor: MonoDevPro
-/// Data: 2025-10-07 17:53:19
-/// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct NetworkDirty { public ulong Flags; public uint LastSyncTick; }
+namespace Game.Abstractions.Network;
 
 /// <summary>
 /// Flags de sincronização de rede (até 64 flags)

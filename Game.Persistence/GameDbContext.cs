@@ -145,7 +145,7 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
-            entity.Property(e => e.Direction)
+            entity.Property(e => e.DirectionEnum)
                 .HasConversion<string>()
                 .HasMaxLength(10);
 
@@ -525,6 +525,53 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 .OnDelete(DeleteBehavior.Restrict) // Não deletar item se houver slots usando
                 .IsRequired(false)
                 .HasConstraintName("FK_EquipmentSlots_Item");
+        });
+    }
+    
+    private void ConfigureMap(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Map>(entity =>
+        {
+            // Chave primária
+            entity.HasKey(e => e.Id);
+
+            // Configuração de tabela
+            entity.ToTable("Maps");
+
+            // Índices
+            entity.HasIndex(e => e.Name)
+                .IsUnique()
+                .HasDatabaseName("IX_Maps_Name");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("IX_Maps_IsActive");
+
+            // Propriedades
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Width)
+                .IsRequired();
+
+            entity.Property(e => e.Height)
+                .IsRequired();
+
+            entity.Property(e => e.UsePadded)
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.BorderBlocked)
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(e => e.LastUpdatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
         });
     }
 

@@ -1,36 +1,37 @@
 using Game.Domain.Enums;
+using Game.Domain.VOs;
 
 namespace Game.ECS.Extensions;
 
 public static class DirectionExtensions
 {
-    public static (int x, int y) ToIntVector(this Direction d) => d switch
+    public static Coordinate ToCoordinate(this DirectionEnum d) => d switch
     {
-        Direction.North => (0, 1),
-        Direction.NorthEast => (1, 1),
-        Direction.East => (1, 0),
-        Direction.SouthEast => (1, -1),
-        Direction.South => (0, -1),
-        Direction.SouthWest => (-1, -1),
-        Direction.West => (-1, 0),
-        Direction.NorthWest => (-1, 1),
-        _ => (0, 0)
+        DirectionEnum.North => new Coordinate(0, 1),
+        DirectionEnum.NorthEast => new Coordinate(1, 1),
+        DirectionEnum.East => new Coordinate(1, 0),
+        DirectionEnum.SouthEast => new Coordinate(1, -1),
+        DirectionEnum.South => new Coordinate(0, -1),
+        DirectionEnum.SouthWest => new Coordinate(-1, -1),
+        DirectionEnum.West => new Coordinate(-1, 0),
+        DirectionEnum.NorthWest => new Coordinate(-1, 1),
+        _ => new Coordinate(0, 0)
     };
 
-    public static int ToAngleDegrees(this Direction d) => d switch
+    public static int ToAngleDegrees(this DirectionEnum d) => d switch
     {
-        Direction.North => 90,
-        Direction.NorthEast => 45,
-        Direction.East => 0,
-        Direction.SouthEast => 315,
-        Direction.South => 270,
-        Direction.SouthWest => 225,
-        Direction.West => 180,
-        Direction.NorthWest => 135,
+        DirectionEnum.North => 90,
+        DirectionEnum.NorthEast => 45,
+        DirectionEnum.East => 0,
+        DirectionEnum.SouthEast => 315,
+        DirectionEnum.South => 270,
+        DirectionEnum.SouthWest => 225,
+        DirectionEnum.West => 180,
+        DirectionEnum.NorthWest => 135,
         _ => 0
     };
 
-    public static Direction FromAngleDegrees(int angle)
+    public static DirectionEnum FromAngleDegrees(int angle)
     {
         // normaliza 0..360
         var a = (angle % 360 + 360) % 360;
@@ -38,15 +39,15 @@ public static class DirectionExtensions
         var index = (int)Math.Round(a / 45.0) % 8;
         return index switch
         {
-            0 => Direction.East,
-            1 => Direction.NorthEast,
-            2 => Direction.North,
-            3 => Direction.NorthWest,
-            4 => Direction.West,
-            5 => Direction.SouthWest,
-            6 => Direction.South,
-            7 => Direction.SouthEast,
-            _ => Direction.None
+            0 => DirectionEnum.East,
+            1 => DirectionEnum.NorthEast,
+            2 => DirectionEnum.North,
+            3 => DirectionEnum.NorthWest,
+            4 => DirectionEnum.West,
+            5 => DirectionEnum.SouthWest,
+            6 => DirectionEnum.South,
+            7 => DirectionEnum.SouthEast,
+            _ => DirectionEnum.None
         };
     }
 }

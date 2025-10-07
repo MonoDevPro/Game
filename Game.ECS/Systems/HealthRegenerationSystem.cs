@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Systems.Common;
 
 namespace Game.ECS.Systems;
 

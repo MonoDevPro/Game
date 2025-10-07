@@ -1,9 +1,11 @@
-using System.Numerics;
 using Arch.Core;
 using Arch.System;
-using Game.Abstractions.Network;
+using Game.Abstractions;
+using Game.Domain.Enums;
+using Game.Domain.VOs;
 using Game.ECS.Archetypes;
 using Game.ECS.Components;
+using Game.ECS.Extensions;
 using Game.ECS.Systems;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,7 +32,7 @@ public class GameSimulation
                 new PlayerInputSystem(_world),
                 
                 // 2. Gameplay
-                new MovementSystem(_world),
+                new MovementSystem(_world, serviceProvider.GetRequiredService<MapService>()),
                 new HealthRegenerationSystem(_world),
                 //new CombatSystem(_world),
                 //new AISystem(_world),
@@ -42,8 +44,6 @@ public class GameSimulation
                 //new DeathSystem(_world),
                 
                 // 5. Network (sempre por último)
-                new NetworkSyncSystem(_world, 
-                    serviceProvider.GetRequiredService<INetworkManager>())
             });
         }
 
@@ -72,15 +72,15 @@ public class GameSimulation
                 new NetworkId { Value = networkId },
                 new PlayerId { Value = playerId },
                 new Position { Value = Coordinate.Zero },
-                new Rotation { Value = 180 },
-                new Velocity { Value = Coordinate.Zero },
+                new Direction { Value = DirectionEnum.South.ToCoordinate() },
+                new Velocity { Value = Vector2F.Zero },
                 new Health { Current = 100, Max = 100, RegenerationRate = 5f },
                 new Mana { Current = 100, Max = 100, RegenerationRate = 10f },
                 new MovementSpeed { BaseSpeed = 5f, CurrentModifier = 1f },
                 new AttackPower { Physical = 10, Magical = 5 },
                 new Defense { Physical = 5, Magical = 5 },
                 new CombatState(),
-                new NetworkSync { Flags = SyncFlags.All },
+                new NetworkDirty { Flags = (ulong)SyncFlags.All },
                 new PlayerInput(),
                 new PlayerControlled()
             });

@@ -42,7 +42,7 @@ public class GameLoopService : BackgroundService
             // Sleep para manter frame rate
             var frameTime = (float)stopwatch.Elapsed.TotalSeconds - currentTime;
             var sleepTime = TargetFrameTime - frameTime;
-                
+            
             if (sleepTime > 0)
             {
                 await Task.Delay(TimeSpan.FromSeconds(sleepTime), stoppingToken);

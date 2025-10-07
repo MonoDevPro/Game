@@ -10,6 +10,8 @@
         <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
         
         <PackageReference Include="MemoryPack.Core" Version="1.21.4" />
+
+        <PackageReference Include="Arch" Version="2.1.0" />
     </ItemGroup>
 
 </Project>

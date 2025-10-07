@@ -1,3 +1,4 @@
+using Game.Domain.VOs;
 using Game.ECS.Components;
 
 namespace Game.ECS.Extensions;

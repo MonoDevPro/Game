@@ -11,7 +11,7 @@ public static class GameArchetypes
         Component<NetworkId>.ComponentType,
         Component<PlayerId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<Rotation>.ComponentType,
+        Component<Direction>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
@@ -19,7 +19,7 @@ public static class GameArchetypes
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<NetworkSync>.ComponentType,
+        Component<NetworkDirty>.ComponentType,
         Component<PlayerInput>.ComponentType,
         Component<PlayerControlled>.ComponentType,
     };
@@ -29,14 +29,14 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<Rotation>.ComponentType,
+        Component<Direction>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<Health>.ComponentType,
         Component<MovementSpeed>.ComponentType,
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<NetworkSync>.ComponentType,
+        Component<NetworkDirty>.ComponentType,
         Component<AIControlled>.ComponentType,
     };
 
@@ -45,10 +45,10 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<Rotation>.ComponentType,
+        Component<Direction>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<AttackPower>.ComponentType,
-        Component<NetworkSync>.ComponentType,
+        Component<NetworkDirty>.ComponentType,
     };
 
     // Item no chão
@@ -56,6 +56,6 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<NetworkSync>.ComponentType,
+        Component<NetworkDirty>.ComponentType,
     };
 }
