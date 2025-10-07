@@ -13,6 +13,7 @@ public static class GameArchetypes
         Component<Position>.ComponentType,
         Component<Direction>.ComponentType,
         Component<Velocity>.ComponentType,
+        Component<MoveAccumulator>.ComponentType,
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
         Component<MovementSpeed>.ComponentType,

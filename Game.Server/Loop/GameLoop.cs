@@ -1,19 +1,28 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Game.Core;
+using Game.Server.Players;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Loop;
 
 public class GameLoopService : BackgroundService
 {
     private readonly GameSimulation _simulation;
+    private readonly PlayerStateBroadcaster _broadcaster;
     private readonly ILogger<GameLoopService> _logger;
     private const int TargetFps = 60;
     private const float TargetFrameTime = 1f / TargetFps;
 
     public GameLoopService(
         GameSimulation simulation,
+        PlayerStateBroadcaster broadcaster,
         ILogger<GameLoopService> logger)
     {
         _simulation = simulation;
+        _broadcaster = broadcaster;
         _logger = logger;
     }
 
@@ -33,6 +42,7 @@ public class GameLoopService : BackgroundService
             try
             {
                 _simulation.Update(deltaTime);
+                _broadcaster.Broadcast();
             }
             catch (Exception ex)
             {

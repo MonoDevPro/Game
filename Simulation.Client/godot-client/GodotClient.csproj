@@ -18,4 +18,8 @@
     <Folder Include="Scripts\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Network\Game.Network.csproj" />
+  </ItemGroup>
+
 </Project>

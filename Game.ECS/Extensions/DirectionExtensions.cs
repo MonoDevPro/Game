@@ -50,4 +50,23 @@ public static class DirectionExtensions
             _ => DirectionEnum.None
         };
     }
+
+    public static DirectionEnum ToDirectionEnum(this Coordinate directionVector)
+    {
+        var x = Math.Clamp(directionVector.X, -1, 1);
+        var y = Math.Clamp(directionVector.Y, -1, 1);
+
+        return (x, y) switch
+        {
+            (0, 1) => DirectionEnum.North,
+            (1, 1) => DirectionEnum.NorthEast,
+            (1, 0) => DirectionEnum.East,
+            (1, -1) => DirectionEnum.SouthEast,
+            (0, -1) => DirectionEnum.South,
+            (-1, -1) => DirectionEnum.SouthWest,
+            (-1, 0) => DirectionEnum.West,
+            (-1, 1) => DirectionEnum.NorthWest,
+            _ => DirectionEnum.None
+        };
+    }
 }

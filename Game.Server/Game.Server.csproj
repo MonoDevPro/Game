@@ -22,4 +22,11 @@
       <ProjectReference Include="..\Game.Core\Game.Core.csproj" />
       <ProjectReference Include="..\Game.Network\Game.Network.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\identifier.sqlite">
+        <Link>identifier.sqlite</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 </Project>
