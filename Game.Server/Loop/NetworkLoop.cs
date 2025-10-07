@@ -1,22 +1,17 @@
 
 namespace Game.Server.Loop;
 
-public class NetworkLoopService : BackgroundService
+public class NetworkLoopService( //GameServer server,
+    ILogger<NetworkLoopService> logger)
+    : BackgroundService
 {
     //private readonly GameServer _server;
-    private readonly ILogger<NetworkLoopService> _logger;
 
-    public NetworkLoopService(
-        //GameServer server,
-        ILogger<NetworkLoopService> logger)
-    {
-        //_server = server;
-        _logger = logger;
-    }
+    //_server = server;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Network loop starting...");
+        logger.LogInformation("Network loop starting...");
             
         //_server.Start();
 
@@ -28,12 +23,12 @@ public class NetworkLoopService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in network loop");
+                logger.LogError(ex, "Error in network loop");
             }
 
             await Task.Delay(15, stoppingToken); // ~66Hz
         }
 
-        _logger.LogInformation("Network loop stopped");
+        logger.LogInformation("Network loop stopped");
     }
 }

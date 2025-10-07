@@ -7,26 +7,18 @@ namespace Game.ECS.Systems;
 
 public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
 {
-    
     [Query]
     [All<PlayerInput, Velocity, MovementSpeed, PlayerControlled>]
     [None<Dead>]
     private void ProcessInput([Data]in float deltaTime, ref PlayerInput input, ref Velocity vel, in MovementSpeed speed)
     {
-        // Aplicar input do jogador ao velocity
-        var moveDirection = new System.Numerics.Vector3(
-            input.Movement.X, 
-            0, 
-            input.Movement.Y
-        );
-
         float actualSpeed = speed.BaseSpeed * speed.CurrentModifier;
-                
+        
         if ((input.Flags & InputFlags.Sprint) != 0)
-        {
             actualSpeed *= 1.5f;
-        }
-
-        vel.Value = moveDirection * actualSpeed;
+        
+        vel.Value = new Coordinate(
+            X: (int)(input.Movement.X * actualSpeed), 
+            Y: (int)(input.Movement.Y * actualSpeed));
     }
 }

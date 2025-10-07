@@ -10,10 +10,9 @@ public static class NetworkExtensions
 {
     public static IServiceCollection AddNetworking(
         this IServiceCollection services, 
-        NetworkOptions options
-        )
+        NetworkOptions options)
     {
-        services.AddSingleton<NetworkManager>(sp =>
+        services.AddSingleton<INetworkManager>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             

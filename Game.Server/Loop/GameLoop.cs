@@ -6,8 +6,8 @@ public class GameLoopService : BackgroundService
 {
     private readonly GameSimulation _simulation;
     private readonly ILogger<GameLoopService> _logger;
-    private const int TargetFPS = 60;
-    private const float TargetFrameTime = 1f / TargetFPS;
+    private const int TargetFps = 60;
+    private const float TargetFrameTime = 1f / TargetFps;
 
     public GameLoopService(
         GameSimulation simulation,

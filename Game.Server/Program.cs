@@ -1,5 +1,6 @@
+using Game.Abstractions.Network;
 using Game.Core;
-using Game.Core.Services;
+using Game.Network;
 using Game.Network.Security;
 using Game.Persistence;
 using Game.Server;
@@ -27,13 +28,18 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
                     
             // Network
             //services.AddSingleton<GameServer>();
-            //services.AddSingleton<INetworkService, NetworkService>();
-            services.AddSingleton<NetworkSecurity>();
-                    
-            // Services
-            services.AddScoped<IPlayerService, PlayerService>();
-            services.AddScoped<IInventoryService, InventoryService>();
-                    
+            services.AddNetworking(new NetworkOptions
+            {
+                IsServer = true,
+                ServerAddress = "127.0.0.1",
+                ServerPort = 7777,
+                ConnectionKey = "default",
+                PingIntervalMs = 2000,
+                DisconnectTimeoutMs = 5000,
+                MaxMessagesPerSecond = 100,
+                MaxMessageSizeBytes = 1024 * 64
+            });
+            
             // Background services
             services.AddHostedService<GameLoopService>();
             services.AddHostedService<NetworkLoopService>();

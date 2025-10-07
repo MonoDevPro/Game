@@ -1,6 +1,7 @@
 using System.Numerics;
 using Arch.Core;
 using Arch.System;
+using Game.Abstractions.Network;
 using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Systems;
@@ -42,7 +43,7 @@ public class GameSimulation
                 
                 // 5. Network (sempre por último)
                 new NetworkSyncSystem(_world, 
-                    serviceProvider.GetRequiredService<INetworkService>())
+                    serviceProvider.GetRequiredService<INetworkManager>())
             });
         }
 
@@ -64,15 +65,15 @@ public class GameSimulation
             }
         }
 
-        public Entity SpawnPlayer(Guid playerId, uint networkId)
+        public Entity SpawnPlayer(int playerId, int networkId)
         {
             return _world.Create(GameArchetypes.PlayerCharacter, new object[]
             {
                 new NetworkId { Value = networkId },
                 new PlayerId { Value = playerId },
-                new Position { Value = Vector3.Zero },
-                new Rotation { Value = Quaternion.Identity },
-                new Velocity { Value = Vector3.Zero },
+                new Position { Value = Coordinate.Zero },
+                new Rotation { Value = 180 },
+                new Velocity { Value = Coordinate.Zero },
                 new Health { Current = 100, Max = 100, RegenerationRate = 5f },
                 new Mana { Current = 100, Max = 100, RegenerationRate = 10f },
                 new MovementSpeed { BaseSpeed = 5f, CurrentModifier = 1f },
