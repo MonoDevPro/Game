@@ -1,3 +1,4 @@
+using Game.Persistence.Interceptors;
 using Game.Persistence.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,13 +16,17 @@ public static class DbContextExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        services.AddDbContext<GameDbContext>(options =>
+        services.AddSingleton<AuditableEntityInterceptor>();
+        
+        services.AddDbContext<GameDbContext>((ctx, options) =>
         {
             options.UseSqlite(connectionString, sqlOptions =>
             {
                 sqlOptions.MigrationsAssembly(typeof(GameDbContext).Assembly.FullName);
                 sqlOptions.CommandTimeout(30);
             });
+            
+            options.AddInterceptors(ctx.GetRequiredService<AuditableEntityInterceptor>()); 
 
             // Configurações de performance
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
@@ -44,13 +49,23 @@ public static class DbContextExtensions
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<GameDbContext>();
 
-        // Aplicar migrações pendentes
+        // Verificar se existem migrações
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+        var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
 
-        var migrations = pendingMigrations as string[] ?? pendingMigrations.ToArray();
-        if (migrations.Length != 0)
+        var pending = pendingMigrations.ToArray();
+        var applied = appliedMigrations.ToArray();
+
+        // Se não há migrações aplicadas nem pendentes, criar o banco direto (desenvolvimento)
+        if (pending.Length == 0 && applied.Length == 0)
         {
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Applying {migrations.Count()} migrations... - MonoDevPro");
+            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] No migrations found. Creating database schema... - MonoDevPro");
+            await context.Database.EnsureCreatedAsync();
+            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Database schema created successfully - MonoDevPro");
+        }
+        else if (pending.Length != 0)
+        {
+            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Applying {pending.Length} migrations... - MonoDevPro");
             await context.Database.MigrateAsync();
             Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Migrations applied successfully - MonoDevPro");
         }

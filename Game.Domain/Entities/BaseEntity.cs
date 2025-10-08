@@ -12,9 +12,9 @@ public abstract class BaseEntity
     
     public bool IsActive { get; set; } = true; // ativo ou inativo
     
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } 
     
-    public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset LastUpdatedAt { get; set; }
     
     private readonly List<BaseEvent> _domainEvents = []; // eventos de domínio :contentReference[oaicite:9]{index=9}
     [NotMapped]

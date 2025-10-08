@@ -83,13 +83,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 .IsRequired()
                 .HasMaxLength(64);
 
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
@@ -148,13 +141,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.DirectionEnum)
                 .HasConversion<string>()
                 .HasMaxLength(10);
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
 
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
@@ -234,13 +220,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.CurrentMp)
                 .HasDefaultValue(30);
 
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
@@ -319,13 +298,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 .HasConversion<string?>()
                 .HasMaxLength(20);
 
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
@@ -373,13 +345,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.BonusAttackSpeed).HasDefaultValue(0f);
             entity.Property(e => e.BonusMovementSpeed).HasDefaultValue(0f);
 
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
         });
@@ -408,13 +373,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             // Propriedades
             entity.Property(e => e.Capacity)
                 .HasDefaultValue(30);
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
 
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
@@ -456,13 +414,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             // Propriedades
             entity.Property(e => e.Quantity)
                 .HasDefaultValue(1);
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
 
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
@@ -506,13 +457,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.SlotType)
                 .HasConversion<string>()
                 .HasMaxLength(20);
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
 
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
@@ -563,13 +507,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.BorderBlocked)
                 .HasDefaultValue(true);
 
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.Property(e => e.LastUpdatedAt)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .ValueGeneratedOnAddOrUpdate();
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
         });
@@ -601,8 +538,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 IconPath = "icons/health_potion.png",
                 RequiredLevel = 1,
                 RequiredVocation = null,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             },
             new Item
@@ -616,8 +551,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 IconPath = "icons/iron_sword.png",
                 RequiredLevel = 5,
                 RequiredVocation = VocationType.Warrior,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             },
             new Item
@@ -631,8 +564,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 IconPath = "icons/leather_armor.png",
                 RequiredLevel = 3,
                 RequiredVocation = null,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             },
             new Item
@@ -646,8 +577,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 IconPath = "icons/magic_staff.png",
                 RequiredLevel = 5,
                 RequiredVocation = VocationType.Mage,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             }
         };
@@ -663,8 +592,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 ItemId = 2, // Iron Sword
                 BonusStrength = 5,
                 BonusPhysicalAttack = 15,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             },
             new ItemStats
@@ -673,8 +600,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 ItemId = 3, // Leather Armor
                 BonusConstitution = 3,
                 BonusPhysicalDefense = 10,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             },
             new ItemStats
@@ -683,8 +608,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 ItemId = 4, // Magic Staff
                 BonusIntelligence = 8,
                 BonusMagicAttack = 20,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
                 IsActive = true
             }
         };
