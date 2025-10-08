@@ -1,5 +1,6 @@
 using System;
 using Game.Abstractions.Network;
+using Game.Domain.Enums;
 using Godot;
 using Microsoft.Extensions.Configuration;
 
@@ -51,12 +52,16 @@ public partial class ConfigManager : Node
 
     public LoginConfiguration GetLoginConfiguration()
         => _configuration.Login ?? new LoginConfiguration();
+
+    public RegistrationConfiguration GetRegistrationConfiguration()
+        => _configuration.Registration ?? new RegistrationConfiguration();
 }
 
 public sealed class ClientConfiguration
 {
     public NetworkConfiguration? Network { get; set; }
     public LoginConfiguration? Login { get; set; }
+    public RegistrationConfiguration? Registration { get; set; }
 }
 
 public sealed class NetworkConfiguration
@@ -77,3 +82,13 @@ public sealed class LoginConfiguration
     public string Password { get; set; } = string.Empty;
     public string? CharacterName { get; set; }
 }
+
+public sealed class RegistrationConfiguration
+{
+    public bool AutoRegister { get; set; } = false;
+    public string Email { get; set; } = string.Empty;
+    public string CharacterName { get; set; } = string.Empty;
+    public Gender Gender { get; set; } = Gender.Unknown;
+    public VocationType Vocation { get; set; } = VocationType.Warrior;
+}
+

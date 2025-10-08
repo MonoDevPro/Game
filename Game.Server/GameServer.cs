@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Game.Abstractions.Network;
 using Game.Core;
+using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
 using Game.Network.Packets;
@@ -48,6 +49,7 @@ public sealed class GameServer : IDisposable
         _networkManager.OnPeerDisconnected += OnPeerDisconnected;
 
         _networkManager.RegisterPacketHandler<LoginRequestPacket>(HandleLoginRequest);
+        _networkManager.RegisterPacketHandler<RegistrationRequestPacket>(HandleRegistrationRequest);
         _networkManager.RegisterPacketHandler<PlayerInputPacket>(HandlePlayerInput);
     }
 
@@ -134,30 +136,10 @@ public sealed class GameServer : IDisposable
                 return;
             }
 
-            var session = new PlayerSession(peer, loginResult.Account, loginResult.Character);
-            _spawnService.SpawnPlayer(session);
-
-            if (!_sessionManager.TryAddSession(session, out var error))
+            if (!TryCompleteLogin(peer, loginResult.Account, loginResult.Character))
             {
-                _spawnService.DespawnPlayer(session);
-                var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
-                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 return;
             }
-
-            var localSnapshot = _spawnService.BuildSnapshot(session);
-            var othersSnapshots = _sessionManager
-                .GetSnapshotExcluding(peer.Id)
-                .Select(existing => _spawnService.BuildSnapshot(existing))
-                .ToList();
-
-            var successResponse = LoginResponsePacket.SuccessResponse(localSnapshot, othersSnapshots.ToArray());
-            _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
-            var spawnPacket = new PlayerSpawnPacket(localSnapshot);
-            _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
-            _logger.LogInformation("Player {Character} authenticated and spawned (peer {PeerId})", session.Character.Name, peer.Id);
         }
         catch (Exception ex)
         {
@@ -165,6 +147,89 @@ public sealed class GameServer : IDisposable
             var response = LoginResponsePacket.Failure("Erro interno no servidor.");
             _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
+    }
+
+    private void HandleRegistrationRequest(INetPeerAdapter peer, RegistrationRequestPacket packet)
+    {
+        _ = ProcessRegistrationAsync(peer, packet);
+    }
+
+    private async Task ProcessRegistrationAsync(INetPeerAdapter peer, RegistrationRequestPacket packet)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var registrationService = scope.ServiceProvider.GetRequiredService<AccountRegistrationService>();
+
+            var registrationResult = await registrationService.RegisterAsync(
+                packet.Username,
+                packet.Email,
+                packet.Password,
+                packet.CharacterName,
+                packet.Gender,
+                packet.Vocation,
+                CancellationToken.None);
+
+            if (!registrationResult.IsSuccess)
+            {
+                var failure = RegistrationResponsePacket.Failure(registrationResult.Message);
+                _networkManager.SendToPeer(peer, failure, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                return;
+            }
+
+            var success = RegistrationResponsePacket.Ok();
+            _networkManager.SendToPeer(peer, success, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+            var loginService = scope.ServiceProvider.GetRequiredService<AccountLoginService>();
+            var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, packet.CharacterName, CancellationToken.None);
+
+            if (!loginResult.Success || loginResult.Account is null || loginResult.Character is null)
+            {
+                var response = LoginResponsePacket.Failure(loginResult.Message);
+                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                return;
+            }
+
+            if (!TryCompleteLogin(peer, loginResult.Account, loginResult.Character))
+            {
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao processar registro para peer {PeerId}", peer.Id);
+            var response = RegistrationResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        }
+    }
+
+    private bool TryCompleteLogin(INetPeerAdapter peer, Account account, Character character)
+    {
+        var session = new PlayerSession(peer, account, character);
+        _spawnService.SpawnPlayer(session);
+
+        if (!_sessionManager.TryAddSession(session, out var error))
+        {
+            _spawnService.DespawnPlayer(session);
+            var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            return false;
+        }
+
+        var localSnapshot = _spawnService.BuildSnapshot(session);
+        var othersSnapshots = _sessionManager
+            .GetSnapshotExcluding(peer.Id)
+            .Select(existing => _spawnService.BuildSnapshot(existing))
+            .ToList();
+
+        var successResponse = LoginResponsePacket.SuccessResponse(localSnapshot, othersSnapshots.ToArray());
+        _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+        var spawnPacket = new PlayerSpawnPacket(localSnapshot);
+        _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+        _logger.LogInformation("Player {Character} authenticated and spawned (peer {PeerId})", character.Name, peer.Id);
+        return true;
     }
 
     public void Dispose()
@@ -178,6 +243,7 @@ public sealed class GameServer : IDisposable
         _networkManager.OnPeerConnected -= OnPeerConnected;
         _networkManager.OnPeerDisconnected -= OnPeerDisconnected;
         _networkManager.UnregisterPacketHandler<LoginRequestPacket>();
+        _networkManager.UnregisterPacketHandler<RegistrationRequestPacket>();
         _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
     }
 

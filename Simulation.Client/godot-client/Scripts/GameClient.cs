@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Abstractions.Network;
+using Game.Domain.Enums;
 using Game.Network.Packets;
 using Godot;
 
@@ -14,7 +15,10 @@ public partial class GameClient : Node
     private GodotInputSystem? _inputSystem;
     private INetworkManager? _network;
     private LoginConfiguration _login = new();
+    private RegistrationConfiguration _registration = new();
     private Label? _statusLabel;
+    private bool _registrationAttempted;
+    private bool _loginAttempted;
 
     private readonly Dictionary<int, PlayerSnapshot> _players = new();
     private bool _isAuthenticated;
@@ -45,14 +49,16 @@ public partial class GameClient : Node
         statusLayer.AddChild(_statusLabel);
         AddChild(statusLayer);
 
-        var networkOptions = _configManager.CreateNetworkOptions();
-        _login = _configManager.GetLoginConfiguration();
+    var networkOptions = _configManager.CreateNetworkOptions();
+    _login = _configManager.GetLoginConfiguration();
+    _registration = _configManager.GetRegistrationConfiguration();
 
         _network = _apiClient.Initialize(networkOptions);
         _network.OnPeerConnected += OnPeerConnected;
         _network.OnPeerDisconnected += OnPeerDisconnected;
 
-        _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
+    _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
+    _network.RegisterPacketHandler<RegistrationResponsePacket>(HandleRegistrationResponse);
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerDespawnPacket>(HandlePlayerDespawn);
@@ -71,6 +77,7 @@ public partial class GameClient : Node
             _network.OnPeerConnected -= OnPeerConnected;
             _network.OnPeerDisconnected -= OnPeerDisconnected;
             _network.UnregisterPacketHandler<LoginResponsePacket>();
+            _network.UnregisterPacketHandler<RegistrationResponsePacket>();
             _network.UnregisterPacketHandler<PlayerSpawnPacket>();
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerDespawnPacket>();
@@ -92,7 +99,13 @@ public partial class GameClient : Node
 
     private void OnPeerConnected(INetPeerAdapter peer)
     {
-        UpdateStatus("Connected. Awaiting authentication...");
+        UpdateStatus("Connected to server. Preparing sessão...");
+
+        if (_registration.AutoRegister && !_registrationAttempted)
+        {
+            TrySendRegistration();
+            return;
+        }
 
         if (_login.AutoLogin)
         {
@@ -107,9 +120,52 @@ public partial class GameClient : Node
         UpdateStatus("Disconnected from server");
     }
 
+    private void TrySendRegistration()
+    {
+        if (_network is null || _registrationAttempted)
+        {
+            return;
+        }
+
+        _registrationAttempted = true;
+
+        var username = _login.Username;
+        var password = _login.Password;
+        var email = _registration.Email;
+        var characterName = string.IsNullOrWhiteSpace(_registration.CharacterName) ? username : _registration.CharacterName;
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            UpdateStatus("Registro não enviado: informe usuário e senha em appsettings.json.");
+            _registrationAttempted = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            UpdateStatus("Registro não enviado: informe o e-mail em appsettings.json.");
+            _registrationAttempted = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(characterName))
+        {
+            characterName = username;
+        }
+
+        if (string.IsNullOrWhiteSpace(_login.CharacterName))
+        {
+            _login.CharacterName = characterName;
+        }
+
+        var packet = new RegistrationRequestPacket(username, email, password, characterName, _registration.Gender, _registration.Vocation);
+        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        UpdateStatus("Enviando registro...");
+    }
+
     private void TrySendLogin()
     {
-        if (_network is null)
+        if (_network is null || _loginAttempted)
         {
             return;
         }
@@ -123,6 +179,7 @@ public partial class GameClient : Node
         var packet = new LoginRequestPacket(_login.Username, _login.Password, _login.CharacterName);
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         UpdateStatus("Authenticating...");
+        _loginAttempted = true;
     }
 
     private void HandleLoginResponse(INetPeerAdapter peer, LoginResponsePacket packet)
@@ -131,6 +188,7 @@ public partial class GameClient : Node
         {
             GD.PushError($"Login failed: {packet.Message}");
             UpdateStatus($"Login failed: {packet.Message}");
+            _loginAttempted = false;
             return;
         }
 
@@ -150,6 +208,23 @@ public partial class GameClient : Node
             {
                 _playerView?.ApplySnapshot(snapshot, false);
             }
+        }
+    }
+
+    private void HandleRegistrationResponse(INetPeerAdapter peer, RegistrationResponsePacket packet)
+    {
+        if (packet.Success)
+        {
+            UpdateStatus("Conta criada com sucesso! Aguardando confirmação de login...");
+            return;
+        }
+
+        GD.PushError($"Registro falhou: {packet.Message}");
+        UpdateStatus($"Registro falhou: {packet.Message}");
+
+        if (_login.AutoLogin && !_loginAttempted)
+        {
+            TrySendLogin();
         }
     }
 
@@ -185,6 +260,8 @@ public partial class GameClient : Node
         _isAuthenticated = false;
         _inputSequence = 0;
         _localNetworkId = -1;
+        _registrationAttempted = false;
+        _loginAttempted = false;
         _players.Clear();
         _playerView?.Clear();
     }
