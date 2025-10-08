@@ -49,23 +49,23 @@ public partial class GameClient : Node
         statusLayer.AddChild(_statusLabel);
         AddChild(statusLayer);
 
-    var networkOptions = _configManager.CreateNetworkOptions();
-    _login = _configManager.GetLoginConfiguration();
-    _registration = _configManager.GetRegistrationConfiguration();
+        var networkOptions = _configManager.CreateNetworkOptions();
+        _login = _configManager.GetLoginConfiguration();
+        _registration = _configManager.GetRegistrationConfiguration();
 
         _network = _apiClient.Initialize(networkOptions);
         _network.OnPeerConnected += OnPeerConnected;
         _network.OnPeerDisconnected += OnPeerDisconnected;
 
-    _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
-    _network.RegisterPacketHandler<RegistrationResponsePacket>(HandleRegistrationResponse);
+        _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
+        _network.RegisterPacketHandler<RegistrationResponsePacket>(HandleRegistrationResponse);
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerDespawnPacket>(HandlePlayerDespawn);
 
         _apiClient.Start();
 
-    UpdateStatus($"Connecting to server {networkOptions.ServerAddress}:{networkOptions.ServerPort}...");
+        UpdateStatus($"Connecting to server {networkOptions.ServerAddress}:{networkOptions.ServerPort}...");
     }
 
     public override void _ExitTree()
@@ -165,10 +165,7 @@ public partial class GameClient : Node
 
     private void TrySendLogin()
     {
-        if (_network is null || _loginAttempted)
-        {
-            return;
-        }
+        if (_network is null || _loginAttempted) return;
 
         if (string.IsNullOrWhiteSpace(_login.Username) || string.IsNullOrWhiteSpace(_login.Password))
         {
@@ -203,12 +200,8 @@ public partial class GameClient : Node
         _playerView?.ApplySnapshot(packet.LocalPlayer, true);
 
         foreach (var snapshot in packet.OnlinePlayers)
-        {
             if (_players.TryAdd(snapshot.NetworkId, snapshot))
-            {
                 _playerView?.ApplySnapshot(snapshot, false);
-            }
-        }
     }
 
     private void HandleRegistrationResponse(INetPeerAdapter peer, RegistrationResponsePacket packet)
@@ -223,9 +216,7 @@ public partial class GameClient : Node
         UpdateStatus($"Registro falhou: {packet.Message}");
 
         if (_login.AutoLogin && !_loginAttempted)
-        {
             TrySendLogin();
-        }
     }
 
     private void HandlePlayerSpawn(INetPeerAdapter peer, PlayerSpawnPacket packet)

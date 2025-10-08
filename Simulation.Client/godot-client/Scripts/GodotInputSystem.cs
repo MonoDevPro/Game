@@ -35,23 +35,15 @@ public partial class GodotInputSystem : Node
 
         var moveX = (sbyte)0;
         if (Input.IsActionPressed("ui_left"))
-        {
             moveX -= 1;
-        }
         if (Input.IsActionPressed("ui_right"))
-        {
             moveX += 1;
-        }
 
         var moveY = (sbyte)0;
         if (Input.IsActionPressed("ui_up"))
-        {
             moveY -= 1;
-        }
         if (Input.IsActionPressed("ui_down"))
-        {
             moveY += 1;
-        }
 
         var direction = new Vector2I(moveX, moveY);
         _timeSinceLastSend += (float)delta;

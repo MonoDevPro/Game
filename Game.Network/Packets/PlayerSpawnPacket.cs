@@ -7,12 +7,7 @@ namespace Game.Network.Packets;
 /// Server -> Client notification when a player enters the world.
 /// </summary>
 [MemoryPackable]
-public partial struct PlayerSpawnPacket : IPacket
+public partial struct PlayerSpawnPacket(PlayerSnapshot player) : IPacket
 {
-    public PlayerSnapshot Player { get; set; }
-
-    public PlayerSpawnPacket(PlayerSnapshot player)
-    {
-        Player = player;
-    }
+    public PlayerSnapshot Player { get; set; } = player;
 }
