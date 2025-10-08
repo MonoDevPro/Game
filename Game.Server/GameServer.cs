@@ -113,14 +113,10 @@ public sealed class GameServer : IDisposable
         if (_sessionManager.TryRemoveByPeer(peer, out var session))
         {
             if (session is not null && _simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
-            {
                 _ = PersistCharacterAsync(session, position, direction);
-            }
 
             if (session is not null)
-            {
                 _spawnService.DespawnPlayer(session);
-            }
             
             _security?.RemovePeer(peer);
 
