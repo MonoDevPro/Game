@@ -1,5 +1,6 @@
 using Game.Abstractions.Network;
 using Game.Domain.Enums;
+using Game.Domain.VOs;
 using MemoryPack;
 
 namespace Game.Network.Packets;
@@ -8,18 +9,11 @@ namespace Game.Network.Packets;
 /// Server -> Client delta update for a player's position and facing.
 /// </summary>
 [MemoryPackable]
-public partial struct PlayerStatePacket : IPacket
+public partial struct PlayerStatePacket(int networkId, Coordinate position, DirectionEnum facing, uint tick)
+    : IPacket
 {
-    public int NetworkId { get; set; }
-    public GridPosition Position { get; set; }
-    public DirectionEnum Facing { get; set; }
-    public uint Tick { get; set; }
-
-    public PlayerStatePacket(int networkId, GridPosition position, DirectionEnum facing, uint tick)
-    {
-        NetworkId = networkId;
-        Position = position;
-        Facing = facing;
-        Tick = tick;
-    }
+    public int NetworkId { get; set; } = networkId;
+    public Coordinate Position { get; set; } = position;
+    public DirectionEnum Facing { get; set; } = facing;
+    public uint Tick { get; set; } = tick;
 }

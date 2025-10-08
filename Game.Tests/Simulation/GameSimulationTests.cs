@@ -45,7 +45,7 @@ public class GameSimulationTests
         var provider = services.BuildServiceProvider();
 
         var simulation = new GameSimulation(provider);
-        var entity = simulation.SpawnPlayer(1, 42, new Coordinate(3, 3), DirectionEnum.East);
+        var entity = simulation.SpawnPlayer(1, 42, new Coordinate(3, 3), DirectionEnum.East, new Stats());
 
         simulation.TryApplyPlayerInput(entity, 1, 0, 0, 1).Should().BeTrue();
 

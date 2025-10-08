@@ -27,7 +27,7 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
         int stepsY = (int)MathF.Truncate(totalY);
 
         // atualiza acumulador com a fração remanescente
-        acc.Value = new Vector2F(totalX - stepsX, totalY - stepsY);
+        acc.Value = new FCoordinate(totalX - stepsX, totalY - stepsY);
 
         // se nenhum passo inteiro, ainda podemos atualizar facing se precisarmos
         if (stepsX == 0 && stepsY == 0)

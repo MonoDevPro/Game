@@ -11,6 +11,7 @@ using Game.Server;
 using Game.Server.Authentication;
 using Game.Server.Loop;
 using Game.Server.Players;
+using Game.Server.Security;
 using Game.Server.Sessions;
 
 var builder = CreateHostBuilder(args);
@@ -42,6 +43,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<PlayerStateBroadcaster>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddScoped<PlayerPersistenceService>();
+            services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
             services.AddSingleton<MapService>(CreateMapService());
                     
@@ -55,12 +57,10 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
                 ConnectionKey = "default",
                 PingIntervalMs = 2000,
                 DisconnectTimeoutMs = 5000,
-                MaxMessagesPerSecond = 100,
-                MaxMessageSizeBytes = 1024 * 64
             });
             
             // Background services
-            services.AddHostedService<BootstrapHostedService>();
+            services.AddHostedService<DatabaseMigrationService>();
             services.AddHostedService<GameLoopService>();
             services.AddHostedService<NetworkLoopService>();
             

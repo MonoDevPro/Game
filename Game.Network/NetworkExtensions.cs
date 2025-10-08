@@ -16,13 +16,9 @@ public static class NetworkExtensions
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             
-            var networkSecurity = new Security.NetworkSecurity(
-                options.ConnectionKey, 
-                loggerFactory.CreateLogger<Security.NetworkSecurity>());
-            
             var packetProcessor = new PacketProcessor(loggerFactory.CreateLogger<PacketProcessor>());
             
-            var listener = new NetworkListener(packetProcessor, networkSecurity, loggerFactory.CreateLogger<NetworkListener>());
+            var listener = new NetworkListener(options.ConnectionKey, packetProcessor, loggerFactory.CreateLogger<NetworkListener>());
 
             var net = new NetManager(listener)
             {

@@ -4,6 +4,7 @@ using Game.Abstractions.Network;
 using Game.Domain.Enums;
 using Game.Network.Packets;
 using Godot;
+using GodotClient.Player;
 
 namespace GodotClient;
 
@@ -11,7 +12,7 @@ public partial class GameClient : Node
 {
     private ApiClient? _apiClient;
     private ConfigManager? _configManager;
-    private PlayerView? _playerView;
+    private Player.PlayerRoot? _playerView;
     private GodotInputSystem? _inputSystem;
     private INetworkManager? _network;
     private LoginConfiguration _login = new();
@@ -31,10 +32,10 @@ public partial class GameClient : Node
     {
         base._Ready();
 
-        _apiClient = GetNode<ApiClient>("%ApiClient");
-        _configManager = GetNode<ConfigManager>("%ConfigManager");
-        _playerView = GetNode<PlayerView>("PlayerView");
-        _inputSystem = GetNode<GodotInputSystem>("GodotInputSystem");
+        _apiClient = GetNode<ApiClient>($"%{nameof(ApiClient)}");
+        _configManager = GetNode<ConfigManager>($"%{nameof(ConfigManager)}");
+        _playerView = GetNode<PlayerRoot>(nameof(PlayerRoot));
+        _inputSystem = GetNode<GodotInputSystem>(nameof(GodotInputSystem));
 
         _inputSystem.Attach(this);
 
@@ -89,11 +90,12 @@ public partial class GameClient : Node
     public void QueueInput(sbyte moveX, sbyte moveY, ushort buttons)
     {
         if (!CanSendInput || _network is null)
-        {
             return;
-        }
 
         var packet = new PlayerInputPacket(++_inputSequence, moveX, moveY, buttons);
+        
+        GD.Print($"Sending input: Seq={packet.Sequence}, MoveX={packet.MoveX}, MoveY={packet.MoveY}, Buttons={packet.Buttons}");
+        
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
     }
 
@@ -230,9 +232,12 @@ public partial class GameClient : Node
 
     private void HandlePlayerState(INetPeerAdapter peer, PlayerStatePacket packet)
     {
+        GD.Print($"Received state: NetId={packet.NetworkId}, Pos=({packet.Position.X},{packet.Position.Y}), Facing={packet.Facing}");
+        
         if (_players.TryGetValue(packet.NetworkId, out var snapshot))
         {
-            snapshot = new PlayerSnapshot(packet.NetworkId, snapshot.PlayerId, snapshot.CharacterId, snapshot.Name, packet.Position, packet.Facing);
+            snapshot = new PlayerSnapshot(packet.NetworkId, snapshot.PlayerId, snapshot.CharacterId, 
+                snapshot.Name, snapshot.Gender, snapshot.Vocation, packet.Position, packet.Facing);
             _players[packet.NetworkId] = snapshot;
             _playerView?.UpdateState(packet);
         }

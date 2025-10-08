@@ -1,16 +1,9 @@
 
-namespace Game.Network.Security;
+namespace Game.Server.Security;
 
-public class RateLimiter
+public class RateLimiter(int maxMessagesPerSecond)
 {
-    private readonly int _maxMessages;
-    private readonly Queue<float> _messageTimes;
-
-    public RateLimiter(int maxMessagesPerSecond)
-    {
-        _maxMessages = maxMessagesPerSecond;
-        _messageTimes = new Queue<float>();
-    }
+    private readonly Queue<float> _messageTimes = new();
 
     public bool AllowMessage()
     {
@@ -18,14 +11,10 @@ public class RateLimiter
             
         // Remover mensagens antigas (> 1 segundo)
         while (_messageTimes.Count > 0 && currentTime - _messageTimes.Peek() > 1f)
-        {
             _messageTimes.Dequeue();
-        }
 
-        if (_messageTimes.Count >= _maxMessages)
-        {
+        if (_messageTimes.Count >= maxMessagesPerSecond)
             return false;
-        }
 
         _messageTimes.Enqueue(currentTime);
         return true;

@@ -19,7 +19,7 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         if ((input.Flags & InputFlags.Sprint) != 0)
             actualSpeed *= 1.5f;
         
-        vel.Value = new Vector2F(
+        vel.Value = new FCoordinate(
             input.Movement.X * actualSpeed,
             input.Movement.Y * actualSpeed);
     }

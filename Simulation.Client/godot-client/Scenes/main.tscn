@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://cqd358filrk2x"]
 
-[ext_resource type="Script" uid="uid://cvt4cob72qk0i" path="res://Scripts/PlayerView.cs" id="1_bo1nx"]
-[ext_resource type="Script" uid="uid://doxe4m5ajv87s" path="res://Scripts/API/ApiClient.cs" id="1_jjvhh"]
-[ext_resource type="Script" uid="uid://djrbe8w6yo2jp" path="res://Scripts/ConfigManager.cs" id="1_kry3j"]
-[ext_resource type="Script" uid="uid://bkiqj6u0h2qjd" path="res://Scripts/GodotInputSystem.cs" id="2_8gbba"]
-[ext_resource type="Script" uid="uid://bv1q6c4mqgukv" path="res://Scripts/GameClient.cs" id="2_kry3j"]
+[ext_resource type="Script" uid="uid://bp65hq6y8o30f" path="res://Scripts/API/ApiClient.cs" id="1_jjvhh"]
+[ext_resource type="Script" uid="uid://cwaqp5wj8q0v5" path="res://Scripts/ConfigManager.cs" id="1_kry3j"]
+[ext_resource type="Script" uid="uid://bjl2pm3j0hjif" path="res://Scripts/GodotInputSystem.cs" id="2_8gbba"]
+[ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/GameClient.cs" id="2_kry3j"]
+[ext_resource type="Script" path="res://Scripts/Player/PlayerRoot.cs" id="5_kry3j"]
 
 [node name="Main" type="Node"]
 
@@ -23,7 +23,7 @@ script = ExtResource("2_kry3j")
 [node name="GodotInputSystem" type="Node" parent="GameClient"]
 script = ExtResource("2_8gbba")
 
-[node name="PlayerView" type="Node2D" parent="GameClient"]
-script = ExtResource("1_bo1nx")
+[node name="PlayerRoot" type="Node2D" parent="GameClient"]
+script = ExtResource("5_kry3j")
 
 [node name="World" type="Node2D" parent="GameClient"]

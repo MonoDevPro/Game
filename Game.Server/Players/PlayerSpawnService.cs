@@ -12,27 +12,18 @@ namespace Game.Server.Players;
 /// <summary>
 /// Handles spawning and despawning of player entities within the simulation.
 /// </summary>
-public sealed class PlayerSpawnService
+public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<PlayerSpawnService> logger)
 {
-    private readonly GameSimulation _simulation;
-    private readonly ILogger<PlayerSpawnService> _logger;
-
-    public PlayerSpawnService(GameSimulation simulation, ILogger<PlayerSpawnService> logger)
-    {
-        _simulation = simulation;
-        _logger = logger;
-    }
-
     public Entity SpawnPlayer(PlayerSession session)
     {
         var character = session.Character;
         Coordinate startPosition = new(character.PositionX, character.PositionY);
         DirectionEnum facing = character.DirectionEnum;
 
-        var entity = _simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, startPosition, facing, session.Character.Stats);
+        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, startPosition, facing, session.Character.Stats);
         session.Entity = entity;
 
-        _logger.LogInformation("Spawned player {Name} at {Position}", character.Name, startPosition);
+        logger.LogInformation("Spawned player {Name} at {Position}", character.Name, startPosition);
         return entity;
     }
 
@@ -41,20 +32,21 @@ public sealed class PlayerSpawnService
         if (session.Entity == Entity.Null)
             return;
 
-        _simulation.DespawnEntity(session.Entity);
-        _logger.LogInformation("Despawned player {Name}", session.Character.Name);
+        simulation.DespawnEntity(session.Entity);
+        logger.LogInformation("Despawned player {Name}", session.Character.Name);
         session.Entity = Entity.Null;
     }
 
     public PlayerSnapshot BuildSnapshot(PlayerSession session)
     {
-        if (!_simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
         {
             return new PlayerSnapshot(session.Peer.Id, session.Account.Id, session.Character.Id, session.Character.Name,
-                new GridPosition(session.Character.PositionX, session.Character.PositionY), session.Character.DirectionEnum);
+                session.Character.Gender, session.Character.Vocation, new Coordinate(session.Character.PositionX, 
+                    session.Character.PositionY), session.Character.DirectionEnum);
         }
 
         return new PlayerSnapshot(session.Peer.Id, session.Account.Id, session.Character.Id, session.Character.Name,
-            GridPosition.FromCoordinate(position), direction);
+            session.Character.Gender, session.Character.Vocation, position, direction);
     }
 }

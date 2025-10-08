@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Game.Abstractions.Network;
 using Game.Core;
 using Game.Domain.Entities;
@@ -10,9 +6,8 @@ using Game.Domain.VOs;
 using Game.Network.Packets;
 using Game.Server.Authentication;
 using Game.Server.Players;
+using Game.Server.Security;
 using Game.Server.Sessions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Game.Server;
 
@@ -27,6 +22,7 @@ public sealed class GameServer : IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameServer> _logger;
     private readonly GameSimulation _simulation;
+    private readonly NetworkSecurity? _security;
 
     private bool _disposed;
 
@@ -36,7 +32,8 @@ public sealed class GameServer : IDisposable
         PlayerSpawnService spawnService,
         IServiceScopeFactory scopeFactory,
         GameSimulation simulation,
-        ILogger<GameServer> logger)
+        ILogger<GameServer> logger,
+        NetworkSecurity? security = null)
     {
         _networkManager = networkManager;
         _sessionManager = sessionManager;
@@ -44,13 +41,46 @@ public sealed class GameServer : IDisposable
         _scopeFactory = scopeFactory;
         _simulation = simulation;
         _logger = logger;
+        _security = security;
 
         _networkManager.OnPeerConnected += OnPeerConnected;
         _networkManager.OnPeerDisconnected += OnPeerDisconnected;
 
-        _networkManager.RegisterPacketHandler<LoginRequestPacket>(HandleLoginRequest);
-        _networkManager.RegisterPacketHandler<RegistrationRequestPacket>(HandleRegistrationRequest);
-        _networkManager.RegisterPacketHandler<PlayerInputPacket>(HandlePlayerInput);
+        RegisterAndValidate<LoginRequestPacket>(HandleLoginRequest);
+        RegisterAndValidate<RegistrationRequestPacket>(HandleRegistrationRequest);
+        RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
+    }
+    
+    private void RegisterAndValidate<T>(PacketHandler<T> handler) where T : struct, IPacket
+    {
+        if (_security is not null)
+        {
+            _networkManager.RegisterPacketHandler<T>(WrappedHandler);
+            return;
+        }
+        _networkManager.RegisterPacketHandler<T>(handler);
+        return;
+        
+        void WrappedHandler(INetPeerAdapter peer, T packet)
+        {
+            if (_disposed)
+                return;
+            if (_security is null)
+            {
+                handler(peer, packet);
+                return;
+            }
+                
+            if (_security.ValidateMessage(peer, packet))
+            {
+                handler(peer, packet);
+            }
+            else
+            {
+                _logger.LogWarning("Invalid message from peer {PeerId}, disconnecting", peer.Id);
+                peer.Disconnect();
+            }
+        }
     }
 
     public void Start()
@@ -91,6 +121,8 @@ public sealed class GameServer : IDisposable
             {
                 _spawnService.DespawnPlayer(session);
             }
+            
+            _security?.RemovePeer(peer);
 
             var packet = new PlayerDespawnPacket(peer.Id);
             _networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
@@ -106,18 +138,23 @@ public sealed class GameServer : IDisposable
     {
         if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {
+            _logger.LogWarning("Received PlayerInputPacket from unknown peer {PeerId}", peer.Id);
             return;
         }
 
         if (packet.Sequence <= session.LastInputSequence)
         {
+            _logger.LogWarning("Out-of-order input packet from peer {PeerId}: {PacketSequence} <= {LastSequence}", peer.Id, packet.Sequence, session.LastInputSequence);
             return;
         }
 
         if (_simulation.TryApplyPlayerInput(session.Entity, packet.MoveX, packet.MoveY, packet.Buttons, packet.Sequence))
         {
+            _logger.LogDebug("Applied input from peer {PeerId}: Seq={Sequence}, MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.Sequence, packet.MoveX, packet.MoveY, packet.Buttons);
             session.LastInputSequence = packet.Sequence;
         }
+        
+        _logger.LogTrace("Processed input from peer {PeerId}: Seq={Sequence}, MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.Sequence, packet.MoveX, packet.MoveY, packet.Buttons);
     }
 
     private async Task ProcessLoginAsync(INetPeerAdapter peer, LoginRequestPacket packet)

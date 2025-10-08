@@ -1,4 +1,5 @@
 using Game.Domain.Enums;
+using Game.Domain.VOs;
 using MemoryPack;
 
 namespace Game.Network.Packets;
@@ -13,15 +14,20 @@ public partial struct PlayerSnapshot
     public int PlayerId { get; set; }
     public int CharacterId { get; set; }
     public string Name { get; set; } = string.Empty;
-    public GridPosition Position { get; set; }
+    public Gender Gender { get; set; }
+    public VocationType Vocation { get; set; }
+    public Coordinate Position { get; set; }
     public DirectionEnum Facing { get; set; }
 
-    public PlayerSnapshot(int networkId, int playerId, int characterId, string name, GridPosition position, DirectionEnum facing)
+    public PlayerSnapshot(int networkId, int playerId, int characterId, string name, Gender gender, 
+        VocationType vocation, Coordinate position, DirectionEnum facing)
     {
         NetworkId = networkId;
         PlayerId = playerId;
         CharacterId = characterId;
         Name = name;
+        Gender = gender;
+        Vocation = vocation;
         Position = position;
         Facing = facing;
     }

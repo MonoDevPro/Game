@@ -4,8 +4,6 @@ namespace GodotClient;
 
 public partial class GodotInputSystem : Node
 {
-    private const float ResendIntervalSeconds = 0.2f;
-
     private GameClient? _gameClient;
     private Vector2I _lastDirection = Vector2I.Zero;
     private float _timeSinceLastSend;
@@ -48,7 +46,7 @@ public partial class GodotInputSystem : Node
         var direction = new Vector2I(moveX, moveY);
         _timeSinceLastSend += (float)delta;
 
-        if (direction != _lastDirection || _timeSinceLastSend >= ResendIntervalSeconds)
+        if (direction != _lastDirection && _timeSinceLastSend >= 0.1f)
         {
             _gameClient.QueueInput((sbyte)direction.X, (sbyte)direction.Y, 0);
             _lastDirection = direction;

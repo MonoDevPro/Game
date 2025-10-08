@@ -45,8 +45,6 @@ public partial class ConfigManager : Node
             ConnectionKey = network.ConnectionKey,
             PingIntervalMs = network.PingIntervalMs,
             DisconnectTimeoutMs = network.DisconnectTimeoutMs,
-            MaxMessagesPerSecond = network.MaxMessagesPerSecond,
-            MaxMessageSizeBytes = network.MaxMessageSizeBytes
         };
     }
 
@@ -71,8 +69,6 @@ public sealed class NetworkConfiguration
     public string ConnectionKey { get; set; } = "default";
     public int PingIntervalMs { get; set; } = 2000;
     public int DisconnectTimeoutMs { get; set; } = 5000;
-    public int MaxMessagesPerSecond { get; set; } = 120;
-    public int MaxMessageSizeBytes { get; set; } = 1024 * 64;
 }
 
 public sealed class LoginConfiguration

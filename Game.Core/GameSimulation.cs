@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using Arch.Core;
-using Arch.Core.Extensions;
 using Arch.System;
 using Game.Abstractions;
 using Game.Domain.Entities;
@@ -39,16 +36,6 @@ public class GameSimulation
             // 2. Gameplay
             new MovementSystem(_world, serviceProvider.GetRequiredService<MapService>()),
             new HealthRegenerationSystem(_world),
-            //new CombatSystem(_world),
-            //new AISystem(_world),
-
-            // 3. Physics/Collision
-            //new CollisionSystem(_world),
-
-            // 4. Cleanup
-            //new DeathSystem(_world),
-
-            // 5. Network (sempre por último)
         });
     }
 
@@ -70,36 +57,20 @@ public class GameSimulation
         }
     }
 
-    public Entity SpawnPlayer(int playerId, int networkId, Coordinate spawnPosition, DirectionEnum facing, Stats? stats = null)
+    public Entity SpawnPlayer(int playerId, int networkId, Coordinate spawnPosition, DirectionEnum facing, Stats stats)
     {
-        var maxHp = 100;
-        var currentHp = maxHp;
-        var hpRegen = 5f;
+        var maxHp = Math.Max(1, stats.MaxHp);
+        var currentHp = Math.Clamp(stats.CurrentHp, 0, maxHp);
+        var hpRegen = Math.Max(0f, stats.HpRegenPerTick());
 
-        var maxMp = 100;
-        var currentMp = maxMp;
-        var mpRegen = 10f;
+        var maxMp = Math.Max(0, stats.MaxMp);
+        var currentMp = Math.Clamp(stats.CurrentMp, 0, maxMp);
+        var mpRegen = Math.Max(0f, stats.MpRegenPerTick());
 
-        var movementModifier = 1f;
+        var movementModifier = (float)Math.Max(0.1, stats.MovementSpeed);
 
-        var attackPower = new AttackPower { Physical = 10, Magical = 5 };
-        var defense = new Defense { Physical = 5, Magical = 5 };
-
-        if (stats is not null)
-        {
-            maxHp = Math.Max(1, stats.MaxHp);
-            currentHp = Math.Clamp(stats.CurrentHp, 0, maxHp);
-            hpRegen = Math.Max(0f, stats.HpRegenPerTick());
-
-            maxMp = Math.Max(0, stats.MaxMp);
-            currentMp = Math.Clamp(stats.CurrentMp, 0, maxMp);
-            mpRegen = Math.Max(0f, stats.MpRegenPerTick());
-
-            movementModifier = (float)Math.Max(0.1, stats.MovementSpeed);
-
-            attackPower = new AttackPower { Physical = stats.PhysicalAttack, Magical = stats.MagicAttack };
-            defense = new Defense { Physical = stats.PhysicalDefense, Magical = stats.MagicDefense };
-        }
+        var attackPower = new AttackPower { Physical = stats.PhysicalAttack, Magical = stats.MagicAttack };
+        var defense = new Defense { Physical = stats.PhysicalDefense, Magical = stats.MagicDefense };
 
         return _world.Create(GameArchetypes.PlayerCharacter, new object[]
         {
@@ -107,8 +78,8 @@ public class GameSimulation
             new PlayerId { Value = playerId },
             new Position { Value = spawnPosition },
             new Direction { Value = facing.ToCoordinate() },
-            new Velocity { Value = Vector2F.Zero },
-            new MoveAccumulator { Value = Vector2F.Zero },
+            new Velocity { Value = FCoordinate.Zero },
+            new MoveAccumulator { Value = FCoordinate.Zero },
             new Health { Current = currentHp, Max = maxHp, RegenerationRate = hpRegen },
             new Mana { Current = currentMp, Max = maxMp, RegenerationRate = mpRegen },
             new MovementSpeed { BaseSpeed = 5f, CurrentModifier = movementModifier },

@@ -7,16 +7,10 @@ namespace Game.Network.Packets;
 /// Server -> Client acknowledgement for registration attempts.
 /// </summary>
 [MemoryPackable]
-public partial struct RegistrationResponsePacket : IPacket
+public partial struct RegistrationResponsePacket(bool success, string message) : IPacket
 {
-    public bool Success { get; set; }
-    public string Message { get; set; }
-
-    public RegistrationResponsePacket(bool success, string message)
-    {
-        Success = success;
-        Message = message;
-    }
+    public bool Success { get; set; } = success;
+    public string Message { get; set; } = message;
 
     public static RegistrationResponsePacket Failure(string message) => new(false, message);
     public static RegistrationResponsePacket Ok() => new(true, string.Empty);

@@ -13,9 +13,9 @@ public partial struct LoginResponsePacket : IPacket
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public PlayerSnapshot LocalPlayer { get; set; }
-    public PlayerSnapshot[] OnlinePlayers { get; set; } = Array.Empty<PlayerSnapshot>();
+    public PlayerSnapshot[] OnlinePlayers { get; set; } = [];
 
-    public LoginResponsePacket(bool success, string message, PlayerSnapshot localPlayer, PlayerSnapshot[] onlinePlayers)
+    private LoginResponsePacket(bool success, string message, PlayerSnapshot localPlayer, PlayerSnapshot[] onlinePlayers)
     {
         Success = success;
         Message = message;
@@ -24,7 +24,7 @@ public partial struct LoginResponsePacket : IPacket
     }
 
     public static LoginResponsePacket Failure(string message)
-        => new(false, message, default, Array.Empty<PlayerSnapshot>());
+        => new(false, message, default, []);
 
     public static LoginResponsePacket SuccessResponse(PlayerSnapshot localPlayer, PlayerSnapshot[] onlinePlayers)
         => new(true, string.Empty, localPlayer, onlinePlayers);

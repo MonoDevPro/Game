@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using Game.Abstractions.Network;
 using Game.Core;
 using Game.Network.Packets;
-using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Players;
 
@@ -14,7 +12,7 @@ public sealed class PlayerStateBroadcaster
     private readonly GameSimulation _simulation;
     private readonly INetworkManager _networkManager;
     private readonly ILogger<PlayerStateBroadcaster> _logger;
-    private readonly List<PlayerNetworkStateData> _buffer = new();
+    private readonly List<PlayerNetworkStateData> _buffer = [];
 
     public PlayerStateBroadcaster(
         GameSimulation simulation,
@@ -32,15 +30,13 @@ public sealed class PlayerStateBroadcaster
         _simulation.CollectDirtyPlayers(_buffer);
 
         if (_buffer.Count == 0)
-        {
             return;
-        }
 
         foreach (var state in _buffer)
         {
             var packet = new PlayerStatePacket(
                 state.NetworkId,
-                GridPosition.FromCoordinate(state.Position),
+                state.Position,
                 state.Facing,
                 state.Tick);
 

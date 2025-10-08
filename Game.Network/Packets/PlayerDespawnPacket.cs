@@ -7,12 +7,7 @@ namespace Game.Network.Packets;
 /// Server -> Client notification when a player leaves the world.
 /// </summary>
 [MemoryPackable]
-public partial struct PlayerDespawnPacket : IPacket
+public partial struct PlayerDespawnPacket(int networkId) : IPacket
 {
-    public int NetworkId { get; set; }
-
-    public PlayerDespawnPacket(int networkId)
-    {
-        NetworkId = networkId;
-    }
+    public int NetworkId { get; set; } = networkId;
 }

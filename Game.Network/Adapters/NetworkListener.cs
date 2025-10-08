@@ -7,28 +7,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Game.Network.Adapters;
 
-public class NetworkListener : INetEventListener, IPeerRepository
-    {
-        private readonly PacketProcessor _packetProcessor; // ALTERADO: Injetar PacketProcessor
-        private readonly ILogger<NetworkListener> _logger;
-        private readonly Dictionary<int, NetPeerAdapter> _connectedPeers = new();
+public class NetworkListener(
+    string connectionKey,
+    PacketProcessor packetProcessor,
+    ILogger<NetworkListener> logger)
+    : INetEventListener, IPeerRepository
+{
+    private readonly Dictionary<int, NetPeerAdapter> _connectedPeers = new();
 
-        private readonly NetworkSecurity _networkSecurity;
-
-        public event Action<INetPeerAdapter> PeerConnected = delegate { };
+    public event Action<INetPeerAdapter> PeerConnected = delegate { };
         public event Action<INetPeerAdapter> PeerDisconnected = delegate { };
 
-        public NetworkListener(
-            PacketProcessor packetProcessor, 
-            NetworkSecurity security,
-            ILogger<NetworkListener> logger)
-        {
-            _packetProcessor = packetProcessor; // ALTERADO
-            _networkSecurity = security;
-            _logger = logger;
-        }
-        
-        // ... métodos de IPeerRepository (GetAllPeers, TryGetPeer, etc.) permanecem os mesmos ...
         public IEnumerable<INetPeerAdapter> GetAllPeers() => _connectedPeers.Values;
         public bool TryGetPeer(int peerId, out INetPeerAdapter? peer)
         {
@@ -37,43 +26,35 @@ public class NetworkListener : INetEventListener, IPeerRepository
         }
         public int PeerCount => _connectedPeers.Count;
 
-        // Implementação de INetEventListener
         void INetEventListener.OnPeerConnected(NetPeer peer)
         {
             var adapter = new NetPeerAdapter(peer);
             _connectedPeers[peer.Id] = adapter;
             PeerConnected?.Invoke(adapter); // Disparar evento
-            _logger.LogInformation("Peer connected: {PeerId} - {EndPoint}", peer.Id, peer.Address);
+            logger.LogInformation("Peer connected: {PeerId} - {EndPoint}", peer.Id, peer.Address);
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             if (_connectedPeers.Remove(peer.Id, out var adapter))
             {
-                _networkSecurity.RemovePeer(peer);
                 PeerDisconnected?.Invoke(adapter); // Disparar evento
-                _logger.LogInformation("Peer disconnected: {PeerId} - Reason: {Reason}", peer.Id, disconnectInfo.Reason);
+                logger.LogInformation("Peer disconnected: {PeerId} - Reason: {Reason}", peer.Id, disconnectInfo.Reason);
             }
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            if (!_networkSecurity.ValidateMessage(peer, reader))
-            {
-                _logger.LogWarning("Invalid message from Peer {PeerId}. Disconnecting.", peer.Id);
-                reader.Recycle();
-                return;
-            }
-            _packetProcessor.HandleData(peer, reader, _connectedPeers[peer.Id]);
+            packetProcessor.HandleData(peer, reader, _connectedPeers[peer.Id]);
             reader.Recycle();
         }
 
         void INetEventListener.OnConnectionRequest(ConnectionRequest request)
         {
-            _networkSecurity.ValidateConnectionRequest(request);
+            if (request.AcceptIfKey(connectionKey) is null)
+                logger.LogWarning("Invalid connection key from {RemoteEndPoint}", request.RemoteEndPoint);
         }
 
-        // Outros métodos de INetEventListener (OnNetworkError, etc.) podem permanecer vazios ou com logging.
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode) { }
         void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType) { }
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency) { }
