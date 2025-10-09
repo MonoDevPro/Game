@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://cwaqp5wj8q0v5" path="res://Scripts/ConfigManager.cs" id="1_kry3j"]
 [ext_resource type="Script" uid="uid://bjl2pm3j0hjif" path="res://Scripts/GodotInputSystem.cs" id="2_8gbba"]
 [ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/GameClient.cs" id="2_kry3j"]
-[ext_resource type="Script" path="res://Scripts/Player/PlayerRoot.cs" id="5_kry3j"]
+[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Player/PlayerRoot.cs" id="5_kry3j"]
 
 [node name="Main" type="Node"]
 
@@ -27,3 +27,40 @@ script = ExtResource("2_8gbba")
 script = ExtResource("5_kry3j")
 
 [node name="World" type="Node2D" parent="GameClient"]
+
+[node name="GameUI" type="CanvasLayer" parent="GameClient"]
+
+[node name="Window" type="Window" parent="GameClient/GameUI"]
+oversampling_override = 1.0
+title = "Game RPG"
+initial_position = 1
+size = Vector2i(200, 250)
+
+[node name="ColorRect" type="ColorRect" parent="GameClient/GameUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.48576602, 0.48576602, 0.48576602, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="GameClient/GameUI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_vertical = 3
+color = Color(0, 0, 0, 0.6627451)
+
+[node name="Label" type="Label" parent="GameClient/GameUI/ColorRect2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Game Open RPG - 2025"
+horizontal_alignment = 1

@@ -6,7 +6,6 @@ public partial class GodotInputSystem : Node
 {
     private GameClient? _gameClient;
     private Vector2I _lastDirection = Vector2I.Zero;
-    private float _timeSinceLastSend;
 
     public void Attach(GameClient client)
     {
@@ -17,7 +16,6 @@ public partial class GodotInputSystem : Node
     {
         _gameClient = null;
         _lastDirection = Vector2I.Zero;
-        _timeSinceLastSend = 0f;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -27,7 +25,6 @@ public partial class GodotInputSystem : Node
         if (_gameClient is null || !_gameClient.CanSendInput)
         {
             _lastDirection = Vector2I.Zero;
-            _timeSinceLastSend = 0f;
             return;
         }
 
@@ -44,13 +41,10 @@ public partial class GodotInputSystem : Node
             moveY += 1;
 
         var direction = new Vector2I(moveX, moveY);
-        _timeSinceLastSend += (float)delta;
-
-        if (direction != _lastDirection && _timeSinceLastSend >= 0.1f)
+        if (direction != _lastDirection)
         {
             _gameClient.QueueInput((sbyte)direction.X, (sbyte)direction.Y, 0);
             _lastDirection = direction;
-            _timeSinceLastSend = 0f;
         }
     }
 }
