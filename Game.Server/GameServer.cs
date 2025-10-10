@@ -1,5 +1,4 @@
 using Game.Abstractions;
-using Game.Core;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
 using Game.Network.Abstractions;
@@ -9,6 +8,7 @@ using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 namespace Game.Server;
 

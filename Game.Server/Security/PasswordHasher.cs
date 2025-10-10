@@ -1,4 +1,4 @@
-namespace Game.Core.Security;
+namespace Game.Server.Security;
 
 public interface IPasswordHasher
 {

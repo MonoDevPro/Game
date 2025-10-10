@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using Game.Core.Security;
 using Game.Domain.Entities;
 using Game.Persistence;
+using Game.Server.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Game.Server.Authentication;

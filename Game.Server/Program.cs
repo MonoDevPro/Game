@@ -1,6 +1,4 @@
 using Game.Abstractions;
-using Game.Core;
-using Game.Core.Security;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Network;
@@ -13,6 +11,7 @@ using Game.Server.Loop;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 var builder = CreateHostBuilder(args);
 

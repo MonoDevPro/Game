@@ -1,4 +1,4 @@
-namespace Game.Core;
+namespace Game.Server.Simulation;
 
 public class FixedTimeStep
 {

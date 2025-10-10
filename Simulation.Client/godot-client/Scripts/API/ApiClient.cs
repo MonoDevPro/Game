@@ -5,7 +5,7 @@ using Godot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient;
+namespace GodotClient.API;
 
 public partial class ApiClient : Node
 {

@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Game.Core.Security;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Persistence;

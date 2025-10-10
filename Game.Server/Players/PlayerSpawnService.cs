@@ -1,11 +1,11 @@
 using Arch.Core;
-using Game.Core;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
 using Game.ECS.Extensions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 namespace Game.Server.Players;
 

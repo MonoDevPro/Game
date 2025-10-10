@@ -10,7 +10,7 @@ namespace GodotClient;
 
 public partial class GameClient : Node
 {
-    private ApiClient? _apiClient;
+    private API.ApiClient? _apiClient;
     private ConfigManager? _configManager;
     private PlayerRoot? _playerView;
     private GodotInputSystem? _inputSystem;
@@ -36,7 +36,7 @@ public partial class GameClient : Node
     {
         base._Ready();
 
-        _apiClient = GetNode<ApiClient>($"%{nameof(ApiClient)}");
+        _apiClient = GetNode<API.ApiClient>($"%{nameof(API.ApiClient)}");
         _configManager = GetNode<ConfigManager>($"%{nameof(ConfigManager)}");
         _playerView = GetNode<PlayerRoot>(nameof(PlayerRoot));
         _inputSystem = GetNode<GodotInputSystem>(nameof(GodotInputSystem));

@@ -1,5 +1,5 @@
-using Game.Core;
 using Game.Server.Players;
+using Game.Server.Simulation;
 
 namespace Game.Server.Loop;
 

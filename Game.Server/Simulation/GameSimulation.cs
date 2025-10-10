@@ -9,7 +9,7 @@ using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Systems;
 
-namespace Game.Core;
+namespace Game.Server.Simulation;
 
 public readonly record struct PlayerNetworkStateData(int NetworkId, Coordinate Position, Coordinate Facing);
 public readonly record struct PlayerVitals(int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, float HpRegenRate, float MpRegenRate);

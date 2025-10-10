@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
-using Game.Core.Security;
 using Game.Domain.Entities;
 using Game.Persistence;
+using Game.Server.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
