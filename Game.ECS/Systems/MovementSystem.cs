@@ -12,103 +12,106 @@ namespace Game.ECS.Systems;
 public sealed partial class MovementSystem(World world, MapService map) : GameSystem(world)
 {
     [Query]
-    [All<Position, Velocity, MoveAccumulator>]
-    private void MoveEntity(Entity e, ref Position pos, ref Velocity vel, ref MoveAccumulator acc, ref Direction dir, [Data] in float deltaTime)
+    [All<Position, Velocity, MoveAccumulator, Direction>]
+    private void MoveEntity(Entity entity, ref Position pos, ref Velocity vel, ref MoveAccumulator acc, ref Direction dir, [Data] float deltaTime)
     {
         if (deltaTime <= 0f) return;
 
-        // 1) acumula movimento (células flutuantes) por eixo
-        var frameMove = vel.Value * deltaTime; // Vector2F
-        var totalX = acc.Value.X + frameMove.X;
-        var totalY = acc.Value.Y + frameMove.Y;
-
-        // 2) extrai passos inteiros (truncacao -> preserva sinal)
-        int stepsX = (int)MathF.Truncate(totalX);
-        int stepsY = (int)MathF.Truncate(totalY);
-
-        // atualiza acumulador com a fração remanescente
-        acc.Value = new FCoordinate(totalX - stepsX, totalY - stepsY);
-
-        // se nenhum passo inteiro, ainda podemos atualizar facing se precisarmos
-        if (stepsX == 0 && stepsY == 0)
-        {
-            if (frameMove.X != 0f || frameMove.Y != 0f)
-            {
-                dir.Value = new Coordinate(
-                    X: frameMove.X > 0f ? 1 : (frameMove.X < 0f ? -1 : 0),
-                    Y: frameMove.Y > 0f ? 1 : (frameMove.Y < 0f ? -1 : 0));
-                World.MarkNetworkDirty(e, SyncFlags.Direction);
-            }
+        // Se não há velocidade, retorna cedo
+        if (vel.Value.X == 0f && vel.Value.Y == 0f)
             return;
-        }
 
-        var start = pos.Value;
-        var remainingX = stepsX;
-        var remainingY = stepsY;
+        // 1. Acumula movimento (células flutuantes)
+        var frameMove = vel.Value * deltaTime;
+        acc.Value = new FCoordinate(
+            acc.Value.X + frameMove.X,
+            acc.Value.Y + frameMove.Y);
+
+        // 2. Extrai passos inteiros (truncate preserva sinal)
+        int stepsX = (int)MathF.Truncate(acc.Value.X);
+        int stepsY = (int)MathF.Truncate(acc.Value.Y);
+
+        // 3. Se nenhum passo completo, retorna (ainda acumulando)
+        if (stepsX == 0 && stepsY == 0)
+            return;
+
+        // 4. Consome os passos do acumulador
+        acc.Value = new FCoordinate(
+            acc.Value.X - stepsX,
+            acc.Value.Y - stepsY);
+
+        var startPos = pos.Value;
         
-        // Vamos aplicar os passos um a um, suportando diagonal e checando colisão a cada passo.
-        // Número de iterações = max(|stepsX|, |stepsY|)
+        // 5. Aplica movimento step-by-step
+        // Para grid, geralmente vai mover 1 célula por vez
         int iterations = Math.Max(Math.Abs(stepsX), Math.Abs(stepsY));
-        int movedX = 0, movedY = 0;
+        int remainingX = stepsX;
+        int remainingY = stepsY;
 
         for (int i = 0; i < iterations; i++)
         {
             int dx = 0, dy = 0;
+            
             if (remainingX != 0)
             {
-                dx = Math.Sign(remainingX); // +1 ou -1
-                remainingX -= Math.Sign(remainingX);
+                dx = Math.Sign(remainingX);
+                remainingX -= dx;
             }
+            
             if (remainingY != 0)
             {
                 dy = Math.Sign(remainingY);
-                remainingY -= Math.Sign(remainingY);
+                remainingY -= dy;
             }
 
             var candidate = new Coordinate(pos.Value.X + dx, pos.Value.Y + dy);
 
-            // tenta o movimento diagonal/combinação primeiro
+            // Tenta movimento diagonal primeiro
             if (map.InBounds(candidate) && !map.IsBlocked(candidate))
             {
                 pos.Value = candidate;
-                movedX += dx;
-                movedY += dy;
             }
             else
             {
-                // se bloqueado na combinação, tente mover só X
+                // Se bloqueado, tenta deslizar nas paredes
+                bool moved = false;
+                
+                // Tenta só X
                 if (dx != 0)
                 {
                     var candX = new Coordinate(pos.Value.X + dx, pos.Value.Y);
                     if (map.InBounds(candX) && !map.IsBlocked(candX))
                     {
                         pos.Value = candX;
-                        movedX += dx;
-                        continue;
+                        moved = true;
                     }
                 }
 
-                // tente só Y
-                if (dy != 0)
+                // Se não moveu em X, tenta só Y
+                if (!moved && dy != 0)
                 {
                     var candY = new Coordinate(pos.Value.X, pos.Value.Y + dy);
                     if (map.InBounds(candY) && !map.IsBlocked(candY))
                     {
                         pos.Value = candY;
-                        movedY += dy;
-                        continue;
+                        moved = true;
                     }
                 }
 
-                // nenhum movimento possível neste sub-passo -> pare (pode manter as frações acumuladas)
-                break;
+                // Se não conseguiu mover, para de processar steps
+                if (!moved)
+                {
+                    // IMPORTANTE: Zera o acumulador para não ficar "empurrando" a parede
+                    acc.Value = FCoordinate.Zero;
+                    break;
+                }
             }
         }
 
-        // se posição mudou, marque para sincronização de rede
-        if (pos.Value.X != start.X || pos.Value.Y != start.Y)
+        // 6. Se moveu, marca como dirty
+        if (pos.Value != startPos)
         {
-            World.MarkNetworkDirty(e, SyncFlags.Movement);
+            World.MarkNetworkDirty(entity, SyncFlags.Movement);
         }
     }
 }

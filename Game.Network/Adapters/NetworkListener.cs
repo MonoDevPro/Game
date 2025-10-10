@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
-using Game.Abstractions.Network;
+using Game.Network.Abstractions;
 using Game.Network.Security;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;

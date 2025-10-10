@@ -1,10 +1,12 @@
-namespace Game.Abstractions.Network;
+namespace Game.Network.Abstractions;
 
 public interface IPacket;
 
 public enum NetworkChannel : byte
 {
-    Simulation = 0,
+    Simulation,
+    Reliable,
+    Chat,
 }
 
 public delegate void PacketHandler<in T>(INetPeerAdapter fromPeer, T packet) 

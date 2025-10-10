@@ -1,9 +1,10 @@
-using Game.Abstractions.Network;
+using Game.Abstractions;
 using Game.Core;
-using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
+using Game.Network.Abstractions;
 using Game.Network.Packets;
+using Game.Network.Packets.DTOs;
 using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
@@ -48,6 +49,8 @@ public sealed class GameServer : IDisposable
 
         RegisterAndValidate<LoginRequestPacket>(HandleLoginRequest);
         RegisterAndValidate<RegistrationRequestPacket>(HandleRegistrationRequest);
+        RegisterAndValidate<CharacterCreationRequestPacket>(HandleCharacterCreationRequest);
+        RegisterAndValidate<CharacterSelectionRequestPacket>(ProcessCharacterSelectionAsync);
         RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
     }
     
@@ -138,19 +141,10 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        if (packet.Sequence <= session.LastInputSequence)
-        {
-            _logger.LogWarning("Out-of-order input packet from peer {PeerId}: {PacketSequence} <= {LastSequence}", peer.Id, packet.Sequence, session.LastInputSequence);
-            return;
-        }
-
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.MoveX, packet.MoveY, packet.Buttons, packet.Sequence))
-        {
-            _logger.LogDebug("Applied input from peer {PeerId}: Seq={Sequence}, MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.Sequence, packet.MoveX, packet.MoveY, packet.Buttons);
-            session.LastInputSequence = packet.Sequence;
-        }
+        if (_simulation.TryApplyPlayerInput(session.Entity, packet.MoveX, packet.MoveY, packet.Buttons))
+            _logger.LogDebug("Applied input from peer {PeerId}: MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.MoveX, packet.MoveY, packet.Buttons);
         
-        _logger.LogTrace("Processed input from peer {PeerId}: Seq={Sequence}, MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.Sequence, packet.MoveX, packet.MoveY, packet.Buttons);
+        _logger.LogInformation("Processed input from peer {PeerId}: MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.MoveX, packet.MoveY, packet.Buttons);
     }
 
     private async Task ProcessLoginAsync(INetPeerAdapter peer, LoginRequestPacket packet)
@@ -160,19 +154,36 @@ public sealed class GameServer : IDisposable
             using var scope = _scopeFactory.CreateScope();
             var loginService = scope.ServiceProvider.GetRequiredService<AccountLoginService>();
 
-            var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, packet.CharacterName, CancellationToken.None);
+            var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, CancellationToken.None);
 
-            if (!loginResult.Success || loginResult.Account is null || loginResult.Character is null)
+            if (!loginResult.Success || loginResult.Account is null)
             {
                 var response = LoginResponsePacket.Failure(loginResult.Message);
                 _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 return;
             }
 
-            if (!TryCompleteLogin(peer, loginResult.Account, loginResult.Character))
+            var session = new PlayerSession(peer, loginResult.Account, loginResult.Characters);
+            if (!_sessionManager.TryAddSession(session, out var error))
             {
+                _spawnService.DespawnPlayer(session);
+                var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
+                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 return;
             }
+            
+            var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Level = c.Stats?.Level ?? 1,
+                Vocation = c.Vocation,
+                Gender = c.Gender
+            }).ToArray();
+            
+            var successResponse = LoginResponsePacket.SuccessResponse(playerCharacters);
+            _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            
         }
         catch (Exception ex)
         {
@@ -198,9 +209,6 @@ public sealed class GameServer : IDisposable
                 packet.Username,
                 packet.Email,
                 packet.Password,
-                packet.CharacterName,
-                packet.Gender,
-                packet.Vocation,
                 CancellationToken.None);
 
             if (!registrationResult.IsSuccess)
@@ -214,19 +222,36 @@ public sealed class GameServer : IDisposable
             _networkManager.SendToPeer(peer, success, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             var loginService = scope.ServiceProvider.GetRequiredService<AccountLoginService>();
-            var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, packet.CharacterName, CancellationToken.None);
+            var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, CancellationToken.None);
 
-            if (!loginResult.Success || loginResult.Account is null || loginResult.Character is null)
+            if (!loginResult.Success || loginResult.Account is null)
             {
                 var response = LoginResponsePacket.Failure(loginResult.Message);
                 _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 return;
             }
-
-            if (!TryCompleteLogin(peer, loginResult.Account, loginResult.Character))
+            
+            var session = new PlayerSession(peer, loginResult.Account, loginResult.Characters);
+            
+            if (!_sessionManager.TryAddSession(session, out var error))
             {
+                _spawnService.DespawnPlayer(session);
+                var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
+                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 return;
             }
+            
+            var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Level = c.Stats?.Level ?? 1,
+                Vocation = c.Vocation,
+                Gender = c.Gender
+            }).ToArray();
+            
+            var successResponse = LoginResponsePacket.SuccessResponse(playerCharacters);
+            _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
         catch (Exception ex)
         {
@@ -235,36 +260,122 @@ public sealed class GameServer : IDisposable
             _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
     }
-
-    private bool TryCompleteLogin(INetPeerAdapter peer, Account account, Character character)
+    
+    private void HandleCharacterCreationRequest(INetPeerAdapter peer, CharacterCreationRequestPacket requestPacket)
     {
-        var session = new PlayerSession(peer, account, character);
-        _spawnService.SpawnPlayer(session);
+        _ = ProcessCharacterCreationAsync(peer, requestPacket);
+    }
 
-        if (!_sessionManager.TryAddSession(session, out var error))
+    private async Task ProcessCharacterCreationAsync(INetPeerAdapter peer, CharacterCreationRequestPacket requestPacket)
+    {
+        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {
-            _spawnService.DespawnPlayer(session);
-            var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            return false;
+            _logger.LogWarning("Received CreateCharacter request from unknown peer {PeerId}", peer.Id);
+            var response = CharacterCreationResponsePacket.Failure("Sessão não encontrada.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
+                NetworkDeliveryMethod.ReliableOrdered);
+            return;
         }
 
+        using var scope = _scopeFactory.CreateScope();
+        var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
+        var creationResult = await characterService.CreateCharacterAsync( 
+            new AccountCharacterService.CharacterInfo(
+                requestPacket.Name,
+                1,
+                requestPacket.Vocation,
+                requestPacket.Gender
+            ), CancellationToken.None);
+
+        if (!creationResult.Success)
+        {
+            var response = CharacterCreationResponsePacket.Failure(creationResult.Message);
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
+                NetworkDeliveryMethod.ReliableOrdered);
+            return;
+        }
+        session.Account.Characters.Add(creationResult.Character!);
+        var charData = new PlayerCharData
+        {
+            Id = creationResult.Character!.Id,
+            Name = creationResult.Character.Name,
+            Level = creationResult.Character.Stats?.Level ?? 1,
+            Vocation = creationResult.Character.Vocation,
+            Gender = creationResult.Character.Gender
+        };
+        var successResponse = CharacterCreationResponsePacket.Ok(charData);
+        _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation,
+            NetworkDeliveryMethod.ReliableOrdered);
+        _logger.LogInformation("Character created: {CharacterName} (peer {PeerId})", creationResult.Character.Name, peer.Id);
+    }
+    
+    private void HandleCharacterSelection(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
+    {
+        ProcessCharacterSelectionAsync(peer, requestPacket);
+    }
+
+    private void ProcessCharacterSelectionAsync(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
+    {
+        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
+        {
+            _logger.LogWarning("Received SelectCharacter request from unknown peer {PeerId}", peer.Id);
+            var response = LoginResponsePacket.Failure("Sessão não encontrada.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            return;
+        }
+        
+        if (session.SelectedCharacter is not null)
+        {
+            _logger.LogWarning("Peer {PeerId} attempted to select a character but already has one selected", peer.Id);
+            var response = LoginResponsePacket.Failure("Personagem já selecionado.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            return;
+        }
+        
+        var characterId = requestPacket.CharacterId;
+        var character = session.Account.Characters.FirstOrDefault(c => c.Id == characterId);
+        
+        if (character is null)
+        {
+            _logger.LogWarning("Character {CharacterId} not found for account {AccountId}", characterId, session.Account.Id);
+            var response = LoginResponsePacket.Failure("Personagem não encontrado.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            return;
+        }
+        
+        session.SelectedCharacter = character;
+        var responsePacket = CharacterSelectionResponsePacket.Ok(character.Id);
+        _networkManager.SendToPeer(peer, responsePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        
+        _spawnService.SpawnPlayer(session);
         var localSnapshot = _spawnService.BuildSnapshot(session);
         var othersSnapshots = _sessionManager
             .GetSnapshotExcluding(peer.Id)
             .Select(existing => _spawnService.BuildSnapshot(existing))
-            .ToList();
-
-        var successResponse = LoginResponsePacket.SuccessResponse(localSnapshot, othersSnapshots.ToArray());
-        _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
+            .ToArray();
         var spawnPacket = new PlayerSpawnPacket(localSnapshot);
         _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
-        _logger.LogInformation("Player {Character} authenticated and spawned (peer {PeerId})", character.Name, peer.Id);
-        return true;
+        
+        
+        var mapService = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<MapService>();
+        var gameDataPacket = new GameDataPacket
+        {
+            MapData = new MapData
+            {
+                Name = mapService.Name,
+                Width = mapService.Width,
+                Height = mapService.Height,
+                TileData = mapService.Tiles,
+                CollisionData = mapService.CollisionMask
+            },
+            LocalPlayer = localSnapshot,
+            OtherPlayers = othersSnapshots
+        };
+        _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        
+        _logger.LogInformation("Player Selected Character {} (peer {PeerId})", character.Name, peer.Id);
     }
-
+    
     public void Dispose()
     {
         if (_disposed)
@@ -277,6 +388,8 @@ public sealed class GameServer : IDisposable
         _networkManager.OnPeerDisconnected -= OnPeerDisconnected;
         _networkManager.UnregisterPacketHandler<LoginRequestPacket>();
         _networkManager.UnregisterPacketHandler<RegistrationRequestPacket>();
+        _networkManager.UnregisterPacketHandler<CharacterCreationRequestPacket>();
+        _networkManager.UnregisterPacketHandler<CharacterSelectionRequestPacket>();
         _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
     }
 
@@ -286,23 +399,25 @@ public sealed class GameServer : IDisposable
         {
             using var scope = _scopeFactory.CreateScope();
             var persistence = scope.ServiceProvider.GetRequiredService<PlayerPersistenceService>();
+            if (session.SelectedCharacter is null)
+                return;
 
-            session.Character.PositionX = position.X;
-            session.Character.PositionY = position.Y;
-            session.Character.DirectionEnum = facing;
-            session.Character.LastUpdatedAt = DateTime.UtcNow;
+            session.SelectedCharacter.PositionX = position.X;
+            session.SelectedCharacter.PositionY = position.Y;
+            session.SelectedCharacter.DirectionEnum = facing;
+            session.SelectedCharacter.LastUpdatedAt = DateTime.UtcNow;
 
-            if (session.Character.Stats is not null && _simulation.TryGetPlayerVitals(session.Entity, out var vitals))
+            if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals))
             {
-                session.Character.Stats.CurrentHp = vitals.CurrentHp;
-                session.Character.Stats.CurrentMp = vitals.CurrentMp;
+                session.SelectedCharacter.Stats.CurrentHp = vitals.CurrentHp;
+                session.SelectedCharacter.Stats.CurrentMp = vitals.CurrentMp;
             }
 
-            await persistence.PersistAsync(session.Character, CancellationToken.None);
+            await persistence.PersistAsync(session.SelectedCharacter, CancellationToken.None);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to persist character {Character}", session.Character.Name);
+            _logger.LogError(ex, "Failed to persist character {Character}", session.SelectedCharacter?.Name);
         }
     }
 }

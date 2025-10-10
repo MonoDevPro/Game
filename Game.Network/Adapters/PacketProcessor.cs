@@ -1,4 +1,4 @@
-using Game.Abstractions.Network;
+using Game.Network.Abstractions;
 using Game.Network.Security;
 using LiteNetLib;
 using MemoryPack;

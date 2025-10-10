@@ -1,4 +1,4 @@
-namespace Game.Abstractions.Network;
+namespace Game.Network.Abstractions;
 
 public class NetworkOptions
 {

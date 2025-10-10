@@ -1,5 +1,5 @@
-using System;
-using Game.Abstractions.Network;
+using Game.Network.Abstractions;
+using Game.Network.Packets.DTOs;
 using MemoryPack;
 
 namespace Game.Network.Packets;
@@ -8,24 +8,22 @@ namespace Game.Network.Packets;
 /// Server -> Client response to login attempts.
 /// </summary>
 [MemoryPackable]
-public partial struct LoginResponsePacket : IPacket
+public readonly partial struct LoginResponsePacket : IPacket
 {
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public PlayerSnapshot LocalPlayer { get; set; }
-    public PlayerSnapshot[] OnlinePlayers { get; set; } = [];
+    public bool Success { get; init; }
+    public string Message { get; init; }
+    public PlayerCharData[] CurrentCharacters { get; init; }
 
-    private LoginResponsePacket(bool success, string message, PlayerSnapshot localPlayer, PlayerSnapshot[] onlinePlayers)
+    private LoginResponsePacket(bool success, string message, PlayerCharData[] currentCharacters)
     {
         Success = success;
         Message = message;
-        LocalPlayer = localPlayer;
-        OnlinePlayers = onlinePlayers;
+        CurrentCharacters = currentCharacters;
     }
 
     public static LoginResponsePacket Failure(string message)
-        => new(false, message, default, []);
+        => new(false, message, []);
 
-    public static LoginResponsePacket SuccessResponse(PlayerSnapshot localPlayer, PlayerSnapshot[] onlinePlayers)
-        => new(true, string.Empty, localPlayer, onlinePlayers);
+    public static LoginResponsePacket SuccessResponse(DTOs.PlayerCharData[] currentCharacters)
+        => new(true, string.Empty, currentCharacters);
 }

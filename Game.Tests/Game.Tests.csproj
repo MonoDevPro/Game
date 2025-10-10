@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Game.Core\Game.Core.csproj" />
     <ProjectReference Include="..\Game.Server\Game.Server.csproj" />
     <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
     <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />

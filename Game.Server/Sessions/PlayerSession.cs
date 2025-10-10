@@ -1,28 +1,20 @@
 using System;
 using Arch.Core;
-using Game.Abstractions.Network;
 using Game.Domain.Entities;
+using Game.Network.Abstractions;
 
 namespace Game.Server.Sessions;
 
 /// <summary>
 /// Tracks runtime data for a connected player.
 /// </summary>
-public sealed class PlayerSession
+public sealed class PlayerSession(INetPeerAdapter peer, Account account, Character[] characters)
 {
-    public PlayerSession(INetPeerAdapter peer, Account account, Character character)
-    {
-        Peer = peer;
-        Account = account;
-        Character = character;
-        ConnectedAt = DateTimeOffset.UtcNow;
-    }
-
-    public INetPeerAdapter Peer { get; }
-    public Account Account { get; }
-    public Character Character { get; }
+    public INetPeerAdapter Peer { get; } = peer;
+    public Account Account { get; } = account;
+    public Character[] Characters { get; } = characters;
+    public Character? SelectedCharacter { get; set; }
 
     public Entity Entity { get; set; } = Entity.Null;
-    public DateTimeOffset ConnectedAt { get; }
-    public uint LastInputSequence { get; set; }
+    public DateTimeOffset ConnectedAt { get; } = DateTimeOffset.UtcNow;
 }

@@ -29,12 +29,14 @@ script = ExtResource("5_kry3j")
 [node name="World" type="Node2D" parent="GameClient"]
 
 [node name="GameUI" type="CanvasLayer" parent="GameClient"]
+visible = false
 
 [node name="Window" type="Window" parent="GameClient/GameUI"]
 oversampling_override = 1.0
 title = "Game RPG"
 initial_position = 1
 size = Vector2i(200, 250)
+visible = false
 
 [node name="ColorRect" type="ColorRect" parent="GameClient/GameUI"]
 anchors_preset = 15

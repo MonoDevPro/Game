@@ -21,7 +21,7 @@ public sealed class AccountLoginService
         _logger = logger;
     }
 
-    public async Task<AccountLoginResult> AuthenticateAsync(string username, string password, string? characterName, CancellationToken cancellationToken)
+    public async Task<AccountLoginResult> AuthenticateAsync(string username, string password, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
@@ -30,59 +30,44 @@ public sealed class AccountLoginService
 
         var account = await _dbContext.Accounts
             .AsTracking()
-            .Include(a => a.Characters.Where(c => c.IsActive))
+            .Include(a => a.Characters)
             .ThenInclude(c => c.Stats)
-            .Include(a => a.Characters.Where(c => c.IsActive))
+            .Include(a => a.Characters)
+            .ThenInclude(s => s.Equipment)
+            .Include(a => a.Characters)
             .ThenInclude(c => c.Inventory)
             .ThenInclude(i => i.Slots)
             .FirstOrDefaultAsync(a => a.Username == username, cancellationToken);
 
         if (account is null)
-        {
             return AccountLoginResult.Failure("Conta não encontrada.");
-        }
 
         if (!account.IsActive)
-        {
             return AccountLoginResult.Failure("Conta desativada.");
-        }
 
         if (account.IsBanned && (!account.BannedUntil.HasValue || account.BannedUntil.Value > DateTime.UtcNow))
-        {
             return AccountLoginResult.Failure("Conta banida.");
-        }
 
         if (!_passwordHasher.VerifyPassword(account.PasswordHash, password))
-        {
             return AccountLoginResult.Failure("Credenciais inválidas.");
-        }
 
-        var character = ResolveCharacter(account, characterName);
-        if (character is null)
-        {
+        var characters = ResolveCharacters(account);
+        if (characters is null)
             return AccountLoginResult.Failure("Personagem não encontrado.");
-        }
 
         account.LastLoginAt = DateTime.UtcNow;
+        
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Login bem-sucedido para {Username} com personagem {Character}", account.Username, character.Name);
-    return AccountLoginResult.From(account, character);
+        _logger.LogInformation("Login bem-sucedido para {Username}", account.Username);
+    return AccountLoginResult.From(account, characters);
     }
-
-    private static Character? ResolveCharacter(Account account, string? characterName)
+    
+    private static Character[]? ResolveCharacters(Account account)
     {
-        if (account.Characters.Count == 0)
-        {
-            return null;
-        }
-
-        if (!string.IsNullOrWhiteSpace(characterName))
-        {
-            return account.Characters.FirstOrDefault(c => c.Name.Equals(characterName, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return account.Characters.OrderBy(c => c.Id).First();
+        return account.Characters.Count == 0 
+            ? null 
+            : account.Characters.OrderBy(c => c.Id).ToArray();
     }
 }
 
@@ -91,7 +76,7 @@ public sealed record AccountLoginResult
     public bool Success { get; init; }
     public string Message { get; init; } = string.Empty;
     public Account? Account { get; init; }
-    public Character? Character { get; init; }
+    public Character[] Characters { get; init; } = [];
 
     public static AccountLoginResult Failure(string message) => new AccountLoginResult
     {
@@ -99,10 +84,10 @@ public sealed record AccountLoginResult
         Message = message
     };
 
-    public static AccountLoginResult From(Account account, Character character) => new AccountLoginResult
+    public static AccountLoginResult From(Account account, Character[] characters) => new AccountLoginResult
     {
         Success = true,
         Account = account,
-        Character = character
+        Characters = characters
     };
 }

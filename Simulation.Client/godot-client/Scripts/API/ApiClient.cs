@@ -1,6 +1,6 @@
 using System;
-using Game.Abstractions.Network;
 using Game.Network;
+using Game.Network.Abstractions;
 using Godot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

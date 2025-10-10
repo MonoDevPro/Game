@@ -1,4 +1,4 @@
-using Game.Abstractions.Network;
+using Game.Network.Abstractions;
 using MemoryPack;
 
 namespace Game.Network.Packets;
@@ -7,9 +7,8 @@ namespace Game.Network.Packets;
 /// Client -> Server login request with credentials and desired character selection.
 /// </summary>
 [MemoryPackable]
-public partial struct LoginRequestPacket(string username, string password, string? characterName) : IPacket
+public partial struct LoginRequestPacket(string username, string password) : IPacket
 {
     public string Username { get; set; } = username;
     public string Password { get; set; } = password;
-    public string? CharacterName { get; set; } = characterName;
 }

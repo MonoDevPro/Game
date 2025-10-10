@@ -1,5 +1,5 @@
-using Game.Abstractions.Network;
 using Game.Domain.Enums;
+using Game.Network.Abstractions;
 using MemoryPack;
 
 namespace Game.Network.Packets;
@@ -11,16 +11,10 @@ namespace Game.Network.Packets;
 public partial struct RegistrationRequestPacket(
     string username,
     string email,
-    string password,
-    string characterName,
-    Gender gender,
-    VocationType vocation)
+    string password)
     : IPacket
 {
     public string Username { get; set; } = username;
     public string Email { get; set; } = email;
     public string Password { get; set; } = password;
-    public string CharacterName { get; set; } = characterName;
-    public Gender Gender { get; set; } = gender;
-    public VocationType Vocation { get; set; } = vocation;
 }

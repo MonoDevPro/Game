@@ -1,6 +1,5 @@
-using Game.Domain.Enums;
 using Game.Domain.VOs;
-using Game.Network.Packets;
+using Game.Network.Packets.DTOs;
 using Godot;
 
 namespace GodotClient.Player;
@@ -8,10 +7,14 @@ namespace GodotClient.Player;
 public sealed partial class PlayerVisual : Node2D
 {
     private const float TileSize = 32f;
+    private const float MoveSpeed = 8f; // Velocidade de interpolação visual
     
     private readonly Polygon2D _body;
     private readonly Label _label;
     private bool _isLocal;
+    
+    private Vector2 _targetPosition; // Posição alvo (do servidor)
+    private Vector2 _currentPosition; // Posição visual atual
 
     public PlayerVisual()
     {
@@ -41,10 +44,29 @@ public sealed partial class PlayerVisual : Node2D
 
     public void UpdatePosition(Coordinate position)
     {
-        Position = new Vector2(position.X * TileSize, position.Y * TileSize);
+        _targetPosition = new Vector2(position.X * TileSize, position.Y * TileSize);
+        
+        // Se é jogador local, teleporta direto (client-side prediction)
+        if (_isLocal)
+        {
+            _currentPosition = _targetPosition;
+            Position = _currentPosition;
+        }
     }
 
-    public void UpdateFacing(DirectionEnum facing)
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        
+        // Interpolação suave apenas para jogadores remotos
+        if (!_isLocal && _currentPosition != _targetPosition)
+        {
+            _currentPosition = _currentPosition.Lerp(_targetPosition, (float)delta * MoveSpeed);
+            Position = _currentPosition;
+        }
+    }
+
+    public void UpdateFacing(Coordinate facing)
     {
         var vector = DirectionToVector(facing);
         if (vector == Vector2.Zero)
@@ -82,19 +104,18 @@ public sealed partial class PlayerVisual : Node2D
         return polygon;
     }
 
-    private static Vector2 DirectionToVector(DirectionEnum direction)
+    private static Vector2 DirectionToVector(Coordinate direction)
     {
-        return direction switch
-        {
-            DirectionEnum.North => new Vector2(0, -1),
-            DirectionEnum.NorthEast => new Vector2(1, -1).Normalized(),
-            DirectionEnum.East => new Vector2(1, 0),
-            DirectionEnum.SouthEast => new Vector2(1, 1).Normalized(),
-            DirectionEnum.South => new Vector2(0, 1),
-            DirectionEnum.SouthWest => new Vector2(-1, 1).Normalized(),
-            DirectionEnum.West => new Vector2(-1, 0),
-            DirectionEnum.NorthWest => new Vector2(-1, -1).Normalized(),
-            _ => Vector2.Zero
-        };
+        // 8 direções
+        if (direction.X == 0 && direction.Y == -1) return new Vector2(0, -1); // Up
+        if (direction.X == 1 && direction.Y == -1) return new Vector2(1, -1).Normalized(); // Up-Right
+        if (direction.X == 1 && direction.Y == 0) return new Vector2(1, 0); // Right
+        if (direction.X == 1 && direction.Y == 1) return new Vector2(1, 1).Normalized(); // Down-Right
+        if (direction.X == 0 && direction.Y == 1) return new Vector2(0, 1); // Down
+        if (direction.X == -1 && direction.Y == 1) return new Vector2(-1, 1).Normalized(); // Down-Left
+        if (direction.X == -1 && direction.Y == 0) return new Vector2(-1, 0); // Left
+        if (direction.X == -1 && direction.Y == -1) return new Vector2(-1, -1).Normalized(); // Up-Left
+
+        return Vector2.Zero;
     }
 }

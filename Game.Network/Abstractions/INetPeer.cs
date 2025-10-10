@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Game.Abstractions.Network;
+namespace Game.Network.Abstractions;
 
 /// <summary>
 /// Define um contrato para um repositório que armazena e gere os peers conectados.

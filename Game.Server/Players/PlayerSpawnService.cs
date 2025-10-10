@@ -1,11 +1,11 @@
 using Arch.Core;
 using Game.Core;
-using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
+using Game.ECS.Extensions;
 using Game.Network.Packets;
+using Game.Network.Packets.DTOs;
 using Game.Server.Sessions;
-using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Players;
 
@@ -16,11 +16,13 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
 {
     public Entity SpawnPlayer(PlayerSession session)
     {
-        var character = session.Character;
+        var character = session.SelectedCharacter 
+            ?? throw new InvalidOperationException("No character selected for session.");
+        
         Coordinate startPosition = new(character.PositionX, character.PositionY);
         DirectionEnum facing = character.DirectionEnum;
 
-        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, startPosition, facing, session.Character.Stats);
+        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, startPosition, facing, character.Stats);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at {Position}", character.Name, startPosition);
@@ -31,22 +33,28 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
     {
         if (session.Entity == Entity.Null)
             return;
-
+        
+        var character = session.SelectedCharacter 
+            ?? throw new InvalidOperationException("No character selected for session.");
+        
         simulation.DespawnEntity(session.Entity);
-        logger.LogInformation("Despawned player {Name}", session.Character.Name);
+        logger.LogInformation("Despawned player {Name}", character.Name);
         session.Entity = Entity.Null;
     }
 
     public PlayerSnapshot BuildSnapshot(PlayerSession session)
     {
+        var character = session.SelectedCharacter 
+            ?? throw new InvalidOperationException("No character selected for session.");
+        
         if (!simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
         {
-            return new PlayerSnapshot(session.Peer.Id, session.Account.Id, session.Character.Id, session.Character.Name,
-                session.Character.Gender, session.Character.Vocation, new Coordinate(session.Character.PositionX, 
-                    session.Character.PositionY), session.Character.DirectionEnum);
+            return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
+                character.Gender, character.Vocation, new Coordinate(character.PositionX, 
+                    character.PositionY), character.DirectionEnum.ToCoordinate());
         }
 
-        return new PlayerSnapshot(session.Peer.Id, session.Account.Id, session.Character.Id, session.Character.Name,
-            session.Character.Gender, session.Character.Vocation, position, direction);
+        return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
+            character.Gender, character.Vocation, position, direction.ToCoordinate());
     }
 }

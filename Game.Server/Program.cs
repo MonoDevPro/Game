@@ -1,10 +1,10 @@
 using Game.Abstractions;
-using Game.Abstractions.Network;
 using Game.Core;
 using Game.Core.Security;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Network;
+using Game.Network.Abstractions;
 using Game.Network.Security;
 using Game.Persistence;
 using Game.Server;

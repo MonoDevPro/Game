@@ -1,5 +1,6 @@
-using Game.Abstractions.Network;
+using Game.Abstractions;
 using Game.Core;
+using Game.Network.Abstractions;
 using Game.Network.Packets;
 
 namespace Game.Server.Players;
@@ -37,8 +38,7 @@ public sealed class PlayerStateBroadcaster
             var packet = new PlayerStatePacket(
                 state.NetworkId,
                 state.Position,
-                state.Facing,
-                state.Tick);
+                state.Facing);
 
             _networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
         }

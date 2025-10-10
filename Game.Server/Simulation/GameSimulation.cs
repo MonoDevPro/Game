@@ -8,9 +8,11 @@ using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Systems;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Game.Core;
+
+public readonly record struct PlayerNetworkStateData(int NetworkId, Coordinate Position, Coordinate Facing);
+public readonly record struct PlayerVitals(int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, float HpRegenRate, float MpRegenRate);
 
 public class GameSimulation
 {
@@ -133,29 +135,44 @@ public class GameSimulation
         return true;
     }
 
-    public bool TryApplyPlayerInput(Entity entity, sbyte moveX, sbyte moveY, ushort buttons, uint sequence)
+    public bool TryApplyPlayerInput(Entity entity, sbyte moveX, sbyte moveY, ushort buttons)
     {
         if (!_world.Has<PlayerInput>(entity))
         {
             _world.Add(entity, new PlayerInput());
         }
 
+        // Clamp para segurança (sbyte já é -128 a 127, mas garantimos -1,0,1)
+        int x = Math.Clamp((int)moveX, -1, 1);
+        int y = Math.Clamp((int)moveY, -1, 1);
+
         ref var input = ref _world.Get<PlayerInput>(entity);
-        input.SequenceNumber = sequence;
-        input.Movement = new Coordinate(Math.Clamp((int)moveX, -1, 1), Math.Clamp((int)moveY, -1, 1));
+        input.Movement = new Coordinate(x, y);
         input.Flags = (InputFlags)buttons;
 
         return true;
+    }
+
+    /// <summary>
+    /// Decodifica um eixo de input de byte (0,1,2) para int (-1,0,1)
+    /// </summary>
+    private static int DecodeInputAxis(byte encoded)
+    {
+        return encoded switch
+        {
+            0 => -1,  // Esquerda ou Cima
+            1 => 0,   // Sem movimento
+            2 => 1,   // Direita ou Baixo
+            _ => 0    // Valor inválido = sem movimento
+        };
     }
 
     public void CollectDirtyPlayers(List<PlayerNetworkStateData> buffer)
     {
         _world.Query(in _dirtyPlayersQuery, (Entity entity, ref NetworkId netId, ref Position position, ref Direction direction, ref NetworkDirty dirty) =>
         {
-            buffer.Add(new PlayerNetworkStateData(netId.Value, position.Value, direction.Value.ToDirectionEnum(), CurrentTick));
+            buffer.Add(new PlayerNetworkStateData(netId.Value, position.Value, direction.Value));
             _world.ClearNetworkDirty(entity, SyncFlags.Movement);
         });
     }
 }
-
-public readonly record struct PlayerVitals(int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, float HpRegenRate, float MpRegenRate);

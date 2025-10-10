@@ -1,4 +1,5 @@
-using Game.Abstractions.Network;
+using Game.Network.Abstractions;
+using Game.Network.Packets.DTOs;
 using MemoryPack;
 
 namespace Game.Network.Packets;

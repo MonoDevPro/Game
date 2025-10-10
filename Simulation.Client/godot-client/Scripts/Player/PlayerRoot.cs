@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Network.Packets;
+using Game.Network.Packets.DTOs;
 using Godot;
 
 namespace GodotClient.Player;

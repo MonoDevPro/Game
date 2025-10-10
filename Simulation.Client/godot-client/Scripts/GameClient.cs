@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
-using Game.Abstractions.Network;
-using Game.Domain.Enums;
+using System.Linq;
+using Game.Network.Abstractions;
 using Game.Network.Packets;
-using Godot;
+using Game.Network.Packets.DTOs;
 using GodotClient.Player;
+using Godot;
 
 namespace GodotClient;
 
@@ -12,21 +12,25 @@ public partial class GameClient : Node
 {
     private ApiClient? _apiClient;
     private ConfigManager? _configManager;
-    private Player.PlayerRoot? _playerView;
+    private PlayerRoot? _playerView;
     private GodotInputSystem? _inputSystem;
     private INetworkManager? _network;
+    
     private LoginConfiguration _login = new();
     private RegistrationConfiguration _registration = new();
+    private CharacterCreationConfiguration _characterCreationConfiguration = new();
+    private CharacterSelectionConfiguration _characterSelectionConfiguration = new();
+    
     private Label? _statusLabel;
     private bool _registrationAttempted;
     private bool _loginAttempted;
 
     private readonly Dictionary<int, PlayerSnapshot> _players = new();
+    private List<PlayerCharData> _availableCharacters = [];
     private bool _isAuthenticated;
-    private uint _inputSequence;
     private int _localNetworkId = -1;
 
-    public bool CanSendInput => _isAuthenticated && _network is not null;
+    public bool CanSendInput => _isAuthenticated && _network is not null && _localNetworkId != -1;
 
     public override void _Ready()
     {
@@ -60,6 +64,9 @@ public partial class GameClient : Node
 
         _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
         _network.RegisterPacketHandler<RegistrationResponsePacket>(HandleRegistrationResponse);
+        _network.RegisterPacketHandler<CharacterCreationResponsePacket>(HandleCharacterCreationResponse);
+        _network.RegisterPacketHandler<CharacterSelectionResponsePacket>(HandleCharacterSelectionResponse);
+        _network.RegisterPacketHandler<GameDataPacket>(HandleGameData);
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerDespawnPacket>(HandlePlayerDespawn);
@@ -79,6 +86,9 @@ public partial class GameClient : Node
             _network.OnPeerDisconnected -= OnPeerDisconnected;
             _network.UnregisterPacketHandler<LoginResponsePacket>();
             _network.UnregisterPacketHandler<RegistrationResponsePacket>();
+            _network.UnregisterPacketHandler<CharacterCreationResponsePacket>();
+            _network.UnregisterPacketHandler<CharacterSelectionResponsePacket>();
+            _network.UnregisterPacketHandler<GameDataPacket>();
             _network.UnregisterPacketHandler<PlayerSpawnPacket>();
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerDespawnPacket>();
@@ -92,16 +102,16 @@ public partial class GameClient : Node
         if (!CanSendInput || _network is null)
             return;
 
-        var packet = new PlayerInputPacket(++_inputSequence, moveX, moveY, buttons);
+        var packet = new PlayerInputPacket(moveX, moveY, buttons);
         
-        GD.Print($"Sending input: Seq={packet.Sequence}, MoveX={packet.MoveX}, MoveY={packet.MoveY}, Buttons={packet.Buttons}");
+        GD.Print($"Sending input: MoveX={moveX}, MoveY={moveY}, Buttons={buttons}");
         
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
     }
 
     private void OnPeerConnected(INetPeerAdapter peer)
     {
-        UpdateStatus("Connected to server. Preparing sessão...");
+        UpdateStatus("Connected to server. Preparing session...");
 
         if (_registration.AutoRegister && !_registrationAttempted)
         {
@@ -109,7 +119,7 @@ public partial class GameClient : Node
             return;
         }
 
-        if (_login.AutoLogin)
+        if (_login.AutoLogin && !_loginAttempted)
         {
             TrySendLogin();
         }
@@ -125,16 +135,18 @@ public partial class GameClient : Node
     private void TrySendRegistration()
     {
         if (_network is null || _registrationAttempted)
-        {
             return;
-        }
 
         _registrationAttempted = true;
 
-        var username = _login.Username;
-        var password = _login.Password;
+        // Use credenciais de Registration se disponíveis, senão fallback para Login
+        var username = !string.IsNullOrWhiteSpace(_registration.Username) 
+            ? _registration.Username 
+            : _login.Username;
+        var password = !string.IsNullOrWhiteSpace(_registration.Password) 
+            ? _registration.Password 
+            : _login.Password;
         var email = _registration.Email;
-        var characterName = string.IsNullOrWhiteSpace(_registration.CharacterName) ? username : _registration.CharacterName;
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
@@ -150,35 +162,64 @@ public partial class GameClient : Node
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(characterName))
-        {
-            characterName = username;
-        }
-
-        if (string.IsNullOrWhiteSpace(_login.CharacterName))
-        {
-            _login.CharacterName = characterName;
-        }
-
-        var packet = new RegistrationRequestPacket(username, email, password, characterName, _registration.Gender, _registration.Vocation);
+        var packet = new RegistrationRequestPacket(username, email, password);
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        UpdateStatus("Enviando registro...");
+        UpdateStatus($"Enviando registro para usuário '{username}'...");
     }
 
     private void TrySendLogin()
     {
-        if (_network is null || _loginAttempted) return;
+        if (_network is null || _loginAttempted)
+            return;
 
         if (string.IsNullOrWhiteSpace(_login.Username) || string.IsNullOrWhiteSpace(_login.Password))
         {
             GD.PushWarning("Login configuration is missing username or password. Update appsettings.json.");
+            UpdateStatus("Login configuration is incomplete.");
             return;
         }
 
-        var packet = new LoginRequestPacket(_login.Username, _login.Password, _login.CharacterName);
+        var packet = new LoginRequestPacket(_login.Username, _login.Password);
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        UpdateStatus("Authenticating...");
+        UpdateStatus($"Authenticating as '{_login.Username}'...");
         _loginAttempted = true;
+    }
+    
+    private void TrySendCharacterCreation()
+    {
+        if (_network is null || !_isAuthenticated)
+            return;
+
+        if (string.IsNullOrWhiteSpace(_characterCreationConfiguration.Name))
+        {
+            GD.PushWarning("Character creation requires a valid name.");
+            UpdateStatus("Character creation failed: no name specified.");
+            return;
+        }
+
+        var packet = new CharacterCreationRequestPacket(
+            _characterCreationConfiguration.Name,
+            _characterCreationConfiguration.Gender,
+            _characterCreationConfiguration.Vocation);
+        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        UpdateStatus($"Creating character '{_characterCreationConfiguration.Name}'...");
+    }
+    
+    private void TrySendCharacterSelection()
+    {
+        if (_network is null || !_isAuthenticated)
+            return;
+
+        if (_characterSelectionConfiguration.CharacterId <= 0)
+        {
+            GD.PushError("Invalid character ID for selection.");
+            UpdateStatus("Character selection failed: invalid ID.");
+            return;
+        }
+
+        var packet = new CharacterSelectionRequestPacket(_characterSelectionConfiguration.CharacterId);
+        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        UpdateStatus($"Selecting character ID '{_characterSelectionConfiguration.CharacterId}'...");
     }
 
     private void HandleLoginResponse(INetPeerAdapter peer, LoginResponsePacket packet)
@@ -190,35 +231,118 @@ public partial class GameClient : Node
             _loginAttempted = false;
             return;
         }
-
-        UpdateStatus($"Logged in as {packet.LocalPlayer.Name}");
+        
+        UpdateStatus($"Logged in successfully. Characters available: {packet.CurrentCharacters.Length}");
 
         _isAuthenticated = true;
-        _localNetworkId = packet.LocalPlayer.NetworkId;
-        _players[_localNetworkId] = packet.LocalPlayer;
-        _inputSequence = 0;
-
-        _playerView?.SetLocalPlayer(packet.LocalPlayer);
-        _playerView?.ApplySnapshot(packet.LocalPlayer, true);
-
-        foreach (var snapshot in packet.OnlinePlayers)
-            if (_players.TryAdd(snapshot.NetworkId, snapshot))
-                _playerView?.ApplySnapshot(snapshot, false);
+        _availableCharacters.Clear();
+        _availableCharacters.AddRange(packet.CurrentCharacters);
+        
+        if (_availableCharacters.Count == 0)
+        {
+            _characterCreationConfiguration = _configManager?.GetCharacterCreationConfiguration() 
+                ?? new CharacterCreationConfiguration();
+            TrySendCharacterCreation();
+        }
+        else
+        {
+            _characterSelectionConfiguration = _configManager?.GetCharacterSelectionConfiguration() 
+                ?? new CharacterSelectionConfiguration();
+            
+            // Valida se o CharacterId existe na lista
+            if (_characterSelectionConfiguration.CharacterId > 0)
+            {
+                var exists = _availableCharacters.Any(c => c.Id == _characterSelectionConfiguration.CharacterId);
+                if (!exists)
+                {
+                    GD.PushWarning($"Configured CharacterId {_characterSelectionConfiguration.CharacterId} not found. Using first available character.");
+                    _characterSelectionConfiguration.CharacterId = _availableCharacters[0].Id;
+                }
+            }
+            else
+            {
+                // Se não configurado, usa o primeiro
+                _characterSelectionConfiguration.CharacterId = _availableCharacters[0].Id;
+            }
+            
+            TrySendCharacterSelection();
+        }
     }
 
     private void HandleRegistrationResponse(INetPeerAdapter peer, RegistrationResponsePacket packet)
     {
         if (packet.Success)
         {
-            UpdateStatus("Conta criada com sucesso! Aguardando confirmação de login...");
+            UpdateStatus("Account created successfully! Attempting login...");
+            
+            // Tenta login automaticamente após registro bem-sucedido
+            if (_login.AutoLogin && !_loginAttempted)
+            {
+                TrySendLogin();
+            }
             return;
         }
 
-        GD.PushError($"Registro falhou: {packet.Message}");
-        UpdateStatus($"Registro falhou: {packet.Message}");
+        GD.PushError($"Registration failed: {packet.Message}");
+        UpdateStatus($"Registration failed: {packet.Message}");
 
+        // Se o registro falhar (ex: conta já existe), tenta login
         if (_login.AutoLogin && !_loginAttempted)
+        {
+            UpdateStatus("Registration failed, attempting login with existing account...");
             TrySendLogin();
+        }
+    }
+    
+    private void HandleCharacterCreationResponse(INetPeerAdapter peer, CharacterCreationResponsePacket packet)
+    {
+        if (packet.Success)
+        {
+            UpdateStatus($"Character '{packet.CreatedCharacter.Name}' created successfully!");
+            _availableCharacters.Add(packet.CreatedCharacter);
+            
+            _characterSelectionConfiguration = _configManager?.GetCharacterSelectionConfiguration() 
+                ?? new CharacterSelectionConfiguration();
+            _characterSelectionConfiguration.CharacterId = packet.CreatedCharacter.Id;
+            TrySendCharacterSelection();
+            
+            return;
+        }
+
+        GD.PushError($"Character creation failed: {packet.Message}");
+        UpdateStatus($"Character creation failed: {packet.Message}");
+    }
+    
+    private void HandleCharacterSelectionResponse(INetPeerAdapter peer, CharacterSelectionResponsePacket packet)
+    {
+        if (packet.Success)
+        {
+            UpdateStatus($"Character selected! Waiting for game data...");
+            return;
+        }
+
+        GD.PushError($"Character selection failed: {packet.Message}");
+        UpdateStatus($"Character selection failed: {packet.Message}");
+    }
+    
+    private void HandleGameData(INetPeerAdapter peer, GameDataPacket packet)
+    {
+        UpdateStatus("Entering game world...");
+        
+        _localNetworkId = packet.LocalPlayer.NetworkId;
+        _players[_localNetworkId] = packet.LocalPlayer;
+
+        _playerView?.SetLocalPlayer(packet.LocalPlayer);
+
+        foreach (var snapshot in packet.OtherPlayers)
+        {
+            if (_players.TryAdd(snapshot.NetworkId, snapshot))
+            {
+                _playerView?.ApplySnapshot(snapshot, false);
+            }
+        }
+        
+        UpdateStatus($"In game as '{packet.LocalPlayer.Name}' (NetID: {_localNetworkId})");
     }
 
     private void HandlePlayerSpawn(INetPeerAdapter peer, PlayerSpawnPacket packet)
@@ -227,17 +351,25 @@ public partial class GameClient : Node
         {
             var isLocal = packet.Player.NetworkId == _localNetworkId;
             _playerView?.ApplySnapshot(packet.Player, isLocal);
+            
+            GD.Print($"Player spawned: {packet.Player.Name} (NetID: {packet.Player.NetworkId})");
         }
     }
 
     private void HandlePlayerState(INetPeerAdapter peer, PlayerStatePacket packet)
     {
-        GD.Print($"Received state: NetId={packet.NetworkId}, Pos=({packet.Position.X},{packet.Position.Y}), Facing={packet.Facing}");
-        
         if (_players.TryGetValue(packet.NetworkId, out var snapshot))
         {
-            snapshot = new PlayerSnapshot(packet.NetworkId, snapshot.PlayerId, snapshot.CharacterId, 
-                snapshot.Name, snapshot.Gender, snapshot.Vocation, packet.Position, packet.Facing);
+            snapshot = new PlayerSnapshot(
+                packet.NetworkId, 
+                snapshot.PlayerId, 
+                snapshot.CharacterId, 
+                snapshot.Name, 
+                snapshot.Gender, 
+                snapshot.Vocation, 
+                packet.Position, 
+                packet.Facing);
+            
             _players[packet.NetworkId] = snapshot;
             _playerView?.UpdateState(packet);
         }
@@ -248,17 +380,18 @@ public partial class GameClient : Node
         if (_players.Remove(packet.NetworkId))
         {
             _playerView?.RemovePlayer(packet.NetworkId);
+            GD.Print($"Player despawned (NetID: {packet.NetworkId})");
         }
     }
 
     private void ResetState()
     {
         _isAuthenticated = false;
-        _inputSequence = 0;
         _localNetworkId = -1;
         _registrationAttempted = false;
         _loginAttempted = false;
         _players.Clear();
+        _availableCharacters.Clear();
         _playerView?.Clear();
     }
 
@@ -268,6 +401,6 @@ public partial class GameClient : Node
         {
             _statusLabel.Text = message;
         }
-        GD.Print(message);
+        GD.Print($"[GameClient] {message}");
     }
 }

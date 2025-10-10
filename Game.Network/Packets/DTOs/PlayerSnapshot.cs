@@ -2,7 +2,7 @@ using Game.Domain.Enums;
 using Game.Domain.VOs;
 using MemoryPack;
 
-namespace Game.Network.Packets;
+namespace Game.Network.Packets.DTOs;
 
 /// <summary>
 /// Flat representation of a player's visible state for sync packets.
@@ -17,10 +17,10 @@ public partial struct PlayerSnapshot
     public Gender Gender { get; set; }
     public VocationType Vocation { get; set; }
     public Coordinate Position { get; set; }
-    public DirectionEnum Facing { get; set; }
+    public Coordinate Facing { get; set; }
 
     public PlayerSnapshot(int networkId, int playerId, int characterId, string name, Gender gender, 
-        VocationType vocation, Coordinate position, DirectionEnum facing)
+        VocationType vocation, Coordinate position, Coordinate facing)
     {
         NetworkId = networkId;
         PlayerId = playerId;
