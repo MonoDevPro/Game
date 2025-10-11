@@ -4,7 +4,7 @@ using Game.Network.Abstractions;
 using Godot;
 using Microsoft.Extensions.Configuration;
 
-namespace GodotClient;
+namespace GodotClient.Systems;
 
 public partial class ConfigManager : Node
 {

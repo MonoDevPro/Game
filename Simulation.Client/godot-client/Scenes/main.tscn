@@ -1,14 +1,15 @@
-[gd_scene load_steps=6 format=3 uid="uid://cqd358filrk2x"]
+[gd_scene load_steps=7 format=3 uid="uid://cqd358filrk2x"]
 
-[ext_resource type="Script" uid="uid://bp65hq6y8o30f" path="res://Scripts/API/ApiClient.cs" id="1_jjvhh"]
-[ext_resource type="Script" uid="uid://cwaqp5wj8q0v5" path="res://Scripts/ConfigManager.cs" id="1_kry3j"]
-[ext_resource type="Script" uid="uid://bjl2pm3j0hjif" path="res://Scripts/GodotInputSystem.cs" id="2_8gbba"]
+[ext_resource type="Script" uid="uid://bp65hq6y8o30f" path="res://Scripts/Systems/NetworkClient.cs" id="1_jjvhh"]
+[ext_resource type="Script" uid="uid://cwaqp5wj8q0v5" path="res://Scripts/Systems/ConfigManager.cs" id="1_kry3j"]
 [ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/GameClient.cs" id="2_kry3j"]
-[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Player/PlayerRoot.cs" id="5_kry3j"]
+[ext_resource type="Script" uid="uid://teiboqr7hc3m" path="res://Scripts/Systems/AssetManager.cs" id="3_21xkr"]
+[ext_resource type="Script" uid="uid://bjl2pm3j0hjif" path="res://Scripts/Systems/InputManager.cs" id="5_21xkr"]
+[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Visuals/PlayerView.cs" id="6_21xkr"]
 
 [node name="Main" type="Node"]
 
-[node name="ApiClient" type="Node" parent="."]
+[node name="NetworkClient" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("1_jjvhh")
 
@@ -16,7 +17,11 @@ script = ExtResource("1_jjvhh")
 unique_name_in_owner = true
 script = ExtResource("1_kry3j")
 
+[node name="AssetManager" type="Node" parent="."]
+script = ExtResource("3_21xkr")
+
 [node name="GameMenu" type="Control" parent="."]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,9 +40,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 1
 alignment = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer"]
-layout_mode = 2
 
 [node name="Background" type="ColorRect" parent="GameMenu/VBoxContainer"]
 layout_mode = 2
@@ -63,19 +65,19 @@ size_flags_vertical = 0
 theme_override_font_sizes/font_size = 30
 text = " X "
 
-[node name="Window" type="Window" parent="GameMenu/VBoxContainer/Background/MarginContainer"]
+[node name="LoginWindow" type="Window" parent="GameMenu/VBoxContainer/Background/MarginContainer"]
 oversampling_override = 1.0
 title = "Login"
 initial_position = 1
-size = Vector2i(250, 164)
+size = Vector2i(250, 178)
+visible = false
 wrap_controls = true
 unresizable = true
-always_on_top = true
 exclude_from_capture = true
 minimize_disabled = true
 maximize_disabled = true
 
-[node name="MarginContainer" type="MarginContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window"]
+[node name="MarginContainer" type="MarginContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -88,49 +90,135 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer"]
 layout_mode = 2
 
-[node name="ButtonRegister" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+[node name="ButtonRegister" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
 theme_override_colors/font_color = Color(0.16078432, 0.8745098, 0.8745098, 1)
 theme_override_font_sizes/font_size = 11
 text = "Register Now!"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "User:"
 
-[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 text = "Pass:"
 
-[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer2"]
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CheckButton" type="CheckButton" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+[node name="CheckButton" type="CheckButton" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
 theme_override_font_sizes/font_size = 12
 text = "Save Credentials?"
 
-[node name="Button" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+[node name="Button" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Enter"
+
+[node name="RegisterWindow" type="Window" parent="GameMenu/VBoxContainer/Background/MarginContainer"]
+oversampling_override = 1.0
+title = "Register"
+initial_position = 1
+size = Vector2i(250, 220)
+visible = false
+wrap_controls = true
+unresizable = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "User:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+text = "Email:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckButton" type="CheckButton" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 12
+text = "I Agree terms of services"
+
+[node name="Button" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Create"
 
 [node name="DownBar" type="ColorRect" parent="GameMenu/VBoxContainer"]
 custom_minimum_size = Vector2(0, 30)
@@ -153,21 +241,20 @@ text = "Game Open 2025 - Created By Peixonalta"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ButtonRegister" type="Button" parent="GameMenu/VBoxContainer/DownBar/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 8
-theme_override_colors/font_color = Color(0.16078432, 0.8745098, 0.8745098, 1)
-theme_override_font_sizes/font_size = 11
-text = "Register Now!"
-
 [node name="GameClient" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("2_kry3j")
 
-[node name="GodotInputSystem" type="Node" parent="GameClient"]
-script = ExtResource("2_8gbba")
+[node name="InputManager" type="Node" parent="GameClient"]
+script = ExtResource("5_21xkr")
 
-[node name="PlayerRoot" type="Node2D" parent="GameClient"]
-script = ExtResource("5_kry3j")
+[node name="PlayerView" type="Node" parent="GameClient"]
+script = ExtResource("6_21xkr")
 
 [node name="World" type="Node2D" parent="GameClient"]
+
+[connection signal="button_up" from="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/ButtonRegister" to="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow" method="hide"]
+[connection signal="button_up" from="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow/MarginContainer/VBoxContainer/ButtonRegister" to="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow" method="show"]
+[connection signal="close_requested" from="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow" to="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow" method="show"]
+[connection signal="pressed" from="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/Button" to="GameMenu/VBoxContainer/Background/MarginContainer/LoginWindow" method="show"]
+[connection signal="pressed" from="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow/MarginContainer/VBoxContainer/Button" to="GameMenu/VBoxContainer/Background/MarginContainer/RegisterWindow" method="hide"]

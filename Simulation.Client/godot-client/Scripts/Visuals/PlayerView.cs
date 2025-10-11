@@ -1,16 +1,24 @@
 using System;
 using System.Collections.Generic;
+using Game.Domain.VOs;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Simulation;
 using Godot;
 
-namespace GodotClient.Player;
+namespace GodotClient.Visuals;
 
-public partial class PlayerRoot : Node2D
+public partial class PlayerView : Node
 {
-    private readonly Dictionary<int, PlayerVisual> _players = new();
+    private readonly Dictionary<int, AnimatedPlayerVisual> _players = new();
     private Node2D? _world;
     private int _localNetworkId = -1;
+    
+    public AnimatedPlayerVisual? GetLocalPlayer()
+    {
+        if (_localNetworkId == -1 || !_players.TryGetValue(_localNetworkId, out var visual)) return null;
+        return visual;
+    }
 
     public override void _Ready()
     {
@@ -60,7 +68,7 @@ public partial class PlayerRoot : Node2D
         _localNetworkId = -1;
     }
 
-    private PlayerVisual GetOrCreateVisual(int networkId)
+    private AnimatedPlayerVisual GetOrCreateVisual(int networkId)
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
@@ -68,7 +76,7 @@ public partial class PlayerRoot : Node2D
         }
 
         var world = EnsureWorld();
-        visual = new PlayerVisual
+        visual = new AnimatedPlayerVisual
         {
             Name = $"Player_{networkId}"
         };

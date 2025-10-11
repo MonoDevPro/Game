@@ -32,6 +32,4 @@ public enum SyncFlags : ulong
     
     // ✅ Apenas as flags que você REALMENTE usa
     InitialSync = Movement | Vitals,
-    
-    All = ulong.MaxValue
 }

@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Abstractions;
 using Game.Domain.VOs;
 using Game.ECS.Components;
 using Game.ECS.Extensions;
@@ -21,9 +22,20 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         if ((input.Flags & InputFlags.Sprint) != 0)
             cellsPerSecond *= 1.5f;
         
-        // 2. Só processa se houver input
-        if (input.Movement is { X: 0, Y: 0 })
-            return;
+        // 2. Se não houver input de movimento, tenta usar mouse look se o botão esquerdo estiver pressionado
+        if (input.Movement == GridOffset.Zero)
+        {
+            if ((input.Flags & InputFlags.ClickLeft) != 0)
+            {
+                if (input.MouseLook != GridOffset.Zero)
+                {
+                    input.Movement = input.MouseLook.Signed();
+                    input.MouseLook = GridOffset.Zero; // Consome o mouse look
+                }
+            }
+            else
+                return;
+        }
         
         // 3. Normaliza diagonal para mesma velocidade que reto
         if (input.Movement.X != 0 && input.Movement.Y != 0)
@@ -49,6 +61,6 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         }
         
         input.Flags &= ~InputFlags.Sprint; // Consome o sprint (é um toggle por frame)
-        input.Movement = Coordinate.Zero; // Consome o movimento (é por frame)
+        input.Movement = GridOffset.Zero; // Consome o movimento (é por frame)
     }
 }

@@ -1,20 +1,20 @@
 using Game.Domain.Enums;
 using Game.Domain.VOs;
 
-namespace Game.ECS.Extensions;
+namespace Game.Abstractions;
 
 public static class DirectionExtensions
 {
     public static Coordinate ToCoordinate(this DirectionEnum d) => d switch
     {
-        DirectionEnum.North => new Coordinate(0, 1),
-        DirectionEnum.NorthEast => new Coordinate(1, 1),
+        DirectionEnum.North => new Coordinate(0, -1),
+        DirectionEnum.NorthEast => new Coordinate(1, -1),
+        DirectionEnum.NorthWest => new Coordinate(-1, -1),
+        DirectionEnum.South => new Coordinate(0, 1),
+        DirectionEnum.SouthEast => new Coordinate(1, 1),
+        DirectionEnum.SouthWest => new Coordinate(-1, 1),
         DirectionEnum.East => new Coordinate(1, 0),
-        DirectionEnum.SouthEast => new Coordinate(1, -1),
-        DirectionEnum.South => new Coordinate(0, -1),
-        DirectionEnum.SouthWest => new Coordinate(-1, -1),
         DirectionEnum.West => new Coordinate(-1, 0),
-        DirectionEnum.NorthWest => new Coordinate(-1, 1),
         _ => new Coordinate(0, 0)
     };
 
@@ -58,14 +58,14 @@ public static class DirectionExtensions
 
         return (x, y) switch
         {
-            (0, 1) => DirectionEnum.North,
-            (1, 1) => DirectionEnum.NorthEast,
+            (0, -1) => DirectionEnum.North,
+            (1, -1) => DirectionEnum.NorthEast,
+            (-1, -1) => DirectionEnum.NorthWest,
+            (0, 1) => DirectionEnum.South,
+            (1, 1) => DirectionEnum.SouthEast,
+            (-1, 1) => DirectionEnum.SouthWest,
             (1, 0) => DirectionEnum.East,
-            (1, -1) => DirectionEnum.SouthEast,
-            (0, -1) => DirectionEnum.South,
-            (-1, -1) => DirectionEnum.SouthWest,
             (-1, 0) => DirectionEnum.West,
-            (-1, 1) => DirectionEnum.NorthWest,
             _ => DirectionEnum.None
         };
     }

@@ -143,7 +143,7 @@ public class GameSimulation
         return true;
     }
 
-    public bool TryApplyPlayerInput(Entity entity, sbyte moveX, sbyte moveY, ushort buttons)
+    public bool TryApplyPlayerInput(Entity entity, GridOffset movement, GridOffset mouseLook, ushort buttons)
     {
         if (!_world.Has<PlayerInput>(entity))
         {
@@ -151,11 +151,14 @@ public class GameSimulation
         }
 
         // Clamp para segurança (sbyte já é -128 a 127, mas garantimos -1,0,1)
-        int x = Math.Clamp((int)moveX, -1, 1);
-        int y = Math.Clamp((int)moveY, -1, 1);
+        movement = new GridOffset(
+            movement.X < -1 ? (sbyte)-1 : (movement.X > 1 ? (sbyte)1 : movement.X),
+            movement.Y < -1 ? (sbyte)-1 : (movement.Y > 1 ? (sbyte)1 : movement.Y)
+        );
 
         ref var input = ref _world.Get<PlayerInput>(entity);
-        input.Movement = new Coordinate(x, y);
+        input.Movement = movement;
+        input.MouseLook = mouseLook;
         input.Flags = (InputFlags)buttons;
 
         return true;

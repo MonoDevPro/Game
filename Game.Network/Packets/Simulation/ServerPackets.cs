@@ -2,7 +2,7 @@ using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using MemoryPack;
 
-namespace Game.Network.Packets;
+namespace Game.Network.Packets.Simulation;
 
 /// <summary>
 /// Server -> Client player movement state update (position and facing).

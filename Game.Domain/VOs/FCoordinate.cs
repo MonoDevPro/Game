@@ -1,5 +1,9 @@
+using System.Runtime.InteropServices;
+
 namespace Game.Domain.VOs;
 
+// Estrutura auxiliar para representar coordenadas 2D em float
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly struct FCoordinate(float x, float y)
 {
     public float X { get; } = x;

@@ -15,11 +15,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Game.Abstractions\Game.Abstractions.csproj" />
     <ProjectReference Include="..\..\Game.Network\Game.Network.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
 
 </Project>

@@ -1,19 +1,22 @@
 using System.Collections.Generic;
 using System.Linq;
+using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
-using GodotClient.Player;
+using Game.Network.Packets.Simulation;
 using Godot;
+using GodotClient.Systems;
+using GodotClient.Visuals;
 
 namespace GodotClient;
 
 public partial class GameClient : Node
 {
-    private API.ApiClient? _apiClient;
+    private NetworkClient? _apiClient;
     private ConfigManager? _configManager;
-    private PlayerRoot? _playerView;
-    private GodotInputSystem? _inputSystem;
+    private PlayerView? _playerView;
+    private InputManager? _inputSystem;
     private INetworkManager? _network;
     
     private LoginConfiguration _login = new();
@@ -31,15 +34,16 @@ public partial class GameClient : Node
     private int _localNetworkId = -1;
 
     public bool CanSendInput => _isAuthenticated && _network is not null && _localNetworkId != -1;
+    public AnimatedPlayerVisual? GetLocalPlayer => _playerView?.GetLocalPlayer();
 
     public override void _Ready()
     {
         base._Ready();
 
-        _apiClient = GetNode<API.ApiClient>($"%{nameof(API.ApiClient)}");
+        _apiClient = GetNode<NetworkClient>($"%{nameof(NetworkClient)}");
         _configManager = GetNode<ConfigManager>($"%{nameof(ConfigManager)}");
-        _playerView = GetNode<PlayerRoot>(nameof(PlayerRoot));
-        _inputSystem = GetNode<GodotInputSystem>(nameof(GodotInputSystem));
+        _playerView = GetNode<PlayerView>($"{nameof(PlayerView)}");
+        _inputSystem = GetNode<InputManager>($"{nameof(InputManager)}");
 
         _inputSystem.Attach(this);
 
@@ -97,14 +101,14 @@ public partial class GameClient : Node
         _inputSystem?.Detach();
     }
 
-    public void QueueInput(sbyte moveX, sbyte moveY, ushort buttons)
+    public void QueueInput(GridOffset movement, GridOffset mouseLook, ushort buttons)
     {
         if (!CanSendInput || _network is null)
             return;
 
-        var packet = new PlayerInputPacket(moveX, moveY, buttons);
+        var packet = new PlayerInputPacket(movement, mouseLook, buttons);
         
-        GD.Print($"Sending input: MoveX={moveX}, MoveY={moveY}, Buttons={buttons}");
+        GD.Print($"Sending input: Movement={movement}, MouseLook={mouseLook}, Buttons={buttons}");
         
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
     }
@@ -335,12 +339,8 @@ public partial class GameClient : Node
         _playerView?.SetLocalPlayer(packet.LocalPlayer);
 
         foreach (var snapshot in packet.OtherPlayers)
-        {
             if (_players.TryAdd(snapshot.NetworkId, snapshot))
-            {
                 _playerView?.ApplySnapshot(snapshot, false);
-            }
-        }
         
         UpdateStatus($"In game as '{packet.LocalPlayer.Name}' (NetID: {_localNetworkId})");
     }

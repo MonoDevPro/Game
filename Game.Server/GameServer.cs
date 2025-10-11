@@ -4,6 +4,7 @@ using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Simulation;
 using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
@@ -142,10 +143,8 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.MoveX, packet.MoveY, packet.Buttons))
-            _logger.LogDebug("Applied input from peer {PeerId}: MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.MoveX, packet.MoveY, packet.Buttons);
-        
-        _logger.LogInformation("Processed input from peer {PeerId}: MoveX={MoveX}, MoveY={MoveY}, Buttons={Buttons}", peer.Id, packet.MoveX, packet.MoveY, packet.Buttons);
+        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Movement, packet.MouseLook, packet.Buttons))
+            _logger.LogDebug("Applied input from peer {PeerId}: Movement={Movement}, MouseLook={MouseLook}, Buttons={Buttons}", peer.Id, packet.Movement, packet.MouseLook, packet.Buttons);
     }
 
     private async Task ProcessLoginAsync(INetPeerAdapter peer, LoginRequestPacket packet)

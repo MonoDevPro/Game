@@ -1,7 +1,6 @@
 using Game.Domain.VOs;
-using Game.ECS.Components;
 
-namespace Game.ECS.Extensions;
+namespace Game.Abstractions;
 
 public static class CoordinateExtensions
 {

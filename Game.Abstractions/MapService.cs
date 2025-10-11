@@ -76,18 +76,18 @@ public class MapService
     }
 
     // Factory
-    public static MapService CreateFromTemplate(Map dto)
+    public static MapService CreateFromEntity(Map entity)
     {
-        int w = dto.Width;
-        int h = dto.Height;
+        int w = entity.Width;
+        int h = entity.Height;
 
         if (w <= 0 || h <= 0)
-            throw new ArgumentException($"Invalid map dimensions in template Id={dto.Id}: width={w}, height={h}");
+            throw new ArgumentException($"Invalid map dimensions in template Id={entity.Id}: width={w}, height={h}");
 
         var expected = w * h;
 
         // defensivo: nunca trabalhar com null
-        var tiles = dto.Tiles ?? [];
+        var tiles = entity.Tiles ?? [];
         if (tiles.Length != expected)
         {
             var fallbackTiles = new TileType[expected];
@@ -95,14 +95,14 @@ public class MapService
             tiles = fallbackTiles;
         }
 
-        var collision = dto.CollisionMask ?? [];
+        var collision = entity.CollisionMask ?? [];
         if (collision.Length != expected)
         {
             collision = new byte[expected]; // default = 0 -> no collision
         }
 
         // cria a instância e popula os arrays internos
-        var ms = new MapService(dto.Id, dto.Name ?? string.Empty, w, h, dto.UsePadded, dto.BorderBlocked);
+        var ms = new MapService(entity.Id, entity.Name ?? string.Empty, w, h, entity.UsePadded, entity.BorderBlocked);
 
         // copia os dados reais para o armazenamento interno (considera padded/compact)
         ms.PopulateFromRowMajor(tiles, collision);

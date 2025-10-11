@@ -78,7 +78,7 @@ public static class NetworkDirtyExtensions
     /// <summary>
     /// Verifica se entidade está dirty para as flags informadas.
     /// </summary>
-    public static bool IsNetworkDirty(this World world, Entity entity, SyncFlags flags = SyncFlags.All)
+    public static bool IsNetworkDirty(this World world, Entity entity, SyncFlags flags = SyncFlags.InitialSync)
     {
         if (world.TryGet(entity, out NetworkDirty dirty))
         {
@@ -90,7 +90,7 @@ public static class NetworkDirtyExtensions
     /// <summary>
     /// Verifica flags na struct.
     /// </summary>
-    public static bool HasFlags(this in NetworkDirty dirty, SyncFlags flags = SyncFlags.All)
+    public static bool HasFlags(this in NetworkDirty dirty, SyncFlags flags = SyncFlags.InitialSync)
     {
         return (dirty.Flags & (ulong)flags) != 0;
     }

@@ -100,5 +100,5 @@ static MapService CreateMapService()
         UsePadded = false
     };
 
-    return MapService.CreateFromTemplate(template);
+    return MapService.CreateFromEntity(template);
 }

@@ -5,16 +5,25 @@ using Godot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient.API;
+namespace GodotClient.Systems;
 
-public partial class ApiClient : Node
+/// <summary>
+/// Gerenciador de rede do client Godot.
+/// Inicializa e gerencia o ciclo de vida do sistema de networking do jogo.
+/// Autor: MonoDevPro
+/// Data: 2025-01-11 14:36:00
+/// </summary>
+public partial class NetworkClient : Node
 {
     private IServiceProvider? _serviceProvider;
     private INetworkManager? _networkManager;
-    private ILogger<ApiClient>? _logger;
+    private ILogger<NetworkClient>? _logger;
 
-    public INetworkManager NetworkManager => _networkManager ?? throw new InvalidOperationException("ApiClient is not initialized.");
+    public INetworkManager NetworkManager => _networkManager ?? throw new InvalidOperationException("NetworkClient is not initialized.");
 
+    /// <summary>
+    /// Inicializa o sistema de rede com as opções fornecidas.
+    /// </summary>
     public INetworkManager Initialize(NetworkOptions options)
     {
         if (_networkManager is not null)
@@ -38,16 +47,19 @@ public partial class ApiClient : Node
 
         _serviceProvider = services.BuildServiceProvider();
         _networkManager = _serviceProvider.GetRequiredService<INetworkManager>();
-        _logger = _serviceProvider.GetService<ILogger<ApiClient>>();
+        _logger = _serviceProvider.GetService<ILogger<NetworkClient>>();
 
         return _networkManager;
     }
 
+    /// <summary>
+    /// Inicia o cliente de rede.
+    /// </summary>
     public void Start()
     {
         if (_networkManager is null)
         {
-            throw new InvalidOperationException("ApiClient must be initialized before starting.");
+            throw new InvalidOperationException("NetworkClient must be initialized before starting.");
         }
 
         if (!_networkManager.IsRunning)

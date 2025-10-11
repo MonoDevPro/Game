@@ -7,6 +7,7 @@ using Game.ECS.Extensions;
 using Game.ECS.Systems.Common;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
+using Game.Network.Packets.Simulation;
 
 namespace Game.Server.Players;
 
@@ -41,7 +42,7 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
             
         // Cria e envia pacote inline (sem alocação de lista)
         var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value);
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
+        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
             
         // Limpa dirty flag de movimento
         World.ClearNetworkDirty(entity, SyncFlags.Movement);
@@ -67,7 +68,7 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
             mana.Current,
             mana.Max);
             
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
             
         // Limpa dirty flag de vitals
         World.ClearNetworkDirty(entity, SyncFlags.Vitals);
