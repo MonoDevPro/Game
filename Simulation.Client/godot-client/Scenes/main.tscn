@@ -16,6 +16,150 @@ script = ExtResource("1_jjvhh")
 unique_name_in_owner = true
 script = ExtResource("1_kry3j")
 
+[node name="GameMenu" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer"]
+layout_mode = 2
+
+[node name="Background" type="ColorRect" parent="GameMenu/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.48576602, 0.48576602, 0.48576602, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="GameMenu/VBoxContainer/Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="ButtonExit" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 30
+text = " X "
+
+[node name="Window" type="Window" parent="GameMenu/VBoxContainer/Background/MarginContainer"]
+oversampling_override = 1.0
+title = "Login"
+initial_position = 1
+size = Vector2i(250, 164)
+wrap_controls = true
+unresizable = true
+always_on_top = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer"]
+layout_mode = 2
+
+[node name="ButtonRegister" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0.16078432, 0.8745098, 0.8745098, 1)
+theme_override_font_sizes/font_size = 11
+text = "Register Now!"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "User:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="LineEdit" type="LineEdit" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckButton" type="CheckButton" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 12
+text = "Save Credentials?"
+
+[node name="Button" type="Button" parent="GameMenu/VBoxContainer/Background/MarginContainer/Window/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enter"
+
+[node name="DownBar" type="ColorRect" parent="GameMenu/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+color = Color(0.21915743, 0.21915743, 0.21915743, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/DownBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/DownBar/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Game Open 2025 - Created By Peixonalta"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ButtonRegister" type="Button" parent="GameMenu/VBoxContainer/DownBar/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0.16078432, 0.8745098, 0.8745098, 1)
+theme_override_font_sizes/font_size = 11
+text = "Register Now!"
+
 [node name="GameClient" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("2_kry3j")
@@ -27,42 +171,3 @@ script = ExtResource("2_8gbba")
 script = ExtResource("5_kry3j")
 
 [node name="World" type="Node2D" parent="GameClient"]
-
-[node name="GameUI" type="CanvasLayer" parent="GameClient"]
-visible = false
-
-[node name="Window" type="Window" parent="GameClient/GameUI"]
-oversampling_override = 1.0
-title = "Game RPG"
-initial_position = 1
-size = Vector2i(200, 250)
-visible = false
-
-[node name="ColorRect" type="ColorRect" parent="GameClient/GameUI"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.48576602, 0.48576602, 0.48576602, 1)
-
-[node name="ColorRect2" type="ColorRect" parent="GameClient/GameUI"]
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -30.0
-grow_horizontal = 2
-grow_vertical = 0
-size_flags_vertical = 3
-color = Color(0, 0, 0, 0.6627451)
-
-[node name="Label" type="Label" parent="GameClient/GameUI/ColorRect2"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Game Open RPG - 2025"
-horizontal_alignment = 1
