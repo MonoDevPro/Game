@@ -5,7 +5,6 @@ public interface IPacket;
 public enum NetworkChannel : byte
 {
     Simulation,
-    Reliable,
     Chat,
 }
 

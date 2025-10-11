@@ -38,16 +38,16 @@ public sealed partial class PlayerVisual : Node2D
         _isLocal = isLocal;
         UpdateAppearance();
         UpdateLabel(snapshot.Name);
-        UpdatePosition(snapshot.Position);
+        UpdatePosition(snapshot.Position, forceImmediate: false);
         UpdateFacing(snapshot.Facing);
     }
 
-    public void UpdatePosition(Coordinate position)
+    public void UpdatePosition(Coordinate position, bool forceImmediate = false)
     {
         _targetPosition = new Vector2(position.X * TileSize, position.Y * TileSize);
         
         // Se é jogador local, teleporta direto (client-side prediction)
-        if (_isLocal)
+        if (forceImmediate)
         {
             _currentPosition = _targetPosition;
             Position = _currentPosition;
