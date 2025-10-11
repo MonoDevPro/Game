@@ -14,6 +14,7 @@ public sealed class PlayerPersistenceService(GameDbContext dbContext, ILogger<Pl
 
             var character = await dbContext.Characters
                 .Include(c => c.Stats)
+                .Include(c => c.Equipment)
                 .Include(c => c.Inventory)
                     .ThenInclude(i => i.Slots)
                 .FirstOrDefaultAsync(c => c.Id == snapshot.Id, cancellationToken);
