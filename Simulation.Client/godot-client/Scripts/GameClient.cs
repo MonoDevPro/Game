@@ -68,7 +68,7 @@ public partial class GameClient : Node
         _network.RegisterPacketHandler<CharacterSelectionResponsePacket>(HandleCharacterSelectionResponse);
         _network.RegisterPacketHandler<GameDataPacket>(HandleGameData);
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
-        _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
+        _network.RegisterPacketHandler<PlayerMovementPacket>(HandlePlayerMovement);
         _network.RegisterPacketHandler<PlayerDespawnPacket>(HandlePlayerDespawn);
 
         _apiClient.Start();
@@ -90,7 +90,7 @@ public partial class GameClient : Node
             _network.UnregisterPacketHandler<CharacterSelectionResponsePacket>();
             _network.UnregisterPacketHandler<GameDataPacket>();
             _network.UnregisterPacketHandler<PlayerSpawnPacket>();
-            _network.UnregisterPacketHandler<PlayerStatePacket>();
+            _network.UnregisterPacketHandler<PlayerMovementPacket>();
             _network.UnregisterPacketHandler<PlayerDespawnPacket>();
         }
 
@@ -356,8 +356,10 @@ public partial class GameClient : Node
         }
     }
 
-    private void HandlePlayerState(INetPeerAdapter peer, PlayerStatePacket packet)
+    private void HandlePlayerMovement(INetPeerAdapter peer, PlayerMovementPacket packet)
     {
+        GD.Print($"Received movement for NetID {packet.NetworkId}: Pos({packet.Position.X},{packet.Position.Y}) Facing({packet.Facing})");
+        
         if (_players.TryGetValue(packet.NetworkId, out var snapshot))
         {
             snapshot = new PlayerSnapshot(
@@ -371,7 +373,7 @@ public partial class GameClient : Node
                 packet.Facing);
             
             _players[packet.NetworkId] = snapshot;
-            _playerView?.UpdateState(packet);
+            _playerView?.UpdateMovement(packet);
         }
     }
 

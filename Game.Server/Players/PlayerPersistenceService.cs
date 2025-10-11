@@ -29,6 +29,7 @@ public sealed class PlayerPersistenceService(GameDbContext dbContext, ILogger<Pl
             PersistStats(snapshot, character);
             PersistInventory(snapshot, character);
 
+            dbContext.Characters.Update(character);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)

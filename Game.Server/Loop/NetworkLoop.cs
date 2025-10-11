@@ -1,32 +1,17 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Game.Network.Abstractions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Loop;
 
-public class NetworkLoopService : BackgroundService
+public class NetworkLoopService(
+    INetworkManager networkManager,
+    GameServer gameServer,
+    ILogger<NetworkLoopService> logger)
+    : BackgroundService
 {
-    private readonly INetworkManager _networkManager;
-    private readonly GameServer _gameServer;
-    private readonly ILogger<NetworkLoopService> _logger;
-
-    public NetworkLoopService(
-        INetworkManager networkManager,
-        GameServer gameServer,
-        ILogger<NetworkLoopService> logger)
-    {
-        _networkManager = networkManager;
-        _gameServer = gameServer;
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Network loop starting...");
-        _gameServer.Start();
+        logger.LogInformation("Network loop starting...");
+        gameServer.Start();
 
         try
         {
@@ -34,11 +19,11 @@ public class NetworkLoopService : BackgroundService
             {
                 try
                 {
-                    _networkManager.PollEvents();
+                    networkManager.PollEvents();
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in network loop");
+                    logger.LogError(ex, "Error in network loop");
                 }
 
                 await Task.Delay(15, stoppingToken); // ~66Hz
@@ -46,8 +31,8 @@ public class NetworkLoopService : BackgroundService
         }
         finally
         {
-            _gameServer.Stop();
-            _logger.LogInformation("Network loop stopped");
+            gameServer.Stop();
+            logger.LogInformation("Network loop stopped");
         }
     }
 }

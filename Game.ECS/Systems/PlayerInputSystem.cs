@@ -21,19 +21,13 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         if ((input.Flags & InputFlags.Sprint) != 0)
             cellsPerSecond *= 1.5f;
         
-        // 2. Aplica velocidade SEM normalização (grid = movimento discreto)
-        // Movimento diagonal é intencionalmente mais lento que permitir
-        // ou você quer que diagonal = 1 célula em vez de 2?
+        // 2. Só processa se houver input
+        if (input.Movement is { X: 0, Y: 0 })
+            return;
         
-        // OPÇÃO A: Diagonal move em ambos os eixos (mais lento, mais realista)
-        // vel.Value = new FCoordinate(
-        //     input.Movement.X * cellsPerSecond,
-        //     input.Movement.Y * cellsPerSecond);
-        
-        // OPÇÃO B: Diagonal = só 1 eixo prioritário (mais rápido, mais arcade)
+        // 3. Normaliza diagonal para mesma velocidade que reto
         if (input.Movement.X != 0 && input.Movement.Y != 0)
         {
-            // Diagonal = mesma velocidade que reto
             float diagonalSpeed = cellsPerSecond / MathF.Sqrt(2);
             vel.Value = new FCoordinate(
                 input.Movement.X * diagonalSpeed,
@@ -41,26 +35,20 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         }
         else
         {
-            // Reto = velocidade normal
             vel.Value = new FCoordinate(
                 input.Movement.X * cellsPerSecond,
                 input.Movement.Y * cellsPerSecond);
         }
         
-        // 3. Atualiza direção apenas quando há movimento
-        if (input.Movement.X != 0 || input.Movement.Y != 0)
+        // 4. Atualiza direção
+        var newDir = new Coordinate(input.Movement.X, input.Movement.Y);
+        if (newDir != dir.Value)
         {
-            var newDir = new Coordinate(input.Movement.X, input.Movement.Y);
-            if (newDir != dir.Value)
-            {
-                dir.Value = newDir;
-                World.MarkNetworkDirty(entity, SyncFlags.Direction);
-            }
+            dir.Value = newDir;
+            World.MarkNetworkDirty(entity, SyncFlags.Direction);
         }
-        else
-        {
-            // Sem input = parado
-            vel.Value = FCoordinate.Zero;
-        }
+        
+        input.Flags &= ~InputFlags.Sprint; // Consome o sprint (é um toggle por frame)
+        input.Movement = Coordinate.Zero; // Consome o movimento (é por frame)
     }
 }

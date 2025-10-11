@@ -3,4 +3,4 @@ using Arch.System;
 
 namespace Game.ECS.Systems.Common;
 
-public abstract class GameSystem(World world) : BaseSystem<World, float>(world);
+public abstract partial class GameSystem(World world) : BaseSystem<World, float>(world);

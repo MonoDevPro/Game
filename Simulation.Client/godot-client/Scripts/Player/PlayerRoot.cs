@@ -31,7 +31,7 @@ public partial class PlayerRoot : Node2D
         visual.Update(snapshot, treatAsLocal);
     }
 
-    public void UpdateState(PlayerStatePacket packet)
+    public void UpdateMovement(PlayerMovementPacket packet)
     {
         if (_players.TryGetValue(packet.NetworkId, out var visual))
         {

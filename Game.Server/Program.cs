@@ -38,8 +38,8 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddScoped<AccountLoginService>();
             services.AddScoped<AccountRegistrationService>();
+            services.AddScoped<AccountCharacterService>();
             services.AddSingleton<PlayerSpawnService>();
-            services.AddSingleton<PlayerStateBroadcaster>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddScoped<PlayerPersistenceService>();
             services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));

@@ -8,10 +8,11 @@ using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Systems;
+using Game.Network.Abstractions;
+using Game.Server.Players;
 
 namespace Game.Server.Simulation;
 
-public readonly record struct PlayerNetworkStateData(int NetworkId, Coordinate Position, Coordinate Facing);
 public readonly record struct PlayerVitals(int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, float HpRegenRate, float MpRegenRate);
 
 public class GameSimulation
@@ -38,6 +39,9 @@ public class GameSimulation
             // 2. Gameplay
             new MovementSystem(_world, serviceProvider.GetRequiredService<MapService>()),
             new HealthRegenerationSystem(_world),
+            
+            // 3. Sincronização de rede
+            new PlayerSyncBroadcaster(_world, serviceProvider.GetRequiredService<INetworkManager>())
         });
     }
 
@@ -74,7 +78,8 @@ public class GameSimulation
         var attackPower = new AttackPower { Physical = stats.PhysicalAttack, Magical = stats.MagicAttack };
         var defense = new Defense { Physical = stats.PhysicalDefense, Magical = stats.MagicDefense };
 
-        return _world.Create(GameArchetypes.PlayerCharacter, new object[]
+        var entity = _world.Create(GameArchetypes.PlayerCharacter);
+        var components = new object[]
         {
             new NetworkId { Value = networkId },
             new PlayerId { Value = playerId },
@@ -88,10 +93,12 @@ public class GameSimulation
             attackPower,
             defense,
             new CombatState(),
-            new NetworkDirty { Flags = (ulong)SyncFlags.All },
+            new NetworkDirty { Flags = (ulong)SyncFlags.InitialSync },
             new PlayerInput(),
             new PlayerControlled()
-        });
+        };
+        _world.SetRange(entity, components);
+        return entity;
     }
 
     public void DespawnEntity(Entity entity)
@@ -102,7 +109,8 @@ public class GameSimulation
         }
     }
 
-    public bool TryGetPlayerState(Entity entity, out Coordinate position, out DirectionEnum facing)
+    public bool TryGetPlayerState(Entity entity, 
+        out Coordinate position, out DirectionEnum facing)
     {
         position = Coordinate.Zero;
         facing = DirectionEnum.South;
@@ -151,28 +159,5 @@ public class GameSimulation
         input.Flags = (InputFlags)buttons;
 
         return true;
-    }
-
-    /// <summary>
-    /// Decodifica um eixo de input de byte (0,1,2) para int (-1,0,1)
-    /// </summary>
-    private static int DecodeInputAxis(byte encoded)
-    {
-        return encoded switch
-        {
-            0 => -1,  // Esquerda ou Cima
-            1 => 0,   // Sem movimento
-            2 => 1,   // Direita ou Baixo
-            _ => 0    // Valor inválido = sem movimento
-        };
-    }
-
-    public void CollectDirtyPlayers(List<PlayerNetworkStateData> buffer)
-    {
-        _world.Query(in _dirtyPlayersQuery, (Entity entity, ref NetworkId netId, ref Position position, ref Direction direction, ref NetworkDirty dirty) =>
-        {
-            buffer.Add(new PlayerNetworkStateData(netId.Value, position.Value, direction.Value));
-            _world.ClearNetworkDirty(entity, SyncFlags.Movement);
-        });
     }
 }

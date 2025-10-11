@@ -5,7 +5,6 @@ namespace Game.Server.Loop;
 
 public class GameLoopService(
     GameSimulation simulation,
-    PlayerStateBroadcaster broadcaster,
     ILogger<GameLoopService> logger)
     : BackgroundService
 {
@@ -28,7 +27,6 @@ public class GameLoopService(
             try
             {
                 simulation.Update(deltaTime);
-                broadcaster.Broadcast();
             }
             catch (Exception ex)
             {

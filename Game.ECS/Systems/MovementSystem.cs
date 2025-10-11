@@ -12,13 +12,13 @@ namespace Game.ECS.Systems;
 public sealed partial class MovementSystem(World world, MapService map) : GameSystem(world)
 {
     [Query]
-    [All<Position, Velocity, MoveAccumulator, Direction>]
-    private void MoveEntity(Entity entity, ref Position pos, ref Velocity vel, ref MoveAccumulator acc, ref Direction dir, [Data] float deltaTime)
+    [All<Position, Velocity, MoveAccumulator>]
+    private void MoveEntity(in Entity entity, ref Position pos, ref Velocity vel, ref MoveAccumulator acc, [Data] float deltaTime)
     {
         if (deltaTime <= 0f) return;
 
         // Se não há velocidade, retorna cedo
-        if (vel.Value.X == 0f && vel.Value.Y == 0f)
+        if (vel.Value is { X: 0f, Y: 0f })
             return;
 
         // 1. Acumula movimento (células flutuantes)
@@ -26,7 +26,7 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
         acc.Value = new FCoordinate(
             acc.Value.X + frameMove.X,
             acc.Value.Y + frameMove.Y);
-
+        
         // 2. Extrai passos inteiros (truncate preserva sinal)
         int stepsX = (int)MathF.Truncate(acc.Value.X);
         int stepsY = (int)MathF.Truncate(acc.Value.Y);
@@ -34,7 +34,9 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
         // 3. Se nenhum passo completo, retorna (ainda acumulando)
         if (stepsX == 0 && stepsY == 0)
             return;
-
+        
+        vel.Value = FCoordinate.Zero;
+        
         // 4. Consome os passos do acumulador
         acc.Value = new FCoordinate(
             acc.Value.X - stepsX,
@@ -111,7 +113,8 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
         // 6. Se moveu, marca como dirty
         if (pos.Value != startPos)
         {
-            World.MarkNetworkDirty(entity, SyncFlags.Movement);
+            Console.WriteLine($"[MOVE] Entity {entity.Id}: {startPos} → {pos.Value}");
+            World.MarkNetworkDirty(entity, SyncFlags.Position);
         }
     }
 }

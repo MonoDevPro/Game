@@ -25,14 +25,13 @@ public enum SyncFlags : ulong
     Velocity = 1UL << 2,
     Health = 1UL << 3,
     Mana = 1UL << 4,
-    Equipment = 1UL << 5,
-    Stats = 1UL << 6,
-    AnimationState = 1UL << 7,
-    AnimationSpeed = 1UL << 8,
     
     // ========== AÇÕES AGRUPADAS (32-47) ==========
-    Movement       = AnimationState | AnimationSpeed | Position | Velocity | Direction,
-    Attributes     = Health | Mana | Stats,
+    Movement       = Position | Velocity | Direction,
+    Vitals         = Health | Mana,
+    
+    // ✅ Apenas as flags que você REALMENTE usa
+    InitialSync = Movement | Vitals,
     
     All = ulong.MaxValue
 }

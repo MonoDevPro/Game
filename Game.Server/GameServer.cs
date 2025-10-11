@@ -50,7 +50,8 @@ public sealed class GameServer : IDisposable
         RegisterAndValidate<LoginRequestPacket>(HandleLoginRequest);
         RegisterAndValidate<RegistrationRequestPacket>(HandleRegistrationRequest);
         RegisterAndValidate<CharacterCreationRequestPacket>(HandleCharacterCreationRequest);
-        RegisterAndValidate<CharacterSelectionRequestPacket>(ProcessCharacterSelectionAsync);
+        RegisterAndValidate<CharacterSelectionRequestPacket>(HandleCharacterSelectionAsync);
+        
         RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
     }
     
@@ -309,12 +310,7 @@ public sealed class GameServer : IDisposable
         _logger.LogInformation("Character created: {CharacterName} (peer {PeerId})", creationResult.Character.Name, peer.Id);
     }
     
-    private void HandleCharacterSelection(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
-    {
-        ProcessCharacterSelectionAsync(peer, requestPacket);
-    }
-
-    private void ProcessCharacterSelectionAsync(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
+    private void HandleCharacterSelectionAsync(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
     {
         if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {

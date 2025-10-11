@@ -1,14 +1,8 @@
 namespace Game.Server.Simulation;
 
-public class FixedTimeStep
+public class FixedTimeStep(float fixedDeltaTime)
 {
-    private readonly float _fixedDeltaTime;
     private float _accumulator;
-
-    public FixedTimeStep(float fixedDeltaTime)
-    {
-        _fixedDeltaTime = fixedDeltaTime;
-    }
 
     public void Accumulate(float deltaTime)
     {
@@ -17,11 +11,11 @@ public class FixedTimeStep
 
     public bool ShouldUpdate()
     {
-        return _accumulator >= _fixedDeltaTime;
+        return _accumulator >= fixedDeltaTime;
     }
 
     public void Step()
     {
-        _accumulator -= _fixedDeltaTime;
+        _accumulator -= fixedDeltaTime;
     }
 }
