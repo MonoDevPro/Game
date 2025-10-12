@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://co4pgh3hsr04t"]
+[gd_scene load_steps=3 format=3 uid="uid://co4pgh3hsr04t"]
 
 [ext_resource type="Script" uid="uid://bpbi47etrkoie" path="res://Scripts/Scenes/Menu/MenuScript.cs" id="1_1rerr"]
+[ext_resource type="Texture2D" uid="uid://d4hjw2hg5d1lh" path="res://Assets/Sprites/Menu/BG.jpg" id="2_xhh6f"]
 
 [node name="Menu" type="Control"]
 layout_mode = 3
@@ -23,30 +24,11 @@ grow_vertical = 2
 theme_override_constants/separation = 1
 alignment = 1
 
-[node name="Background" type="ColorRect" parent="VBoxContainer"]
+[node name="Background" type="TextureRect" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-color = Color(0.48576602, 0.48576602, 0.48576602, 1)
-
-[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/Background"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="ExitButton" type="Button" parent="VBoxContainer/Background/MarginContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 0
-theme_override_font_sizes/font_size = 30
-text = " X "
+texture = ExtResource("2_xhh6f")
+expand_mode = 1
 
 [node name="DownBar" type="ColorRect" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 30)
@@ -64,10 +46,19 @@ alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/DownBar/HBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 text = "Game Open 2025 - Created By Peixonalta"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="ExitButton" type="Button" parent="VBoxContainer/DownBar/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 16
+text = " Exit"
 
 [node name="LoginWindow" type="Window" parent="."]
 unique_name_in_owner = true
@@ -230,6 +221,148 @@ theme_override_font_sizes/font_size = 12
 text = "I Agree terms of services"
 
 [node name="RegisterButton" type="Button" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Create"
+
+[node name="CharacterSelectionWindow" type="Window" parent="."]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Character Selection"
+initial_position = 1
+size = Vector2i(250, 180)
+visible = false
+wrap_controls = true
+unresizable = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionWindow/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CharacterList" type="ItemList" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+auto_width = true
+
+[node name="HSeparator" type="HSeparator" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="SelectCharacterButton" type="Button" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Select"
+
+[node name="CreateCharacterButton" type="Button" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Create"
+
+[node name="DeleteCharacterButton" type="Button" parent="CharacterSelectionWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Delete"
+
+[node name="CharacterCreationWindow" type="Window" parent="."]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Character Creation"
+initial_position = 1
+size = Vector2i(250, 196)
+visible = false
+wrap_controls = true
+unresizable = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="CharacterCreationWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterCreationWindow/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CharacterCreationWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Name:     "
+
+[node name="CharacterNameLineEdit" type="LineEdit" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="CharacterCreationWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Gender:   "
+
+[node name="GenderOptionButton" type="OptionButton" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="CharacterCreationWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Vocation:"
+
+[node name="VocationOptionButton" type="OptionButton" parent="CharacterCreationWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="CharacterCreationWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="CreateButton" type="Button" parent="CharacterCreationWindow/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Create"

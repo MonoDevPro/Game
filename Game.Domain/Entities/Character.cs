@@ -24,10 +24,10 @@ public class Character : BaseEntity
     public virtual Account Account { get; set; } = null!;
     
     // Um personagem tem um inventário (1:1)
-    public virtual Inventory Inventory { get; init; } = null!;
+    public virtual Inventory Inventory { get; set; } = null!;
     
     // Um personagem tem stats (1:1)
-    public virtual Stats Stats { get; init; } = null!;
+    public virtual Stats Stats { get; set; } = null!;
     
     // Um personagem tem múltiplos slots de equipamento (1:N)
     public virtual ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();

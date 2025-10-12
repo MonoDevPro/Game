@@ -54,12 +54,6 @@ public partial class ConfigManager : Node
     public LoginConfiguration GetLoginConfiguration()
         => _configuration.Login ?? new LoginConfiguration();
 
-    public RegistrationConfiguration GetRegistrationConfiguration()
-        => _configuration.Registration ?? new RegistrationConfiguration();
-    
-    public CharacterCreationConfiguration GetCharacterCreationConfiguration()
-        => _configuration.CharacterCreation ?? new CharacterCreationConfiguration();
-    
     public CharacterSelectionConfiguration GetCharacterSelectionConfiguration()
         => _configuration.CharacterSelection ?? new CharacterSelectionConfiguration();
 }
@@ -68,8 +62,6 @@ public sealed class ClientConfiguration
 {
     public NetworkConfiguration? Network { get; set; }
     public LoginConfiguration? Login { get; set; }
-    public RegistrationConfiguration? Registration { get; set; }
-    public CharacterCreationConfiguration? CharacterCreation { get; set; }
     public CharacterSelectionConfiguration? CharacterSelection { get; set; }
 }
 
@@ -87,23 +79,6 @@ public sealed class LoginConfiguration
     public bool AutoLogin { get; set; } = true;
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-}
-
-public sealed class RegistrationConfiguration
-{
-    public bool AutoRegister { get; set; } = false;
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-}
-
-public sealed class CharacterCreationConfiguration
-{
-    public string Name { get; set; } = string.Empty;
-    // 0=Unknown, 1=Male, 2=Female
-    public Gender Gender { get; set; } = Gender.Unknown;
-    // 0=None, 1=Warrior, 2=Mage, 3=Archer, etc.
-    public VocationType Vocation { get; set; } = VocationType.Warrior;
 }
 
 public sealed class CharacterSelectionConfiguration
