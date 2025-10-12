@@ -21,7 +21,7 @@ public class Character : BaseEntity
     
     // Relacionamentos
     public int AccountId { get; init; }
-    public virtual Account Account { get; init; } = null!;
+    public virtual Account Account { get; set; } = null!;
     
     // Um personagem tem um inventário (1:1)
     public virtual Inventory Inventory { get; init; } = null!;

@@ -10,7 +10,7 @@ namespace Game.Server.Authentication;
 
 public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<AccountCharacterService> logger)
 {
-    public record CharacterInfo(string Name, int Level, VocationType Vocation, Gender Gender);
+    public record CharacterInfo(int accountId, string Name, int Level, VocationType Vocation, Gender Gender);
     
     public record CharacterListResult(bool Success, string Message, Character[] Characters)
     {
@@ -40,6 +40,7 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
 
         var character = new Character
         {
+            AccountId = characterInfo.accountId,
             Name = characterInfo.Name,
             Gender = characterInfo.Gender,
             Vocation = characterInfo.Vocation,

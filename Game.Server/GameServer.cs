@@ -281,6 +281,7 @@ public sealed class GameServer : IDisposable
         var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
         var creationResult = await characterService.CreateCharacterAsync( 
             new AccountCharacterService.CharacterInfo(
+                session.Account.Id,
                 requestPacket.Name,
                 1,
                 requestPacket.Vocation,
@@ -294,7 +295,17 @@ public sealed class GameServer : IDisposable
                 NetworkDeliveryMethod.ReliableOrdered);
             return;
         }
-        session.Account.Characters.Add(creationResult.Character!);
+        
+        if (creationResult.Character is null)
+        {
+            var response = CharacterCreationResponsePacket.Failure("Falha ao criar personagem.");
+            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
+                NetworkDeliveryMethod.ReliableOrdered);
+            return;
+        }
+        
+        session.Account.Characters.Add(creationResult.Character);
+        creationResult.Character.Account = session.Account;
         var charData = new PlayerCharData
         {
             Id = creationResult.Character!.Id,
