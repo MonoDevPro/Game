@@ -563,6 +563,8 @@ public partial class MenuScript : Control
         _loginWindow.CloseRequested += OnExitButtonPressed;
         _loginButton.Pressed += OnLoginButtonPressed;
         _openRegisterButton.Pressed += OnOpenRegisterPressed;
+        _loginUserLineEdit.TextSubmitted += OnLoginButtonPressedFromTextSubmitted;
+        _loginPassLineEdit.TextSubmitted += OnLoginButtonPressedFromTextSubmitted;
         
         // Register
         _registerWindow.CloseRequested += OnRegisterWindowClosed;
@@ -647,6 +649,8 @@ public partial class MenuScript : Control
     {
         _loginButton.Pressed -= OnLoginButtonPressed;
         _openRegisterButton.Pressed -= OnOpenRegisterPressed;
+        _loginUserLineEdit.TextSubmitted -= OnLoginButtonPressedFromTextSubmitted;
+        _loginPassLineEdit.TextSubmitted -= OnLoginButtonPressedFromTextSubmitted;
         _registerButton.Pressed -= OnRegisterButtonPressed;
         _selectCharacterButton.Pressed -= OnSelectCharacterButtonPressed;
         _createCharacterButton.Pressed -= OnCreateCharacterPressed;
@@ -718,6 +722,10 @@ public partial class MenuScript : Control
         }
     }
     
+    private void OnLoginButtonPressedFromTextSubmitted(string _)
+    {
+        OnLoginButtonPressed();
+    }
     private void OnLoginButtonPressed()
     {
         if (!CanTransitionFrom(MenuState.Login))
