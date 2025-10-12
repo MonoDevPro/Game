@@ -78,6 +78,7 @@ public sealed class GameServer : IDisposable
         RegisterUnconnectedAndValidate<UnconnectedRegistrationRequestPacket>(HandleRegistrationRequest);
         RegisterUnconnectedAndValidate<UnconnectedCharacterCreationRequestPacket>(HandleCharacterCreationRequest);
         RegisterUnconnectedAndValidate<UnconnectedCharacterSelectionRequestPacket>(HandleCharacterSelectionRequest);
+        RegisterUnconnectedAndValidate<UnconnectedCharacterDeleteRequestPacket>(HandleCharacterDeleteRequest); // ✅ NOVO
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectPacket>(HandleGameConnect);
@@ -236,20 +237,87 @@ public sealed class GameServer : IDisposable
         // ✅ Remove sessão de jogo (se existir)
         if (_sessionManager.TryRemoveByPeer(peer, out var session))
         {
-            if (session is not null && _simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+            if (session is not null && session.SelectedCharacter is not null)
             {
-                _ = PersistCharacterAsync(session, position, direction);
-            }
+                // ✅ Persistir dados de desconexão (leve e rápido)
+                if (_simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+                {
+                    int? currentHp = null;
+                    int? currentMp = null;
 
-            if (session is not null)
-            {
+                    // ✅ Tentar obter vitals da simulação
+                    if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals))
+                    {
+                        currentHp = vitals.CurrentHp;
+                        currentMp = vitals.CurrentMp;
+                    }
+
+                    // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
+                    _ = PersistDisconnectDataAsync(
+                        session.SelectedCharacter.Id,
+                        position,
+                        direction,
+                        currentHp,
+                        currentMp);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Could not get player state for character {CharacterId} on disconnect",
+                        session.SelectedCharacter.Id);
+                }
+
+                // ✅ Despawn do player
                 _spawnService.DespawnPlayer(session);
             }
-        
+    
+            // ✅ Remove peer da segurança
             _security?.RemovePeer(peer);
 
+            // ✅ Notifica outros jogadores sobre o despawn
             var packet = new PlayerDespawnPacket(peer.Id);
-            _networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAll(
+                packet, 
+                NetworkChannel.Simulation, 
+                NetworkDeliveryMethod.ReliableOrdered);
+        
+            _logger.LogInformation(
+                "Session removed for account {AccountName} (peer {PeerId})",
+                session?.Account.Username,
+                peer.Id);
+        }
+    }
+    private async Task PersistDisconnectDataAsync(
+        int characterId,
+        Coordinate position,
+        DirectionEnum direction,
+        int? currentHp,
+        int? currentMp)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var persistence = scope.ServiceProvider.GetRequiredService<PlayerPersistenceService>();
+        
+            await persistence.PersistDisconnectAsync(
+                characterId,
+                position.X,
+                position.Y,
+                direction,
+                currentHp,
+                currentMp,
+                CancellationToken.None);
+        
+            _logger.LogDebug(
+                "Disconnect data persisted successfully for character {CharacterId}",
+                characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex, 
+                "Failed to persist disconnect data for character {CharacterId}", 
+                characterId);
         }
     }
 
@@ -499,127 +567,227 @@ public sealed class GameServer : IDisposable
     }
     
     /// <summary>
-/// ✅ Handler de conexão real com game token.
-/// AQUI é onde o GameDataPacket é enviado!
-/// </summary>
-private void HandleGameConnect(INetPeerAdapter peer, GameConnectPacket packet)
-{
-    _ = ProcessGameConnectAsync(peer, packet);
-}
-
-private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPacket packet)
-{
-    try
+    /// ✅ Handler UNCONNECTED de deleção de personagem.
+    /// </summary>
+    private void HandleCharacterDeleteRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterDeleteRequestPacket packet)
     {
-        // ✅ Remove da lista de pendentes e cancela timeout
-        if (_pendingConnections.TryRemove(peer.Id, out var pending))
+        _ = ProcessCharacterDeleteAsync(remoteEndPoint, packet);
+    }
+
+    /// <summary>
+    /// Processa requisição de deleção de personagem.
+    /// </summary>
+    private async Task ProcessCharacterDeleteAsync(IPEndPoint remoteEndPoint, UnconnectedCharacterDeleteRequestPacket packet)
+    {
+        try
         {
-            pending.TimeoutCts.Cancel();
-            pending.TimeoutCts.Dispose();
-            
-            _logger.LogDebug("Peer {PeerId} authenticated - Timeout cancelled", peer.Id);
-        }
-        else
-        {
-            _logger.LogWarning("Peer {PeerId} sent GameConnectPacket but was not in pending list", peer.Id);
-        }
-
-        // ✅ 1. Valida game token
-        if (!_tokenManager.ValidateAndConsumeGameToken(packet.GameToken, out var accountId, out var characterId))
-        {
-            _logger.LogWarning("Invalid or expired game token from peer {PeerId}", peer.Id);
-            peer.Disconnect();
-            return;
-        }
-
-        _logger.LogInformation(
-            "Valid game token from peer {PeerId} - AccountId: {AccountId}, CharacterId: {CharacterId}",
-            peer.Id, accountId, characterId
-        );
-
-        // ✅ 2. Carrega conta e personagem do banco
-        using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
-        
-        var account = await dbContext.Accounts
-            .Include(a => a.Characters)
-            .ThenInclude(c => c.Stats)
-            .FirstOrDefaultAsync(a => a.Id == accountId);
-
-        if (account is null)
-        {
-            _logger.LogError("Account {AccountId} not found for peer {PeerId}", accountId, peer.Id);
-            peer.Disconnect();
-            return;
-        }
-
-        var character = account.Characters.FirstOrDefault(c => c.Id == characterId);
-
-        if (character is null)
-        {
-            _logger.LogError("Character {CharacterId} not found for peer {PeerId}", characterId, peer.Id);
-            peer.Disconnect();
-            return;
-        }
-
-        // ✅ 3. Cria sessão do jogador
-        var session = new PlayerSession(peer, account, account.Characters.ToArray())
-        {
-            SelectedCharacter = character
-        };
-
-        if (!_sessionManager.TryAddSession(session, out var error))
-        {
-            _logger.LogError("Failed to create session for peer {PeerId}: {Error}", peer.Id, error);
-            peer.Disconnect();
-            return;
-        }
-
-        // ✅ 4. Spawna jogador no mundo
-        _spawnService.SpawnPlayer(session);
-
-        // ✅ 5. Monta dados do jogo
-        var localSnapshot = _spawnService.BuildSnapshot(session);
-        var othersSnapshots = _sessionManager
-            .GetSnapshotExcluding(peer.Id)
-            .Select(existing => _spawnService.BuildSnapshot(existing))
-            .ToArray();
-
-        // ✅ 6. Broadcasta spawn para outros jogadores
-        var spawnPacket = new PlayerSpawnPacket(localSnapshot);
-        _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
-        // ✅ 7. Envia dados do mapa
-        var mapService = scope.ServiceProvider.GetRequiredService<MapService>();
-
-        // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-        var gameDataPacket = new GameDataPacket
-        {
-            MapData = new MapData
+            // ✅ 1. Valida token de sessão
+            if (!_tokenManager.ValidateToken(packet.SessionToken, out var accountId, out var account))
             {
-                Name = mapService.Name,
-                Width = mapService.Width,
-                Height = mapService.Height,
-                TileData = mapService.Tiles,
-                CollisionData = mapService.CollisionMask
-            },
-            LocalPlayer = localSnapshot,
-            OtherPlayers = othersSnapshots
-        };
+                var response = UnconnectedCharacterDeleteResponsePacket.Failure("Sessão inválida ou expirada.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning(
+                    "Invalid session token for character deletion from {EndPoint}", 
+                    remoteEndPoint);
+                return;
+            }
 
-        _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            // ✅ 2. Validação adicional: personagem pertence à conta?
+            var character = account!.Characters.FirstOrDefault(c => c.Id == packet.CharacterId);
+        
+            if (character is null)
+            {
+                var response = UnconnectedCharacterDeleteResponsePacket.Failure(
+                    "Personagem não encontrado ou não pertence a esta conta.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning(
+                    "Account {AccountId} attempted to delete non-existent character {CharacterId} from {EndPoint}",
+                    accountId,
+                    packet.CharacterId,
+                    remoteEndPoint);
+                return;
+            }
 
-        _logger.LogInformation(
-            "Player '{CharacterName}' entered the game (Peer: {PeerId}, NetID: {NetworkId})",
-            character.Name, peer.Id, localSnapshot.NetworkId
-        );
+            // ✅ 3. Verificar se há pelo menos 1 personagem restante (opcional)
+            // Descomente se quiser impedir deleção do último personagem
+            /*
+            if (account.Characters.Count <= 1)
+            {
+                var response = UnconnectedCharacterDeleteResponsePacket.Failure(
+                    "Não é possível deletar o último personagem da conta.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning(
+                    "Account {AccountId} attempted to delete last character {CharacterId}",
+                    accountId,
+                    packet.CharacterId);
+                return;
+            }
+            */
+
+            // ✅ 4. Deleta personagem via service
+            using var scope = _scopeFactory.CreateScope();
+            var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
+        
+            var deletionResult = await characterService.DeleteCharacterAsync(
+                accountId,
+                packet.CharacterId,
+                CancellationToken.None);
+
+            if (!deletionResult.Success)
+            {
+                var response = UnconnectedCharacterDeleteResponsePacket.Failure(deletionResult.Message);
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                return;
+            }
+
+            // ✅ 5. Remove personagem da lista em memória da sessão
+            var gameDbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+            account.Characters.Remove(character);
+            gameDbContext.Accounts.Update(account);
+            await gameDbContext.SaveChangesAsync(CancellationToken.None);
+            
+        
+            // ✅ 6. Envia resposta de sucesso
+            var successResponse = UnconnectedCharacterDeleteResponsePacket.Ok(packet.CharacterId);
+            _networkManager.SendUnconnected(remoteEndPoint, successResponse);
+
+            _logger.LogInformation(
+                "Character deleted via unconnected: {CharacterName} (ID: {CharacterId}) for account {AccountId} from {EndPoint}",
+                character.Name,
+                packet.CharacterId,
+                accountId,
+                remoteEndPoint);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing character deletion from {EndPoint}", remoteEndPoint);
+            var response = UnconnectedCharacterDeleteResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendUnconnected(remoteEndPoint, response);
+        }
     }
-    catch (Exception ex)
+    
+    /// <summary>
+    /// ✅ Handler de conexão real com game token.
+    /// AQUI é onde o GameDataPacket é enviado!
+    /// </summary>
+    private void HandleGameConnect(INetPeerAdapter peer, GameConnectPacket packet)
     {
-        _logger.LogError(ex, "Error processing game connect for peer {PeerId}", peer.Id);
-        peer.Disconnect();
+        _ = ProcessGameConnectAsync(peer, packet);
     }
-}
+
+    private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPacket packet)
+    {
+        try
+        {
+            // ✅ Remove da lista de pendentes e cancela timeout
+            if (_pendingConnections.TryRemove(peer.Id, out var pending))
+            {
+                await pending.TimeoutCts.CancelAsync();
+                pending.TimeoutCts.Dispose();
+            
+                _logger.LogDebug("Peer {PeerId} authenticated - Timeout cancelled", peer.Id);
+            }
+            else
+            {
+                _logger.LogWarning("Peer {PeerId} sent GameConnectPacket but was not in pending list", peer.Id);
+            }
+
+            // ✅ 1. Valida game token
+            if (!_tokenManager.ValidateAndConsumeGameToken(packet.GameToken, out var accountId, out var characterId))
+            {
+                _logger.LogWarning("Invalid or expired game token from peer {PeerId}", peer.Id);
+                peer.Disconnect();
+                return;
+            }
+
+            _logger.LogInformation(
+                "Valid game token from peer {PeerId} - AccountId: {AccountId}, CharacterId: {CharacterId}",
+                peer.Id, accountId, characterId
+            );
+
+            // ✅ 2. Carrega conta e personagem do banco
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+        
+            var account = await dbContext.Accounts
+                .Include(a => a.Characters)
+                .ThenInclude(c => c.Stats)
+                .FirstOrDefaultAsync(a => a.Id == accountId);
+
+            if (account is null)
+            {
+                _logger.LogError("Account {AccountId} not found for peer {PeerId}", accountId, peer.Id);
+                peer.Disconnect();
+                return;
+            }
+
+            var character = account.Characters.FirstOrDefault(c => c.Id == characterId);
+
+            if (character is null)
+            {
+                _logger.LogError("Character {CharacterId} not found for peer {PeerId}", characterId, peer.Id);
+                peer.Disconnect();
+                return;
+            }
+
+            // ✅ 3. Cria sessão do jogador
+            var session = new PlayerSession(peer, account, account.Characters.ToArray())
+            {
+                SelectedCharacter = character
+            };
+
+            if (!_sessionManager.TryAddSession(session, out var error))
+            {
+                _logger.LogError("Failed to create session for peer {PeerId}: {Error}", peer.Id, error);
+                peer.Disconnect();
+                return;
+            }
+
+            // ✅ 4. Spawna jogador no mundo
+            _spawnService.SpawnPlayer(session);
+
+            // ✅ 5. Monta dados do jogo
+            var localSnapshot = _spawnService.BuildSnapshot(session);
+            var othersSnapshots = _sessionManager
+                .GetSnapshotExcluding(peer.Id)
+                .Select(existing => _spawnService.BuildSnapshot(existing))
+                .ToArray();
+
+            // ✅ 6. Broadcasta spawn para outros jogadores
+            var spawnPacket = new PlayerSpawnPacket(localSnapshot);
+            _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+            // ✅ 7. Envia dados do mapa
+            var mapService = scope.ServiceProvider.GetRequiredService<MapService>();
+
+            // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
+            var gameDataPacket = new GameDataPacket
+            {
+                MapData = new MapData
+                {
+                    Name = mapService.Name,
+                    Width = mapService.Width,
+                    Height = mapService.Height,
+                    TileData = mapService.Tiles,
+                    CollisionData = mapService.CollisionMask
+                },
+                LocalPlayer = localSnapshot,
+                OtherPlayers = othersSnapshots
+            };
+
+            _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+            _logger.LogInformation(
+                "Player '{CharacterName}' entered the game (Peer: {PeerId}, NetID: {NetworkId})",
+                character.Name, peer.Id, localSnapshot.NetworkId
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing game connect for peer {PeerId}", peer.Id);
+            peer.Disconnect();
+        }
+    }
 
     // ========== CONNECTED HANDLERS (In-game) ==========
 
@@ -652,28 +820,62 @@ private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPack
     {
         try
         {
-            using var scope = _scopeFactory.CreateScope();
-            var persistence = scope.ServiceProvider.GetRequiredService<PlayerPersistenceService>();
-            
             if (session.SelectedCharacter is null)
-                return;
-
-            session.SelectedCharacter.PositionX = position.X;
-            session.SelectedCharacter.PositionY = position.Y;
-            session.SelectedCharacter.DirectionEnum = facing;
-            session.SelectedCharacter.LastUpdatedAt = DateTime.UtcNow;
-
-            if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals))
             {
-                session.SelectedCharacter.Stats.CurrentHp = vitals.CurrentHp;
-                session.SelectedCharacter.Stats.CurrentMp = vitals.CurrentMp;
+                _logger.LogWarning("Cannot persist: session has no selected character");
+                return;
             }
 
-            await persistence.PersistAsync(session.SelectedCharacter, CancellationToken.None);
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+        
+            // ✅ NOVO: Recarregar personagem completo do banco antes de persistir
+            var character = await dbContext.Characters
+                .AsSplitQuery()
+                .Include(c => c.Stats)
+                .Include(c => c.Equipment)
+                .Include(c => c.Inventory)
+                .ThenInclude(i => i.Slots)
+                .FirstOrDefaultAsync(c => c.Id == session.SelectedCharacter.Id);
+
+            if (character is null)
+            {
+                _logger.LogError(
+                    "Cannot persist character {CharacterId}: not found in database",
+                    session.SelectedCharacter.Id);
+                return;
+            }
+
+            // ✅ Atualizar posição e direção
+            character.PositionX = position.X;
+            character.PositionY = position.Y;
+            character.DirectionEnum = facing;
+            character.LastUpdatedAt = DateTime.UtcNow;
+
+            // ✅ Atualizar vitals (HP/MP) se disponível
+            if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals) && character.Stats is not null)
+            {
+                character.Stats.CurrentHp = vitals.CurrentHp;
+                character.Stats.CurrentMp = vitals.CurrentMp;
+            }
+
+            // ✅ Salvar diretamente (não usar PersistAsync para evitar overhead)
+            dbContext.Characters.Update(character);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+
+            _logger.LogInformation(
+                "Character {CharacterName} (ID: {CharacterId}) persisted: Position ({X},{Y}), Direction: {Direction}, HP: {HP}, MP: {MP}",
+                character.Name,
+                character.Id,
+                position.X,
+                position.Y,
+                facing,
+                character.Stats?.CurrentHp ?? 0,
+                character.Stats?.CurrentMp ?? 0);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to persist character {Character}", session.SelectedCharacter?.Name);
+            _logger.LogError(ex, "Failed to persist character {CharacterName}", session.SelectedCharacter?.Name ?? "Unknown");
         }
     }
 
@@ -709,6 +911,7 @@ private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPack
         _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedRegistrationRequestPacket>();
         _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterCreationRequestPacket>();
         _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterSelectionRequestPacket>();
+        _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteRequestPacket>();
     
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<PlayerInputPacket>();

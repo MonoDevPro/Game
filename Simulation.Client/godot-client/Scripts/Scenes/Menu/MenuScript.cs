@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Game.Domain.Enums;
 using Game.Network.Abstractions;
@@ -30,6 +31,7 @@ public partial class MenuScript : Control
         Register,
         CharacterSelection,
         CharacterCreation,
+        CharacterDeletion,
         Connecting,
         WaitingGameData,
         TransitioningToGame,
@@ -60,6 +62,12 @@ public partial class MenuScript : Control
     private string? _sessionToken; // Token de sessão (menu)
     private string? _gameToken;    // Token de jogo (para conectar)
     private readonly List<PlayerCharData> _availableCharacters = new();
+    
+    #endregion
+    
+    #region Deletion State
+    
+    private PlayerCharData? _characterPendingDeletion; // ✅ NOVO
     
     #endregion
     
@@ -104,6 +112,9 @@ public partial class MenuScript : Control
     private OptionButton _vocationOptionButton = null!;
     private Button _createButton = null!;
     
+    // ✅ Character Deletion Confirmation Dialog
+    private AcceptDialog? _deleteConfirmationDialog;
+    
     // Global
     private Button _exitButton = null!;
     
@@ -116,6 +127,7 @@ public partial class MenuScript : Control
         base._Ready();
         
         CreateStatusLabel();
+        CreateDeleteConfirmationDialog();
         LoadConfigurations();
         LoadUIComponents();
         InitializeStateMachine();
@@ -147,6 +159,7 @@ public partial class MenuScript : Control
         _stateEnterActions[MenuState.Register] = OnEnterRegister;
         _stateEnterActions[MenuState.CharacterSelection] = OnEnterCharacterSelection;
         _stateEnterActions[MenuState.CharacterCreation] = OnEnterCharacterCreation;
+        _stateEnterActions[MenuState.CharacterDeletion] = OnEnterCharacterDeletion;
         _stateEnterActions[MenuState.Connecting] = OnEnterConnecting;
         _stateEnterActions[MenuState.WaitingGameData] = OnEnterWaitingGameData;
         _stateEnterActions[MenuState.TransitioningToGame] = OnEnterTransitioningToGame;
@@ -158,6 +171,7 @@ public partial class MenuScript : Control
         _stateExitActions[MenuState.Register] = OnExitRegister;
         _stateExitActions[MenuState.CharacterSelection] = OnExitCharacterSelection;
         _stateExitActions[MenuState.CharacterCreation] = OnExitCharacterCreation;
+        _stateExitActions[MenuState.CharacterDeletion] = OnExitCharacterDeletion;
         _stateExitActions[MenuState.Connecting] = OnExitConnecting;
         _stateExitActions[MenuState.WaitingGameData] = OnExitWaitingGameData;
         _stateExitActions[MenuState.TransitioningToGame] = OnExitTransitioningToGame;
@@ -246,6 +260,22 @@ public partial class MenuScript : Control
         _vocationOptionButton.Selected = 0;
     }
     
+    private void OnEnterCharacterDeletion()
+    {
+        if (_characterPendingDeletion is null)
+        {
+            GD.PushError("[Menu] Character deletion state entered but no character pending deletion");
+            TransitionToState(MenuState.CharacterSelection);
+            return;
+        }
+        
+        UpdateStatus($"Deleting character '{_characterPendingDeletion.Value.Name}'...");
+        HideAllWindows();
+        
+        // Mostra dialog de confirmação
+        ShowDeleteConfirmationDialog();
+    }
+    
     private void OnEnterConnecting()
     {
         UpdateStatus("Connecting to game server...");
@@ -322,6 +352,11 @@ public partial class MenuScript : Control
         _characterCreationWindow.Hide();
     }
     
+    private void OnExitCharacterDeletion()
+    {
+        _characterPendingDeletion = null;
+    }
+    
     private void OnExitConnecting() { }
     
     private void OnExitWaitingGameData() { }
@@ -352,6 +387,10 @@ public partial class MenuScript : Control
         _registerWindow.Hide();
         _characterSelectionWindow.Hide();
         _characterCreationWindow.Hide();
+        
+        // ✅ Esconder dialog de confirmação também
+        if (_deleteConfirmationDialog is not null && _deleteConfirmationDialog.Visible)
+            _deleteConfirmationDialog.Hide();
     }
     
     // ========== AUTO ACTIONS ==========
@@ -411,6 +450,57 @@ public partial class MenuScript : Control
         
         statusLayer.AddChild(_statusLabel);
         AddChild(statusLayer);
+    }
+    
+    private void CreateDeleteConfirmationDialog()
+    {
+        _deleteConfirmationDialog = new AcceptDialog
+        {
+            Title = "Confirm Character Deletion",
+            DialogText = "Are you sure you want to delete this character?\n\nThis action cannot be undone!",
+            OkButtonText = "Delete",
+            Exclusive = true,
+            PopupWindow = false
+        };
+        
+        // Conectar eventos
+        _deleteConfirmationDialog.Confirmed += OnDeleteConfirmed;
+        _deleteConfirmationDialog.Canceled += OnDeleteCanceled;
+        _deleteConfirmationDialog.CloseRequested += OnDeleteCanceled;
+        
+        AddChild(_deleteConfirmationDialog);
+        
+        GD.Print("[Menu] Delete confirmation dialog created");
+    }
+    
+    private void ShowDeleteConfirmationDialog()
+    {
+        if (_deleteConfirmationDialog is null || _characterPendingDeletion is null)
+            return;
+        
+        _deleteConfirmationDialog.DialogText = 
+            $"Are you sure you want to delete '{_characterPendingDeletion.Value.Name}'?\n\n" +
+            $"Level {_characterPendingDeletion.Value.Level} {_characterPendingDeletion.Value.Vocation}\n\n" +
+            "This action cannot be undone!";
+        
+        _deleteConfirmationDialog.PopupCentered();
+        
+        GD.Print($"[Menu] Showing delete confirmation for: {_characterPendingDeletion.Value.Name}");
+    }
+    
+    private void CleanupDeleteConfirmationDialog()
+    {
+        if (_deleteConfirmationDialog is null)
+            return;
+        
+        _deleteConfirmationDialog.Confirmed -= OnDeleteConfirmed;
+        _deleteConfirmationDialog.Canceled -= OnDeleteCanceled;
+        _deleteConfirmationDialog.CloseRequested -= OnDeleteCanceled;
+        
+        _deleteConfirmationDialog.QueueFree();
+        _deleteConfirmationDialog = null;
+        
+        GD.Print("[Menu] Delete confirmation dialog cleaned up");
     }
     
     private void LoadConfigurations()
@@ -543,6 +633,7 @@ public partial class MenuScript : Control
         _network.RegisterUnconnectedPacketHandler<UnconnectedCharacterCreationResponsePacket>(HandleCharacterCreationResponse);
         _network.RegisterUnconnectedPacketHandler<UnconnectedCharacterSelectionResponsePacket>(HandleCharacterSelectionResponse);
         _network.RegisterUnconnectedPacketHandler<UnconnectedGameTokenResponsePacket>(HandleGameTokenResponse);
+        _network.RegisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(HandleCharacterDeleteResponse);
     }
     
     private void RegisterConnectedHandlers()
@@ -578,6 +669,7 @@ public partial class MenuScript : Control
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterCreationResponsePacket>();
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterSelectionResponsePacket>();
         _network.UnregisterUnconnectedPacketHandler<UnconnectedGameTokenResponsePacket>();
+        _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(); // ✅ NOVO
         
         // Unregister CONNECTED handlers
         _network.UnregisterPacketHandler<GameDataPacket>();
@@ -775,10 +867,72 @@ public partial class MenuScript : Control
         GD.Print($"[Menu] Character creation request sent: {name} ({gender}, {vocation})");
     }
     
+    // ✅ ATUALIZADO: Handler de deleção de personagem
     private void OnDeleteCharacterButtonPressed()
     {
-        GD.PushWarning("[Menu] Delete character feature not implemented yet");
-        UpdateStatus("Delete character: Not implemented");
+        if (!CanTransitionFrom(MenuState.CharacterSelection))
+            return;
+        
+        if (_network is null || _serverEndPoint is null || string.IsNullOrWhiteSpace(_sessionToken))
+        {
+            UpdateStatus("Error: Invalid session");
+            return;
+        }
+        
+        var selectedIndices = _characterList.GetSelectedItems();
+        
+        if (selectedIndices.Length == 0)
+        {
+            UpdateStatus("Character deletion failed: no character selected");
+            return;
+        }
+        
+        var selectedIndex = selectedIndices[0];
+        
+        if (selectedIndex < 0 || selectedIndex >= _availableCharacters.Count)
+        {
+            UpdateStatus("Character deletion failed: invalid selection");
+            return;
+        }
+        
+        // ✅ Armazena personagem pendente de deleção
+        _characterPendingDeletion = _availableCharacters[selectedIndex];
+        
+        // ✅ Transiciona para estado de deleção (mostrará confirmação)
+        TransitionToState(MenuState.CharacterDeletion);
+    }
+    
+    // ✅ NOVO: Confirmação de deleção
+    private void OnDeleteConfirmed()
+    {
+        if (_characterPendingDeletion is null || _network is null || _serverEndPoint is null || 
+            string.IsNullOrWhiteSpace(_sessionToken))
+        {
+            GD.PushError("[Menu] Cannot delete: invalid state");
+            TransitionToState(MenuState.CharacterSelection);
+            return;
+        }
+        
+        var character = _characterPendingDeletion.Value;
+        
+        // ✅ Envia requisição de deleção
+        var packet = new UnconnectedCharacterDeleteRequestPacket(_sessionToken, character.Id);
+        _network.SendUnconnected(_serverEndPoint, packet);
+        
+        UpdateStatus($"Deleting character '{character.Name}'...");
+        GD.Print($"[Menu] Character deletion request sent: {character.Name} (ID: {character.Id})");
+        
+        // ✅ Permanece no estado de deleção até receber resposta
+    }
+    
+    // ✅ NOVO: Cancelamento de deleção
+    private void OnDeleteCanceled()
+    {
+        GD.Print("[Menu] Character deletion cancelled by user");
+        UpdateStatus("Character deletion cancelled");
+        
+        // ✅ Volta para seleção de personagem
+        TransitionToState(MenuState.CharacterSelection);
     }
     
     private void OnExitButtonPressed()
@@ -879,6 +1033,39 @@ public partial class MenuScript : Control
         GD.Print($"[Menu] Game token received: {_gameToken}");
         
         TransitionToState(MenuState.Connecting);
+    }
+    
+    private void HandleCharacterDeleteResponse(IPEndPoint remoteEndPoint, UnconnectedCharacterDeleteResponsePacket packet)
+    {
+        if (!packet.Success)
+        {
+            GD.PushError($"[Menu] Character deletion failed: {packet.Message}");
+            UpdateStatus($"Deletion failed: {packet.Message}");
+            
+            // ✅ Volta para seleção de personagem
+            TransitionToState(MenuState.CharacterSelection);
+            return;
+        }
+        
+        // ✅ Remove personagem da lista local
+        var deletedCharacter = _availableCharacters.FirstOrDefault(c => c.Id == packet.CharacterId, new(){ Id = 0 });
+        if (deletedCharacter.Id != 0)
+        {
+            _availableCharacters.Remove(deletedCharacter);
+            GD.Print($"[Menu] Character deleted successfully: {deletedCharacter.Name} (ID: {packet.CharacterId})");
+            UpdateStatus($"Character '{deletedCharacter.Name}' deleted successfully!");
+        }
+        else
+        {
+            GD.Print($"[Menu] Character deleted successfully (ID: {packet.CharacterId})");
+            UpdateStatus("Character deleted successfully!");
+        }
+        
+        // ✅ Limpa estado de deleção pendente
+        _characterPendingDeletion = null;
+        
+        // ✅ Volta para seleção de personagem e atualiza lista
+        TransitionToState(MenuState.CharacterSelection);
     }
     
     // ========== PACKET HANDLERS (CONNECTED) ==========

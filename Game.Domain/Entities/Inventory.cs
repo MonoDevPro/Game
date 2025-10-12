@@ -7,13 +7,13 @@ namespace Game.Domain.Entities;
 /// </summary>
 public class Inventory : BaseEntity
 {
-    public int Capacity { get; init; } = 30; // Capacidade padrão
+    public int Capacity { get; set; } = 30; // Capacidade padrão
     
     // Relacionamentos
     public int CharacterId { get; init; }
     public virtual Character Character { get; init; } = null!;
     
-    public virtual ICollection<InventorySlot> Slots { get; init; } = new List<InventorySlot>();
+    public virtual ICollection<InventorySlot> Slots { get; set; } = new List<InventorySlot>();
 }
 
 /// <summary>
