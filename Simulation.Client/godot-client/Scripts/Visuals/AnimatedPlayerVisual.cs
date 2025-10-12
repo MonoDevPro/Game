@@ -91,23 +91,46 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     {
         _targetPosition = new Vector2(position.X * TileSize, position.Y * TileSize);
         
-        if (_isLocal)
-        {
-            _currentPosition = _targetPosition;
-            Position = _currentPosition;
-        }
-        else if (_currentPosition != _targetPosition)
+        // ✅ CLIENT PREDICTION: Local player agora também usa interpolação suave
+        if (_currentPosition != _targetPosition)
         {
             // ✅ FIX: Usa animação direcional
             PlayDirectionalAnimation("walk", _currentDirection);
         }
     }
 
+    /// <summary>
+    /// ✅ CLIENT PREDICTION: Prediz movimento local imediatamente para responsividade.
+    /// Usado quando o jogador local envia input, antes da confirmação do servidor.
+    /// </summary>
+    public void PredictLocalMovement(GridOffset movement)
+    {
+        if (!_isLocal || movement == GridOffset.Zero)
+            return;
+
+        // Prediz nova posição baseada no input
+        var predictedX = _targetPosition.X + (movement.X * TileSize);
+        var predictedY = _targetPosition.Y + (movement.Y * TileSize);
+        
+        _targetPosition = new Vector2(predictedX, predictedY);
+        
+        // Atualiza direção da animação
+        var newDirection = new Coordinate(movement.X, movement.Y).ToDirectionEnum();
+        if (newDirection != _currentDirection)
+        {
+            _currentDirection = newDirection;
+        }
+        
+        // Inicia animação de caminhada
+        PlayDirectionalAnimation("walk", _currentDirection);
+    }
+
     public override void _Process(double delta)
     {
         base._Process(delta);
         
-        if (!_isLocal && _currentPosition != _targetPosition)
+        // ✅ CLIENT PREDICTION: Interpola movimento tanto para local quanto para remote players
+        if (_currentPosition != _targetPosition)
         {
             var distance = _currentPosition.DistanceTo(_targetPosition);
             

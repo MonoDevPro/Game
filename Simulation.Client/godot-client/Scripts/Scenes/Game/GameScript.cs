@@ -221,6 +221,12 @@ public partial class GameScript : Node
     /// </summary>
     public void QueueInput(GridOffset movement, GridOffset mouseLook, ushort buttons)
     {
+        // ✅ CLIENT PREDICTION: Prediz movimento local imediatamente
+        if (movement != GridOffset.Zero)
+        {
+            GetLocalPlayer?.PredictLocalMovement(movement);
+        }
+        
         var packet = new PlayerInputPacket(
             movement,
             mouseLook,
