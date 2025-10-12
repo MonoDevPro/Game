@@ -54,8 +54,21 @@ public class NetworkListener(
             if (request.AcceptIfKey(connectionKey) is null)
                 logger.LogWarning("Invalid connection key from {RemoteEndPoint}", request.RemoteEndPoint);
         }
+        
+        // ✅ UNCONNECTED EVENTS
+        public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
+        {
+            logger.LogDebug(
+                "Received UNCONNECTED packet from {EndPoint} (Type: {MessageType})", 
+                remoteEndPoint, 
+                messageType
+            );
+
+            // ✅ Usa HandleUnconnectedData para pacotes UNCONNECTED
+            packetProcessor.HandleUnconnectedData(remoteEndPoint, reader);
+            reader.Recycle();
+        }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode) { }
-        void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType) { }
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency) { }
     }

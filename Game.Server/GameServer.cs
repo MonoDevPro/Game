@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Net;
 using Game.Abstractions;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
@@ -5,19 +7,33 @@ using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Simulation;
+using Game.Persistence;
 using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Game.Server;
 
 /// <summary>
 /// High-level orchestration for networking, authentication and player lifecycle.
+/// Autor: MonoDevPro
+/// Data: 2025-01-12 06:04:47
 /// </summary>
 public sealed class GameServer : IDisposable
 {
+    /// <summary>
+    /// Representa uma conexão pendente aguardando autenticação.
+    /// </summary>
+    private sealed class PendingConnection
+    {
+        public INetPeerAdapter Peer { get; init; } = null!;
+        public DateTime ConnectedAt { get; init; }
+        public CancellationTokenSource TimeoutCts { get; init; } = new();
+    }
+    
     private readonly INetworkManager _networkManager;
     private readonly PlayerSessionManager _sessionManager;
     private readonly PlayerSpawnService _spawnService;
@@ -25,16 +41,22 @@ public sealed class GameServer : IDisposable
     private readonly ILogger<GameServer> _logger;
     private readonly GameSimulation _simulation;
     private readonly NetworkSecurity? _security;
+    private readonly SessionTokenManager _tokenManager;
+    private readonly int _connectionTimeoutSeconds;
+    
+    private readonly ConcurrentDictionary<int, PendingConnection> _pendingConnections = new();
 
     private bool _disposed;
 
     public GameServer(
+        IConfiguration configuration,
         INetworkManager networkManager,
         PlayerSessionManager sessionManager,
         PlayerSpawnService spawnService,
         IServiceScopeFactory scopeFactory,
         GameSimulation simulation,
         ILogger<GameServer> logger,
+        SessionTokenManager tokenManager, // ✅ Injetar
         NetworkSecurity? security = null)
     {
         _networkManager = networkManager;
@@ -44,18 +66,64 @@ public sealed class GameServer : IDisposable
         _simulation = simulation;
         _logger = logger;
         _security = security;
+        _tokenManager = tokenManager;
 
+        _connectionTimeoutSeconds = configuration.GetValue("GameServer:ConnectionTimeoutSeconds", 10);
+        
         _networkManager.OnPeerConnected += OnPeerConnected;
         _networkManager.OnPeerDisconnected += OnPeerDisconnected;
 
-        RegisterAndValidate<LoginRequestPacket>(HandleLoginRequest);
-        RegisterAndValidate<RegistrationRequestPacket>(HandleRegistrationRequest);
-        RegisterAndValidate<CharacterCreationRequestPacket>(HandleCharacterCreationRequest);
-        RegisterAndValidate<CharacterSelectionRequestPacket>(HandleCharacterSelectionAsync);
+        // ✅ UNCONNECTED PACKETS (Menu - sem conexão)
+        RegisterUnconnectedAndValidate<UnconnectedLoginRequestPacket>(HandleLoginRequest);
+        RegisterUnconnectedAndValidate<UnconnectedRegistrationRequestPacket>(HandleRegistrationRequest);
+        RegisterUnconnectedAndValidate<UnconnectedCharacterCreationRequestPacket>(HandleCharacterCreationRequest);
+        RegisterUnconnectedAndValidate<UnconnectedCharacterSelectionRequestPacket>(HandleCharacterSelectionRequest);
         
+        // ✅ CONNECTED PACKETS (In-game)
+        RegisterAndValidate<GameConnectPacket>(HandleGameConnect);
         RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
     }
+
     
+    /// <summary>
+    /// Registra handler UNCONNECTED com validação de segurança.
+    /// </summary>
+    private void RegisterUnconnectedAndValidate<T>(UnconnectedPacketHandler<T> handler) where T : struct, IPacket
+    {
+        if (_security is not null)
+        {
+            _networkManager.RegisterUnconnectedPacketHandler<T>(WrappedHandler);
+            return;
+        }
+        
+        _networkManager.RegisterUnconnectedPacketHandler<T>(handler);
+        return;
+        
+        void WrappedHandler(IPEndPoint remoteEndPoint, T packet)
+        {
+            if (_disposed)
+                return;
+            
+            if (_security is null)
+            {
+                handler(remoteEndPoint, packet);
+                return;
+            }
+                
+            if (_security.ValidateUnconnectedMessage(remoteEndPoint, packet))
+            {
+                handler(remoteEndPoint, packet);
+            }
+            else
+            {
+                _logger.LogWarning("Invalid unconnected message from endpoint {Endpoint}, ignoring", remoteEndPoint);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Registra handler CONNECTED com validação de segurança.
+    /// </summary>
     private void RegisterAndValidate<T>(PacketHandler<T> handler) where T : struct, IPacket
     {
         if (_security is not null)
@@ -63,6 +131,7 @@ public sealed class GameServer : IDisposable
             _networkManager.RegisterPacketHandler<T>(WrappedHandler);
             return;
         }
+        
         _networkManager.RegisterPacketHandler<T>(handler);
         return;
         
@@ -70,6 +139,7 @@ public sealed class GameServer : IDisposable
         {
             if (_disposed)
                 return;
+            
             if (_security is null)
             {
                 handler(peer, packet);
@@ -93,7 +163,7 @@ public sealed class GameServer : IDisposable
         if (_networkManager.IsRunning)
             return;
 
-        _networkManager.Start();
+        _networkManager.Initialize();
         _logger.LogInformation("Network server started");
     }
 
@@ -108,21 +178,74 @@ public sealed class GameServer : IDisposable
 
     private void OnPeerConnected(INetPeerAdapter peer)
     {
-        _logger.LogInformation("Peer connected: {PeerId}", peer.Id);
+        _logger.LogInformation("Peer connected: {PeerId} - Waiting for GameConnectPacket (timeout: {Timeout}s)", 
+            peer.Id, _connectionTimeoutSeconds);
+    
+        // ✅ Adiciona à lista de conexões pendentes
+        var pending = new PendingConnection
+        {
+            Peer = peer,
+            ConnectedAt = DateTime.UtcNow
+        };
+
+        _pendingConnections[peer.Id] = pending;
+
+        // ✅ Inicia timeout de 10 segundos
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(_connectionTimeoutSeconds), pending.TimeoutCts.Token);
+
+                // ✅ Se chegou aqui, timeout expirou
+                if (_pendingConnections.TryRemove(peer.Id, out _))
+                {
+                    _logger.LogWarning(
+                        "Peer {PeerId} did not authenticate within {Timeout} seconds - Disconnecting",
+                        peer.Id,
+                        _connectionTimeoutSeconds
+                    );
+
+                    peer.Disconnect();
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // ✅ Timeout foi cancelado (peer autenticou com sucesso)
+                _logger.LogDebug("Authentication timeout cancelled for peer {PeerId} (authenticated successfully)", peer.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in authentication timeout for peer {PeerId}", peer.Id);
+            }
+        }, pending.TimeoutCts.Token);
     }
 
     private void OnPeerDisconnected(INetPeerAdapter peer)
     {
         _logger.LogInformation("Peer disconnected: {PeerId}", peer.Id);
 
+        // ✅ Remove da lista de pendentes e cancela timeout
+        if (_pendingConnections.TryRemove(peer.Id, out var pending))
+        {
+            pending.TimeoutCts.Cancel();
+            pending.TimeoutCts.Dispose();
+            _logger.LogDebug("Pending connection removed for peer {PeerId}", peer.Id);
+        }
+
+        // ✅ Remove sessão de jogo (se existir)
         if (_sessionManager.TryRemoveByPeer(peer, out var session))
         {
             if (session is not null && _simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+            {
                 _ = PersistCharacterAsync(session, position, direction);
+            }
 
             if (session is not null)
+            {
                 _spawnService.DespawnPlayer(session);
-            
+            }
+        
             _security?.RemovePeer(peer);
 
             var packet = new PlayerDespawnPacket(peer.Id);
@@ -130,24 +253,45 @@ public sealed class GameServer : IDisposable
         }
     }
 
-    private void HandleLoginRequest(INetPeerAdapter peer, LoginRequestPacket packet)
+    // ========== UNCONNECTED HANDLERS (Menu - sem conexão) ==========
+
+    /// <summary>
+    /// ✅ Handler UNCONNECTED de login.
+    /// </summary>
+    private void HandleLoginRequest(IPEndPoint remoteEndPoint, UnconnectedLoginRequestPacket packet)
     {
-        _ = ProcessLoginAsync(peer, packet);
+        _ = ProcessLoginAsync(remoteEndPoint, packet);
     }
 
-    private void HandlePlayerInput(INetPeerAdapter peer, PlayerInputPacket packet)
+    /// <summary>
+    /// ✅ Handler UNCONNECTED de registro.
+    /// </summary>
+    private void HandleRegistrationRequest(IPEndPoint remoteEndPoint, UnconnectedRegistrationRequestPacket packet)
     {
-        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
-        {
-            _logger.LogWarning("Received PlayerInputPacket from unknown peer {PeerId}", peer.Id);
-            return;
-        }
-
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Movement, packet.MouseLook, packet.Buttons))
-            _logger.LogDebug("Applied input from peer {PeerId}: Movement={Movement}, MouseLook={MouseLook}, Buttons={Buttons}", peer.Id, packet.Movement, packet.MouseLook, packet.Buttons);
+        _ = ProcessRegistrationAsync(remoteEndPoint, packet);
     }
-
-    private async Task ProcessLoginAsync(INetPeerAdapter peer, LoginRequestPacket packet)
+    
+    /// <summary>
+    /// ✅ Handler UNCONNECTED de criação de personagem.
+    /// PROBLEMA: Não temos como identificar a conta sem conexão!
+    /// SOLUÇÃO: Implementar sistema de tokens de sessão.
+    /// </summary>
+    private void HandleCharacterCreationRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterCreationRequestPacket packet)
+    {
+        _ = ProcessCharacterCreationAsync(remoteEndPoint, packet);
+    }
+    
+    /// <summary>
+    /// ✅ Handler UNCONNECTED de seleção de personagem.
+    /// PROBLEMA: Não temos como identificar a conta sem conexão!
+    /// SOLUÇÃO: Implementar sistema de tokens de sessão.
+    /// </summary>
+    private void HandleCharacterSelectionRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterSelectionRequestPacket packet)
+    {
+        _ = ProcessCharacterSelectionAsync(remoteEndPoint, packet);
+    }
+    
+    private async Task ProcessLoginAsync(IPEndPoint remoteEndPoint, UnconnectedLoginRequestPacket packet)
     {
         try
         {
@@ -158,20 +302,14 @@ public sealed class GameServer : IDisposable
 
             if (!loginResult.Success || loginResult.Account is null)
             {
-                var response = LoginResponsePacket.Failure(loginResult.Message);
-                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                var response = UnconnectedLoginResponsePacket.Failure(loginResult.Message);
+                _networkManager.SendUnconnected(remoteEndPoint, response);
                 return;
             }
 
-            var session = new PlayerSession(peer, loginResult.Account, loginResult.Characters);
-            if (!_sessionManager.TryAddSession(session, out var error))
-            {
-                _spawnService.DespawnPlayer(session);
-                var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
-                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                return;
-            }
-            
+            // ✅ Cria token de sessão
+            var sessionToken = _tokenManager.CreateSession(loginResult.Account.Id, loginResult.Account);
+
             var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
             {
                 Id = c.Id,
@@ -180,25 +318,22 @@ public sealed class GameServer : IDisposable
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
-            
-            var successResponse = LoginResponsePacket.SuccessResponse(playerCharacters);
-            _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            
+        
+            var successResponse = UnconnectedLoginResponsePacket.SuccessResponse(sessionToken, playerCharacters);
+            _networkManager.SendUnconnected(remoteEndPoint, successResponse);
+        
+            _logger.LogInformation("Unconnected login successful for {Username} from {EndPoint} (Token: {Token})", 
+                packet.Username, remoteEndPoint, sessionToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao processar login para peer {PeerId}", peer.Id);
-            var response = LoginResponsePacket.Failure("Erro interno no servidor.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _logger.LogError(ex, "Error processing unconnected login from {EndPoint}", remoteEndPoint);
+            var response = UnconnectedLoginResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendUnconnected(remoteEndPoint, response);
         }
     }
 
-    private void HandleRegistrationRequest(INetPeerAdapter peer, RegistrationRequestPacket packet)
-    {
-        _ = ProcessRegistrationAsync(peer, packet);
-    }
-
-    private async Task ProcessRegistrationAsync(INetPeerAdapter peer, RegistrationRequestPacket packet)
+    private async Task ProcessRegistrationAsync(IPEndPoint remoteEndPoint, UnconnectedRegistrationRequestPacket packet)
     {
         try
         {
@@ -213,34 +348,28 @@ public sealed class GameServer : IDisposable
 
             if (!registrationResult.IsSuccess)
             {
-                var failure = RegistrationResponsePacket.Failure(registrationResult.Message);
-                _networkManager.SendToPeer(peer, failure, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                var failure = UnconnectedRegistrationResponsePacket.Failure(registrationResult.Message);
+                _networkManager.SendUnconnected(remoteEndPoint, failure);
                 return;
             }
 
-            var success = RegistrationResponsePacket.Ok();
-            _networkManager.SendToPeer(peer, success, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var success = UnconnectedRegistrationResponsePacket.Ok();
+            _networkManager.SendUnconnected(remoteEndPoint, success);
 
+            // ✅ Auto-login após registro
             var loginService = scope.ServiceProvider.GetRequiredService<AccountLoginService>();
             var loginResult = await loginService.AuthenticateAsync(packet.Username, packet.Password, CancellationToken.None);
 
             if (!loginResult.Success || loginResult.Account is null)
             {
-                var response = LoginResponsePacket.Failure(loginResult.Message);
-                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                var response = UnconnectedLoginResponsePacket.Failure(loginResult.Message);
+                _networkManager.SendUnconnected(remoteEndPoint, response);
                 return;
             }
-            
-            var session = new PlayerSession(peer, loginResult.Account, loginResult.Characters);
-            
-            if (!_sessionManager.TryAddSession(session, out var error))
-            {
-                _spawnService.DespawnPlayer(session);
-                var response = LoginResponsePacket.Failure(error ?? "Falha ao criar sessão.");
-                _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                return;
-            }
-            
+        
+            // ✅ Cria token de sessão
+            var sessionToken = _tokenManager.CreateSession(loginResult.Account.Id, loginResult.Account);
+
             var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
             {
                 Id = c.Id,
@@ -249,121 +378,221 @@ public sealed class GameServer : IDisposable
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
-            
-            var successResponse = LoginResponsePacket.SuccessResponse(playerCharacters);
-            _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        
+            var successResponse = UnconnectedLoginResponsePacket.SuccessResponse(sessionToken, playerCharacters);
+            _networkManager.SendUnconnected(remoteEndPoint, successResponse);
+        
+            _logger.LogInformation("Account registered and logged in: {Username} from {EndPoint} (Token: {Token})", 
+                packet.Username, remoteEndPoint, sessionToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao processar registro para peer {PeerId}", peer.Id);
-            var response = RegistrationResponsePacket.Failure("Erro interno no servidor.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _logger.LogError(ex, "Error processing unconnected registration from {EndPoint}", remoteEndPoint);
+            var response = UnconnectedRegistrationResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendUnconnected(remoteEndPoint, response);
         }
     }
-    
-    private void HandleCharacterCreationRequest(INetPeerAdapter peer, CharacterCreationRequestPacket requestPacket)
+
+// ✅ IMPLEMENTAÇÃO COMPLETA DE CHARACTER CREATION
+    private async Task ProcessCharacterCreationAsync(IPEndPoint remoteEndPoint, UnconnectedCharacterCreationRequestPacket packet)
     {
-        _ = ProcessCharacterCreationAsync(peer, requestPacket);
+        try
+        {
+            // ✅ Valida token de sessão
+            if (!_tokenManager.ValidateToken(packet.SessionToken, out var accountId, out var account))
+            {
+                var response = UnconnectedCharacterCreationResponsePacket.Failure("Sessão inválida ou expirada.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning("Invalid session token for character creation from {EndPoint}", remoteEndPoint);
+                return;
+            }
+
+            using var scope = _scopeFactory.CreateScope();
+            var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
+        
+            var creationResult = await characterService.CreateCharacterAsync( 
+                new AccountCharacterService.CharacterInfo(
+                    accountId,
+                    packet.Name,
+                    1,
+                    packet.Vocation,
+                    packet.Gender
+                ), CancellationToken.None);
+
+            if (!creationResult.Success || creationResult.Character is null)
+            {
+                var response = UnconnectedCharacterCreationResponsePacket.Failure(creationResult.Message);
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                return;
+            }
+        
+            // ✅ Adiciona personagem à conta na sessão
+            account!.Characters.Add(creationResult.Character);
+        
+            var charData = new PlayerCharData
+            {
+                Id = creationResult.Character.Id,
+                Name = creationResult.Character.Name,
+                Level = creationResult.Character.Stats?.Level ?? 1,
+                Vocation = creationResult.Character.Vocation,
+                Gender = creationResult.Character.Gender
+            };
+        
+            var successResponse = UnconnectedCharacterCreationResponsePacket.Ok(charData);
+            _networkManager.SendUnconnected(remoteEndPoint, successResponse);
+        
+            _logger.LogInformation("Character created via unconnected: {CharacterName} for account {AccountId} from {EndPoint}", 
+                creationResult.Character.Name, accountId, remoteEndPoint);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing character creation from {EndPoint}", remoteEndPoint);
+            var response = UnconnectedCharacterCreationResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendUnconnected(remoteEndPoint, response);
+        }
     }
 
-    private async Task ProcessCharacterCreationAsync(INetPeerAdapter peer, CharacterCreationRequestPacket requestPacket)
+// ✅ IMPLEMENTAÇÃO COMPLETA DE CHARACTER SELECTION
+    private Task ProcessCharacterSelectionAsync(IPEndPoint remoteEndPoint, UnconnectedCharacterSelectionRequestPacket packet)
     {
-        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
+        try
         {
-            _logger.LogWarning("Received CreateCharacter request from unknown peer {PeerId}", peer.Id);
-            var response = CharacterCreationResponsePacket.Failure("Sessão não encontrada.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
-                NetworkDeliveryMethod.ReliableOrdered);
+            // ✅ Valida token de sessão
+            if (!_tokenManager.ValidateToken(packet.SessionToken, out var accountId, out var account))
+            {
+                var response = UnconnectedCharacterSelectionResponsePacket.Failure("Sessão inválida ou expirada.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning("Invalid session token for character selection from {EndPoint}", remoteEndPoint);
+                return Task.CompletedTask;
+            }
+        
+            var character = account!.Characters.FirstOrDefault(c => c.Id == packet.CharacterId);
+        
+            if (character is null)
+            {
+                var response = UnconnectedCharacterSelectionResponsePacket.Failure("Personagem não encontrado.");
+                _networkManager.SendUnconnected(remoteEndPoint, response);
+                _logger.LogWarning("Character {CharacterId} not found for account {AccountId}", packet.CharacterId, accountId);
+                return Task.CompletedTask;
+            }
+        
+            var successResponse = UnconnectedCharacterSelectionResponsePacket.Ok(character.Id);
+            _networkManager.SendUnconnected(remoteEndPoint, successResponse);
+        
+            _logger.LogInformation("Character selected via unconnected: {CharacterName} (ID: {CharacterId}) for account {AccountId} from {EndPoint}", 
+                character.Name, character.Id, accountId, remoteEndPoint);
+            
+            var sessionToken = _tokenManager.CreateGameToken(accountId, character.Id);
+            _logger.LogDebug("Game token created for account {AccountId}, character {CharacterId}: {Token}", accountId, character.Id, sessionToken);
+            
+            // ✅ Envia token de jogo ao cliente
+            var tokenPacket = new UnconnectedGameTokenResponsePacket(sessionToken);
+            _networkManager.SendUnconnected(remoteEndPoint, tokenPacket);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing character selection from {EndPoint}", remoteEndPoint);
+            var response = UnconnectedCharacterSelectionResponsePacket.Failure("Erro interno no servidor.");
+            _networkManager.SendUnconnected(remoteEndPoint, response);
+        }
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+/// ✅ Handler de conexão real com game token.
+/// AQUI é onde o GameDataPacket é enviado!
+/// </summary>
+private void HandleGameConnect(INetPeerAdapter peer, GameConnectPacket packet)
+{
+    _ = ProcessGameConnectAsync(peer, packet);
+}
+
+private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPacket packet)
+{
+    try
+    {
+        // ✅ Remove da lista de pendentes e cancela timeout
+        if (_pendingConnections.TryRemove(peer.Id, out var pending))
+        {
+            pending.TimeoutCts.Cancel();
+            pending.TimeoutCts.Dispose();
+            
+            _logger.LogDebug("Peer {PeerId} authenticated - Timeout cancelled", peer.Id);
+        }
+        else
+        {
+            _logger.LogWarning("Peer {PeerId} sent GameConnectPacket but was not in pending list", peer.Id);
+        }
+
+        // ✅ 1. Valida game token
+        if (!_tokenManager.ValidateAndConsumeGameToken(packet.GameToken, out var accountId, out var characterId))
+        {
+            _logger.LogWarning("Invalid or expired game token from peer {PeerId}", peer.Id);
+            peer.Disconnect();
             return;
         }
 
+        _logger.LogInformation(
+            "Valid game token from peer {PeerId} - AccountId: {AccountId}, CharacterId: {CharacterId}",
+            peer.Id, accountId, characterId
+        );
+
+        // ✅ 2. Carrega conta e personagem do banco
         using var scope = _scopeFactory.CreateScope();
-        var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
-        var creationResult = await characterService.CreateCharacterAsync( 
-            new AccountCharacterService.CharacterInfo(
-                session.Account.Id,
-                requestPacket.Name,
-                1,
-                requestPacket.Vocation,
-                requestPacket.Gender
-            ), CancellationToken.None);
+        var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+        
+        var account = await dbContext.Accounts
+            .Include(a => a.Characters)
+            .ThenInclude(c => c.Stats)
+            .FirstOrDefaultAsync(a => a.Id == accountId);
 
-        if (!creationResult.Success)
+        if (account is null)
         {
-            var response = CharacterCreationResponsePacket.Failure(creationResult.Message);
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
-                NetworkDeliveryMethod.ReliableOrdered);
+            _logger.LogError("Account {AccountId} not found for peer {PeerId}", accountId, peer.Id);
+            peer.Disconnect();
             return;
         }
-        
-        if (creationResult.Character is null)
-        {
-            var response = CharacterCreationResponsePacket.Failure("Falha ao criar personagem.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation,
-                NetworkDeliveryMethod.ReliableOrdered);
-            return;
-        }
-        
-        session.Account.Characters.Add(creationResult.Character);
-        creationResult.Character.Account = session.Account;
-        var charData = new PlayerCharData
-        {
-            Id = creationResult.Character!.Id,
-            Name = creationResult.Character.Name,
-            Level = creationResult.Character.Stats?.Level ?? 1,
-            Vocation = creationResult.Character.Vocation,
-            Gender = creationResult.Character.Gender
-        };
-        var successResponse = CharacterCreationResponsePacket.Ok(charData);
-        _networkManager.SendToPeer(peer, successResponse, NetworkChannel.Simulation,
-            NetworkDeliveryMethod.ReliableOrdered);
-        _logger.LogInformation("Character created: {CharacterName} (peer {PeerId})", creationResult.Character.Name, peer.Id);
-    }
-    
-    private void HandleCharacterSelectionAsync(INetPeerAdapter peer, CharacterSelectionRequestPacket requestPacket)
-    {
-        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
-        {
-            _logger.LogWarning("Received SelectCharacter request from unknown peer {PeerId}", peer.Id);
-            var response = LoginResponsePacket.Failure("Sessão não encontrada.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            return;
-        }
-        
-        if (session.SelectedCharacter is not null)
-        {
-            _logger.LogWarning("Peer {PeerId} attempted to select a character but already has one selected", peer.Id);
-            var response = LoginResponsePacket.Failure("Personagem já selecionado.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            return;
-        }
-        
-        var characterId = requestPacket.CharacterId;
-        var character = session.Account.Characters.FirstOrDefault(c => c.Id == characterId);
-        
+
+        var character = account.Characters.FirstOrDefault(c => c.Id == characterId);
+
         if (character is null)
         {
-            _logger.LogWarning("Character {CharacterId} not found for account {AccountId}", characterId, session.Account.Id);
-            var response = LoginResponsePacket.Failure("Personagem não encontrado.");
-            _networkManager.SendToPeer(peer, response, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _logger.LogError("Character {CharacterId} not found for peer {PeerId}", characterId, peer.Id);
+            peer.Disconnect();
             return;
         }
-        
-        session.SelectedCharacter = character;
-        var responsePacket = CharacterSelectionResponsePacket.Ok(character.Id);
-        _networkManager.SendToPeer(peer, responsePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        
+
+        // ✅ 3. Cria sessão do jogador
+        var session = new PlayerSession(peer, account, account.Characters.ToArray())
+        {
+            SelectedCharacter = character
+        };
+
+        if (!_sessionManager.TryAddSession(session, out var error))
+        {
+            _logger.LogError("Failed to create session for peer {PeerId}: {Error}", peer.Id, error);
+            peer.Disconnect();
+            return;
+        }
+
+        // ✅ 4. Spawna jogador no mundo
         _spawnService.SpawnPlayer(session);
+
+        // ✅ 5. Monta dados do jogo
         var localSnapshot = _spawnService.BuildSnapshot(session);
         var othersSnapshots = _sessionManager
             .GetSnapshotExcluding(peer.Id)
             .Select(existing => _spawnService.BuildSnapshot(existing))
             .ToArray();
+
+        // ✅ 6. Broadcasta spawn para outros jogadores
         var spawnPacket = new PlayerSpawnPacket(localSnapshot);
         _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        
-        
-        var mapService = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<MapService>();
+
+        // ✅ 7. Envia dados do mapa
+        var mapService = scope.ServiceProvider.GetRequiredService<MapService>();
+
+        // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
         var gameDataPacket = new GameDataPacket
         {
             MapData = new MapData
@@ -377,27 +606,47 @@ public sealed class GameServer : IDisposable
             LocalPlayer = localSnapshot,
             OtherPlayers = othersSnapshots
         };
+
         _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        
-        _logger.LogInformation("Player Selected Character {} (peer {PeerId})", character.Name, peer.Id);
+
+        _logger.LogInformation(
+            "Player '{CharacterName}' entered the game (Peer: {PeerId}, NetID: {NetworkId})",
+            character.Name, peer.Id, localSnapshot.NetworkId
+        );
     }
-    
-    public void Dispose()
+    catch (Exception ex)
     {
-        if (_disposed)
+        _logger.LogError(ex, "Error processing game connect for peer {PeerId}", peer.Id);
+        peer.Disconnect();
+    }
+}
+
+    // ========== CONNECTED HANDLERS (In-game) ==========
+
+    /// <summary>
+    /// ✅ Handler CONNECTED de input de jogador.
+    /// </summary>
+    private void HandlePlayerInput(INetPeerAdapter peer, PlayerInputPacket packet)
+    {
+        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {
+            _logger.LogWarning("Received PlayerInputPacket from unknown peer {PeerId}", peer.Id);
             return;
         }
 
-        _disposed = true;
-        _networkManager.OnPeerConnected -= OnPeerConnected;
-        _networkManager.OnPeerDisconnected -= OnPeerDisconnected;
-        _networkManager.UnregisterPacketHandler<LoginRequestPacket>();
-        _networkManager.UnregisterPacketHandler<RegistrationRequestPacket>();
-        _networkManager.UnregisterPacketHandler<CharacterCreationRequestPacket>();
-        _networkManager.UnregisterPacketHandler<CharacterSelectionRequestPacket>();
-        _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
+        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Movement, packet.MouseLook, packet.Buttons))
+        {
+            _logger.LogDebug(
+                "Applied input from peer {PeerId}: Movement={Movement}, MouseLook={MouseLook}, Buttons={Buttons}", 
+                peer.Id, 
+                packet.Movement, 
+                packet.MouseLook, 
+                packet.Buttons
+            );
+        }
     }
+
+    // ========== PERSISTENCE ==========
 
     private async Task PersistCharacterAsync(PlayerSession session, Coordinate position, DirectionEnum facing)
     {
@@ -405,6 +654,7 @@ public sealed class GameServer : IDisposable
         {
             using var scope = _scopeFactory.CreateScope();
             var persistence = scope.ServiceProvider.GetRequiredService<PlayerPersistenceService>();
+            
             if (session.SelectedCharacter is null)
                 return;
 
@@ -425,5 +675,43 @@ public sealed class GameServer : IDisposable
         {
             _logger.LogError(ex, "Failed to persist character {Character}", session.SelectedCharacter?.Name);
         }
+    }
+
+    // ========== DISPOSE ==========
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+    
+        // ✅ Cancela todos os timeouts pendentes
+        foreach (var pending in _pendingConnections.Values)
+        {
+            try
+            {
+                pending.TimeoutCts.Cancel();
+                pending.TimeoutCts.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disposing pending connection for peer {PeerId}", pending.Peer.Id);
+            }
+        }
+        _pendingConnections.Clear();
+    
+        _networkManager.OnPeerConnected -= OnPeerConnected;
+        _networkManager.OnPeerDisconnected -= OnPeerDisconnected;
+    
+        // ✅ Desregistra handlers unconnected
+        _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedLoginRequestPacket>();
+        _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedRegistrationRequestPacket>();
+        _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterCreationRequestPacket>();
+        _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterSelectionRequestPacket>();
+    
+        // ✅ Desregistra handlers connected
+        _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
+        _networkManager.UnregisterPacketHandler<GameConnectPacket>();
     }
 }

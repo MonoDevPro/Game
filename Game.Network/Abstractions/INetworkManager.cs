@@ -1,15 +1,21 @@
+using System.Net;
+
 namespace Game.Network.Abstractions;
 
 public interface IPacket;
 
 public enum NetworkChannel : byte
 {
+    Menu,
     Simulation,
     Chat,
 }
 
 public delegate void PacketHandler<in T>(INetPeerAdapter fromPeer, T packet) 
     where T : IPacket;
+
+// ✅ Delegate para handlers unconnected
+public delegate void UnconnectedPacketHandler<T>(IPEndPoint remoteEndPoint, T packet) where T : struct, IPacket;
 
 public enum NetworkDeliveryMethod : byte
 {
@@ -46,13 +52,18 @@ public interface INetworkManager
     IPeerRepository Peers { get; }
 
     // Métodos de ciclo de vida.
-    void Start();
+    void Initialize();
+    void ConnectToServer();
     void Stop();
     void PollEvents();
 
     // Registro de handlers de pacotes.
     void RegisterPacketHandler<T>(PacketHandler<T> handler) where T : struct, IPacket;
     bool UnregisterPacketHandler<T>() where T : struct, IPacket;
+    
+    // ✅ UNCONNECTED PACKETS
+    void RegisterUnconnectedPacketHandler<T>(UnconnectedPacketHandler<T> handler) where T : struct, IPacket;
+    bool UnregisterUnconnectedPacketHandler<T>() where T : struct, IPacket;
 
     // Métodos de envio de pacotes.
     void SendToServer<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket;
@@ -60,4 +71,5 @@ public interface INetworkManager
     void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket;
     void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket;
     void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket;
+    void SendUnconnected<T>(IPEndPoint endPoint, T packet) where T : struct, IPacket;
 }

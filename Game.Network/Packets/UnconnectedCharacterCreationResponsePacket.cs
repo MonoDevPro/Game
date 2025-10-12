@@ -8,19 +8,19 @@ namespace Game.Network.Packets;
 /// Server -> Client notification when a player leaves the world.
 /// </summary>
 [MemoryPackable]
-public readonly partial struct CharacterCreationResponsePacket : IPacket
+public readonly partial struct UnconnectedCharacterCreationResponsePacket : IPacket
 {
     public bool Success { get; init; }
     public string Message { get; init; }
     public PlayerCharData CreatedCharacter { get; init; }
     
-    private CharacterCreationResponsePacket(bool success, string message, PlayerCharData createdCharacter)
+    private UnconnectedCharacterCreationResponsePacket(bool success, string message, PlayerCharData createdCharacter)
     {
         Success = success;
         Message = message;
         CreatedCharacter = createdCharacter;
     }
     
-    public static CharacterCreationResponsePacket Failure(string message) => new(false, message, default);
-    public static CharacterCreationResponsePacket Ok(PlayerCharData createdCharacter) => new(true, string.Empty, createdCharacter);
+    public static UnconnectedCharacterCreationResponsePacket Failure(string message) => new(false, message, default);
+    public static UnconnectedCharacterCreationResponsePacket Ok(PlayerCharData createdCharacter) => new(true, string.Empty, createdCharacter);
 }

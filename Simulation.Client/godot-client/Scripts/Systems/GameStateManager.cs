@@ -1,5 +1,6 @@
 using System;
 using Game.Network.Packets;
+using Game.Network.Packets.Simulation;
 using Godot;
 
 namespace GodotClient.Systems;

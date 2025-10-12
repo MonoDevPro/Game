@@ -36,6 +36,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<GameSimulation>();
             
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
+            services.AddSingleton<SessionTokenManager>();
             services.AddScoped<AccountLoginService>();
             services.AddScoped<AccountRegistrationService>();
             services.AddScoped<AccountCharacterService>();

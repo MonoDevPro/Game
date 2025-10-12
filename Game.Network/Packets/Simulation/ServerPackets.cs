@@ -6,6 +6,14 @@ using MemoryPack;
 namespace Game.Network.Packets.Simulation;
 
 [MemoryPackable]
+public readonly partial struct GameDataPacket : IPacket
+{
+    public MapData MapData { get; init; }
+    public PlayerSnapshot LocalPlayer { get; init; }
+    public PlayerSnapshot[] OtherPlayers { get; init; }
+}
+
+[MemoryPackable]
 public readonly partial record struct PlayerSpawnPacket(PlayerSnapshot Player) : IPacket;
 
 /// <summary>

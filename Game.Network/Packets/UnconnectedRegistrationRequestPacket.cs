@@ -8,7 +8,7 @@ namespace Game.Network.Packets;
 /// Client -> Server request to create a new account and starter character.
 /// </summary>
 [MemoryPackable]
-public partial struct RegistrationRequestPacket(
+public partial struct UnconnectedRegistrationRequestPacket(
     string username,
     string email,
     string password)

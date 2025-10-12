@@ -1,22 +1,24 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Net;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Simulation;
 using Godot;
 using GodotClient.Systems;
 
 namespace GodotClient.Scenes.Menu;
 
 /// <summary>
-/// Controlador do menu com autenticação completa (Login/Registro/Criação/Seleção).
+/// Controlador do menu com autenticação completa usando UNCONNECTED packets.
 /// Autor: MonoDevPro
-/// Data: 2025-01-11 22:01:06
+/// Data: 2025-01-12 06:54:48
 /// </summary>
 public partial class MenuScript : Control
 {
     private INetworkManager? _network;
+    private IPEndPoint? _serverEndPoint;
     private Label? _statusLabel;
     
     // Configurações
@@ -26,15 +28,18 @@ public partial class MenuScript : Control
     private CharacterCreationConfiguration _characterCreation = null!;
     private CharacterSelectionConfiguration _characterSelection = null!;
     
-    // Estado de autenticação
-    private bool _isAuthenticated;
+    // ✅ Estado de autenticação COM TOKENS
+    private string? _sessionToken;
+    private string? _gameToken; // ✅ ADICIONADO
     private bool _registrationAttempted;
     private bool _loginAttempted;
     private bool _gameDataReceived;
+    private bool _isConnecting; // ✅ ADICIONADO
     
     // ✅ Cache de personagens disponíveis
     private readonly List<PlayerCharData> _availableCharacters = new();
     
+    // UI Components
     private Window _loginWindow = null!;
     private Window _registerWindow = null!;
     private Button _loginButton = null!;
@@ -52,9 +57,6 @@ public partial class MenuScript : Control
         InitializeNetwork();
     }
 
-    /// <summary>
-    /// Cria label de status (HUD temporário).
-    /// </summary>
     private void CreateStatusLabel()
     {
         var statusLayer = new CanvasLayer { Name = "HudLayer" };
@@ -69,9 +71,6 @@ public partial class MenuScript : Control
         AddChild(statusLayer);
     }
 
-    /// <summary>
-    /// Carrega configurações do ConfigManager.
-    /// </summary>
     private void LoadConfigurations()
     {
         var configManager = ConfigManager.Instance;
@@ -108,7 +107,79 @@ public partial class MenuScript : Control
         _openRegisterButton.Disabled = _loginAttempted || _gameDataReceived;
         _exitButton.Disabled = _loginAttempted || _gameDataReceived;
     }
-    
+
+    /// <summary>
+    /// ✅ Inicializa rede SEM CONECTAR - apenas prepara para unconnected.
+    /// </summary>
+    private void InitializeNetwork()
+    {
+        UpdateStatus($"Network Options: Server={_netOptions.ServerAddress}:{_netOptions.ServerPort}");
+        
+        // ✅ Cria endpoint do servidor
+        _serverEndPoint = new IPEndPoint(
+            IPAddress.Parse(_netOptions.ServerAddress),
+            _netOptions.ServerPort
+        );
+        
+        // ✅ Inicializa network manager
+        _network = NetworkClient.Instance.Initialize(_netOptions);
+
+        // ✅ Eventos de conexão
+        _network.OnPeerConnected += OnPeerConnected;
+        _network.OnPeerDisconnected += OnPeerDisconnected;
+
+        // ✅ Registra handlers UNCONNECTED
+        _network.RegisterUnconnectedPacketHandler<UnconnectedLoginResponsePacket>(HandleLoginResponse);
+        _network.RegisterUnconnectedPacketHandler<UnconnectedRegistrationResponsePacket>(HandleRegistrationResponse);
+        _network.RegisterUnconnectedPacketHandler<UnconnectedCharacterCreationResponsePacket>(HandleCharacterCreationResponse);
+        _network.RegisterUnconnectedPacketHandler<UnconnectedCharacterSelectionResponsePacket>(HandleCharacterSelectionResponse);
+        _network.RegisterUnconnectedPacketHandler<UnconnectedGameTokenResponsePacket>(HandleGameTokenResponse); // ✅ ADICIONADO
+        
+        // ✅ Registra handler CONNECTED (GameData vem após conexão)
+        _network.RegisterPacketHandler<GameDataPacket>(HandleGameData); // ✅ CORRIGIDO
+        
+        // ✅ Inicia network manager (para receber unconnected)
+        NetworkClient.Instance.Start();
+        
+        UpdateStatus("Network initialized. Ready to authenticate.");
+        
+        // ✅ Auto-register/login se configurado
+        if (_registration.AutoRegister && !_registrationAttempted)
+        {
+            TrySendRegistration();
+        }
+        else if (_login.AutoLogin && !_loginAttempted)
+        {
+            TrySendLogin();
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        base._ExitTree();
+
+        UnloadMenuComponents();
+
+        if (_network is not null)
+        {
+            // ✅ Remove eventos
+            _network.OnPeerConnected -= OnPeerConnected;
+            _network.OnPeerDisconnected -= OnPeerDisconnected;
+
+            // ✅ Desregistra handlers unconnected
+            _network.UnregisterUnconnectedPacketHandler<UnconnectedLoginResponsePacket>();
+            _network.UnregisterUnconnectedPacketHandler<UnconnectedRegistrationResponsePacket>();
+            _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterCreationResponsePacket>();
+            _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterSelectionResponsePacket>();
+            _network.UnregisterUnconnectedPacketHandler<UnconnectedGameTokenResponsePacket>(); // ✅ ADICIONADO
+            
+            // ✅ Desregistra handler connected
+            _network.UnregisterPacketHandler<GameDataPacket>();
+        }
+        
+        GD.Print("[Menu] Unloaded");
+    }
+
     private void UnloadMenuComponents()
     {
         _loginButton.Pressed -= TrySendLogin;
@@ -117,83 +188,49 @@ public partial class MenuScript : Control
         _exitButton.Pressed -= ExitGame;
     }
 
-    /// <summary>
-    /// Inicializa rede e registra handlers.
-    /// </summary>
-    private void InitializeNetwork()
-    {
-        UpdateStatus($"Network Options: {_netOptions}");
-        
-        // ✅ Usa singleton NetworkClient
-        _network = NetworkClient.Instance.Initialize(_netOptions);
-        _network.OnPeerConnected += OnPeerConnected;
-        _network.OnPeerDisconnected += OnPeerDisconnected;
-
-        // ✅ Registra handlers de autenticação
-        _network.RegisterPacketHandler<LoginResponsePacket>(HandleLoginResponse);
-        _network.RegisterPacketHandler<RegistrationResponsePacket>(HandleRegistrationResponse);
-        _network.RegisterPacketHandler<CharacterCreationResponsePacket>(HandleCharacterCreationResponse);
-        _network.RegisterPacketHandler<CharacterSelectionResponsePacket>(HandleCharacterSelectionResponse);
-        _network.RegisterPacketHandler<GameDataPacket>(ProcessGameData); 
-        
-        UpdateStatus("Network initialized.");
-        
-        // Conecta ao servidor
-        UpdateStatus("Connecting to server...");
-        NetworkClient.Instance.Start();
-    }
-
-    public override void _ExitTree()
-    {
-        base._ExitTree();
-
-        if (_network is not null)
-        {
-            _network.OnPeerConnected -= OnPeerConnected;
-            _network.OnPeerDisconnected -= OnPeerDisconnected;
-            
-            // ✅ Desregistra handlers
-            _network.UnregisterPacketHandler<LoginResponsePacket>();
-            _network.UnregisterPacketHandler<RegistrationResponsePacket>();
-            _network.UnregisterPacketHandler<CharacterCreationResponsePacket>();
-            _network.UnregisterPacketHandler<CharacterSelectionResponsePacket>();
-            _network.UnregisterPacketHandler<GameDataPacket>();
-        }
-        
-        GD.Print("[Menu] Unloaded");
-    }
-
     // ========== EVENTOS DE REDE ==========
 
+    /// <summary>
+    /// ✅ Chamado quando conecta ao servidor (após receber game token).
+    /// </summary>
     private void OnPeerConnected(INetPeerAdapter peer)
     {
-        UpdateStatus("Connected to server. Preparing session...");
+        GD.Print($"[Menu] Connected to server (Peer: {peer.Id})");
+        UpdateStatus("Connected! Authenticating...");
 
-        // Fluxo: Registro (se necessário) → Login
-        if (_registration.AutoRegister && !_registrationAttempted)
+        // ✅ Envia GameConnectPacket com o game token
+        if (!string.IsNullOrWhiteSpace(_gameToken))
         {
-            TrySendRegistration();
-            return;
+            var packet = new GameConnectPacket(_gameToken);
+            _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            
+            GD.Print($"[Menu] Sent GameConnectPacket with token: {_gameToken}");
+            UpdateStatus("Sent authentication token. Waiting for game data...");
         }
-
-        if (_login.AutoLogin && !_loginAttempted)
+        else
         {
-            TrySendLogin();
+            GD.PushError("[Menu] Connected but no game token available!");
+            UpdateStatus("Error: No game token");
         }
     }
 
     private void OnPeerDisconnected(INetPeerAdapter peer)
     {
         GD.PushWarning("[Menu] Disconnected from server");
-        ResetState();
         UpdateStatus("Disconnected from server");
+        
+        if (!_gameDataReceived)
+        {
+            // ✅ Se desconectou antes de receber game data, reseta estado
+            ResetState();
+        }
     }
 
-    // ========== ENVIO DE PACOTES ==========
+    // ========== ENVIO DE PACOTES UNCONNECTED ==========
 
     private void TrySendRegistration()
     {
-        if (_network is null || _registrationAttempted)
+        if (_network is null || _serverEndPoint is null || _registrationAttempted)
             return;
         
         _registration.Username = GetNode<LineEdit>("%RegisterUserLineEdit").Text.Trim();
@@ -204,7 +241,6 @@ public partial class MenuScript : Control
         if (_registration.Password != registerConfirm)
         {
             UpdateStatus("Registration failed: passwords do not match");
-            _registrationAttempted = false;
             return;
         }
         
@@ -220,29 +256,30 @@ public partial class MenuScript : Control
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            UpdateStatus("Registration failed: username or password missing in config");
+            UpdateStatus("Registration failed: username or password missing");
             _registrationAttempted = false;
             return;
         }
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            UpdateStatus("Registration failed: email missing in config");
+            UpdateStatus("Registration failed: email missing");
             _registrationAttempted = false;
             return;
         }
 
-        var packet = new RegistrationRequestPacket(username, email, password);
-        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        var packet = new UnconnectedRegistrationRequestPacket(username, email, password);
+        _network.SendUnconnected(_serverEndPoint, packet);
+        
         UpdateStatus($"Registering user '{username}'...");
         
-        _registerWindow.Hide();
-        _loginWindow.Show();
+        _registerWindow?.Hide();
+        _loginWindow?.Show();
     }
 
     private void TrySendLogin()
     {
-        if (_network is null || _loginAttempted)
+        if (_network is null || _serverEndPoint is null || _loginAttempted)
             return;
         
         _login.Username = GetNode<LineEdit>("%LoginUserLineEdit").Text.Trim();
@@ -250,19 +287,20 @@ public partial class MenuScript : Control
 
         if (string.IsNullOrWhiteSpace(_login.Username) || string.IsNullOrWhiteSpace(_login.Password))
         {
-            UpdateStatus("Login failed: credentials missing in config");
+            UpdateStatus("Login failed: credentials missing");
             return;
         }
 
-        var packet = new LoginRequestPacket(_login.Username, _login.Password);
-        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        var packet = new UnconnectedLoginRequestPacket(_login.Username, _login.Password);
+        _network.SendUnconnected(_serverEndPoint, packet);
+        
         UpdateStatus($"Authenticating as '{_login.Username}'...");
         _loginAttempted = true;
     }
 
     private void TrySendCharacterCreation()
     {
-        if (_network is null || !_isAuthenticated)
+        if (_network is null || _serverEndPoint is null || string.IsNullOrWhiteSpace(_sessionToken))
             return;
 
         if (string.IsNullOrWhiteSpace(_characterCreation.Name))
@@ -271,18 +309,19 @@ public partial class MenuScript : Control
             return;
         }
 
-        var packet = new CharacterCreationRequestPacket(
+        var packet = new UnconnectedCharacterCreationRequestPacket(
+            _sessionToken,
             _characterCreation.Name,
             _characterCreation.Gender,
             _characterCreation.Vocation);
         
-        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        _network.SendUnconnected(_serverEndPoint, packet);
         UpdateStatus($"Creating character '{_characterCreation.Name}'...");
     }
 
     private void TrySendCharacterSelection()
     {
-        if (_network is null || !_isAuthenticated)
+        if (_network is null || _serverEndPoint is null || string.IsNullOrWhiteSpace(_sessionToken))
             return;
 
         if (_characterSelection.CharacterId <= 0)
@@ -291,36 +330,41 @@ public partial class MenuScript : Control
             return;
         }
 
-        var packet = new CharacterSelectionRequestPacket(_characterSelection.CharacterId);
-        _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        var packet = new UnconnectedCharacterSelectionRequestPacket(
+            _sessionToken,
+            _characterSelection.CharacterId);
+        
+        _network.SendUnconnected(_serverEndPoint, packet);
         UpdateStatus($"Selecting character ID '{_characterSelection.CharacterId}'...");
     }
 
-    // ========== HANDLERS DE RESPOSTA ==========
+    // ========== HANDLERS DE RESPOSTA UNCONNECTED ==========
 
-    private void HandleRegistrationResponse(INetPeerAdapter peer, RegistrationResponsePacket packet)
+    private void HandleRegistrationResponse(IPEndPoint remoteEndPoint, UnconnectedRegistrationResponsePacket packet)
     {
         if (packet.Success)
         {
             UpdateStatus("Account created successfully! Attempting login...");
             
             if (_login.AutoLogin && !_loginAttempted)
+            {
                 TrySendLogin();
+            }
             return;
         }
 
         GD.PushError($"[Menu] Registration failed: {packet.Message}");
         UpdateStatus($"Registration failed: {packet.Message}");
+        _registrationAttempted = false;
 
-        // Fallback: tenta login se conta já existe
-        if (_login.AutoLogin && !_loginAttempted)
+        if (_login.AutoLogin && !_loginAttempted && packet.Message.Contains("already exists"))
         {
             UpdateStatus("Attempting login with existing account...");
             TrySendLogin();
         }
     }
 
-    private void HandleLoginResponse(INetPeerAdapter peer, LoginResponsePacket packet)
+    private void HandleLoginResponse(IPEndPoint remoteEndPoint, UnconnectedLoginResponsePacket packet)
     {
         if (!packet.Success)
         {
@@ -330,20 +374,20 @@ public partial class MenuScript : Control
             return;
         }
         
+        _sessionToken = packet.SessionToken;
+        
         UpdateStatus($"Logged in successfully. Characters: {packet.CurrentCharacters.Length}");
+        GD.Print($"[Menu] Session token received: {_sessionToken}");
 
-        _isAuthenticated = true;
         _availableCharacters.Clear();
         _availableCharacters.AddRange(packet.CurrentCharacters);
         
-        // Fluxo: Sem personagens → Cria | Com personagens → Seleciona
         if (_availableCharacters.Count == 0)
         {
             TrySendCharacterCreation();
         }
         else
         {
-            // Valida CharacterId configurado
             if (_characterSelection.CharacterId > 0)
             {
                 var exists = _availableCharacters.Any(c => c.Id == _characterSelection.CharacterId);
@@ -355,7 +399,6 @@ public partial class MenuScript : Control
             }
             else
             {
-                // Usa primeiro personagem se não configurado
                 _characterSelection.CharacterId = _availableCharacters[0].Id;
             }
             
@@ -363,14 +406,13 @@ public partial class MenuScript : Control
         }
     }
 
-    private void HandleCharacterCreationResponse(INetPeerAdapter peer, CharacterCreationResponsePacket packet)
+    private void HandleCharacterCreationResponse(IPEndPoint remoteEndPoint, UnconnectedCharacterCreationResponsePacket packet)
     {
         if (packet.Success)
         {
             UpdateStatus($"Character '{packet.CreatedCharacter.Name}' created!");
             _availableCharacters.Add(packet.CreatedCharacter);
             
-            // Auto-seleciona personagem recém-criado
             _characterSelection.CharacterId = packet.CreatedCharacter.Id;
             TrySendCharacterSelection();
             return;
@@ -380,12 +422,12 @@ public partial class MenuScript : Control
         UpdateStatus($"Character creation failed: {packet.Message}");
     }
 
-    private void HandleCharacterSelectionResponse(INetPeerAdapter peer, CharacterSelectionResponsePacket packet)
+    private void HandleCharacterSelectionResponse(IPEndPoint remoteEndPoint, UnconnectedCharacterSelectionResponsePacket packet)
     {
         if (packet.Success)
         {
-            UpdateStatus("Character selected! Waiting for game data...");
-            
+            UpdateStatus("Character selected! Waiting for game token...");
+            _characterSelection.CharacterId = packet.CharacterId;
             return;
         }
 
@@ -393,48 +435,67 @@ public partial class MenuScript : Control
         UpdateStatus($"Character selection failed: {packet.Message}");
     }
 
-    private void ProcessGameData(INetPeerAdapter peer, GameDataPacket packet)
-    {
-        GetNode<Button>("%LoginButton").Pressed -= TrySendLogin;
-        GetNode<Button>("%RegisterButton").Pressed -= TrySendRegistration;
-        
-        _ = HandleGameData(peer, packet);
-    }
-    
     /// <summary>
-    /// ✅ Handler de GameDataPacket - Salva no GameStateManager e transiciona.
+    /// ✅ NOVO: Handler de game token (servidor envia após seleção).
     /// </summary>
-    private async Task HandleGameData(INetPeerAdapter peer, GameDataPacket packet)
+    private void HandleGameTokenResponse(IPEndPoint remoteEndPoint, UnconnectedGameTokenResponsePacket packet)
+    {
+        _gameToken = packet.GameToken;
+        
+        GD.Print($"[Menu] Game token received: {_gameToken}");
+        UpdateStatus("Game token received! Connecting to server...");
+
+        // ✅ AGORA conecta ao servidor
+        if (!_isConnecting)
+        {
+            _isConnecting = true;
+            NetworkClient.Instance.NetworkManager.ConnectToServer();
+        }
+    }
+
+    /// <summary>
+    /// ✅ Handler CONNECTED de GameDataPacket.
+    /// </summary>
+    private void HandleGameData(INetPeerAdapter peer, GameDataPacket packet)
     {
         GD.Print($"[Menu] Received GameDataPacket - LocalPlayer: {packet.LocalPlayer.Name} (NetID: {packet.LocalPlayer.NetworkId})");
         
         UpdateStatus($"Entering game as '{packet.LocalPlayer.Name}'...");
         
-        // ✅ Salva dados no GameStateManager (persiste entre cenas)
         var gameState = GameStateManager.Instance;
         gameState.LocalNetworkId = packet.LocalPlayer.NetworkId;
         gameState.CurrentGameData = packet;
         _gameDataReceived = true;
 
-        // ✅ Transiciona para o jogo após pequeno delay
+        UnloadMenuComponents();
+        CallDeferred(nameof(TransitionToGame));
+    }
+
+    private async void TransitionToGame()
+    {
+        await ToSignal(GetTree().CreateTimer(0.5f), SceneTreeTimer.SignalName.Timeout);
         await SceneManager.Instance.LoadGame().ConfigureAwait(false);
     }
 
     // ========== UTILIDADES ==========
+
     private void ResetState()
     {
-        _isAuthenticated = false;
+        _sessionToken = null;
+        _gameToken = null;
         _registrationAttempted = false;
         _loginAttempted = false;
         _gameDataReceived = false;
+        _isConnecting = false;
         _availableCharacters.Clear();
     }
 
     private void UpdateStatus(string message)
     {
         if (_statusLabel is not null)
+        {
             _statusLabel.Text = message;
-        
+        }
         GD.Print($"[Menu] {message}");
     }
     

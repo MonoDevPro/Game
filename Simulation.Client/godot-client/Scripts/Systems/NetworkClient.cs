@@ -70,7 +70,7 @@ public partial class NetworkClient : Node
         if (!_networkManager.IsRunning)
         {
             _logger?.LogInformation("Starting network client");
-            _networkManager.Start();
+            _networkManager.Initialize();
         }
     }
 

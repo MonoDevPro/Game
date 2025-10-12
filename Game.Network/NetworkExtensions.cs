@@ -24,7 +24,8 @@ public static class NetworkExtensions
             {
                 DisconnectTimeout = options.DisconnectTimeoutMs,
                 ChannelsCount = (byte)Enum.GetValues(typeof(NetworkChannel)).Length,
-                PingInterval = options.PingIntervalMs
+                PingInterval = options.PingIntervalMs,
+                UnconnectedMessagesEnabled = true,
             };
 
             var packetSender = new PacketSender(net, packetProcessor);
