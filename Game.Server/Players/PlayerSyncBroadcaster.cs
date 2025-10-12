@@ -8,16 +8,18 @@ using Game.ECS.Systems.Common;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.Simulation;
+using Game.Server.Sessions;
 
 namespace Game.Server.Players;
 
 /// <summary>
 /// Sistema de sincronização de rede de alta performance.
 /// Coleta e broadcasta atualizações de estado dos jogadores usando queries diretas do Arch ECS.
+/// Envia pacotes apenas para jogadores que estão dentro do jogo (não no menu).
 /// Autor: MonoDevPro
 /// Data: 2025-01-11 01:39:21
 /// </summary>
-public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager networkManager) 
+public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager networkManager, PlayerSessionManager sessionManager) 
     : GameSystem(world)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -30,6 +32,7 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
     /// <summary>
     /// Broadcasta atualizações de movimento (posição + direção).
     /// Usa Sequenced delivery (pode descartar pacotes antigos).
+    /// Envia apenas para jogadores que estão dentro do jogo.
     /// </summary>
     [Query]
     [All<NetworkId, Position, Direction, NetworkDirty>]
@@ -40,9 +43,14 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
         if (!dirty.HasFlags(SyncFlags.Movement))
             return;
             
+        // Obtém apenas jogadores que estão dentro do jogo
+        var inGameSessions = sessionManager.GetInGameSessions();
+        if (inGameSessions.Count == 0)
+            return;
+            
         // Cria e envia pacote inline (sem alocação de lista)
         var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value);
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
+        networkManager.SendToPeers(inGameSessions.Select(s => s.Peer), packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
             
         // Limpa dirty flag de movimento
         World.ClearNetworkDirty(entity, SyncFlags.Movement);
@@ -51,6 +59,7 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
     /// <summary>
     /// Broadcasta atualizações de vitals (HP/MP).
     /// Usa ReliableOrdered delivery (garante entrega).
+    /// Envia apenas para jogadores que estão dentro do jogo.
     /// </summary>
     [Query]
     [All<NetworkId, Health, Mana, NetworkDirty>]
@@ -58,6 +67,11 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
     {
         // Filtra apenas entidades com vitals dirty
         if (!dirty.HasFlags(SyncFlags.Vitals))
+            return;
+            
+        // Obtém apenas jogadores que estão dentro do jogo
+        var inGameSessions = sessionManager.GetInGameSessions();
+        if (inGameSessions.Count == 0)
             return;
             
         // Envia pacote de vitals
@@ -68,7 +82,7 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
             mana.Current,
             mana.Max);
             
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
+        networkManager.SendToPeers(inGameSessions.Select(s => s.Peer), packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
             
         // Limpa dirty flag de vitals
         World.ClearNetworkDirty(entity, SyncFlags.Vitals);

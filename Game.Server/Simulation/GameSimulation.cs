@@ -10,6 +10,7 @@ using Game.ECS.Extensions;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.Players;
+using Game.Server.Sessions;
 
 namespace Game.Server.Simulation;
 
@@ -41,7 +42,10 @@ public class GameSimulation
             new HealthRegenerationSystem(_world),
             
             // 3. Sincronização de rede
-            new PlayerSyncBroadcaster(_world, serviceProvider.GetRequiredService<INetworkManager>())
+            new PlayerSyncBroadcaster(
+                _world, 
+                serviceProvider.GetRequiredService<INetworkManager>(),
+                serviceProvider.GetRequiredService<PlayerSessionManager>())
         });
     }
 

@@ -125,8 +125,10 @@ public sealed class GameServer : IDisposable
             
             _security?.RemovePeer(peer);
 
+            // Envia pacote de despawn apenas para jogadores que estão dentro do jogo
             var packet = new PlayerDespawnPacket(peer.Id);
-            _networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var inGameSessions = _sessionManager.GetInGameSessions();
+            _networkManager.SendToPeers(inGameSessions.Select(s => s.Peer), packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
     }
 
@@ -359,8 +361,12 @@ public sealed class GameServer : IDisposable
             .GetSnapshotExcluding(peer.Id)
             .Select(existing => _spawnService.BuildSnapshot(existing))
             .ToArray();
+        
+        // Envia pacote de spawn apenas para jogadores que estão dentro do jogo (exceto o próprio jogador)
         var spawnPacket = new PlayerSpawnPacket(localSnapshot);
-        _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        var inGameSessions = _sessionManager.GetInGameSessions()
+            .Where(s => s.Peer.Id != peer.Id);
+        _networkManager.SendToPeers(inGameSessions.Select(s => s.Peer), spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         
         
         var mapService = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<MapService>();

@@ -70,6 +70,15 @@ public class NetworkManager : INetworkManager, IDisposable
         public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
             => _packetSender.SendToPeerId(peerId, packet, channel, deliveryMethod.ToLite());
         
+        public void SendToPeers<T>(IEnumerable<INetPeerAdapter> peers, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
+        {
+            foreach (var peer in peers)
+            {
+                if (peer is NetPeerAdapter adapter)
+                    _packetSender.SendToPeer(adapter.Peer, packet, channel, deliveryMethod.ToLite());
+            }
+        }
+        
         public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct, IPacket
             => _packetSender.SendToAll(packet, channel, deliveryMethod.ToLite());
         

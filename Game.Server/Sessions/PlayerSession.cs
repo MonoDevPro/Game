@@ -17,4 +17,10 @@ public sealed class PlayerSession(INetPeerAdapter peer, Account account, Charact
 
     public Entity Entity { get; set; } = Entity.Null;
     public DateTimeOffset ConnectedAt { get; } = DateTimeOffset.UtcNow;
+    
+    /// <summary>
+    /// Indica se o jogador está realmente dentro do jogo (personagem selecionado e spawnado).
+    /// Jogadores no menu principal não devem receber pacotes da simulação.
+    /// </summary>
+    public bool IsInGame => SelectedCharacter is not null && Entity != Entity.Null;
 }

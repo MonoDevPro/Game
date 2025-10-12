@@ -75,4 +75,18 @@ public class PlayerSessionManager(ILogger<PlayerSessionManager> logger)
                 .ToList();
         }
     }
+
+    /// <summary>
+    /// Obtém apenas as sessões de jogadores que estão realmente dentro do jogo.
+    /// Exclui jogadores que estão apenas no menu principal.
+    /// </summary>
+    public List<PlayerSession> GetInGameSessions()
+    {
+        lock (_syncRoot)
+        {
+            return _sessionsByPeer.Values
+                .Where(session => session.IsInGame)
+                .ToList();
+        }
+    }
 }
