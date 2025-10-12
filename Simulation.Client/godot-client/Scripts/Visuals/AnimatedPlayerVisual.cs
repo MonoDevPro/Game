@@ -116,10 +116,7 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         
         // Atualiza direção da animação
         var newDirection = new Coordinate(movement.X, movement.Y).ToDirectionEnum();
-        if (newDirection != _currentDirection)
-        {
-            _currentDirection = newDirection;
-        }
+        _currentDirection = newDirection;
         
         // Inicia animação de caminhada
         PlayDirectionalAnimation("walk", _currentDirection);

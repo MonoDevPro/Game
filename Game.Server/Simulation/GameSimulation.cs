@@ -20,7 +20,6 @@ public class GameSimulation
     private readonly World _world;
     private readonly Group<float> _systems;
     private readonly FixedTimeStep _fixedTimeStep;
-    private readonly QueryDescription _dirtyPlayersQuery = new QueryDescription().WithAll<NetworkId, Position, Direction, NetworkDirty>();
 
     public const float FixedDeltaTime = 1f / 60f; // 60 ticks/segundo
     public uint CurrentTick { get; private set; }
