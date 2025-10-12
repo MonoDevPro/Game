@@ -52,8 +52,6 @@ public sealed class AccountLoginService
             return AccountLoginResult.Failure("Credenciais inválidas.");
 
         var characters = ResolveCharacters(account);
-        if (characters is null)
-            return AccountLoginResult.Failure("Personagem não encontrado.");
 
         account.LastLoginAt = DateTime.UtcNow;
         
@@ -63,10 +61,10 @@ public sealed class AccountLoginService
     return AccountLoginResult.From(account, characters);
     }
     
-    private static Character[]? ResolveCharacters(Account account)
+    private static Character[] ResolveCharacters(Account account)
     {
         return account.Characters.Count == 0 
-            ? null 
+            ? []
             : account.Characters.OrderBy(c => c.Id).ToArray();
     }
 }

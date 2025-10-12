@@ -34,6 +34,13 @@ public partial class MenuScript : Control
     
     // ✅ Cache de personagens disponíveis
     private readonly List<PlayerCharData> _availableCharacters = new();
+    
+    private Window _loginWindow = null!;
+    private Window _registerWindow = null!;
+    private Button _loginButton = null!;
+    private Button _registerButton = null!;
+    private Button _openRegisterButton = null!;
+    private Button _exitButton = null!;
 
     public override void _Ready()
     {
@@ -41,13 +48,8 @@ public partial class MenuScript : Control
 
         CreateStatusLabel();
         LoadConfigurations();
+        LoadMenuComponents();
         InitializeNetwork();
-        
-        GetNode<Window>("%LoginWindow").Visible = !_login.AutoLogin;
-        GetNode<Button>("%LoginButton").Pressed += TrySendLogin;
-        
-        GetNode<Window>("%RegisterWindow").Visible = _registration.AutoRegister && !_login.AutoLogin;
-        GetNode<Button>("%RegisterButton").Pressed += TrySendRegistration;
     }
 
     /// <summary>
@@ -80,6 +82,39 @@ public partial class MenuScript : Control
         _characterSelection = configManager.GetCharacterSelectionConfiguration();
         
         GD.Print("[Menu] Configurations loaded");
+    }
+    
+    private void LoadMenuComponents()
+    {
+        _loginWindow = GetNode<Window>("%LoginWindow");
+        _registerWindow = GetNode<Window>("%RegisterWindow");
+        _loginButton = GetNode<Button>("%LoginButton");
+        _registerButton = GetNode<Button>("%RegisterButton");
+        _openRegisterButton = GetNode<Button>("%OpenRegisterButton");
+        _exitButton = GetNode<Button>("%ExitButton");
+
+        _loginButton.Pressed += TrySendLogin;
+        _registerButton.Pressed += TrySendRegistration;
+        _openRegisterButton.Pressed += _registerWindow.Show;
+        _exitButton.Pressed += ExitGame;
+        
+        UpdateMenuComponents();
+    }
+    
+    private void UpdateMenuComponents()
+    {
+        _loginButton.Disabled = _loginAttempted || _gameDataReceived;
+        _registerButton.Disabled = _registrationAttempted || _gameDataReceived;
+        _openRegisterButton.Disabled = _loginAttempted || _gameDataReceived;
+        _exitButton.Disabled = _loginAttempted || _gameDataReceived;
+    }
+    
+    private void UnloadMenuComponents()
+    {
+        _loginButton.Pressed -= TrySendLogin;
+        _registerButton.Pressed -= TrySendRegistration;
+        _openRegisterButton.Pressed -= _registerWindow.Show;
+        _exitButton.Pressed -= ExitGame;
     }
 
     /// <summary>
@@ -201,8 +236,8 @@ public partial class MenuScript : Control
         _network.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         UpdateStatus($"Registering user '{username}'...");
         
-        GetNode<Window>("%RegisterWindow").Visible = false;
-        GetNode<Window>("%LoginWindow").Visible = true;
+        _registerWindow.Hide();
+        _loginWindow.Show();
     }
 
     private void TrySendLogin()
@@ -402,4 +437,6 @@ public partial class MenuScript : Control
         
         GD.Print($"[Menu] {message}");
     }
+    
+    public void ExitGame() => GetTree().Quit();
 }

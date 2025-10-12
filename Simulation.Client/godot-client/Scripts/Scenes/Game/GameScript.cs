@@ -25,7 +25,7 @@ public partial class GameScript : Node
     private int _localNetworkId;
     private Label? _statusLabel;
 
-    public bool CanSendInput => _network?.IsRunning == true && _localNetworkId > 0;
+    public bool CanSendInput => _network?.IsRunning == true && _localNetworkId > -1;
     public AnimatedPlayerVisual? GetLocalPlayer => _playerView?.GetLocalPlayer();
 
     public override void _Ready()
