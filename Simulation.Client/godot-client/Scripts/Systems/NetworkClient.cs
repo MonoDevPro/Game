@@ -15,21 +15,28 @@ namespace GodotClient.Systems;
 /// </summary>
 public partial class NetworkClient : Node
 {
+    private static NetworkClient? _instance;
+    public static NetworkClient Instance => _instance ?? throw new InvalidOperationException("NetworkClient not initialized");
+    
     private IServiceProvider? _serviceProvider;
     private INetworkManager? _networkManager;
     private ILogger<NetworkClient>? _logger;
 
     public INetworkManager NetworkManager => _networkManager ?? throw new InvalidOperationException("NetworkClient is not initialized.");
 
+    public override void _Ready()
+    {
+        base._Ready();
+        _instance = this;
+    }
+    
     /// <summary>
     /// Inicializa o sistema de rede com as opções fornecidas.
     /// </summary>
     public INetworkManager Initialize(NetworkOptions options)
     {
         if (_networkManager is not null)
-        {
             return _networkManager;
-        }
 
         var services = new ServiceCollection();
         services.AddSingleton(options);
@@ -58,9 +65,7 @@ public partial class NetworkClient : Node
     public void Start()
     {
         if (_networkManager is null)
-        {
             throw new InvalidOperationException("NetworkClient must be initialized before starting.");
-        }
 
         if (!_networkManager.IsRunning)
         {
@@ -86,17 +91,13 @@ public partial class NetworkClient : Node
         }
 
         if (_serviceProvider is IDisposable disposable)
-        {
             disposable.Dispose();
-        }
     }
 
     public T GetRequiredService<T>() where T : notnull
     {
         if (_serviceProvider is null)
-        {
             throw new InvalidOperationException("Service provider not initialized.");
-        }
 
         return _serviceProvider.GetRequiredService<T>();
     }

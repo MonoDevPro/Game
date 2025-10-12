@@ -1,8 +1,18 @@
 using Game.Domain.VOs;
 using Game.Network.Abstractions;
+using Game.Network.Packets.DTOs;
 using MemoryPack;
 
 namespace Game.Network.Packets.Simulation;
+
+[MemoryPackable]
+public readonly partial record struct PlayerSpawnPacket(PlayerSnapshot Player) : IPacket;
+
+/// <summary>
+/// Server -> Client notification when a player leaves the world.
+/// </summary>
+[MemoryPackable]
+public readonly partial record struct PlayerDespawnPacket(int NetworkId) : IPacket;
 
 /// <summary>
 /// Server -> Client player movement state update (position and facing).

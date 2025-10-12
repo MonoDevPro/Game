@@ -8,13 +8,16 @@ namespace GodotClient.Systems;
 
 public partial class ConfigManager : Node
 {
+    private static ConfigManager? _instance;
+    public static ConfigManager Instance => _instance ?? throw new InvalidOperationException("ConfigManager not initialized");
+    
+    
     private ClientConfiguration _configuration = new();
-
     public ClientConfiguration Configuration => _configuration;
-
     public override void _Ready()
     {
         base._Ready();
+        _instance = this;
 
         try
         {
@@ -89,11 +92,10 @@ public sealed class LoginConfiguration
 public sealed class RegistrationConfiguration
 {
     public bool AutoRegister { get; set; } = false;
-    public string Email { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
 }
-
 
 public sealed class CharacterCreationConfiguration
 {

@@ -1,0 +1,234 @@
+[gd_scene load_steps=2 format=3 uid="uid://co4pgh3hsr04t"]
+
+[ext_resource type="Script" uid="uid://bpbi47etrkoie" path="res://Scripts/Scenes/Menu/MenuScript.cs" id="1_1rerr"]
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_1rerr")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Background" type="ColorRect" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.48576602, 0.48576602, 0.48576602, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="ExitButton" type="Button" parent="VBoxContainer/Background/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 30
+text = " X "
+
+[node name="DownBar" type="ColorRect" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+color = Color(0.21915743, 0.21915743, 0.21915743, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/DownBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/DownBar/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Game Open 2025 - Created By Peixonalta"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LoginWindow" type="Window" parent="."]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Login"
+initial_position = 1
+size = Vector2i(250, 178)
+wrap_controls = true
+unresizable = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="LoginWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LoginWindow/MarginContainer"]
+layout_mode = 2
+
+[node name="OpenRegister" type="Button" parent="LoginWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0.16078432, 0.8745098, 0.8745098, 1)
+theme_override_font_sizes/font_size = 11
+text = "Register Now!"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LoginWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="LoginWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "User:"
+
+[node name="LoginUserLineEdit" type="LineEdit" parent="LoginWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="LoginWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="LoginWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="LoginPassLineEdit" type="LineEdit" parent="LoginWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckButton" type="CheckButton" parent="LoginWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 12
+text = "Save Credentials?"
+
+[node name="LoginButton" type="Button" parent="LoginWindow/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enter"
+
+[node name="RegisterWindow" type="Window" parent="."]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Register"
+initial_position = 1
+size = Vector2i(250, 220)
+visible = false
+wrap_controls = true
+unresizable = true
+exclude_from_capture = true
+minimize_disabled = true
+maximize_disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="RegisterWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RegisterWindow/MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "User:"
+
+[node name="RegisterUserLineEdit" type="LineEdit" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="RegisterPassLineEdit" type="LineEdit" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Pass:"
+
+[node name="RegisterPassConfirmLineEdit" type="LineEdit" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer3"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+text = "Email:"
+
+[node name="RegisterEmailLineEdit" type="LineEdit" parent="RegisterWindow/MarginContainer/VBoxContainer/HBoxContainer4"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckButton" type="CheckButton" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 12
+text = "I Agree terms of services"
+
+[node name="RegisterButton" type="Button" parent="RegisterWindow/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Create"

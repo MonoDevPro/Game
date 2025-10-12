@@ -2,33 +2,31 @@ using Game.Abstractions;
 using Game.Domain.VOs;
 using Godot;
 
-namespace GodotClient.Systems;
+namespace GodotClient.Scenes.Game;
 
 public partial class InputManager : Node
 {
     private const int TileSize = 32; // Tamanho do tile em pixels
-    private GameClient? _gameClient;
+    private GameScript? _game;
     private float _accumulator = 0f;
     private const float InputInterval = 0.1f; // 10 inputs por segundo
 
-    public void Attach(GameClient client)
+    public void Attach(GameScript script)
     {
-        _gameClient = client;
+        _game = script;
     }
 
     public void Detach()
     {
-        _gameClient = null;
+        _game = null;
     }
 
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
 
-        if (_gameClient is null || !_gameClient.CanSendInput)
-        {
+        if (_game is null || !_game.CanSendInput)
             return;
-        }
         
         _accumulator += (float)delta;
         if (_accumulator < InputInterval)
@@ -69,7 +67,7 @@ public partial class InputManager : Node
         // IMPORTANTE: Apenas envia se houver input (evita spam de pacotes vazios)
         if (moveX != 0 || moveY != 0)
         {
-            _gameClient.QueueInput(
+            _game.QueueInput(
                 new GridOffset(moveX, moveY), 
                 GetMouseGridPositionRelative(), 
                 buttons);
@@ -94,7 +92,7 @@ public partial class InputManager : Node
     /// </summary>
     private GridOffset GetMouseGridPositionRelative()
     {
-        var localPlayer = _gameClient?.GetLocalPlayer;
+        var localPlayer = _game?.GetLocalPlayer;
         if (localPlayer is null)
             return GridOffset.Zero;
 

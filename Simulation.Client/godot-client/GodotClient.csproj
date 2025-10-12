@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <Content Include="appsettings.json" />
+    <Content Include="Scenes\game.tscn" />
+    <Content Include="Scenes\menu.tscn" />
   </ItemGroup>
 
   <ItemGroup>

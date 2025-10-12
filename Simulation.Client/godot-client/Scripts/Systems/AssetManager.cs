@@ -13,7 +13,7 @@ namespace GodotClient.Systems;
 public partial class AssetManager : Node
 {
     private static AssetManager? _instance;
-    public static AssetManager Instance => _instance ?? throw new System.InvalidOperationException("AssetManager not initialized");
+    public static AssetManager Instance => _instance ?? throw new InvalidOperationException("AssetManager not initialized");
 
     // Cache de recursos carregados
     private readonly Dictionary<string, Texture2D> _textureCache = new();
@@ -55,7 +55,7 @@ public partial class AssetManager : Node
     {
         var vocationName = vocation.ToString();
         var genderSuffix = gender == Gender.Female ? "_female" : "_male";
-        var path = $"res://Assets/Sprites/Characters/{vocationName}/{vocationName.ToLower()}{genderSuffix}_frames.tres";
+        var path = $"res://Resources/SpriteSheets/{vocationName.ToLower()}{genderSuffix}_frames.tres";
 
         return GetSpriteFrames(path);
     }

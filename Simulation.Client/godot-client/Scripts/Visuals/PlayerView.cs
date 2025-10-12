@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Domain.VOs;
-using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
-using Game.Network.Packets.Simulation;
 using Godot;
 
 namespace GodotClient.Visuals;
@@ -38,13 +36,21 @@ public partial class PlayerView : Node
         var treatAsLocal = isLocal || snapshot.NetworkId == _localNetworkId;
         visual.Update(snapshot, treatAsLocal);
     }
-
-    public void UpdateMovement(PlayerMovementPacket packet)
+    
+    public void UpdateVitals(int networkId, int currentHp, int maxHp, int currentMp, int maxMp)
     {
-        if (_players.TryGetValue(packet.NetworkId, out var visual))
+        if (_players.TryGetValue(networkId, out var visual))
         {
-            visual.UpdatePosition(packet.Position);
-            visual.UpdateFacing(packet.Facing);
+            visual.UpdateVitals(currentHp, maxHp, currentMp, maxMp);
+        }
+    }
+
+    public void UpdateMovement(int networkId, Coordinate position, Coordinate facing)
+    {
+        if (_players.TryGetValue(networkId, out var visual))
+        {
+            visual.UpdatePosition(position);
+            visual.UpdateFacing(facing);
         }
     }
 
