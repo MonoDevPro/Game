@@ -103,6 +103,16 @@ public partial class GameScript : Node
         
         _playerView?.SetLocalPlayer(localPlayer.Value);
 
+        // ✅ Carrega cache de colisão para predição client-side
+        var mapData = gameState.CurrentGameData?.MapData;
+        if (mapData.HasValue)
+        {
+            AnimatedPlayerVisual.LoadCollisionCache(
+                mapData.Value.CollisionData,
+                mapData.Value.Width,
+                mapData.Value.Height);
+        }
+
         // Adiciona outros players
         foreach (var snapshot in gameState.CurrentGameData?.OtherPlayers ?? [])
         {
@@ -153,16 +163,17 @@ public partial class GameScript : Node
     {
         if (_players.TryGetValue(packet.NetworkId, out var snapshot))
         {
-            // Atualiza snapshot local
+            // Atualiza snapshot local com posição, direção e velocidade
             snapshot = snapshot with 
             { 
                 Position = packet.Position, 
-                Facing = packet.Facing 
+                Facing = packet.Facing,
+                Speed = packet.Speed
             };
             _players[packet.NetworkId] = snapshot;
             
-            // Atualiza visualmente
-            _playerView?.UpdateMovement(packet.NetworkId, packet.Position, packet.Facing);
+            // Atualiza visualmente (passa o speed para predição)
+            _playerView?.UpdateMovement(packet.NetworkId, packet.Position, packet.Facing, packet.Speed);
         }
     }
 

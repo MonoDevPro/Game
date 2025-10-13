@@ -240,7 +240,7 @@ public sealed class GameServer : IDisposable
             if (session is not null && session.SelectedCharacter is not null)
             {
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                if (_simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+                if (_simulation.TryGetPlayerState(session.Entity, out var position, out var direction, out var speed))
                 {
                     int? currentHp = null;
                     int? currentMp = null;

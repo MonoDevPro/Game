@@ -18,9 +18,10 @@ public partial struct PlayerSnapshot
     public VocationType Vocation { get; set; }
     public Coordinate Position { get; set; }
     public Coordinate Facing { get; set; }
+    public float Speed { get; set; }
 
     public PlayerSnapshot(int networkId, int playerId, int characterId, string name, Gender gender, 
-        VocationType vocation, Coordinate position, Coordinate facing)
+        VocationType vocation, Coordinate position, Coordinate facing, float speed)
     {
         NetworkId = networkId;
         PlayerId = playerId;
@@ -30,5 +31,6 @@ public partial struct PlayerSnapshot
         Vocation = vocation;
         Position = position;
         Facing = facing;
+        Speed = speed;
     }
 }

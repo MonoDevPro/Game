@@ -23,14 +23,14 @@ public readonly partial record struct PlayerSpawnPacket(PlayerSnapshot Player) :
 public readonly partial record struct PlayerDespawnPacket(int NetworkId) : IPacket;
 
 /// <summary>
-/// Server -> Client player movement state update (position and facing).
+/// Server -> Client player movement state update (position, facing, and speed).
 /// Sent at high frequency (60Hz) using Sequenced delivery.
 /// Autor: MonoDevPro
 /// Data: 2025-10-11 01:09:48
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerMovementPacket(
-    int NetworkId, Coordinate Position, Coordinate Facing) : IPacket;
+    int NetworkId, Coordinate Position, Coordinate Facing, float Speed) : IPacket;
 
 /// <summary>
 /// Server -> Client player vitals update (HP/MP).

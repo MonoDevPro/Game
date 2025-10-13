@@ -45,12 +45,13 @@ public partial class PlayerView : Node
         }
     }
 
-    public void UpdateMovement(int networkId, Coordinate position, Coordinate facing)
+    public void UpdateMovement(int networkId, Coordinate position, Coordinate facing, float speed)
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
             visual.UpdatePosition(position);
             visual.UpdateFacing(facing);
+            visual.UpdateSpeed(speed);
         }
     }
 

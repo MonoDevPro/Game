@@ -67,6 +67,13 @@ public partial class InputManager : Node
         // IMPORTANTE: Apenas envia se houver input (evita spam de pacotes vazios)
         if (moveX != 0 || moveY != 0)
         {
+            if (_game.GetLocalPlayer?.IsMoving == true)
+            {
+                // Se já está se movendo, não envia input de movimento para evitar jitter
+                moveX = 0;
+                moveY = 0;
+            }
+            
             _game.QueueInput(
                 new GridOffset(moveX, moveY), 
                 GetMouseGridPositionRelative(), 

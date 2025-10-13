@@ -48,14 +48,14 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var direction))
+        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var direction, out var speed))
         {
             return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
                 character.Gender, character.Vocation, new Coordinate(character.PositionX, 
-                    character.PositionY), character.DirectionEnum.ToCoordinate());
+                    character.PositionY), character.DirectionEnum.ToCoordinate(), 0f);
         }
 
         return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
-            character.Gender, character.Vocation, position, direction.ToCoordinate());
+            character.Gender, character.Vocation, position, direction.ToCoordinate(), speed);
     }
 }

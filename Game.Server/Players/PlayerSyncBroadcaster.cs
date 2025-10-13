@@ -28,20 +28,23 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
     }
 
     /// <summary>
-    /// Broadcasta atualizações de movimento (posição + direção).
+    /// Broadcasta atualizações de movimento (posição + direção + velocidade).
     /// Usa Sequenced delivery (pode descartar pacotes antigos).
     /// </summary>
     [Query]
-    [All<NetworkId, Position, Direction, NetworkDirty>]
-    private void BroadcastMovement(in Entity entity, ref NetworkId netId, ref Position pos, ref Direction dir, ref NetworkDirty dirty)
+    [All<NetworkId, Position, Direction, MovementSpeed, NetworkDirty>]
+    private void BroadcastMovement(in Entity entity, ref NetworkId netId, ref Position pos, ref Direction dir, in MovementSpeed speed, ref NetworkDirty dirty)
     {
         // ⚡ Query direta sem buffer intermediário (FASTEST)
         // Filtra apenas entidades com movimento dirty
         if (!dirty.HasFlags(SyncFlags.Movement))
             return;
             
+        // Calcula velocidade efetiva (BaseSpeed * CurrentModifier)
+        var effectiveSpeed = speed.BaseSpeed * speed.CurrentModifier;
+            
         // Cria e envia pacote inline (sem alocação de lista)
-        var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value);
+        var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value, effectiveSpeed);
         networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
             
         // Limpa dirty flag de movimento

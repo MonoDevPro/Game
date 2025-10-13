@@ -109,10 +109,11 @@ public class GameSimulation
     }
 
     public bool TryGetPlayerState(Entity entity, 
-        out Coordinate position, out DirectionEnum facing)
+        out Coordinate position, out DirectionEnum facing, out float speed)
     {
         position = Coordinate.Zero;
         facing = DirectionEnum.South;
+        speed = 0f;
 
         if (!_world.TryGet(entity, out Position posComponent))
         {
@@ -124,6 +125,11 @@ public class GameSimulation
         if (_world.TryGet(entity, out Direction dirComponent))
         {
             facing = dirComponent.Value.ToDirectionEnum();
+        }
+
+        if (_world.TryGet(entity, out MovementSpeed speedComponent))
+        {
+            speed = speedComponent.BaseSpeed * speedComponent.CurrentModifier;
         }
 
         return true;
