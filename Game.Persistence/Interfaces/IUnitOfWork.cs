@@ -1,18 +1,13 @@
 using Game.Domain.Entities;
+using Game.Persistence.Interfaces.Repositories;
 
 namespace Game.Persistence.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
     // Repositórios
-    IRepository<Item> Accounts { get; }
-    IRepository<Item> Characters { get; }
-    IRepository<Item> Stats { get; }
-    IRepository<Item> Items { get; }
-    IRepository<Item> ItemStats { get; }
-    IRepository<Item> Inventories { get; }
-    IRepository<Item> InventorySlots { get; }
-    IRepository<Item> EquipmentSlots { get; }
+    IAccountRepository Accounts { get; }
+    ICharacterRepository Characters { get; }
     
     // Transações
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

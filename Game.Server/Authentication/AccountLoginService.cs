@@ -1,9 +1,14 @@
 using Game.Domain.Entities;
-using Game.Persistence;
+using Game.Persistence.Interfaces;
 using Game.Server.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace Game.Server.Authentication;
+
+public sealed record AccountLoginResult(bool Success, string Message, Account? Account)
+{
+    public static AccountLoginResult Failure(string message) => new(false, message, null);
+    public static AccountLoginResult From(Account account, Character[] characters) => new(true, "Login successful", account);
+}
 
 /// <summary>
 /// Serviço responsável pela autenticação de contas.
@@ -12,24 +17,11 @@ namespace Game.Server.Authentication;
 /// Autor: MonoDevPro
 /// Data: 2025-10-12 21:31:29
 /// </summary>
-public sealed class AccountLoginService
+public sealed class AccountLoginService(
+    IUnitOfWork unitOfWork,
+    IPasswordHasher passwordHasher,
+    ILogger<AccountLoginService> logger)
 {
-    private readonly GameDbContext _dbContext;
-    private readonly IPasswordHasher _passwordHasher;
-    private readonly AccountCharacterService _characterService;
-    private readonly ILogger<AccountLoginService> _logger;
-
-    public AccountLoginService(
-        GameDbContext dbContext, 
-        IPasswordHasher passwordHasher,
-        AccountCharacterService characterService,
-        ILogger<AccountLoginService> logger)
-    {
-        _dbContext = dbContext;
-        _passwordHasher = passwordHasher;
-        _characterService = characterService;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Autentica um usuário com username e senha.
@@ -39,72 +31,40 @@ public sealed class AccountLoginService
         string password, 
         CancellationToken cancellationToken = default)
     {
-        // Validação de entrada
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-        {
             return AccountLoginResult.Failure("Usuário e senha são obrigatórios.");
-        }
 
-        // Buscar conta (sem incluir relacionamentos - será feito pelo CharacterService)
-        var account = await _dbContext.Accounts
-            .AsTracking()
-            .FirstOrDefaultAsync(a => a.Username == username, cancellationToken);
+        // ✅ Usar repositório especializado
+        var account = await unitOfWork.Accounts.GetByUsernameWithCharactersAsync(username, cancellationToken);
 
         if (account is null)
         {
-            _logger.LogWarning("Login attempt failed: Account not found for username {Username}", username);
+            logger.LogWarning("Login attempt failed: Account not found for username {Username}", username);
             return AccountLoginResult.Failure("Credenciais inválidas.");
         }
 
-        // Validar estado da conta
         var validationResult = ValidateAccountState(account);
         if (!validationResult.IsValid)
         {
-            _logger.LogWarning(
-                "Login attempt failed for {Username}: {Reason}", 
-                username, 
-                validationResult.ErrorMessage);
-            
+            logger.LogWarning("Login attempt failed for {Username}: {Reason}", username, validationResult.ErrorMessage);
             return AccountLoginResult.Failure(validationResult.ErrorMessage!);
         }
 
-        // Verificar senha
-        if (!_passwordHasher.VerifyPassword(account.PasswordHash, password))
+        if (!passwordHasher.VerifyPassword(account.PasswordHash, password))
         {
-            _logger.LogWarning("Login attempt failed: Invalid password for username {Username}", username);
+            logger.LogWarning("Login attempt failed: Invalid password for username {Username}", username);
             return AccountLoginResult.Failure("Credenciais inválidas.");
-        }
-
-        // Buscar personagens usando o CharacterService
-        var charactersResult = await _characterService.GetAccountCharactersAsync(
-            account.Id, 
-            cancellationToken);
-
-        if (!charactersResult.Success)
-        {
-            _logger.LogError(
-                "Failed to retrieve characters for account {AccountId}: {Message}", 
-                account.Id, 
-                charactersResult.Message);
-            
-            return AccountLoginResult.Failure("Erro ao carregar personagens.");
         }
 
         // Atualizar último login
         account.LastLoginAt = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await unitOfWork.Accounts.UpdateAsync(account, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Login successful for {Username} (Account ID: {AccountId}, Characters: {CharacterCount})",
-            account.Username,
-            account.Id,
-            charactersResult.Characters.Length);
-        
-        account.Characters.Clear();
-        foreach (var character in charactersResult.Characters)
-            account.Characters.Add(character);
+        logger.LogInformation("Login successful for {Username} (Account ID: {AccountId})",
+            account.Username, account.Id);
 
-        return AccountLoginResult.From(account, charactersResult.Characters);
+        return AccountLoginResult.From(account, account.Characters.ToArray());
     }
 
     /// <summary>
@@ -142,28 +102,4 @@ public sealed class AccountLoginService
 
         return (true, null);
     }
-}
-
-/// <summary>
-/// Resultado da autenticação de conta.
-/// </summary>
-public sealed record AccountLoginResult
-{
-    public bool Success { get; init; }
-    public string Message { get; init; } = string.Empty;
-    public Account? Account { get; init; }
-    public Character[] Characters { get; init; } = [];
-
-    public static AccountLoginResult Failure(string message) => new()
-    {
-        Success = false,
-        Message = message
-    };
-
-    public static AccountLoginResult From(Account account, Character[] characters) => new()
-    {
-        Success = true,
-        Account = account,
-        Characters = characters
-    };
 }

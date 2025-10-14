@@ -1,5 +1,8 @@
 using Game.Persistence.Interceptors;
 using Game.Persistence.Interfaces;
+using Game.Persistence.Interfaces.Repositories;
+using Game.Persistence.Repositories;
+using Game.Persistence.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,41 +40,13 @@ public static class DbContextExtensions
             options.EnableDetailedErrors();
 #endif
         });
-
+        
         // Registrar UnitOfWork
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        // ✅ Registrar PlayerPersistenceService
+        services.AddScoped<IPlayerPersistenceService, PlayerPersistenceService>();
 
         return services;
-    }
-
-    public static async Task MigrateDatabaseAsync(this IServiceProvider services)
-    {
-        using var scope = services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<GameDbContext>();
-
-        // Verificar se existem migrações
-        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
-        var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
-
-        var pending = pendingMigrations.ToArray();
-        var applied = appliedMigrations.ToArray();
-
-        // Se não há migrações aplicadas nem pendentes, criar o banco direto (desenvolvimento)
-        if (pending.Length == 0 && applied.Length == 0)
-        {
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] No migrations found. Creating database schema... - MonoDevPro");
-            await context.Database.EnsureCreatedAsync();
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Database schema created successfully - MonoDevPro");
-        }
-        else if (pending.Length != 0)
-        {
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Applying {pending.Length} migrations... - MonoDevPro");
-            await context.Database.MigrateAsync();
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Migrations applied successfully - MonoDevPro");
-        }
-        else
-        {
-            Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Database is up to date - MonoDevPro");
-        }
     }
 }

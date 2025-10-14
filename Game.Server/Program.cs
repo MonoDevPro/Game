@@ -42,7 +42,6 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddScoped<AccountCharacterService>();
             services.AddSingleton<PlayerSpawnService>();
             services.AddSingleton<PlayerSessionManager>();
-            services.AddScoped<PlayerPersistenceService>();
             services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
             services.AddSingleton<MapService>(CreateMapService());

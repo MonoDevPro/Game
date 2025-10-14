@@ -40,7 +40,7 @@ public class GameSimulation
             new HealthRegenerationSystem(_world),
             
             // 3. Sincronização de rede
-            new PlayerSyncBroadcaster(_world, serviceProvider.GetRequiredService<INetworkManager>())
+            new PlayerSyncBroadcasterSystem(_world, serviceProvider.GetRequiredService<INetworkManager>())
         });
     }
 

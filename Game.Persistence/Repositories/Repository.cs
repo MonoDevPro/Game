@@ -3,13 +3,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Game.Persistence.Repositories;
 
-public class Repository<T>(GameDbContext context) : IRepository<T>
+internal class Repository<T>(GameDbContext context) : IRepository<T>
     where T : class
 {
     protected readonly GameDbContext Context = context;
     protected readonly DbSet<T> DbSet = context.Set<T>();
 
-    public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public virtual async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await DbSet.FindAsync([id], cancellationToken);
     }
@@ -31,7 +31,7 @@ public class Repository<T>(GameDbContext context) : IRepository<T>
         await Task.CompletedTask;
     }
 
-    public virtual async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public virtual async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity != null)

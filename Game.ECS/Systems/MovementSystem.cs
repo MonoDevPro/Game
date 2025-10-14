@@ -12,35 +12,30 @@ namespace Game.ECS.Systems;
 public sealed partial class MovementSystem(World world, MapService map) : GameSystem(world)
 {
     [Query]
-    [All<Position, Velocity, MoveAccumulator>]
-    private void MoveEntity(in Entity entity, ref Position pos, ref Velocity vel, ref MoveAccumulator acc, [Data] float deltaTime)
+    [All<Position, Velocity>]
+    private void MoveEntity(Entity entity, ref Position pos, ref Velocity vel, [Data] float deltaTime)
     {
         if (deltaTime <= 0f) return;
 
-        // Se não há velocidade, retorna cedo
         if (vel.Value is { X: 0f, Y: 0f })
             return;
-
-        // 1. Acumula movimento (células flutuantes)
-        var frameMove = vel.Value * deltaTime;
-        acc.Value = new FCoordinate(
-            acc.Value.X + frameMove.X,
-            acc.Value.Y + frameMove.Y);
         
+        vel.Value = new FCoordinate(
+            vel.Value.X * deltaTime,
+            vel.Value.Y * deltaTime);
+
         // 2. Extrai passos inteiros (truncate preserva sinal)
-        int stepsX = (int)MathF.Truncate(acc.Value.X);
-        int stepsY = (int)MathF.Truncate(acc.Value.Y);
+        int stepsX = (int)MathF.Truncate(vel.Value.X);
+        int stepsY = (int)MathF.Truncate(vel.Value.Y);
 
         // 3. Se nenhum passo completo, retorna (ainda acumulando)
         if (stepsX == 0 && stepsY == 0)
             return;
         
-        vel.Value = FCoordinate.Zero;
-        
-        // 4. Consome os passos do acumulador
-        acc.Value = new FCoordinate(
-            acc.Value.X - stepsX,
-            acc.Value.Y - stepsY);
+        // 4. Consome os passos da velocidade
+        vel.Value = new FCoordinate(
+            vel.Value.X - stepsX,
+            vel.Value.Y - stepsY);
 
         var startPos = pos.Value;
         
@@ -104,7 +99,7 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
                 if (!moved)
                 {
                     // IMPORTANTE: Zera o acumulador para não ficar "empurrando" a parede
-                    acc.Value = FCoordinate.Zero;
+                    vel.Value = FCoordinate.Zero;
                     break;
                 }
             }

@@ -61,13 +61,13 @@ public partial class MenuScript : Control
     
     private string? _sessionToken; // Token de sessão (menu)
     private string? _gameToken;    // Token de jogo (para conectar)
-    private readonly List<PlayerCharData> _availableCharacters = new();
+    private readonly List<CharMenuData> _availableCharacters = new();
     
     #endregion
     
     #region Deletion State
     
-    private PlayerCharData? _characterPendingDeletion; // ✅ NOVO
+    private CharMenuData? _characterPendingDeletion; // ✅ NOVO
     
     #endregion
     

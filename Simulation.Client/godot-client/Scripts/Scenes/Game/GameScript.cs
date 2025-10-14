@@ -228,21 +228,27 @@ public partial class GameScript : Node
     // ========== INPUT ==========
 
     /// <summary>
-    /// ✅ Envia input do jogador para o servidor.
+    /// ✅ Envia input do jogador para o servidor (com validação).
     /// </summary>
     public void QueueInput(GridOffset movement, GridOffset mouseLook, ushort buttons)
     {
-        // ✅ CLIENT PREDICTION: Prediz movimento local imediatamente
+        // ✅ Validação adicional (redundante, mas garante)
         if (movement != GridOffset.Zero)
         {
-            GetLocalPlayer?.PredictLocalMovement(movement);
+            var localPlayer = GetLocalPlayer;
+            if (localPlayer is null)
+                return;
+
+            // ✅ CLIENT PREDICTION: Prediz movimento local imediatamente
+            localPlayer.PredictLocalMovement(movement);
         }
+
+        // ✅ Envia para o servidor
+        var packet = new PlayerInputPacket(movement, mouseLook, buttons);
+        _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         
-        var packet = new PlayerInputPacket(
-            movement,
-            mouseLook,
-            buttons);
-        _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Sequenced);
+        GD.Print($"[GameClient] Sent input: Move({movement.X},{movement.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
+        
     }
 
     // ========== DESCONEXÃO ==========

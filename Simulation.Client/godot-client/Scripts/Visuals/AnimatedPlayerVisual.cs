@@ -9,20 +9,15 @@ using GodotClient.Systems;
 namespace GodotClient.Visuals;
 
 /// <summary>
-/// Representação visual do jogador com animações direcionais.
-/// Autor: MonoDevPro (refatorado)
-/// Data: 2025-10-13
-/// Mudanças: movimento frame-rate independente, predição local segura,
-/// interpolação consistente para remoto, thresholds configuráveis,
-/// inicialização robusta e limpeza de nulos.
+/// Representação visual do jogador com predição local e reconciliação de servidor.
+/// Autor: MonoDevPro (modificado)
+/// Data: 2025-10-13 21:40:00
 /// </summary>
 public sealed partial class AnimatedPlayerVisual : Node2D
 {
     // --- Editor-configuráveis ---
-    [Export] private float TileSize = 32f; // pixels por tile
-    [Export] private float DefaultTilesPerSecond = 5f; // velocidade enviada pelo servidor (tiles/s)
-    [Export] private float SnapDistanceTiles = 4f; // se a discrepância for maior que isso, "snap" para posição do servidor
-    [Export] private float ArriveThreshold = 2f; // pixels para considerar "no alvo"
+    [Export] private float _tileSize = 32f;
+    [Export] private float _defaultTilesPerSecond = 5f;
 
     // --- Nodes ---
     private AnimatedSprite2D? _sprite;
@@ -31,38 +26,29 @@ public sealed partial class AnimatedPlayerVisual : Node2D
 
     // --- Estado ---
     private bool _isLocal;
-    private Vector2 _targetPosition = Vector2.Zero; // pixels
-    private Vector2 _currentPosition = Vector2.Zero; // pixels
+    private Vector2 _targetPosition = Vector2.Zero; // pixels (para renderização)
+    private Vector2 _currentPosition = Vector2.Zero; // pixels (posição visual atual)
     private DirectionEnum _currentDirection = DirectionEnum.South;
-
-    // velocidade em pixels por segundo (derivada da velocidade em tiles/s recebida do servidor)
     private float _currentSpeedPx;
+    private float _currentTilesPerSecond; // <-- tiles / second usado para movimento e animação
 
-    // Cache de colisão para predição (compartilhado entre todos os players)
+    // --- Cache de Colisão ---
     private static byte[]? _collisionCache;
     private static int _mapWidth;
     private static int _mapHeight;
-
-    public bool IsMoving => _currentPosition.DistanceTo(_targetPosition) > 0.1f && _currentPosition != _targetPosition;
 
     public override void _Ready()
     {
         base._Ready();
 
-        // Tenta encontrar nós existentes (se o Node estiver instanciado via scene file)
+        // Inicialização de nós (igual ao original)
         _sprite = GetNodeOrNull<AnimatedSprite2D>("Sprite");
         _nameLabel = GetNodeOrNull<Label>("NameLabel");
         _healthBar = GetNodeOrNull<ProgressBar>("HealthBar");
 
-        // Se não houverem nós (instanciação por código), cria-os
         if (_sprite == null)
         {
-            _sprite = new AnimatedSprite2D
-            {
-                Name = "Sprite",
-                Position = Vector2.Zero,
-                Centered = true
-            };
+            _sprite = new AnimatedSprite2D { Name = "Sprite", Position = Vector2.Zero, Centered = true };
             AddChild(_sprite);
         }
 
@@ -93,66 +79,29 @@ public sealed partial class AnimatedPlayerVisual : Node2D
             AddChild(_healthBar);
         }
 
-        // Inicializa posições com a posição atual do nó (caso a Scene tenha sido colocada no mapa)
         _currentPosition = Position;
         _targetPosition = Position;
 
-        // Inicializa velocidade padrão (tiles/s -> pixels/s)
-        _currentSpeedPx = DefaultTilesPerSecond * TileSize;
+        // inicializa velocidade com padrão
+        _currentTilesPerSecond = Math.Max(0.0001f, _defaultTilesPerSecond);
+        _currentSpeedPx = _currentTilesPerSecond * _tileSize;
 
-        // Garantia de animação inicial
         PlayDirectionalAnimation("idle", _currentDirection);
+        UpdateAnimationSpeedForCurrent();
     }
 
-    /// <summary>
-    /// Atualiza o visual de acordo com snapshot (chamado pelo sistema de rede).
-    /// </summary>
     public void Update(PlayerSnapshot snapshot, bool isLocal)
     {
         _isLocal = isLocal;
 
         LoadSprites(snapshot.Vocation, snapshot.Gender);
         UpdateLabel(snapshot.Name);
-
-        // Converte posição em pixels
-        var serverPosPx = new Vector2(snapshot.Position.X * TileSize, snapshot.Position.Y * TileSize);
-
-        // Ajuste de correção: se a diferença for muito grande, "snap" para a posição do servidor
-        var dist = _currentPosition.DistanceTo(serverPosPx);
-        if (!_isLocal && dist > SnapDistanceTiles * TileSize)
-        {
-            _currentPosition = serverPosPx;
-            _targetPosition = serverPosPx;
-            Position = _currentPosition;
-        }
-        else
-        {
-            // atualiza alvo para interpolação normal
-            _targetPosition = serverPosPx;
-        }
-
-        // Atualiza facing e velocidade
+        UpdatePosition(snapshot.Position);
         UpdateFacing(snapshot.Facing);
-        UpdateSpeed(snapshot.Speed);
 
-        // Tint local para fácil visual durante debug
         if (_sprite is not null)
         {
             _sprite.Modulate = isLocal ? Colors.Chartreuse : Colors.White;
-        }
-
-        // Se houver movimento do servidor, inicia animação de walk
-        if (_currentPosition.DistanceTo(_targetPosition) > ArriveThreshold)
-        {
-            // determina direção a partir do vetor de movimento
-            var delta = (_targetPosition - _currentPosition).Normalized();
-            var dir = VectorToDirection(delta);
-            _currentDirection = dir;
-            PlayDirectionalAnimation("walk", _currentDirection);
-        }
-        else
-        {
-            PlayDirectionalAnimation("idle", _currentDirection);
         }
     }
 
@@ -163,19 +112,16 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
         _sprite.SpriteFrames = spriteFrames;
 
-        // Mantém animação coerente com direção atual
+        // atualiza a animação atual baseado se estamos andando ou idle
         PlayDirectionalAnimation(_currentPosition == _targetPosition ? "idle" : "walk", _currentDirection);
+        UpdateAnimationSpeedForCurrent();
     }
 
-    /// <summary>
-    /// Carrega cache de colisão do mapa (chamado uma vez no início do jogo).
-    /// </summary>
     public static void LoadCollisionCache(byte[] collisionData, int width, int height)
     {
         _collisionCache = collisionData;
         _mapWidth = width;
         _mapHeight = height;
-        GD.Print($"[AnimatedPlayerVisual] Collision cache loaded: {width}x{height}");
     }
 
     private static bool CanMoveTo(Coordinate position)
@@ -191,39 +137,52 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     }
 
     /// <summary>
-    /// Predição de movimento local (aplicada apenas para o jogador local).
+    /// Predição de movimento local com rastreamento de sequência.
     /// </summary>
     public void PredictLocalMovement(GridOffset movement)
     {
         if (!_isLocal || movement == GridOffset.Zero)
             return;
 
-        // Assegura que _targetPosition esteja alinhado a tiles antes de predizer
+        if (_currentPosition.DistanceTo(_targetPosition) > 0.1f)
+            return; // Ainda estamos nos movendo, ignora novo input até chegar
+
+        // 1. Calcular direção baseada no input
+        _currentDirection = new Coordinate(movement.X, movement.Y).ToDirectionEnum();
+
         var currentTile = new Coordinate(
-            Mathf.RoundToInt(_targetPosition.X / TileSize),
-            Mathf.RoundToInt(_targetPosition.Y / TileSize));
+            Mathf.RoundToInt(_currentPosition.X / _tileSize),
+            Mathf.RoundToInt(_currentPosition.Y / _tileSize));
 
-        var nextTile = new Coordinate(currentTile.X + movement.X, currentTile.Y + movement.Y);
+        // 2. Calcular próxima posição baseada na posição PREDITA atual (não visual)
+        var nextTile = new Coordinate(
+            currentTile.X + movement.X,
+            currentTile.Y + movement.Y);
 
+        // 3. Validar colisão local
         if (!CanMoveTo(nextTile))
-        {
-            PlayDirectionalAnimation("idle", _currentDirection);
             return;
-        }
 
-        // Aplicar predição: atualiza target e inicia animação de walk
-        _targetPosition = new Vector2(nextTile.X * TileSize, nextTile.Y * TileSize);
-
-        // Atualiza direção baseada no deslocamento
-        var newDirection = new Coordinate(movement.X, movement.Y).ToDirectionEnum();
-        _currentDirection = newDirection;
-
+        _targetPosition = new Vector2(nextTile.X * _tileSize, nextTile.Y * _tileSize);
         PlayDirectionalAnimation("walk", _currentDirection);
+        UpdateAnimationSpeedForCurrent();
+    }
 
-        // Se estivermos exatamente no tile anterior, garantir que _currentPosition esteja alinhado para evitar "tremores"
-        if (_currentPosition.DistanceTo(Position) <= 1f)
+    /// <summary>
+    /// Atualiza posição confirmada pelo servidor (com reconciliação para ReliableSequenced).
+    /// </summary>
+    public void UpdatePosition(Coordinate serverPosition)
+    {
+        _targetPosition = new Vector2(serverPosition.X * _tileSize, serverPosition.Y * _tileSize);
+
+        // Se estivermos muito longe, snap imediato
+        if (_currentPosition.DistanceTo(_targetPosition) > _tileSize)
         {
-            _currentPosition = Position;
+            _currentPosition = _targetPosition;
+            Position = _currentPosition;
+            PlayDirectionalAnimation("idle", _currentDirection);
+            UpdateAnimationSpeedForCurrent();
+            return;
         }
     }
 
@@ -231,84 +190,84 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     {
         base._Process(delta);
 
-        // Interpolação frame-rate independente usando MoveToward com distância máxima por frame
-        if (_currentPosition.DistanceTo(_targetPosition) > ArriveThreshold)
+        // Interpolação suave apenas se não estamos no target
+        if (_currentPosition.DistanceTo(_targetPosition) > 0.1f)
         {
-            float maxDistanceThisFrame = _currentSpeedPx * (float)delta;
-            _currentPosition = _currentPosition.MoveToward(_targetPosition, maxDistanceThisFrame);
+            // Interpolação frame-rate independente
+            _currentPosition = _currentPosition.MoveToward(_targetPosition, _currentSpeedPx * (float)delta);
             Position = _currentPosition;
 
-            // Atualiza animação caso comece a mover-se
-            if (!(_sprite?.IsPlaying() ?? false))
-            {
-                PlayDirectionalAnimation("walk", _currentDirection);
-            }
-
-            // Se chegou muito perto, snap final
-            if (_currentPosition.DistanceTo(_targetPosition) <= ArriveThreshold)
+            // Se chegamos perto o suficiente, snap para evitar jitter
+            float distance = _currentPosition.DistanceTo(_targetPosition);
+            if (distance <= 0.1f)
             {
                 _currentPosition = _targetPosition;
-                Position = _targetPosition;
+                Position = _currentPosition;
+
+                // Ao chegar, ir para idle
                 PlayDirectionalAnimation("idle", _currentDirection);
+                UpdateAnimationSpeedForCurrent();
             }
-        }
-    }
-    
-    /// <summary>
-    /// Atualização de posição vinda do servidor (compatível com quem chamava o método antigo).
-    /// Mantém comportamento de snap quando a discrepância for grande e atualiza animação/direção.
-    /// </summary>
-    public void UpdatePosition(Coordinate position)
-    {
-        var serverPosPx = new Vector2(position.X * TileSize, position.Y * TileSize);
-        var dist = _currentPosition.DistanceTo(serverPosPx);
-        if (dist > SnapDistanceTiles * TileSize)
-        {
-            _currentPosition = serverPosPx;
-            _targetPosition = serverPosPx;
-            Position = _currentPosition;
-            PlayDirectionalAnimation("idle", _currentDirection);
-            return;
-        }
-        _targetPosition = serverPosPx;
-        var delta = _targetPosition - _currentPosition;
-        if (delta.LengthSquared() > 0.0001f)
-        {
-            var dir = VectorToDirection(delta.Normalized());
-            _currentDirection = dir;
-            PlayDirectionalAnimation("walk", _currentDirection);
-        }
-        else
-        {
-            PlayDirectionalAnimation("idle", _currentDirection);
         }
     }
 
     public void UpdateFacing(Coordinate facing)
     {
-        if (_sprite is null) return;
-
-        var newDirection = facing.ToDirectionEnum();
-        if (newDirection != _currentDirection)
-        {
-            _currentDirection = newDirection;
-            if (_currentPosition.DistanceTo(_targetPosition) <= ArriveThreshold)
-            {
-                PlayDirectionalAnimation("idle", _currentDirection);
-            }
-        }
+        _currentDirection = facing.ToDirectionEnum();
+        // atualiza animação se necessário (por exemplo trocar idle/walk variant)
+        PlayDirectionalAnimation(_currentPosition == _targetPosition ? "idle" : "walk", _currentDirection);
+        UpdateAnimationSpeedForCurrent();
     }
 
     /// <summary>
-    /// Atualiza a velocidade de movimento (recebida do servidor em tiles/s).
+    /// Chame esta função sempre que receber a velocidade "cellsPerSecond" (tilesPerSecond)
+    /// do servidor/cliente para manter animação e interpolação sincronizadas.
     /// </summary>
     public void UpdateSpeed(float tilesPerSecond)
     {
-        // Proteção contra valores inválidos
         if (tilesPerSecond <= 0f)
-            tilesPerSecond = DefaultTilesPerSecond;
+            tilesPerSecond = _defaultTilesPerSecond;
 
-        _currentSpeedPx = tilesPerSecond * TileSize;
+        _currentTilesPerSecond = tilesPerSecond;
+        _currentSpeedPx = tilesPerSecond * _tileSize;
+
+        UpdateAnimationSpeedForCurrent();
+    }
+
+    /// <summary>
+    /// Ajusta a velocidade da animação (AnimatedSprite2D.Speed) proporcional a tiles/sec.
+    /// Estratégia: queremos que a animação rode proporcionalmente à velocidade de movimento.
+    /// Aqui definimos: sprite.Speed = framesInAnimation * tilesPerSecond (com um mínimo).
+    /// </summary>
+    private void UpdateAnimationSpeedForCurrent()
+    {
+        if (_sprite == null || _sprite.SpriteFrames == null)
+            return;
+
+        string anim = _sprite.Animation;
+        if (string.IsNullOrEmpty(anim) || !_sprite.SpriteFrames.HasAnimation(anim))
+            return;
+
+        try
+        {
+            int frames = _sprite.SpriteFrames.GetFrameCount(anim);
+            // Se for idle, mantemos uma velocidade baixa para idle (evita "parado" com 0/0)
+            if (anim.StartsWith("idle", StringComparison.OrdinalIgnoreCase))
+            {
+                _sprite.SpriteFrames.SetAnimationSpeed(anim, 1f); // idle sempre 1
+            }
+            else
+            {
+                // frames * tilesPerSecond => frames/sec
+                float targetFps = MathF.Max(0.05f, frames * _currentTilesPerSecond);
+                _sprite.SpriteFrames.SetAnimationSpeed(anim, targetFps);
+            }
+        }
+        catch
+        {
+            // fallback seguro
+            _sprite.SpriteFrames.SetAnimationSpeed(anim, MathF.Max(1f, _currentTilesPerSecond));
+        }
     }
 
     private void PlayDirectionalAnimation(string baseAnim, DirectionEnum direction)
@@ -323,13 +282,10 @@ public sealed partial class AnimatedPlayerVisual : Node2D
             _ => $"{baseAnim}_south",
         };
 
-        // Flip horizontal apenas para direção oeste (assumindo frames para lado direito)
         _sprite.FlipH = direction == DirectionEnum.West;
 
         if (_sprite.SpriteFrames != null && _sprite.Animation != animName)
-        {
             _sprite.Play(animName);
-        }
     }
 
     public void UpdateVitals(int currentHp, int maxHp, int currentMp, int maxMp)
@@ -341,22 +297,6 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         }
     }
 
-    public void ShowDamageNumber(int damage, DamageType damageType)
-    {
-        var damageLabel = new Label
-        {
-            Text = $"-{damage}",
-            Position = new Vector2(0, -50),
-            Modulate = GetDamageColor(damageType)
-        };
-        AddChild(damageLabel);
-
-        var tween = CreateTween();
-        tween.TweenProperty(damageLabel, "position:y", -80, 1.0f);
-        tween.Parallel().TweenProperty(damageLabel, "modulate:a", 0.0f, 1.0f);
-        tween.TweenCallback(Callable.From(damageLabel.QueueFree));
-    }
-
     private void UpdateLabel(string name)
     {
         if (_nameLabel is not null)
@@ -365,48 +305,4 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         }
     }
 
-    private static Color GetDamageColor(DamageType damageType)
-    {
-        return damageType switch
-        {
-            DamageType.Physical => Colors.White,
-            DamageType.Magical => Colors.Cyan,
-            DamageType.Fire => Colors.OrangeRed,
-            DamageType.Ice => Colors.LightBlue,
-            DamageType.Lightning => Colors.Yellow,
-            DamageType.Poison => Colors.Green,
-            _ => Colors.White
-        };
-    }
-
-    // Helpers
-    private static DirectionEnum VectorToDirection(Vector2 v)
-    {
-        if (v.LengthSquared() < 0.0001f) return DirectionEnum.South;
-
-        var angle = Mathf.RadToDeg(Mathf.Atan2(-v.Y, v.X)); // y negativo invertido para convenção de direção
-        // normaliza [-180,180) para [0,360)
-        if (angle < 0) angle += 360f;
-
-        // Dividir em 8 direções
-        if (angle >= 337.5f || angle < 22.5f) return DirectionEnum.East;
-        if (angle >= 22.5f && angle < 67.5f) return DirectionEnum.NorthEast;
-        if (angle >= 67.5f && angle < 112.5f) return DirectionEnum.North;
-        if (angle >= 112.5f && angle < 157.5f) return DirectionEnum.NorthWest;
-        if (angle >= 157.5f && angle < 202.5f) return DirectionEnum.West;
-        if (angle >= 202.5f && angle < 247.5f) return DirectionEnum.SouthWest;
-        if (angle >= 247.5f && angle < 292.5f) return DirectionEnum.South;
-        return DirectionEnum.SouthEast;
-    }
-}
-
-public enum DamageType
-{
-    Physical,
-    Magical,
-    Fire,
-    Ice,
-    Lightning,
-    Poison,
-    True
 }

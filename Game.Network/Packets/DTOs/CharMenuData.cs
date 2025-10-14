@@ -4,7 +4,7 @@ using MemoryPack;
 namespace Game.Network.Packets.DTOs;
 
 [MemoryPackable]
-public readonly partial record struct PlayerCharData(
+public readonly partial record struct CharMenuData(
     int Id,
     string Name,
     int Level,

@@ -1,24 +1,26 @@
-// Persistence/IUnitOfWork.cs
-using Game.Persistence.Repositories;
-using Game.Domain.Entities;
 using Game.Persistence.Interfaces;
+using Game.Persistence.Interfaces.Repositories;
+using Game.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Game.Persistence;
 
-public class UnitOfWork(GameDbContext context) : IUnitOfWork
+/// <summary>
+/// Unit of Work pattern implementation.
+/// Centralizes repository access and transaction management.
+/// 
+/// Author: MonoDevPro
+/// Date: 2025-10-13
+/// </summary>
+internal class UnitOfWork(GameDbContext context) : IUnitOfWork
 {
     private IDbContextTransaction? _transaction;
     
-    public IRepository<Item> Accounts { get; } = new Repository<Item>(context);
-    public IRepository<Item> Characters { get; } = new Repository<Item>(context);
-    public IRepository<Item> Stats { get; } = new Repository<Item>(context);
-    public IRepository<Item> Items { get; } = new Repository<Item>(context);
-    public IRepository<Item> ItemStats { get; } = new Repository<Item>(context);
-    public IRepository<Item> Inventories { get; } = new Repository<Item>(context);
-    public IRepository<Item> InventorySlots { get; } = new Repository<Item>(context);
-    public IRepository<Item> EquipmentSlots { get; } = new Repository<Item>(context);
+    public IAccountRepository Accounts { get; } = new AccountRepository(context);
+    public ICharacterRepository Characters { get; } = new CharacterRepository(context);
 
+    // ========== TRANSACTION MANAGEMENT ==========
+    
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await context.SaveChangesAsync(cancellationToken);
@@ -34,6 +36,7 @@ public class UnitOfWork(GameDbContext context) : IUnitOfWork
         try
         {
             await SaveChangesAsync(cancellationToken);
+            
             if (_transaction != null)
             {
                 await _transaction.CommitAsync(cancellationToken);
@@ -65,5 +68,6 @@ public class UnitOfWork(GameDbContext context) : IUnitOfWork
     {
         _transaction?.Dispose();
         context?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

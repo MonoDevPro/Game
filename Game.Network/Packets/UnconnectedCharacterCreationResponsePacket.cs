@@ -12,9 +12,9 @@ public readonly partial struct UnconnectedCharacterCreationResponsePacket : IPac
 {
     public bool Success { get; init; }
     public string Message { get; init; }
-    public PlayerCharData CreatedCharacter { get; init; }
+    public CharMenuData CreatedCharacter { get; init; }
     
-    private UnconnectedCharacterCreationResponsePacket(bool success, string message, PlayerCharData createdCharacter)
+    private UnconnectedCharacterCreationResponsePacket(bool success, string message, CharMenuData createdCharacter)
     {
         Success = success;
         Message = message;
@@ -22,5 +22,5 @@ public readonly partial struct UnconnectedCharacterCreationResponsePacket : IPac
     }
     
     public static UnconnectedCharacterCreationResponsePacket Failure(string message) => new(false, message, default);
-    public static UnconnectedCharacterCreationResponsePacket Ok(PlayerCharData createdCharacter) => new(true, string.Empty, createdCharacter);
+    public static UnconnectedCharacterCreationResponsePacket Ok(CharMenuData createdCharacter) => new(true, string.Empty, createdCharacter);
 }

@@ -49,9 +49,9 @@ public partial class PlayerView : Node
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
-            visual.UpdatePosition(position);
-            visual.UpdateFacing(facing);
             visual.UpdateSpeed(speed);
+            visual.UpdateFacing(facing);
+            visual.UpdatePosition(position);
         }
     }
 

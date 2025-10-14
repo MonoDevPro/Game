@@ -6,7 +6,6 @@ using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Systems.Common;
 using Game.Network.Abstractions;
-using Game.Network.Packets;
 using Game.Network.Packets.Simulation;
 
 namespace Game.Server.Players;
@@ -17,7 +16,7 @@ namespace Game.Server.Players;
 /// Autor: MonoDevPro
 /// Data: 2025-01-11 01:39:21
 /// </summary>
-public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager networkManager) 
+public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkManager networkManager) 
     : GameSystem(world)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,13 +38,13 @@ public sealed partial class PlayerSyncBroadcaster(World world, INetworkManager n
         // Filtra apenas entidades com movimento dirty
         if (!dirty.HasFlags(SyncFlags.Movement))
             return;
-            
+        
         // Calcula velocidade efetiva (BaseSpeed * CurrentModifier)
         var effectiveSpeed = speed.BaseSpeed * speed.CurrentModifier;
             
         // Cria e envia pacote inline (sem alocação de lista)
         var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value, effectiveSpeed);
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
+        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             
         // Limpa dirty flag de movimento
         World.ClearNetworkDirty(entity, SyncFlags.Movement);

@@ -2,10 +2,16 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Game.Domain.Entities;
 using Game.Persistence;
+using Game.Persistence.Interfaces;
 using Game.Server.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace Game.Server.Authentication;
+
+public sealed record AccountRegistrationResult(bool IsSuccess, string Message, Account? Account)
+{
+    public static AccountRegistrationResult Failure(string message) => new(IsSuccess: false, Message: message, Account: null);
+    public static AccountRegistrationResult Succeeded(Account account) => new(IsSuccess: true, Message: "Conta registrada com sucesso.", Account: account);
+}
 
 /// <summary>
 /// Serviço responsável pelo registro de novas contas.
@@ -14,7 +20,10 @@ namespace Game.Server.Authentication;
 /// Autor: MonoDevPro
 /// Data: 2025-10-12 21:35:22
 /// </summary>
-public sealed class AccountRegistrationService
+public sealed class AccountRegistrationService(
+    IUnitOfWork unitOfWork,
+    IPasswordHasher passwordHasher,
+    ILogger<AccountRegistrationService> logger)
 {
     // ========== CONSTANTS ==========
     
@@ -43,23 +52,9 @@ public sealed class AccountRegistrationService
     };
     
     // ========== FIELDS ==========
-    
-    private readonly GameDbContext _dbContext;
-    private readonly IPasswordHasher _passwordHasher;
-    private readonly ILogger<AccountRegistrationService> _logger;
-    
+
     // ========== CONSTRUCTOR ==========
-    
-    public AccountRegistrationService(
-        GameDbContext dbContext,
-        IPasswordHasher passwordHasher,
-        ILogger<AccountRegistrationService> logger)
-    {
-        _dbContext = dbContext;
-        _passwordHasher = passwordHasher;
-        _logger = logger;
-    }
-    
+
     // ========== PUBLIC METHODS ==========
     
     /// <summary>
@@ -71,77 +66,45 @@ public sealed class AccountRegistrationService
         string password,
         CancellationToken cancellationToken = default)
     {
-        // Normalizar entrada
+        // Normalizar e validar entrada...
         username = username?.Trim().ToLowerInvariant() ?? string.Empty;
         email = email?.Trim().ToLowerInvariant() ?? string.Empty;
-        
-        // Validar entrada básica
-        if (string.IsNullOrWhiteSpace(username) || 
-            string.IsNullOrWhiteSpace(password) || 
-            string.IsNullOrWhiteSpace(email))
-        {
-            return AccountRegistrationResult.Failure("Usuário, senha e e-mail são obrigatórios.");
-        }
-        
-        // Validar username
+
+        // Validações básicas...
         var usernameValidation = ValidateUsername(username);
         if (!usernameValidation.IsValid)
-        {
             return AccountRegistrationResult.Failure(usernameValidation.ErrorMessage!);
-        }
-        
-        // Validar email
+
         var emailValidation = ValidateEmail(email);
         if (!emailValidation.IsValid)
-        {
             return AccountRegistrationResult.Failure(emailValidation.ErrorMessage!);
-        }
-        
-        // Validar senha
+
         var passwordValidation = ValidatePassword(password);
         if (!passwordValidation.IsValid)
-        {
             return AccountRegistrationResult.Failure(passwordValidation.ErrorMessage!);
-        }
-        
-        // Verificar duplicatas (com transação para evitar race condition)
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-        
+
+        // ✅ Usar Unit of Work com transação
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
+
         try
         {
-            // Verificar username duplicado
-            var usernameExists = await _dbContext.Accounts
-                .AnyAsync(a => a.Username == username, cancellationToken);
-            
-            if (usernameExists)
+            // ✅ Usar repositório especializado
+            if (await unitOfWork.Accounts.ExistsByUsernameAsync(username, cancellationToken))
             {
-                _logger.LogWarning(
-                    "Registration failed: Username {Username} already exists", 
-                    username);
-                
+                logger.LogWarning("Registration failed: Username {Username} already exists", username);
                 return AccountRegistrationResult.Failure("Nome de usuário já está em uso.");
             }
-            
-            // Verificar email duplicado
-            var emailExists = await _dbContext.Accounts
-                .AnyAsync(a => a.Email == email, cancellationToken);
-            
-            if (emailExists)
+
+            if (await unitOfWork.Accounts.ExistsByEmailAsync(email, cancellationToken))
             {
-                _logger.LogWarning(
-                    "Registration failed: Email {Email} already registered", 
-                    MaskEmail(email));
-                
+                logger.LogWarning("Registration failed: Email {Email} already registered", MaskEmail(email));
                 return AccountRegistrationResult.Failure("E-mail já está cadastrado.");
             }
-            
-            // Gerar salt criptográfico
-            var salt = GenerateSalt();
-            
-            // Hash da senha
-            var passwordHash = _passwordHasher.HashPassword(password);
-            
+
             // Criar conta
+            var salt = GenerateSalt();
+            var passwordHash = passwordHasher.HashPassword(password);
+
             var account = new Account
             {
                 Username = username,
@@ -153,42 +116,25 @@ public sealed class AccountRegistrationService
                 IsActive = true,
                 IsEmailVerified = false,
                 IsBanned = false,
-                BannedUntil = null,
-                LastLoginAt = null,
                 Characters = new List<Character>()
             };
+
+            // ✅ Adicionar via repositório
+            await unitOfWork.Accounts.AddAsync(account, cancellationToken);
             
-            // Salvar
-            await _dbContext.Accounts.AddAsync(account, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            
-            _logger.LogInformation(
-                "New account registered: {Username} (ID: {AccountId}, Email: {Email})",
+            // ✅ Commit da transação (já faz SaveChanges internamente)
+            await unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            logger.LogInformation(
+                "New account registered: {Username} (ID: {AccountId})",
                 username,
-                account.Id,
-                MaskEmail(email));
-            
+                account.Id);
+
             return AccountRegistrationResult.Succeeded(account);
-        }
-        catch (DbUpdateException dbEx)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                dbEx, 
-                "Database failure while registering account {Username}", 
-                username);
-            
-            return AccountRegistrationResult.Failure("Erro ao salvar dados no banco.");
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                ex, 
-                "Unexpected error while registering account {Username}", 
-                username);
-            
+            logger.LogError(ex, "Error registering account {Username}", username);
             return AccountRegistrationResult.Failure("Erro interno ao registrar conta.");
         }
     }
@@ -209,8 +155,8 @@ public sealed class AccountRegistrationService
         if (!validation.IsValid)
             return false;
         
-        return !await _dbContext.Accounts
-            .AnyAsync(a => a.Username == username, cancellationToken);
+        return !await unitOfWork.Accounts
+            .ExistsByUsernameAsync(username, cancellationToken);
     }
     
     /// <summary>
@@ -229,8 +175,8 @@ public sealed class AccountRegistrationService
         if (!validation.IsValid)
             return false;
         
-        return !await _dbContext.Accounts
-            .AnyAsync(a => a.Email == email, cancellationToken);
+        return !await unitOfWork.Accounts
+            .ExistsByEmailAsync(email, cancellationToken);
     }
     
     // ========== VALIDATION METHODS ==========
@@ -409,29 +355,4 @@ public sealed class AccountRegistrationService
         
         return $"{localPart[0]}***{localPart[^1]}@{domain}";
     }
-}
-
-// ========== RESULT RECORD ==========
-
-/// <summary>
-/// Resultado do registro de conta.
-/// </summary>
-public sealed record AccountRegistrationResult
-{
-    public bool IsSuccess { get; init; }
-    public string Message { get; init; } = string.Empty;
-    public Account? Account { get; init; }
-
-    public static AccountRegistrationResult Failure(string message) => new()
-    {
-        IsSuccess = false,
-        Message = message
-    };
-
-    public static AccountRegistrationResult Succeeded(Account account) => new()
-    {
-        IsSuccess = true,
-        Account = account,
-        Message = "Conta criada com sucesso!"
-    };
 }

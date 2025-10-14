@@ -8,6 +8,8 @@ using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Simulation;
 using Game.Persistence;
+using Game.Persistence.DTOs;
+using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
@@ -239,26 +241,57 @@ public sealed class GameServer : IDisposable
         {
             if (session is not null && session.SelectedCharacter is not null)
             {
+                var characterPersistData = new DisconnectPersistenceDto
+                {
+                    CharacterId = session.SelectedCharacter.Id,
+                    PositionX = session.SelectedCharacter.PositionX,
+                    PositionY = session.SelectedCharacter.PositionY,
+                    Direction = session.SelectedCharacter.DirectionEnum,
+                    CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
+                    CurrentMp = session.SelectedCharacter.Stats.CurrentMp
+                };
+                
                 // ✅ Persistir dados de desconexão (leve e rápido)
                 if (_simulation.TryGetPlayerState(session.Entity, out var position, out var direction, out var speed))
                 {
-                    int? currentHp = null;
-                    int? currentMp = null;
-
+                    characterPersistData = characterPersistData with
+                    {
+                        PositionX = position.X,
+                        PositionY = position.Y,
+                        Direction = direction
+                    };
+                    
                     // ✅ Tentar obter vitals da simulação
                     if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals))
                     {
-                        currentHp = vitals.CurrentHp;
-                        currentMp = vitals.CurrentMp;
+                        characterPersistData = characterPersistData with
+                        {
+                            CurrentHp = vitals.CurrentHp,
+                            CurrentMp = vitals.CurrentMp
+                        };
                     }
 
                     // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
-                    _ = PersistDisconnectDataAsync(
-                        session.SelectedCharacter.Id,
-                        position,
-                        direction,
-                        currentHp,
-                        currentMp);
+                    using var scope = _scopeFactory.CreateScope();
+                    var persistence = scope.ServiceProvider.GetRequiredService<IPlayerPersistenceService>();
+                    
+                    _ = persistence.PersistDisconnectAsync(characterPersistData, CancellationToken.None)
+                        .ContinueWith(task =>
+                        {
+                            if (task.IsFaulted)
+                            {
+                                _logger.LogError(
+                                    task.Exception,
+                                    "Failed to persist disconnect data for character {CharacterId}",
+                                    session.SelectedCharacter.Id);
+                            }
+                            else
+                            {
+                                _logger.LogDebug(
+                                    "Disconnect data persisted successfully for character {CharacterId}",
+                                    session.SelectedCharacter.Id);
+                            }
+                        });
                 }
                 else
                 {
@@ -285,39 +318,6 @@ public sealed class GameServer : IDisposable
                 "Session removed for account {AccountName} (peer {PeerId})",
                 session?.Account.Username,
                 peer.Id);
-        }
-    }
-    private async Task PersistDisconnectDataAsync(
-        int characterId,
-        Coordinate position,
-        DirectionEnum direction,
-        int? currentHp,
-        int? currentMp)
-    {
-        try
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var persistence = scope.ServiceProvider.GetRequiredService<PlayerPersistenceService>();
-        
-            await persistence.PersistDisconnectAsync(
-                characterId,
-                position.X,
-                position.Y,
-                direction,
-                currentHp,
-                currentMp,
-                CancellationToken.None);
-        
-            _logger.LogDebug(
-                "Disconnect data persisted successfully for character {CharacterId}",
-                characterId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex, 
-                "Failed to persist disconnect data for character {CharacterId}", 
-                characterId);
         }
     }
 
@@ -378,11 +378,11 @@ public sealed class GameServer : IDisposable
             // ✅ Cria token de sessão
             var sessionToken = _tokenManager.CreateSession(loginResult.Account.Id, loginResult.Account);
 
-            var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
+            var playerCharacters = loginResult.Account.Characters.Select(c => new CharMenuData
             {
                 Id = c.Id,
                 Name = c.Name,
-                Level = c.Stats?.Level ?? 1,
+                Level = c.Stats.Level,
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
@@ -438,11 +438,11 @@ public sealed class GameServer : IDisposable
             // ✅ Cria token de sessão
             var sessionToken = _tokenManager.CreateSession(loginResult.Account.Id, loginResult.Account);
 
-            var playerCharacters = loginResult.Characters.Select(c => new PlayerCharData
+            var playerCharacters = loginResult.Account.Characters.Select(c => new CharMenuData
             {
                 Id = c.Id,
                 Name = c.Name,
-                Level = c.Stats?.Level ?? 1,
+                Level = c.Stats.Level,
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
@@ -497,11 +497,11 @@ public sealed class GameServer : IDisposable
             // ✅ Adiciona personagem à conta na sessão
             account!.Characters.Add(creationResult.Character);
         
-            var charData = new PlayerCharData
+            var charData = new CharMenuData
             {
                 Id = creationResult.Character.Id,
                 Name = creationResult.Character.Name,
-                Level = creationResult.Character.Stats?.Level ?? 1,
+                Level = creationResult.Character.Stats.Level,
                 Vocation = creationResult.Character.Vocation,
                 Gender = creationResult.Character.Gender
             };
@@ -608,22 +608,6 @@ public sealed class GameServer : IDisposable
                 return;
             }
 
-            // ✅ 3. Verificar se há pelo menos 1 personagem restante (opcional)
-            // Descomente se quiser impedir deleção do último personagem
-            /*
-            if (account.Characters.Count <= 1)
-            {
-                var response = UnconnectedCharacterDeleteResponsePacket.Failure(
-                    "Não é possível deletar o último personagem da conta.");
-                _networkManager.SendUnconnected(remoteEndPoint, response);
-                _logger.LogWarning(
-                    "Account {AccountId} attempted to delete last character {CharacterId}",
-                    accountId,
-                    packet.CharacterId);
-                return;
-            }
-            */
-
             // ✅ 4. Deleta personagem via service
             using var scope = _scopeFactory.CreateScope();
             var characterService = scope.ServiceProvider.GetRequiredService<AccountCharacterService>();
@@ -640,13 +624,6 @@ public sealed class GameServer : IDisposable
                 return;
             }
 
-            // ✅ 5. Remove personagem da lista em memória da sessão
-            var gameDbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
-            account.Characters.Remove(character);
-            gameDbContext.Accounts.Update(account);
-            await gameDbContext.SaveChangesAsync(CancellationToken.None);
-            
-        
             // ✅ 6. Envia resposta de sucesso
             var successResponse = UnconnectedCharacterDeleteResponsePacket.Ok(packet.CharacterId);
             _networkManager.SendUnconnected(remoteEndPoint, successResponse);
@@ -704,16 +681,12 @@ public sealed class GameServer : IDisposable
                 "Valid game token from peer {PeerId} - AccountId: {AccountId}, CharacterId: {CharacterId}",
                 peer.Id, accountId, characterId
             );
+            
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var account = await dbContext.Accounts.GetByIdWithCharactersAsync(accountId, CancellationToken.None);
 
             // ✅ 2. Carrega conta e personagem do banco
-            using var scope = _scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
-        
-            var account = await dbContext.Accounts
-                .Include(a => a.Characters)
-                .ThenInclude(c => c.Stats)
-                .FirstOrDefaultAsync(a => a.Id == accountId);
-
             if (account is null)
             {
                 _logger.LogError("Account {AccountId} not found for peer {PeerId}", accountId, peer.Id);
@@ -811,71 +784,6 @@ public sealed class GameServer : IDisposable
                 packet.MouseLook, 
                 packet.Buttons
             );
-        }
-    }
-
-    // ========== PERSISTENCE ==========
-
-    private async Task PersistCharacterAsync(PlayerSession session, Coordinate position, DirectionEnum facing)
-    {
-        try
-        {
-            if (session.SelectedCharacter is null)
-            {
-                _logger.LogWarning("Cannot persist: session has no selected character");
-                return;
-            }
-
-            using var scope = _scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
-        
-            // ✅ NOVO: Recarregar personagem completo do banco antes de persistir
-            var character = await dbContext.Characters
-                .AsSplitQuery()
-                .Include(c => c.Stats)
-                .Include(c => c.Equipment)
-                .Include(c => c.Inventory)
-                .ThenInclude(i => i.Slots)
-                .FirstOrDefaultAsync(c => c.Id == session.SelectedCharacter.Id);
-
-            if (character is null)
-            {
-                _logger.LogError(
-                    "Cannot persist character {CharacterId}: not found in database",
-                    session.SelectedCharacter.Id);
-                return;
-            }
-
-            // ✅ Atualizar posição e direção
-            character.PositionX = position.X;
-            character.PositionY = position.Y;
-            character.DirectionEnum = facing;
-            character.LastUpdatedAt = DateTime.UtcNow;
-
-            // ✅ Atualizar vitals (HP/MP) se disponível
-            if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals) && character.Stats is not null)
-            {
-                character.Stats.CurrentHp = vitals.CurrentHp;
-                character.Stats.CurrentMp = vitals.CurrentMp;
-            }
-
-            // ✅ Salvar diretamente (não usar PersistAsync para evitar overhead)
-            dbContext.Characters.Update(character);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-
-            _logger.LogInformation(
-                "Character {CharacterName} (ID: {CharacterId}) persisted: Position ({X},{Y}), Direction: {Direction}, HP: {HP}, MP: {MP}",
-                character.Name,
-                character.Id,
-                position.X,
-                position.Y,
-                facing,
-                character.Stats?.CurrentHp ?? 0,
-                character.Stats?.CurrentMp ?? 0);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to persist character {CharacterName}", session.SelectedCharacter?.Name ?? "Unknown");
         }
     }
 

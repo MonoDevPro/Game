@@ -1,0 +1,58 @@
+using Game.Domain.Entities;
+using Game.Persistence.Interfaces;
+using Game.Persistence.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
+
+namespace Game.Persistence.Repositories;
+
+internal class CharacterRepository(GameDbContext context) : Repository<Character>(context), ICharacterRepository
+{
+    public async Task<Character[]> GetByAccountIdAsync(int accountId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsTracking()
+            .Include(c => c.Stats)
+            .Include(c => c.Inventory)
+            .Where(c => c.AccountId == accountId)
+            .OrderBy(c => c.Id)
+            .ToArrayAsync(cancellationToken);
+    }
+
+    public async Task<Character?> GetByIdWithStatsAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(c => c.Stats)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
+
+    public async Task<Character?> GetByIdWithStatsAndInventoryAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsTracking()
+            .Include(c => c.Stats)
+            .Include(c => c.Inventory)
+            .ThenInclude(i => i.Slots)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AnyAsync(c => c.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase), cancellationToken);
+    }
+
+    public async Task<int> CountByAccountIdAsync(int accountId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .CountAsync(c => c.AccountId == accountId, cancellationToken);
+    }
+    
+    public async Task<Character?> GetByIdWithRelationsForDeletionAsync(int characterId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(c => c.Stats)
+            .Include(c => c.Inventory)
+            .ThenInclude(i => i.Slots) // Incluir slots para deleção em cascata
+            .FirstOrDefaultAsync(c => c.Id == characterId, cancellationToken);
+    }
+}

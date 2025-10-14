@@ -1,4 +1,3 @@
-// Persistence/GameDbContext.cs
 using Microsoft.EntityFrameworkCore;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
@@ -6,12 +5,14 @@ using Game.Domain.Enums;
 namespace Game.Persistence;
 
 /// <summary>
-/// Contexto do banco de dados do jogo
+/// Contexto do banco de dados do jogo com configurações de cascade delete otimizadas.
 /// Autor: MonoDevPro
-/// Data: 2025-10-05 21:16:27
+/// Data: 2025-10-13 20:18:33
 /// </summary>
-public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
+internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
 {
+    // ========== DBSETS ==========
+    
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Character> Characters { get; set; }
     public DbSet<Stats> Stats { get; set; }
@@ -20,7 +21,10 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<InventorySlot> InventorySlots { get; set; }
     public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
+    public DbSet<Map> Maps { get; set; }
 
+    // ========== MODEL CONFIGURATION ==========
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -34,24 +38,22 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
         ConfigureInventory(modelBuilder);
         ConfigureInventorySlot(modelBuilder);
         ConfigureEquipmentSlot(modelBuilder);
+        ConfigureMap(modelBuilder);
 
         // Seed data
         SeedData(modelBuilder);
     }
 
+    // ========== ENTITY CONFIGURATIONS ==========
+
     /// <summary>
-    /// Configuração da entidade Account
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade Account com cascade delete para Characters.
     /// </summary>
     private void ConfigureAccount(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Accounts");
 
             // Índices
@@ -86,29 +88,24 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // Account (1) -> Characters (N)
+            // ✅ Relacionamento: Account (1) -> Characters (N) com CASCADE DELETE
+            // Deletar Account = Deletar todos os Characters (e seus relacionamentos em cascata)
             entity.HasMany(e => e.Characters)
                 .WithOne(c => c.Account)
                 .HasForeignKey(c => c.AccountId)
-                .OnDelete(DeleteBehavior.Cascade) // Deletar conta = deletar personagens
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Characters_Account");
         });
     }
 
     /// <summary>
-    /// Configuração da entidade Character
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade Character com cascade delete para Stats, Inventory e Equipment.
     /// </summary>
     private void ConfigureCharacter(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Character>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Characters");
 
             // Índices
@@ -145,22 +142,24 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // Character (1) -> Inventory (1)
-            entity.HasOne(e => e.Inventory)
-                .WithOne(i => i.Character)
-                .HasForeignKey<Inventory>(i => i.CharacterId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_Inventory_Character");
-
-            // Character (1) -> Stats (1)
+            // ✅ Relacionamento: Character (1) -> Stats (1) com CASCADE DELETE
+            // Deletar Character = Deletar Stats automaticamente
             entity.HasOne(e => e.Stats)
                 .WithOne(s => s.Character)
                 .HasForeignKey<Stats>(s => s.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Stats_Character");
 
-            // Character (1) -> EquipmentSlots (N)
+            // ✅ Relacionamento: Character (1) -> Inventory (1) com CASCADE DELETE
+            // Deletar Character = Deletar Inventory (e seus Slots via outra cascata)
+            entity.HasOne(e => e.Inventory)
+                .WithOne(i => i.Character)
+                .HasForeignKey<Inventory>(i => i.CharacterId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Inventory_Character");
+
+            // ✅ Relacionamento: Character (1) -> EquipmentSlots (N) com CASCADE DELETE
+            // Deletar Character = Deletar todos os EquipmentSlots
             entity.HasMany(e => e.Equipment)
                 .WithOne(eq => eq.Character)
                 .HasForeignKey(eq => eq.CharacterId)
@@ -170,18 +169,13 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     }
 
     /// <summary>
-    /// Configuração da entidade Stats
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade Stats (relacionamento 1:1 com Character).
     /// </summary>
     private void ConfigureStats(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Stats>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Stats");
 
             // Índices
@@ -192,38 +186,19 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.HasIndex(e => e.Level)
                 .HasDatabaseName("IX_Stats_Level");
 
-            // Propriedades
-            entity.Property(e => e.Level)
-                .HasDefaultValue(1);
+            // Propriedades com valores padrão
+            entity.Property(e => e.Level).HasDefaultValue(1);
+            entity.Property(e => e.Experience).HasDefaultValue(0);
+            entity.Property(e => e.BaseStrength).HasDefaultValue(5);
+            entity.Property(e => e.BaseDexterity).HasDefaultValue(5);
+            entity.Property(e => e.BaseIntelligence).HasDefaultValue(5);
+            entity.Property(e => e.BaseConstitution).HasDefaultValue(5);
+            entity.Property(e => e.BaseSpirit).HasDefaultValue(5);
+            entity.Property(e => e.CurrentHp).HasDefaultValue(50);
+            entity.Property(e => e.CurrentMp).HasDefaultValue(30);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
 
-            entity.Property(e => e.Experience)
-                .HasDefaultValue(0);
-
-            entity.Property(e => e.BaseStrength)
-                .HasDefaultValue(5);
-
-            entity.Property(e => e.BaseDexterity)
-                .HasDefaultValue(5);
-
-            entity.Property(e => e.BaseIntelligence)
-                .HasDefaultValue(5);
-
-            entity.Property(e => e.BaseConstitution)
-                .HasDefaultValue(5);
-
-            entity.Property(e => e.BaseSpirit)
-                .HasDefaultValue(5);
-
-            entity.Property(e => e.CurrentHp)
-                .HasDefaultValue(50);
-
-            entity.Property(e => e.CurrentMp)
-                .HasDefaultValue(30);
-
-            entity.Property(e => e.IsActive)
-                .HasDefaultValue(true);
-
-            // Ignorar propriedades NotMapped
+            // Ignorar propriedades calculadas (NotMapped)
             entity.Ignore(e => e.TotalStrength);
             entity.Ignore(e => e.TotalDexterity);
             entity.Ignore(e => e.TotalIntelligence);
@@ -246,18 +221,13 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     }
 
     /// <summary>
-    /// Configuração da entidade Item
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade Item.
     /// </summary>
     private void ConfigureItem(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Item>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Items");
 
             // Índices
@@ -301,8 +271,8 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // Item (1) -> ItemStats (0..1)
+            // ✅ Relacionamento: Item (1) -> ItemStats (0..1) com CASCADE DELETE
+            // Deletar Item = Deletar ItemStats automaticamente
             entity.HasOne(e => e.Stats)
                 .WithOne(s => s.Item)
                 .HasForeignKey<ItemStats>(s => s.ItemId)
@@ -313,18 +283,13 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     }
 
     /// <summary>
-    /// Configuração da entidade ItemStats
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade ItemStats (relacionamento 1:1 com Item).
     /// </summary>
     private void ConfigureItemStats(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ItemStats>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("ItemStats");
 
             // Índices
@@ -332,7 +297,7 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
                 .IsUnique()
                 .HasDatabaseName("IX_ItemStats_ItemId");
 
-            // Propriedades - valores padrão 0
+            // Propriedades com valores padrão 0
             entity.Property(e => e.BonusStrength).HasDefaultValue(0);
             entity.Property(e => e.BonusDexterity).HasDefaultValue(0);
             entity.Property(e => e.BonusIntelligence).HasDefaultValue(0);
@@ -344,25 +309,18 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.BonusMagicDefense).HasDefaultValue(0);
             entity.Property(e => e.BonusAttackSpeed).HasDefaultValue(0f);
             entity.Property(e => e.BonusMovementSpeed).HasDefaultValue(0f);
-
-            entity.Property(e => e.IsActive)
-                .HasDefaultValue(true);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
         });
     }
 
     /// <summary>
-    /// Configuração da entidade Inventory
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade Inventory com cascade delete para InventorySlots.
     /// </summary>
     private void ConfigureInventory(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Inventory>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Inventories");
 
             // Índices
@@ -377,8 +335,8 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // Inventory (1) -> InventorySlots (N)
+            // ✅ Relacionamento: Inventory (1) -> InventorySlots (N) com CASCADE DELETE
+            // Deletar Inventory = Deletar todos os InventorySlots automaticamente
             entity.HasMany(e => e.Slots)
                 .WithOne(s => s.Inventory)
                 .HasForeignKey(s => s.InventoryId)
@@ -388,22 +346,17 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     }
 
     /// <summary>
-    /// Configuração da entidade InventorySlot
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade InventorySlot.
+    /// ⚠️ DELETE RESTRICT para Item: Não deletar Item se houver slots usando.
     /// </summary>
     private void ConfigureInventorySlot(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<InventorySlot>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("InventorySlots");
 
             // Índices
-            // Um inventário não pode ter dois slots no mesmo índice
             entity.HasIndex(e => new { e.InventoryId, e.SlotIndex })
                 .IsUnique()
                 .HasDatabaseName("IX_InventorySlots_InventoryId_SlotIndex");
@@ -418,34 +371,29 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // InventorySlot (N) -> Item (0..1)
+            // ⚠️ Relacionamento: InventorySlot (N) -> Item (0..1) com RESTRICT
+            // Não permitir deletar Item se houver slots usando (proteção de integridade)
             entity.HasOne(e => e.Item)
                 .WithMany()
                 .HasForeignKey(e => e.ItemId)
-                .OnDelete(DeleteBehavior.Restrict) // Não deletar item se houver slots usando
+                .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false)
                 .HasConstraintName("FK_InventorySlots_Item");
         });
     }
 
     /// <summary>
-    /// Configuração da entidade EquipmentSlot
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Configuração da entidade EquipmentSlot.
+    /// ⚠️ DELETE RESTRICT para Item: Não deletar Item se houver equipamentos usando.
     /// </summary>
     private void ConfigureEquipmentSlot(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EquipmentSlot>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("EquipmentSlots");
 
             // Índices
-            // Um personagem não pode ter dois itens no mesmo slot
             entity.HasIndex(e => new { e.CharacterId, e.SlotType })
                 .IsUnique()
                 .HasDatabaseName("IX_EquipmentSlots_CharacterId_SlotType");
@@ -461,25 +409,25 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 
-            // Relacionamentos
-            // EquipmentSlot (N) -> Item (0..1)
+            // ⚠️ Relacionamento: EquipmentSlot (N) -> Item (0..1) com RESTRICT
+            // Não permitir deletar Item se houver equipamentos usando (proteção de integridade)
             entity.HasOne(e => e.Item)
                 .WithMany()
                 .HasForeignKey(e => e.ItemId)
-                .OnDelete(DeleteBehavior.Restrict) // Não deletar item se houver slots usando
+                .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false)
                 .HasConstraintName("FK_EquipmentSlots_Item");
         });
     }
-    
+
+    /// <summary>
+    /// Configuração da entidade Map.
+    /// </summary>
     private void ConfigureMap(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Map>(entity =>
         {
-            // Chave primária
             entity.HasKey(e => e.Id);
-
-            // Configuração de tabela
             entity.ToTable("Maps");
 
             // Índices
@@ -512,14 +460,13 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
         });
     }
 
+    // ========== SEED DATA ==========
+
     /// <summary>
-    /// Seed inicial de dados
-    /// Autor: MonoDevPro
-    /// Data: 2025-10-05 21:16:27
+    /// Seed inicial de dados.
     /// </summary>
     private void SeedData(ModelBuilder modelBuilder)
     {
-        // Items básicos
         SeedItems(modelBuilder);
     }
 

@@ -13,9 +13,9 @@ public readonly partial struct UnconnectedLoginResponsePacket : IPacket
     public bool Success { get; init; }
     public string Message { get; init; }
     public string? SessionToken { get; init; } // ✅ Token de sessão
-    public PlayerCharData[] CurrentCharacters { get; init; }
+    public CharMenuData[] CurrentCharacters { get; init; }
 
-    private UnconnectedLoginResponsePacket(bool success, string message, string? sessionToken, PlayerCharData[] currentCharacters)
+    private UnconnectedLoginResponsePacket(bool success, string message, string? sessionToken, CharMenuData[] currentCharacters)
     {
         Success = success;
         Message = message;
@@ -24,8 +24,8 @@ public readonly partial struct UnconnectedLoginResponsePacket : IPacket
     }
 
     public static UnconnectedLoginResponsePacket Failure(string message)
-        => new(false, message, null, Array.Empty<PlayerCharData>());
+        => new(false, message, null, Array.Empty<CharMenuData>());
 
-    public static UnconnectedLoginResponsePacket SuccessResponse(string sessionToken, PlayerCharData[] characters)
+    public static UnconnectedLoginResponsePacket SuccessResponse(string sessionToken, CharMenuData[] characters)
         => new(true, "Login successful", sessionToken, characters);
 }

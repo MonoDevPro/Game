@@ -1,14 +1,10 @@
-using System;
-using System.Linq;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using Game.Persistence.Interfaces;
 
 namespace Game.Server.Authentication;
 
-public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<AccountCharacterService> logger)
+public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<AccountCharacterService> logger)
 {
     // ========== CONSTANTS ==========
     
@@ -69,20 +65,12 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
     {
         try
         {
-            // Buscar personagens SEM OrderBy (SQLite não suporta DateTimeOffset em ORDER BY)
-            var characters = await dbContext.Characters
-                .AsTracking()
-                .Include(c => c.Stats)
-                .Include(c => c.Inventory)
-                .Where(c => c.AccountId == accountId)
-                .OrderBy(a => a.Id)
-                .ToArrayAsync(cancellationToken);
-            
-            logger.LogInformation(
-                "Retrieved {Count} characters for account {AccountId}", 
-                characters.Length, 
-                accountId);
-            
+            // ✅ Usar repositório especializado
+            var characters = await unitOfWork.Characters.GetByAccountIdAsync(accountId, cancellationToken);
+
+            logger.LogInformation("Retrieved {Count} characters for account {AccountId}", 
+                characters.Length, accountId);
+
             return CharacterListResult.From(characters);
         }
         catch (Exception ex)
@@ -91,48 +79,39 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
             return CharacterListResult.Failure("Erro ao buscar personagens.");
         }
     }
-    
-    /// <summary>
-    /// Cria um novo personagem para uma conta.
-    /// </summary>
+
     public async Task<CharacterCreationResult> CreateCharacterAsync(
         CharacterInfo characterInfo, 
         CancellationToken cancellationToken = default)
     {
-        // Normalizar nome
         var nameTrimmed = characterInfo.Name.Trim();
         characterInfo = characterInfo with { Name = nameTrimmed };
-        
-        // Validar nome
+
         var validationResult = ValidateCharacterName(characterInfo.Name);
         if (!validationResult.IsValid)
-        {
             return CharacterCreationResult.Failure(validationResult.ErrorMessage!);
-        }
-        
-        // Validar limite de personagens por conta
-        var characterCount = await dbContext.Characters
-            .CountAsync(c => c.AccountId == characterInfo.AccountId, cancellationToken);
-        
+
+        // ✅ Usar repositório especializado
+        var characterCount = await unitOfWork.Characters.CountByAccountIdAsync(
+            characterInfo.AccountId, cancellationToken);
+
         if (characterCount >= MaxCharactersPerAccount)
         {
             return CharacterCreationResult.Failure(
                 $"Limite de {MaxCharactersPerAccount} personagens por conta atingido.");
         }
-        
-        // Verificar duplicação de nome (com transação para evitar race condition)
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        
+
+        // ✅ Usar transação do Unit of Work
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
+
         try
         {
-            var nameExists = await dbContext.Characters
-                .AnyAsync(c => c.Name == characterInfo.Name, cancellationToken);
-            
-            if (nameExists)
+            // ✅ Verificar nome duplicado
+            if (await unitOfWork.Characters.ExistsByNameAsync(characterInfo.Name, cancellationToken))
             {
                 return CharacterCreationResult.Failure("Nome do personagem já está em uso.");
             }
-            
+
             // Criar personagem
             var character = new Character
             {
@@ -144,30 +123,21 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
                 PositionY = DefaultSpawnY,
                 DirectionEnum = DefaultDirection,
             };
-            
-            // Criar Stats baseado na vocação
+
             character.Stats = CreateInitialStats(character, characterInfo.Vocation);
-            
-            // Criar Inventário
             character.Inventory = CreateInitialInventory(character);
-            
-            // Salvar tudo de uma vez
-            await dbContext.Characters.AddAsync(character, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            
-            logger.LogInformation(
-                "New character created: {CharacterName} (ID: {CharacterId}, Account: {AccountId}, Vocation: {Vocation})",
-                character.Name,
-                character.Id,
-                characterInfo.AccountId,
-                characterInfo.Vocation);
-            
+
+            // ✅ Adicionar via repositório
+            await unitOfWork.Characters.AddAsync(character, cancellationToken);
+            await unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            logger.LogInformation("New character created: {CharacterName} (ID: {CharacterId})",
+                character.Name, character.Id);
+
             return CharacterCreationResult.From(character);
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
             logger.LogError(ex, "Error creating character: {CharacterName}", characterInfo.Name);
             return CharacterCreationResult.Failure("Erro ao criar personagem.");
         }
@@ -183,17 +153,16 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
     {
         try
         {
-            var character = await dbContext.Characters
-                .Include(c => c.Stats)
-                .Include(c => c.Inventory)
-                .FirstOrDefaultAsync(c => c.Id == characterId, cancellationToken);
-            
+            // ✅ Usar método especializado do repositório
+            var character = await unitOfWork.Characters
+                .GetByIdWithRelationsForDeletionAsync(characterId, cancellationToken);
+        
             if (character is null)
             {
                 return CharacterDeletionResult.Failure("Personagem não encontrado.");
             }
-            
-            // Validar propriedade
+        
+            // ✅ Validar propriedade
             if (character.AccountId != accountId)
             {
                 logger.LogWarning(
@@ -201,19 +170,22 @@ public sealed class AccountCharacterService(GameDbContext dbContext, ILogger<Acc
                     accountId,
                     characterId,
                     character.AccountId);
-                
+            
                 return CharacterDeletionResult.Failure("Você não pode deletar este personagem.");
             }
-            
-            dbContext.Characters.Remove(character);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            
+        
+            // ✅ Deletar via repositório (usa o método DeleteAsync do Repository<T>)
+            await unitOfWork.Characters.DeleteAsync(characterId, cancellationToken);
+        
+            // ✅ Salvar mudanças via Unit of Work
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        
             logger.LogInformation(
                 "Character deleted: {CharacterName} (ID: {CharacterId}, Account: {AccountId})",
                 character.Name,
                 characterId,
                 accountId);
-            
+        
             return CharacterDeletionResult.Ok();
         }
         catch (Exception ex)
