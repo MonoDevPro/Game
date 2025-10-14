@@ -15,10 +15,11 @@ namespace GodotClient.Scenes.Game;
 /// Autor: MonoDevPro
 /// Data: 2025-10-12 02:13:16
 /// </summary>
-public partial class GameScript : Node
+public partial class GameScript : Node2D
 {
     private INetworkManager? _network;
     private readonly Dictionary<int, PlayerSnapshot> _players = new();
+    
     private PlayerView? _playerView;
     private InputManager? _inputManager;
     
@@ -26,7 +27,11 @@ public partial class GameScript : Node
     private Label? _statusLabel;
 
     public bool CanSendInput => _network?.IsRunning == true && _localNetworkId > -1;
-    public AnimatedPlayerVisual? GetLocalPlayer => _playerView?.GetLocalPlayer();
+    
+    public AnimatedPlayerVisual? GetLocalPlayerVisual()
+    {
+        return _playerView?.GetLocalPlayer();
+    }
 
     public override void _Ready()
     {
@@ -163,17 +168,18 @@ public partial class GameScript : Node
     {
         if (_players.TryGetValue(packet.NetworkId, out var snapshot))
         {
-            // Atualiza snapshot local com posição, direção e velocidade
+            // Atualiza o snapshot local (isso é bom para debug e estado geral)
             snapshot = snapshot with 
             { 
                 Position = packet.Position, 
                 Facing = packet.Facing,
-                Speed = packet.Speed
+                Speed = packet.Speed,
+                LastProcessedInputSequence = packet.LastProcessedInputSequence // <-- Adicionar ao seu snapshot
             };
             _players[packet.NetworkId] = snapshot;
-            
-            // Atualiza visualmente (passa o speed para predição)
-            _playerView?.UpdateMovement(packet.NetworkId, packet.Position, packet.Facing, packet.Speed);
+        
+            // Chama a nova função de atualização no PlayerView
+            _playerView?.UpdateFromServer(packet.NetworkId, packet.Position, packet.Facing, packet.Speed, packet.LastProcessedInputSequence);
         }
     }
 
@@ -230,24 +236,23 @@ public partial class GameScript : Node
     /// <summary>
     /// ✅ Envia input do jogador para o servidor (com validação).
     /// </summary>
-    public void QueueInput(GridOffset movement, GridOffset mouseLook, ushort buttons)
+    public void QueueInput(DirectionOffset direction, DirectionOffset mouseLook, ushort buttons)
     {
-        // ✅ Validação adicional (redundante, mas garante)
-        if (movement != GridOffset.Zero)
-        {
-            var localPlayer = GetLocalPlayer;
-            if (localPlayer is null)
-                return;
+        var localPlayer = _playerView?.GetLocalPlayer();
+        if (localPlayer is null)
+            return;
 
-            // ✅ CLIENT PREDICTION: Prediz movimento local imediatamente
-            localPlayer.PredictLocalMovement(movement);
-        }
+        // 1. INFORMA O VISUAL SOBRE O INPUT PARA PREDIÇÃO CONTÍNUA
+        localPlayer.SetLocalMovementInput(direction);
 
-        // ✅ Envia para o servidor
-        var packet = new PlayerInputPacket(movement, mouseLook, buttons);
+        // 2. ENVIA PARA O SERVIDOR COM O NÚMERO DE SEQUÊNCIA
+        // Você precisará de uma forma de obter a sequência atual do AnimatedPlayerVisual
+        // ou gerenciá-la aqui. Vamos supor que o visual a gerencia.
+        uint inputSequence = localPlayer.GetCurrentInputSequence();
+        var packet = new PlayerInputPacket(inputSequence, direction, mouseLook, buttons);
         _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         
-        GD.Print($"[GameClient] Sent input: Move({movement.X},{movement.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
+        GD.Print($"[GameClient] Sent input: Move({direction.X},{direction.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
         
     }
 

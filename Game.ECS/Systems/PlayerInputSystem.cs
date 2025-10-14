@@ -14,47 +14,38 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
     [Query]
     [All<PlayerInput, Velocity, Direction, MovementSpeed, PlayerControlled>]
     [None<Dead>]
-    private void ProcessInput(Entity entity, ref PlayerInput input, ref Velocity vel, ref Direction dir, in MovementSpeed speed)
+    private void ProcessInputMovement(Entity e, ref PlayerInput input, ref Velocity vel, ref Direction dir, in MovementSpeed speed)
     {
-        // 1. Calcula velocidade (células por segundo)
+        // Se não há input de movimento, zera a velocidade e para.
+        if (input.Movement.X == 0 && input.Movement.Y == 0)
+        {
+            if (vel.Value.MagnitudeSquared > 0)
+            {
+                vel.Value = FCoordinate.Zero;
+                World.MarkNetworkDirty(e, SyncFlags.Velocity); // Marca para sincronizar a parada
+            }
+            return;
+        }
+        
+        // Calcula velocidade (células por segundo)
         float cellsPerSecond = speed.BaseSpeed * speed.CurrentModifier;
-
         if ((input.Flags & InputFlags.Sprint) != 0)
         {
             cellsPerSecond *= 1.5f;
             input.Flags &= ~InputFlags.Sprint;
         }
         
-        if (input.Movement == GridOffset.Zero)
-            return;
+        if (cellsPerSecond <= 0)
+            return; // Sem movimento possível
         
-        // OPÇÃO B: Diagonal = só 1 eixo prioritário (mais rápido, mais arcade)
-        if (input.Movement.X != 0 && input.Movement.Y != 0)
+        // Altera a direção conforme o input
+        if (dir.Value.X != input.Movement.X || dir.Value.Y != input.Movement.Y)
         {
-            // Diagonal = mesma velocidade que reto
-            float diagonalSpeed = cellsPerSecond / MathF.Sqrt(2);
-            vel.Value += new FCoordinate(
-                input.Movement.X * diagonalSpeed,
-                input.Movement.Y * diagonalSpeed);
-        }
-        else
-        {
-            // Reto = velocidade normal
-            vel.Value += new FCoordinate(
-                input.Movement.X * cellsPerSecond,
-                input.Movement.Y * cellsPerSecond);
+            dir.Value = input.Movement.ToSignedCoordinate();
+            World.MarkNetworkDirty(e, SyncFlags.Direction);
         }
         
-        // 3. Atualiza direção apenas quando há movimento
-        if (input.Movement.X != 0 || input.Movement.Y != 0)
-        {
-            var newDir = new Coordinate(input.Movement.X, input.Movement.Y);
-            if (newDir != dir.Value)
-            {
-                dir.Value = newDir;
-                World.MarkNetworkDirty(entity, SyncFlags.Direction);
-            }
-            input.Movement = GridOffset.Zero; // Consome o input
-        }
+        var moveDirection = new FCoordinate(input.Movement.X, input.Movement.Y).Normalized;
+        vel.Value = moveDirection * cellsPerSecond;
     }
 }

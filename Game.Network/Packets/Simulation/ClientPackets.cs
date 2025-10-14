@@ -17,6 +17,7 @@ public readonly partial record struct GameConnectPacket(string GameToken) : IPac
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerInputPacket(
-    GridOffset Movement,
-    GridOffset MouseLook,
+    uint Sequence,
+    DirectionOffset Movement,
+    DirectionOffset MouseLook,
     ushort Buttons) : IPacket;

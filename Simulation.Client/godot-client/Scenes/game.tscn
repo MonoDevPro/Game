@@ -13,4 +13,4 @@ script = ExtResource("2_3dryh")
 [node name="PlayerView" type="Node" parent="."]
 script = ExtResource("6_21xkr")
 
-[node name="World" type="Node2D" parent="."]
+[node name="Entities" type="Node2D" parent="."]

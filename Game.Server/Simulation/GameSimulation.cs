@@ -82,10 +82,10 @@ public class GameSimulation
         {
             new NetworkId { Value = networkId },
             new PlayerId { Value = playerId },
-            new Position { Value = spawnPosition },
+            new Position { Value = new FCoordinate(spawnPosition.X, spawnPosition.Y) },
+            new GridPosition { Value = spawnPosition },
             new Direction { Value = facing.ToCoordinate() },
             new Velocity { Value = FCoordinate.Zero },
-            new MoveAccumulator { Value = FCoordinate.Zero },
             new Health { Current = currentHp, Max = maxHp, RegenerationRate = hpRegen },
             new Mana { Current = currentMp, Max = maxMp, RegenerationRate = mpRegen },
             new MovementSpeed { BaseSpeed = 5f, CurrentModifier = movementModifier },
@@ -115,7 +115,7 @@ public class GameSimulation
         facing = DirectionEnum.South;
         speed = 0f;
 
-        if (!_world.TryGet(entity, out Position posComponent))
+        if (!_world.TryGet(entity, out GridPosition posComponent))
         {
             return false;
         }
@@ -148,7 +148,7 @@ public class GameSimulation
         return true;
     }
 
-    public bool TryApplyPlayerInput(Entity entity, GridOffset movement, GridOffset mouseLook, ushort buttons)
+    public bool TryApplyPlayerInput(Entity entity, uint sequence, DirectionOffset movement, DirectionOffset mouseLook, ushort buttons)
     {
         if (!_world.Has<PlayerInput>(entity))
         {
@@ -156,7 +156,7 @@ public class GameSimulation
         }
 
         // Clamp para segurança (sbyte já é -128 a 127, mas garantimos -1,0,1)
-        movement = new GridOffset(
+        movement = new DirectionOffset(
             movement.X < -1 ? (sbyte)-1 : (movement.X > 1 ? (sbyte)1 : movement.X),
             movement.Y < -1 ? (sbyte)-1 : (movement.Y > 1 ? (sbyte)1 : movement.Y)
         );
@@ -165,6 +165,7 @@ public class GameSimulation
         input.Movement = movement;
         input.MouseLook = mouseLook;
         input.Flags = (InputFlags)buttons;
+        input.Sequence = sequence;
 
         return true;
     }

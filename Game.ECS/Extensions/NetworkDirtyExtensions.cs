@@ -27,7 +27,7 @@ public static class NetworkDirtyExtensions
             world.Add(entity, new NetworkDirty
             {
                 Flags = f,
-                LastSyncTick = 0
+                LastProcessedInputSequence = 0
             });
         }
     }

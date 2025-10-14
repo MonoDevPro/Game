@@ -17,7 +17,7 @@ public static class DirectionExtensions
         DirectionEnum.West => new Coordinate(-1, 0),
         _ => new Coordinate(0, 0)
     };
-
+    
     public static int ToAngleDegrees(this DirectionEnum d) => d switch
     {
         DirectionEnum.North => 90,

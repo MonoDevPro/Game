@@ -30,7 +30,8 @@ public readonly partial record struct PlayerDespawnPacket(int NetworkId) : IPack
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerMovementPacket(
-    int NetworkId, Coordinate Position, Coordinate Facing, float Speed) : IPacket;
+    int NetworkId, Coordinate Position, Coordinate Facing, float Speed, uint LastProcessedInputSequence
+    ) : IPacket;
 
 /// <summary>
 /// Server -> Client player vitals update (HP/MP).

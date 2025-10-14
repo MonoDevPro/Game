@@ -21,7 +21,7 @@ public partial class PlayerView : Node
     public override void _Ready()
     {
         base._Ready();
-        _world = GetParent()?.GetNode<Node2D>("World");
+        _world = GetParent()?.GetNode<Node2D>("Entities");
     }
 
     public void SetLocalPlayer(PlayerSnapshot snapshot)
@@ -45,13 +45,11 @@ public partial class PlayerView : Node
         }
     }
 
-    public void UpdateMovement(int networkId, Coordinate position, Coordinate facing, float speed)
+    public void UpdateFromServer(int networkId, Coordinate position, Coordinate facing, float speed, uint lastProcessedInputSequence)
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
-            visual.UpdateSpeed(speed);
-            visual.UpdateFacing(facing);
-            visual.UpdatePosition(position);
+            visual.UpdateFromServer(position, facing, speed, lastProcessedInputSequence);
         }
     }
 

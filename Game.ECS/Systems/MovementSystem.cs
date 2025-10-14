@@ -12,104 +12,46 @@ namespace Game.ECS.Systems;
 public sealed partial class MovementSystem(World world, MapService map) : GameSystem(world)
 {
     [Query]
-    [All<Position, Velocity>]
-    private void MoveEntity(Entity entity, ref Position pos, ref Velocity vel, [Data] float deltaTime)
+    [All<GridPosition, Velocity>]
+    private void MoveEntity(Entity e, ref GridPosition grid, ref Position pos, ref Velocity vel, [Data] float deltaTime)
     {
-        if (deltaTime <= 0f) return;
-
-        if (vel.Value is { X: 0f, Y: 0f })
+        // Se não há velocidade, não há o que fazer.
+        if (vel.Value.MagnitudeSquared == 0f)
             return;
         
-        vel.Value = new FCoordinate(
-            vel.Value.X * deltaTime,
-            vel.Value.Y * deltaTime);
+        // 1. Calcula a posição precisa de destino potencial
+        var displacement = vel.Value * deltaTime;
+        var nextPrecisePos = pos.Value + displacement;
+        
+        // 2. Converte para a próxima posição do grid
+        var nextGridPos = new Coordinate(
+            (int)Math.Round(nextPrecisePos.X),
+            (int)Math.Round(nextPrecisePos.Y)
+        );
 
-        // 2. Extrai passos inteiros (truncate preserva sinal)
-        int stepsX = (int)MathF.Truncate(vel.Value.X);
-        int stepsY = (int)MathF.Truncate(vel.Value.Y);
-
-        // 3. Se nenhum passo completo, retorna (ainda acumulando)
-        if (stepsX == 0 && stepsY == 0)
+        // 3. Se a posição no grid não mudou, apenas atualizamos a posição precisa e paramos.
+        //    Isso permite que pequenos movimentos se acumulem sem verificar colisão desnecessariamente.
+        if (grid.Value == nextGridPos)
+        {
+            pos.Value = nextPrecisePos;
             return;
-        
-        // 4. Consome os passos da velocidade
-        vel.Value = new FCoordinate(
-            vel.Value.X - stepsX,
-            vel.Value.Y - stepsY);
-
-        var startPos = pos.Value;
-        
-        // 5. Aplica movimento step-by-step
-        // Para grid, geralmente vai mover 1 célula por vez
-        int iterations = Math.Max(Math.Abs(stepsX), Math.Abs(stepsY));
-        int remainingX = stepsX;
-        int remainingY = stepsY;
-
-        for (int i = 0; i < iterations; i++)
-        {
-            int dx = 0, dy = 0;
-            
-            if (remainingX != 0)
-            {
-                dx = Math.Sign(remainingX);
-                remainingX -= dx;
-            }
-            
-            if (remainingY != 0)
-            {
-                dy = Math.Sign(remainingY);
-                remainingY -= dy;
-            }
-
-            var candidate = new Coordinate(pos.Value.X + dx, pos.Value.Y + dy);
-
-            // Tenta movimento diagonal primeiro
-            if (map.InBounds(candidate) && !map.IsBlocked(candidate))
-            {
-                pos.Value = candidate;
-            }
-            else
-            {
-                // Se bloqueado, tenta deslizar nas paredes
-                bool moved = false;
-                
-                // Tenta só X
-                if (dx != 0)
-                {
-                    var candX = new Coordinate(pos.Value.X + dx, pos.Value.Y);
-                    if (map.InBounds(candX) && !map.IsBlocked(candX))
-                    {
-                        pos.Value = candX;
-                        moved = true;
-                    }
-                }
-
-                // Se não moveu em X, tenta só Y
-                if (!moved && dy != 0)
-                {
-                    var candY = new Coordinate(pos.Value.X, pos.Value.Y + dy);
-                    if (map.InBounds(candY) && !map.IsBlocked(candY))
-                    {
-                        pos.Value = candY;
-                        moved = true;
-                    }
-                }
-
-                // Se não conseguiu mover, para de processar steps
-                if (!moved)
-                {
-                    // IMPORTANTE: Zera o acumulador para não ficar "empurrando" a parede
-                    vel.Value = FCoordinate.Zero;
-                    break;
-                }
-            }
         }
-
-        // 6. Se moveu, marca como dirty
-        if (pos.Value != startPos)
+        
+        // 4. VERIFICAÇÃO DE COLISÃO: A posição no grid vai mudar, então validamos o destino.
+        //    Verifica se a nova posição está dentro dos limites do mapa e não está bloqueada.
+        if (!map.InBounds(nextGridPos) || map.IsBlocked(nextGridPos))
         {
-            Console.WriteLine($"[MOVE] Entity {entity.Id}: {startPos} → {pos.Value}");
-            World.MarkNetworkDirty(entity, SyncFlags.Position);
+            // Posição inválida. Barramos o movimento.
+            // Opcional: zerar a velocidade para parar a entidade completamente ao colidir.
+            vel.Value = FCoordinate.Zero; 
+            return; // Não atualiza a posição.
         }
+        
+        // 5. Movimento VÁLIDO: Atualiza a posição precisa e a posição do grid.
+        pos.Value = nextPrecisePos;
+        grid.Value = nextGridPos;
+
+        // Marca a entidade como "dirty" para sincronização de rede.
+        World.MarkNetworkDirty(e, SyncFlags.Movement);
     }
 }

@@ -68,7 +68,7 @@ public partial class InputManager : Node
         if (moveX != 0 || moveY != 0 || buttons != 0)
         {
             _game.QueueInput(
-                new GridOffset(moveX, moveY), 
+                new DirectionOffset(moveX, moveY), 
                 GetMouseGridPositionRelative(), 
                 buttons);
         }
@@ -90,17 +90,17 @@ public partial class InputManager : Node
     /// <summary>
     /// Obtém posição RELATIVA do mouse ao player local.
     /// </summary>
-    private GridOffset GetMouseGridPositionRelative()
+    private DirectionOffset GetMouseGridPositionRelative()
     {
-        var localPlayer = _game?.GetLocalPlayer;
+        var localPlayer = _game?.GetLocalPlayerVisual();
         if (localPlayer is null)
-            return GridOffset.Zero;
+            return DirectionOffset.Zero;
 
         var mousePos = localPlayer.GetLocalMousePosition();
         var playerPos = localPlayer.Position;
         var diff = mousePos - playerPos;
 
-        return new GridOffset(
+        return new DirectionOffset(
             (sbyte)Mathf.RoundToInt(diff.X / TileSize), 
             (sbyte)Mathf.RoundToInt(diff.Y / TileSize));
     }

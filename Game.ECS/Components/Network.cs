@@ -9,7 +9,7 @@ namespace Game.ECS.Components;
 /// Data: 2025-10-07 17:53:19
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct NetworkDirty { public ulong Flags; public uint LastSyncTick; }
+public struct NetworkDirty { public ulong Flags; public uint LastProcessedInputSequence; }
 
 /// <summary>
 /// Flags de sincronização de rede (até 64 flags)
