@@ -49,13 +49,9 @@ public partial class InputManager : Node
         
         ushort buttons = 0; // Nenhuma ação por enquanto
         if (Input.IsActionPressed("click_left"))
-        {
             buttons |= (ushort)InputFlags.ClickLeft;
-        }
         if (Input.IsActionPressed("click_right"))
-        {
             buttons |= (ushort)InputFlags.ClickRight;
-        }
         
         if (Input.IsActionPressed("attack"))
             buttons |= (ushort)InputFlags.Attack;
@@ -66,12 +62,10 @@ public partial class InputManager : Node
         // Envia direto como sbyte (signed byte: -128 a 127)
         // IMPORTANTE: Apenas envia se houver input (evita spam de pacotes vazios)
         if (moveX != 0 || moveY != 0 || buttons != 0)
-        {
             _game.QueueInput(
-                new DirectionOffset(moveX, moveY), 
+                new GridOffset(moveX, moveY), 
                 GetMouseGridPositionRelative(), 
                 buttons);
-        }
     }
     
     /// <summary>
@@ -90,17 +84,17 @@ public partial class InputManager : Node
     /// <summary>
     /// Obtém posição RELATIVA do mouse ao player local.
     /// </summary>
-    private DirectionOffset GetMouseGridPositionRelative()
+    private GridOffset GetMouseGridPositionRelative()
     {
         var localPlayer = _game?.GetLocalPlayerVisual();
         if (localPlayer is null)
-            return DirectionOffset.Zero;
+            return GridOffset.Zero;
 
         var mousePos = localPlayer.GetLocalMousePosition();
         var playerPos = localPlayer.Position;
         var diff = mousePos - playerPos;
 
-        return new DirectionOffset(
+        return new GridOffset(
             (sbyte)Mathf.RoundToInt(diff.X / TileSize), 
             (sbyte)Mathf.RoundToInt(diff.Y / TileSize));
     }

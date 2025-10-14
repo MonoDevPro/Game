@@ -236,23 +236,23 @@ public partial class GameScript : Node2D
     /// <summary>
     /// ✅ Envia input do jogador para o servidor (com validação).
     /// </summary>
-    public void QueueInput(DirectionOffset direction, DirectionOffset mouseLook, ushort buttons)
+    public void QueueInput(GridOffset grid, GridOffset mouseLook, ushort buttons)
     {
         var localPlayer = _playerView?.GetLocalPlayer();
         if (localPlayer is null)
             return;
 
         // 1. INFORMA O VISUAL SOBRE O INPUT PARA PREDIÇÃO CONTÍNUA
-        localPlayer.SetLocalMovementInput(direction);
+        localPlayer.SetLocalMovementInput(grid);
 
         // 2. ENVIA PARA O SERVIDOR COM O NÚMERO DE SEQUÊNCIA
         // Você precisará de uma forma de obter a sequência atual do AnimatedPlayerVisual
         // ou gerenciá-la aqui. Vamos supor que o visual a gerencia.
         uint inputSequence = localPlayer.GetCurrentInputSequence();
-        var packet = new PlayerInputPacket(inputSequence, direction, mouseLook, buttons);
+        var packet = new PlayerInputPacket(inputSequence, grid, mouseLook, buttons);
         _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         
-        GD.Print($"[GameClient] Sent input: Move({direction.X},{direction.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
+        GD.Print($"[GameClient] Sent input: Move({grid.X},{grid.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
         
     }
 

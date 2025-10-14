@@ -69,4 +69,23 @@ public static class DirectionExtensions
             _ => DirectionEnum.None
         };
     }
+    
+    public static DirectionEnum ToDirectionEnum(this GridOffset offset)
+    {
+        var x = Math.Clamp((int)offset.X, -1, 1);
+        var y = Math.Clamp((int)offset.Y, -1, 1);
+
+        return (x, y) switch
+        {
+            (0, -1) => DirectionEnum.North,
+            (1, -1) => DirectionEnum.NorthEast,
+            (-1, -1) => DirectionEnum.NorthWest,
+            (0, 1) => DirectionEnum.South,
+            (1, 1) => DirectionEnum.SouthEast,
+            (-1, 1) => DirectionEnum.SouthWest,
+            (1, 0) => DirectionEnum.East,
+            (-1, 0) => DirectionEnum.West,
+            _ => DirectionEnum.None
+        };
+    }
 }
