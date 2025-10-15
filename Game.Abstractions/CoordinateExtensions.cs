@@ -4,9 +4,6 @@ namespace Game.Abstractions;
 
 public static class CoordinateExtensions
 {
-    public static Coordinate ToSignedCoordinate(this GridOffset offset) 
-        => new(Math.Sign(offset.X), Math.Sign(offset.Y));
-    
     /// <summary>Distância euclidiana (double).</summary>
     public static double DistanceTo(this Coordinate current, Coordinate other)
     {

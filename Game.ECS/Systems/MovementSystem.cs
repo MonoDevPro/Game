@@ -24,10 +24,7 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
         var nextPrecisePos = pos.Value + displacement;
         
         // 2. Converte para a próxima posição do grid
-        var nextGridPos = new Coordinate(
-            (int)Math.Round(nextPrecisePos.X),
-            (int)Math.Round(nextPrecisePos.Y)
-        );
+        var nextGridPos = new Coordinate((int)Math.Round(nextPrecisePos.X), (int)Math.Round(nextPrecisePos.Y));
 
         // 3. Se a posição no grid não mudou, apenas atualizamos a posição precisa e paramos.
         //    Isso permite que pequenos movimentos se acumulem sem verificar colisão desnecessariamente.
@@ -44,13 +41,18 @@ public sealed partial class MovementSystem(World world, MapService map) : GameSy
             // Posição inválida. Barramos o movimento.
             // Opcional: zerar a velocidade para parar a entidade completamente ao colidir.
             vel.Value = FCoordinate.Zero; 
+            World.MarkNetworkDirty(e, SyncFlags.Velocity); // Marca para sincronizar a colisão e parada
             return; // Não atualiza a posição.
         }
         
         // 5. Movimento VÁLIDO: Atualiza a posição precisa e a posição do grid.
         pos.Value = nextPrecisePos;
         grid.Value = nextGridPos;
-
+        
+        Console.WriteLine($"Entity {e} moved to {pos.Value} (Grid: {grid.Value})");
+        
+        vel.Value = FCoordinate.Zero; // Zera a velocidade após o movimento (movimento por input)
+        
         // Marca a entidade como "dirty" para sincronização de rede.
         World.MarkNetworkDirty(e, SyncFlags.Movement);
     }

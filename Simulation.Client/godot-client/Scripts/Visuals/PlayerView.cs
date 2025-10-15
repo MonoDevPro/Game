@@ -45,11 +45,11 @@ public partial class PlayerView : Node
         }
     }
 
-    public void UpdateFromServer(int networkId, Coordinate position, Coordinate facing, float speed, uint lastProcessedInputSequence)
+    public void UpdateFromServer(int networkId, Coordinate position, Coordinate facing, float speed)
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
-            visual.UpdateFromServer(position, facing, speed, lastProcessedInputSequence);
+            visual.UpdateFromServer(position, facing, speed);
         }
     }
 

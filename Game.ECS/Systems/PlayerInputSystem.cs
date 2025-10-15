@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -18,14 +19,7 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
     {
         // Se não há input de movimento, zera a velocidade e para.
         if (input.Movement.X == 0 && input.Movement.Y == 0)
-        {
-            if (vel.Value.MagnitudeSquared > 0)
-            {
-                vel.Value = FCoordinate.Zero;
-                World.MarkNetworkDirty(e, SyncFlags.Velocity); // Marca para sincronizar a parada
-            }
             return;
-        }
         
         // Calcula velocidade (células por segundo)
         float cellsPerSecond = speed.BaseSpeed * speed.CurrentModifier;
@@ -41,11 +35,15 @@ public sealed partial class PlayerInputSystem(World world) : GameSystem(world)
         // Altera a direção conforme o input
         if (dir.Value.X != input.Movement.X || dir.Value.Y != input.Movement.Y)
         {
-            dir.Value = input.Movement.ToSignedCoordinate();
+            dir.Value = new Coordinate(Math.Sign(dir.Value.X), Math.Sign(dir.Value.Y));
             World.MarkNetworkDirty(e, SyncFlags.Direction);
         }
         
         var moveDirection = new FCoordinate(input.Movement.X, input.Movement.Y).Normalized;
         vel.Value = moveDirection * cellsPerSecond;
+        World.MarkNetworkDirty(e, SyncFlags.Velocity);
+        
+        // Zera o input de movimento após processar
+        input.Movement = new GridOffset(0, 0);
     }
 }

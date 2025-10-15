@@ -174,12 +174,11 @@ public partial class GameScript : Node2D
                 Position = packet.Position, 
                 Facing = packet.Facing,
                 Speed = packet.Speed,
-                LastProcessedInputSequence = packet.LastProcessedInputSequence // <-- Adicionar ao seu snapshot
             };
             _players[packet.NetworkId] = snapshot;
         
             // Chama a nova função de atualização no PlayerView
-            _playerView?.UpdateFromServer(packet.NetworkId, packet.Position, packet.Facing, packet.Speed, packet.LastProcessedInputSequence);
+            _playerView?.UpdateFromServer(packet.NetworkId, packet.Position, packet.Facing, packet.Speed);
         }
     }
 
@@ -248,8 +247,7 @@ public partial class GameScript : Node2D
         // 2. ENVIA PARA O SERVIDOR COM O NÚMERO DE SEQUÊNCIA
         // Você precisará de uma forma de obter a sequência atual do AnimatedPlayerVisual
         // ou gerenciá-la aqui. Vamos supor que o visual a gerencia.
-        uint inputSequence = localPlayer.GetCurrentInputSequence();
-        var packet = new PlayerInputPacket(inputSequence, grid, mouseLook, buttons);
+        var packet = new PlayerInputPacket(grid, mouseLook, buttons);
         _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         
         GD.Print($"[GameClient] Sent input: Move({grid.X},{grid.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");

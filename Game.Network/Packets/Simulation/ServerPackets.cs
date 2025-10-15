@@ -30,7 +30,7 @@ public readonly partial record struct PlayerDespawnPacket(int NetworkId) : IPack
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerMovementPacket(
-    int NetworkId, Coordinate Position, Coordinate Facing, float Speed, uint LastProcessedInputSequence
+    int NetworkId, Coordinate Position, Coordinate Facing, float Speed
     ) : IPacket;
 
 /// <summary>

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Game.Abstractions;
 using Game.Domain.Enums;
 using Game.Domain.VOs;
@@ -16,12 +15,10 @@ namespace GodotClient.Visuals;
 /// </summary>
 public sealed partial class AnimatedPlayerVisual : Node2D
 {
-    // Estrutura para armazenar inputs para reconciliação
-    private struct PlayerInputState { public uint Sequence; public GridOffset Movement; }
-    
     // --- Configuração ---
     [Export] private float _tileSize = 32f;
     [Export] private float _defaultTilesPerSecond = 5f;
+    [Export] private float _positionEpsilonFactor = 0.1f; // 10% do tile
 
     // --- Nós ---
     private AnimatedSprite2D? _sprite;
@@ -31,23 +28,19 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     // --- Estado de Movimento ---
     private bool _isLocal;
     private Vector2 _currentVisualPosition = Vector2.Zero; // Posição visual atual, interpolada a cada frame.
-    private Vector2 _serverPosition = Vector2.Zero;       // Última posição autoritativa recebida do servidor (em pixels).
-    
-    // --- Predição Local ---
-    private Vector2 _predictionTargetPosition = Vector2.Zero; // <<< NOVO: Alvo do movimento de predição
-    private GridOffset _lastInputMovement = GridOffset.Zero;
-    private uint _inputSequence = 0;
-    /// <summary>
-    /// Retorna o número de sequência atual para ser enviado ao servidor.
-    /// </summary>
-    public uint GetCurrentInputSequence() => _inputSequence;
-    
+    private Vector2 _serverPosition = Vector2.Zero; // Última posição autoritativa recebida do servidor (em pixels).
+    private Vector2 _predictedPosition = Vector2.Zero; // Posição prevista baseada no input local (em pixels).
+
+    private Coordinate _predictedGridPos = new Coordinate(0, 0);
+    private Coordinate _serverGridPos = new Coordinate(0, 0);
+    private float PositionEpsilon => MathF.Max(0.5f, _tileSize * _positionEpsilonFactor);
+
     // --- Estado de Animação ---
     private DirectionEnum _currentDirection = DirectionEnum.South;
     private float _currentSpeedPx;
     private float _currentTilesPerSecond;
 
-    // --- Cache de Colisão ---
+    // --- Cache de Colisão s---
     private static byte[]? _collisionCache;
     private static int _mapWidth;
     private static int _mapHeight;
@@ -96,7 +89,12 @@ public sealed partial class AnimatedPlayerVisual : Node2D
 
         _currentVisualPosition = Position;
         _serverPosition = Position;
-        _predictionTargetPosition = Position; // <<< INICIALIZA O ALVO NA POSIÇÃO INICIAL
+        _predictedPosition = Position;
+
+        // inicializar grid coords
+        _serverGridPos = new Coordinate((int)Math.Round(_serverPosition.X / _tileSize),
+            (int)Math.Round(_serverPosition.Y / _tileSize));
+        _predictedGridPos = _serverGridPos;
 
         _currentTilesPerSecond = Math.Max(0.0001f, _defaultTilesPerSecond);
         _currentSpeedPx = _currentTilesPerSecond * _tileSize;
@@ -104,7 +102,7 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         PlayDirectionalAnimation("idle", _currentDirection);
         UpdateAnimationSpeedForCurrent();
     }
-    
+
     // ===================================================================
     // 1. LÓGICA DE PREDIÇÃO LOCAL (CHAMADA PELO INPUT MANAGER)
     // ===================================================================
@@ -117,137 +115,105 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     {
         if (!_isLocal) return;
 
-        // Apenas atualiza o input. A lógica de movimento será tratada no _Process.
-        if (_lastInputMovement != movement)
+        if (movement.ManhattanDistance() > 1)
+            movement = movement.Signed(); // normaliza para -1/0/1
+
+        if (movement == GridOffset.Zero)
         {
-            _lastInputMovement = movement;
-            if (movement != GridOffset.Zero)
-            {
-                _inputSequence++;
-            }
+            // não altere _predictedGridPos — o personagem completa o passo ativo.
+            // Apenas atualiza velocidade de animação; a decisão idle/walk ficará centralizada em _Process.
+            UpdateAnimationSpeedForCurrent();
+            return;
+        }
+
+        var currentPredictedGrid = _predictedGridPos;
+        var targetGridPos = new Coordinate(currentPredictedGrid.X + movement.X, currentPredictedGrid.Y + movement.Y);
+
+        _currentDirection = movement.ToDirectionEnum();
+
+        if (CanMoveTo(targetGridPos))
+        {
+            _predictedGridPos = targetGridPos;
+            _predictedPosition = new Vector2(targetGridPos.X * _tileSize, targetGridPos.Y * _tileSize);
         }
     }
 
     // ===================================================================
     // 2. LÓGICA DE ATUALIZAÇÃO DO SERVIDOR (CHAMADA PELO GAMESCRIPT)
     // ===================================================================
-
-    /// <summary>
-    /// Atualiza o estado do jogador com base nos dados autoritativos do servidor.
-    /// </summary>
-    public void UpdateFromServer(Coordinate serverGridPos, Coordinate facing, float speed, uint lastProcessedSequence)
-    {
-        // ... (a lógica de reconciliação permanece a mesma, mas agora ela corrige o _predictionTargetPosition) ...
-        UpdateSpeed(speed);
-        UpdateFacing(facing);
-
-        var authoritativePosition = new Vector2(serverGridPos.X * _tileSize, serverGridPos.Y * _tileSize);
-        _serverPosition = authoritativePosition;
-
-        if (_isLocal)
-        {
-            // A reconciliação agora ajusta a posição visual e o alvo da predição.
-            if (_currentVisualPosition.DistanceTo(authoritativePosition) > _tileSize)
-            {
-                // Se o erro for muito grande, faz o "snap" tanto da posição visual quanto do alvo.
-                _currentVisualPosition = authoritativePosition;
-                _predictionTargetPosition = authoritativePosition;
-                GD.Print("Reconciliation: Large error, snapping position.");
-            }
-        }
-    }
-
-    // ===================================================================
-    // 3. LOOP DE JOGO (_PROCESS)
-    // ===================================================================
-
-    public override void _Process(double delta)
-    {
-        base._Process(delta);
-
-        if (_isLocal)
-        {
-            // --- PREDIÇÃO LOCAL COM INTERPOLAÇÃO ---
-
-            // 1. Verifica se já chegamos ao nosso alvo de predição.
-            if (_currentVisualPosition.IsEqualApprox(_predictionTargetPosition))
-            {
-                // 2. Se chegamos e há um novo input de movimento, calculamos o próximo alvo.
-                if (_lastInputMovement != GridOffset.Zero)
-                {
-                    var nextTargetGrid = new Coordinate(
-                        Mathf.RoundToInt(_currentVisualPosition.X / _tileSize),
-                        Mathf.RoundToInt(_currentVisualPosition.Y / _tileSize)
-                    ) + _lastInputMovement;
-
-                    // 3. Valida se podemos mover para o próximo alvo.
-                    if (CanMoveTo(nextTargetGrid))
-                    {
-                        _predictionTargetPosition = new Vector2(nextTargetGrid.X * _tileSize, nextTargetGrid.Y * _tileSize);
-                        _currentDirection = new Coordinate(_lastInputMovement.X, _lastInputMovement.Y).ToDirectionEnum();
-                    }
-                }
-            }
-            
-            // 4. Move suavemente em direção ao alvo da predição (seja o atual ou o novo).
-            _currentVisualPosition = _currentVisualPosition.MoveToward(_predictionTargetPosition, _currentSpeedPx * (float)delta);
-
-        }
-        else
-        {
-            // --- INTERPOLAÇÃO PARA JOGADORES REMOTOS (sem mudanças) ---
-            _currentVisualPosition = _currentVisualPosition.MoveToward(_serverPosition, _currentSpeedPx * (float)delta);
-        }
-
-        // Aplica a posição visual final ao nó.
-        Position = _currentVisualPosition;
-
-        // Atualiza a animação
-        bool isMoving = !_currentVisualPosition.IsEqualApprox(_isLocal ? _predictionTargetPosition : _serverPosition);
-        PlayDirectionalAnimation(isMoving ? "walk" : "idle", _currentDirection);
-        UpdateAnimationSpeedForCurrent();
-    }
     
-    /// <summary>
-    /// Função auxiliar que calcula a próxima posição com base na posição atual e no input,
-    /// validando contra o cache de colisão.
-    /// </summary>
-    private Vector2 PredictNextPosition(Vector2 currentPixelPos, GridOffset movement)
-    {
-        if (movement == GridOffset.Zero)
-            return currentPixelPos;
-            
-        var currentGridPos = new Coordinate(
-            Mathf.RoundToInt(currentPixelPos.X / _tileSize),
-            Mathf.RoundToInt(currentPixelPos.Y / _tileSize));
-
-        var nextGridPos = currentGridPos + movement;
-
-        if (CanMoveTo(nextGridPos))
-        {
-            // Calcula a direção do movimento e atualiza a animação
-            _currentDirection = new Coordinate(movement.X, movement.Y).ToDirectionEnum();
-            
-            // Retorna a nova posição em pixels
-            return new Vector2(nextGridPos.X * _tileSize, nextGridPos.Y * _tileSize);
-        }
-        
-        // Se não pode mover, retorna a posição atual
-        return currentPixelPos;
-    }
-
     public void Update(PlayerSnapshot snapshot, bool isLocal)
     {
         _isLocal = isLocal;
 
         LoadSprites(snapshot.Vocation, snapshot.Gender);
         UpdateLabel(snapshot.Name);
-        UpdateFromServer(snapshot.Position, snapshot.Facing, snapshot.Speed, 0);
+        UpdateFromServer(snapshot.Position, snapshot.Facing, snapshot.Speed);
+        UpdateFacing(snapshot.Facing);
 
         if (_sprite is not null)
         {
             _sprite.Modulate = isLocal ? Colors.Chartreuse : Colors.White;
         }
+    }
+
+    public void UpdateFromServer(Coordinate serverGridPos, Coordinate facing, float speed)
+    {
+        UpdateSpeed(speed);
+        UpdateFacing(facing);
+
+        var authoritativePosition = new Vector2(serverGridPos.X * _tileSize, serverGridPos.Y * _tileSize);
+        _serverPosition = authoritativePosition;
+        _serverGridPos = serverGridPos;
+
+        if (!_isLocal)
+            return;
+
+        // Reconciliação mínima: se discrepância grande, corrija; senão ignore (client keeps prediction).
+        var serverDelta = _predictedPosition.DistanceTo(_serverPosition);
+        const float snapThreshold = 1.5f * 32f; // exemplo: 1.5 tiles
+
+        if (serverDelta > snapThreshold)
+        {
+            // grande diferença: snap para o servidor — limpa o predictedGrid para o servidor
+            _predictedGridPos = _serverGridPos;
+            _predictedPosition = _serverPosition;
+        }
+        else
+        {
+            // pequena diferença: deixe o cliente continuar movendo; atualiza somente a grid base.
+            _predictedGridPos = _serverGridPos; // opcional: sincroniza grid base, mas não pos
+        }
+
+        // deixe a decisão de animação para o loop centralizado (_Process)
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+
+        var target = _isLocal ? _predictedPosition : _serverPosition;
+
+        _currentVisualPosition = _currentVisualPosition.MoveToward(target, _currentSpeedPx * (float)delta);
+        Position = _currentVisualPosition;
+
+        var dist = _currentVisualPosition.DistanceTo(target);
+        bool isMoving = dist > PositionEpsilon;
+
+        DirectionEnum effectiveDirection;
+        if (isMoving)
+        {
+            var deltaVec = target - _currentVisualPosition;
+            effectiveDirection = DetermineDirectionFromDelta(deltaVec);
+        }
+        else
+        {
+            effectiveDirection = _currentDirection;
+        }
+
+        var baseAnim = isMoving ? "walk" : "idle";
+        PlayDirectionalAnimation(baseAnim, effectiveDirection);
+        UpdateAnimationSpeedForCurrent();
     }
 
     private void LoadSprites(VocationType vocation, Gender gender)
@@ -256,9 +222,7 @@ public sealed partial class AnimatedPlayerVisual : Node2D
 
         var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
         _sprite.SpriteFrames = spriteFrames;
-
-        // atualiza a animação atual baseado se estamos andando ou idle
-        PlayDirectionalAnimation(_currentVisualPosition == _serverPosition ? "idle" : "walk", _currentDirection);
+        // atualiza a animação atual baseado se estamos andando ou idle (decisão centralizada em _Process)
         UpdateAnimationSpeedForCurrent();
     }
 
@@ -283,9 +247,9 @@ public sealed partial class AnimatedPlayerVisual : Node2D
 
     public void UpdateFacing(Coordinate facing)
     {
+        // O servidor é autoridade sobre a direção "estática" do jogador.
         _currentDirection = facing.ToDirectionEnum();
-        // atualiza animação se necessário (por exemplo trocar idle/walk variant)
-        PlayDirectionalAnimation(_currentVisualPosition == _serverPosition ? "idle" : "walk", _currentDirection);
+        // não forçamos animação aqui — deixamos o _Process decidir (centralizado).
         UpdateAnimationSpeedForCurrent();
     }
 
@@ -340,6 +304,26 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         }
     }
 
+// Determina a direção principal com base no delta de movimento.
+// Prioriza o eixo com maior componente absoluta para evitar flicker entre animações.
+    private DirectionEnum DetermineDirectionFromDelta(Vector2 delta)
+    {
+        if (delta.LengthSquared() < 0.0001f)
+            return _currentDirection;
+
+        var absX = MathF.Abs(delta.X);
+        var absY = MathF.Abs(delta.Y);
+
+        if (absX > absY * 1.1f) // evita troca em ties
+            return delta.X > 0 ? DirectionEnum.East : DirectionEnum.West;
+
+        if (absY > absX * 1.1f)
+            return delta.Y > 0 ? DirectionEnum.South : DirectionEnum.North;
+
+        // quase diagonal — escolha vertical como padrão
+        return delta.Y > 0 ? DirectionEnum.South : DirectionEnum.North;
+    }
+
     private void PlayDirectionalAnimation(string baseAnim, DirectionEnum direction)
     {
         if (_sprite is null) return;
@@ -370,9 +354,6 @@ public sealed partial class AnimatedPlayerVisual : Node2D
     private void UpdateLabel(string name)
     {
         if (_nameLabel is not null)
-        {
             _nameLabel.Text = name;
-        }
     }
-
 }

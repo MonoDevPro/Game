@@ -1,7 +1,8 @@
-using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Abstractions;
+using Game.Domain.VOs;
 using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Systems.Common;
@@ -19,12 +20,6 @@ namespace Game.Server.Players;
 public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkManager networkManager) 
     : GameSystem(world)
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override void Update(in float data)
-    {
-        BroadcastMovementQuery(World);
-        BroadcastVitalsQuery(World);
-    }
 
     /// <summary>
     /// Broadcasta atualizações de movimento (posição + direção + velocidade).
@@ -41,11 +36,11 @@ public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkMan
         
         // Calcula velocidade efetiva (BaseSpeed * CurrentModifier)
         var effectiveSpeed = speed.BaseSpeed * speed.CurrentModifier;
-            
+        
         // Cria e envia pacote inline (sem alocação de lista)
-        var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value, effectiveSpeed, dirty.LastProcessedInputSequence);
+        var packet = new PlayerMovementPacket(netId.Value, pos.Value, dir.Value, effectiveSpeed);
         networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            
+        
         // Limpa dirty flag de movimento
         World.ClearNetworkDirty(entity, SyncFlags.Movement);
     }
@@ -61,7 +56,7 @@ public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkMan
         // Filtra apenas entidades com vitals dirty
         if (!dirty.HasFlags(SyncFlags.Vitals))
             return;
-            
+        
         // Envia pacote de vitals
         var packet = new PlayerVitalsPacket(
             netId.Value,
@@ -69,9 +64,12 @@ public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkMan
             health.Max,
             mana.Current,
             mana.Max);
-            
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableSequenced);
-            
+        
+        networkManager.SendToAll(
+            packet, 
+            NetworkChannel.Simulation, 
+            NetworkDeliveryMethod.ReliableOrdered);
+        
         // Limpa dirty flag de vitals
         World.ClearNetworkDirty(entity, SyncFlags.Vitals);
     }

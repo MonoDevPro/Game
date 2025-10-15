@@ -26,8 +26,7 @@ public static class NetworkDirtyExtensions
             // Inicializa LastSyncTick conforme sua lógica (0 == nunca sincronizado)
             world.Add(entity, new NetworkDirty
             {
-                Flags = f,
-                LastProcessedInputSequence = 0
+                Flags = f
             });
         }
     }

@@ -775,7 +775,7 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Sequence, packet.Movement, packet.MouseLook, packet.Buttons))
+        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Movement, packet.MouseLook, packet.Buttons))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Movement={Movement}, MouseLook={MouseLook}, Buttons={Buttons}", 

@@ -19,8 +19,6 @@ public partial struct PlayerSnapshot
     public Coordinate Position { get; set; }
     public Coordinate Facing { get; set; }
     public float Speed { get; set; }
-    
-    public uint LastProcessedInputSequence { get; set; }
 
     public PlayerSnapshot(int networkId, int playerId, int characterId, string name, Gender gender, 
         VocationType vocation, Coordinate position, Coordinate facing, float speed)

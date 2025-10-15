@@ -148,12 +148,10 @@ public class GameSimulation
         return true;
     }
 
-    public bool TryApplyPlayerInput(Entity entity, uint sequence, GridOffset movement, GridOffset mouseLook, ushort buttons)
+    public bool TryApplyPlayerInput(Entity entity, GridOffset movement, GridOffset mouseLook, ushort buttons)
     {
         if (!_world.Has<PlayerInput>(entity))
-        {
             _world.Add(entity, new PlayerInput());
-        }
 
         // Clamp para segurança (sbyte já é -128 a 127, mas garantimos -1,0,1)
         movement = new GridOffset(
@@ -165,7 +163,6 @@ public class GameSimulation
         input.Movement = movement;
         input.MouseLook = mouseLook;
         input.Flags = (InputFlags)buttons;
-        input.Sequence = sequence;
 
         return true;
     }
