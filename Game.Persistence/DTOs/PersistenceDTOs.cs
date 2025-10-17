@@ -12,13 +12,15 @@ public sealed record DisconnectPersistenceDto
     public required int CharacterId { get; init; }
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
-    public required DirectionEnum Direction { get; init; }
+    public required int PositionZ { get; init; }
+    public required int FacingX { get; set; }
+    public required int FacingY { get; set; }
     public int CurrentHp { get; init; }
     public int CurrentMp { get; init; }
     
     public override string ToString()
     {
-        return $"DisconnectPersistenceDto(CharacterId={CharacterId}, Position=({PositionX}, {PositionY}), Direction={Direction}, CurrentHp={CurrentHp}, CurrentMp={CurrentMp})";
+        return $"DisconnectPersistenceDto(CharacterId={CharacterId}, Position=({PositionX}, {PositionY}), Facing=({FacingX}, {FacingY}), CurrentHp={CurrentHp}, CurrentMp={CurrentMp})";
     }
 }
 
@@ -30,7 +32,9 @@ public sealed record PositionPersistenceDto
     public required int CharacterId { get; init; }
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
-    public required DirectionEnum Direction { get; init; }
+    public required int PositionZ { get; init; }
+    public required int FacingX { get; init; }
+    public required int FacingY { get; init; }
 }
 
 /// <summary>

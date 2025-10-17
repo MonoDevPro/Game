@@ -38,7 +38,7 @@ internal class CharacterRepository(GameDbContext context) : Repository<Character
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         return await DbSet
-            .AnyAsync(c => c.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase), cancellationToken);
+            .AnyAsync(c => c.Name.ToUpper() == name.ToUpperInvariant(), cancellationToken);
     }
 
     public async Task<int> CountByAccountIdAsync(int accountId, CancellationToken cancellationToken = default)

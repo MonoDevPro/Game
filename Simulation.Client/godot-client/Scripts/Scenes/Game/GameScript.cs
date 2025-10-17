@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Simulation;
 using Godot;
-using GodotClient.Systems;
+using GodotClient.Autoloads;
+using GodotClient.Simulation.Systems;
 using GodotClient.Visuals;
 
 namespace GodotClient.Scenes.Game;
@@ -21,7 +21,6 @@ public partial class GameScript : Node2D
     private readonly Dictionary<int, PlayerSnapshot> _players = new();
     
     private PlayerView? _playerView;
-    private InputManager? _inputManager;
     
     private int _localNetworkId;
     private Label? _statusLabel;
@@ -43,11 +42,7 @@ public partial class GameScript : Node2D
         _network = NetworkClient.Instance.NetworkManager;
         
         // ✅ Obtém referências das nodes
-        _inputManager = GetNode<InputManager>(nameof(InputManager));
         _playerView = GetNode<PlayerView>(nameof(PlayerView));
-        
-        // ✅ Conecta input manager
-        _inputManager.Attach(this);
         
         // ✅ Carrega dados iniciais do GameStateManager
         LoadGameData();
@@ -88,7 +83,7 @@ public partial class GameScript : Node2D
         {
             GD.PushError("[GameClient] No game data available! Returning to menu...");
             UpdateStatus("Error: No game data");
-            _ = SceneManager.Instance.LoadMainMenu();
+            SceneManager.Instance.LoadMainMenu();
             return;
         }
 
@@ -100,7 +95,7 @@ public partial class GameScript : Node2D
         {
             GD.PushError("[GameClient] Local player data is null! Returning to menu...");
             UpdateStatus("Error: Local player data is null");
-            _ = SceneManager.Instance.LoadMainMenu();
+            SceneManager.Instance.LoadMainMenu();
             return;
         }
         
@@ -112,7 +107,7 @@ public partial class GameScript : Node2D
         var mapData = gameState.CurrentGameData?.MapData;
         if (mapData.HasValue)
         {
-            AnimatedPlayerVisual.LoadCollisionCache(
+            ClientMovementSystem.LoadCollisionCache(
                 mapData.Value.CollisionData,
                 mapData.Value.Width,
                 mapData.Value.Height);
@@ -171,14 +166,24 @@ public partial class GameScript : Node2D
             // Atualiza o snapshot local (isso é bom para debug e estado geral)
             snapshot = snapshot with 
             { 
-                Position = packet.Position, 
-                Facing = packet.Facing,
+                PositionX = packet.PositionX,
+                PositionY = packet.PositionY,
+                PositionZ = packet.PositionZ,
+                FacingX = packet.FacingX,
+                FacingY = packet.FacingY,
                 Speed = packet.Speed,
             };
             _players[packet.NetworkId] = snapshot;
         
             // Chama a nova função de atualização no PlayerView
-            _playerView?.UpdateFromServer(packet.NetworkId, packet.Position, packet.Facing, packet.Speed);
+            _playerView?.UpdateFromServer(
+                packet.NetworkId, 
+                packet.PositionX, 
+                packet.PositionY, 
+                packet.PositionZ, 
+                packet.FacingX, 
+                packet.FacingY, 
+                packet.Speed);
         }
     }
 
@@ -230,32 +235,6 @@ public partial class GameScript : Node2D
         }
     }
 
-    // ========== INPUT ==========
-
-    /// <summary>
-    /// ✅ Envia input do jogador para o servidor (com validação).
-    /// </summary>
-    public void QueueInput(GridOffset grid, GridOffset mouseLook, ushort buttons)
-    {
-        var localPlayer = _playerView?.GetLocalPlayer();
-        if (localPlayer is null)
-            return;
-
-        // 1. INFORMA O VISUAL SOBRE O INPUT PARA PREDIÇÃO CONTÍNUA
-        localPlayer.SetLocalMovementInput(grid);
-
-        // 2. ENVIA PARA O SERVIDOR COM O NÚMERO DE SEQUÊNCIA
-        // Você precisará de uma forma de obter a sequência atual do AnimatedPlayerVisual
-        // ou gerenciá-la aqui. Vamos supor que o visual a gerencia.
-        var packet = new PlayerInputPacket(grid, mouseLook, buttons);
-        _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        
-        GD.Print($"[GameClient] Sent input: Move({grid.X},{grid.Y}) Look({mouseLook.X},{mouseLook.Y}) Buttons({buttons})");
-        
-    }
-
-    // ========== DESCONEXÃO ==========
-
     /// <summary>
     /// ✅ Desconecta e retorna ao menu principal.
     /// </summary>
@@ -290,9 +269,7 @@ public partial class GameScript : Node2D
 
         // ESC = Desconectar e voltar ao menu
         if (@event.IsActionPressed("ui_cancel"))
-        {
             DisconnectAndReturnToMenu();
-        }
     }
 
     // ========== CLEANUP ==========
@@ -300,9 +277,6 @@ public partial class GameScript : Node2D
     public override void _ExitTree()
     {
         base._ExitTree();
-        
-        // Desconecta input
-        _inputManager?.Detach();
         
         // ✅ Desregistra handlers
         if (_network is not null)

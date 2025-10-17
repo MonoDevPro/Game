@@ -8,7 +8,7 @@ using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Simulation;
 using Godot;
-using GodotClient.Systems;
+using GodotClient.Autoloads;
 
 namespace GodotClient.Scenes.Menu;
 

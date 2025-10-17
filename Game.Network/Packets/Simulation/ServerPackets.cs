@@ -1,4 +1,3 @@
-using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using Game.Network.Packets.DTOs;
 using MemoryPack;
@@ -30,8 +29,14 @@ public readonly partial record struct PlayerDespawnPacket(int NetworkId) : IPack
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerMovementPacket(
-    int NetworkId, Coordinate Position, Coordinate Facing, float Speed
-    ) : IPacket;
+    int NetworkId,
+    int PositionX,
+    int PositionY,
+    int PositionZ,
+    int FacingX,
+    int FacingY,
+    float Speed
+) : IPacket;
 
 /// <summary>
 /// Server -> Client player vitals update (HP/MP).
@@ -41,4 +46,9 @@ public readonly partial record struct PlayerMovementPacket(
 /// </summary>
 [MemoryPackable]
 public readonly partial record struct PlayerVitalsPacket(
-    int NetworkId, int CurrentHp, int MaxHp, int CurrentMp, int MaxMp) : IPacket;
+    int NetworkId, 
+    int CurrentHp, 
+    int MaxHp, 
+    int CurrentMp, 
+    int MaxMp
+) : IPacket;

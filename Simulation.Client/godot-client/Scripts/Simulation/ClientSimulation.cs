@@ -1,3 +1,4 @@
+using System;
 using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
@@ -5,15 +6,13 @@ using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Services;
 using Game.ECS.Utils;
-using Game.Network.Abstractions;
-using Game.Server.Simulation.Systems;
-using Game.Server.Simulation.Utils;
+using GodotClient.Scenes.Game;
+using GodotClient.Simulation.Systems;
 
-namespace Game.Server.Simulation;
+namespace GodotClient.Simulation;
 
-public readonly record struct PlayerVitals(int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, float HpRegenRate, float MpRegenRate);
 
-public class GameSimulation
+public sealed class ClientSimulation
 {
     private readonly World _world;
     private readonly Group<float> _systems;
@@ -21,29 +20,29 @@ public class GameSimulation
 
     public const float FixedDeltaTime = 1f / 60f; // 60 ticks/segundo
     public uint CurrentTick { get; private set; }
+    
+    private readonly GameScript _game;
 
-    public GameSimulation(IServiceProvider serviceProvider)
+    public ClientSimulation(GameScript game, MapService mapService)
     {
         _world = World.Create();
         _fixedTimeStep = new FixedTimeStep(FixedDeltaTime);
+        _game = game;
 
         // Ordem de execução dos sistemas é importante!
         _systems = new Group<float>("Simulation", new ISystem<float>[]
         {
             // 1. Input
-            new PlayerInputSystem(_world),
+            new ClientInputSystem(_world),
 
-            // 2. Gameplay
-            new MovementSystem(_world, serviceProvider.GetRequiredService<MapService>()),
-            new HealthRegenerationSystem(_world),
-            
-            // 3. Sincronização de rede
-            new PlayerSyncBroadcasterSystem(_world, serviceProvider.GetRequiredService<INetworkManager>())
         });
     }
 
     public void Update(float deltaTime)
     {
+        if (!_game.CanSendInput)
+            return;
+        
         _fixedTimeStep.Accumulate(deltaTime);
 
         while (_fixedTimeStep.ShouldUpdate())
@@ -106,63 +105,36 @@ public class GameSimulation
             _world.Destroy(entity);
         }
     }
-
-    public bool TryGetPlayerState(Entity entity, 
-        out Position position, out Facing facing, out float speed)
+    
+    public bool ApplyMovementFromServer(Entity entity, int posX, int posY, int posZ, 
+        int facingX, int facingY, float speed)
     {
-        position = default;
-        facing = default;
-        speed = 0f;
+        bool updated = false;
 
-        if (!_world.TryGet(entity, out Position posComponent))
+        ref var position = ref _world.Get<Position>(entity);
+        if (position.X != posX || position.Y != posY || position.Z != posZ)
         {
-            return false;
+            position.X = posX;
+            position.Y = posY;
+            position.Z = posZ;
+            updated = true;
         }
 
-        position = posComponent;
-
-        if (_world.TryGet(entity, out Facing facingComponent))
+        ref var facing = ref _world.Get<Facing>(entity);
+        if (facing.DirectionX != facingX || facing.DirectionY != facingY)
         {
-            facing = facingComponent;
+            facing.DirectionX = facingX;
+            facing.DirectionY = facingY;
+            updated = true;
         }
 
-        if (_world.TryGet(entity, out Walkable speedComponent))
+        ref var velocity = ref _world.Get<Velocity>(entity);
+        if (Math.Abs(velocity.Speed - speed) > 0.01f)
         {
-            speed = speedComponent.BaseSpeed * speedComponent.CurrentModifier;
+            velocity.Speed = speed;
+            updated = true;
         }
 
-        return true;
-    }
-
-    public bool TryGetPlayerVitals(Entity entity, out PlayerVitals vitals)
-    {
-        vitals = default;
-
-        if (!_world.TryGet(entity, out Health health) || !_world.TryGet(entity, out Mana mana))
-        {
-            return false;
-        }
-
-        vitals = new PlayerVitals(health.Current, health.Max, mana.Current, mana.Max, health.RegenerationRate, mana.RegenerationRate);
-        return true;
-    }
-
-    public bool TryApplyPlayerInput(Entity entity, int inputX, int inputY, ushort flags)
-    {
-        var input = new PlayerInput
-        {
-            InputX = inputX,
-            InputY = inputY,
-            Flags = (InputFlags)flags
-        };
-        ref var inputComponent = ref _world.AddOrGet<PlayerInput>(entity);
-        if (inputComponent.InputX == input.InputX &&
-            inputComponent.InputY == input.InputY &&
-            inputComponent.Flags == input.Flags)
-            // Mesmo input, ignora
-            return false;
-        
-        inputComponent = input;
-        return true;
+        return updated;
     }
 }

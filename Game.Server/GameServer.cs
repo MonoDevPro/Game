@@ -1,13 +1,10 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Abstractions;
-using Game.Domain.Enums;
-using Game.Domain.VOs;
+using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Simulation;
-using Game.Persistence;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
@@ -15,7 +12,6 @@ using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Game.Server;
 
@@ -246,7 +242,9 @@ public sealed class GameServer : IDisposable
                     CharacterId = session.SelectedCharacter.Id,
                     PositionX = session.SelectedCharacter.PositionX,
                     PositionY = session.SelectedCharacter.PositionY,
-                    Direction = session.SelectedCharacter.DirectionEnum,
+                    PositionZ = session.SelectedCharacter.PositionZ,
+                    FacingX = session.SelectedCharacter.FacingX,
+                    FacingY = session.SelectedCharacter.FacingY,
                     CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
                     CurrentMp = session.SelectedCharacter.Stats.CurrentMp
                 };
@@ -258,7 +256,9 @@ public sealed class GameServer : IDisposable
                     {
                         PositionX = position.X,
                         PositionY = position.Y,
-                        Direction = direction
+                        PositionZ = position.Z,
+                        FacingX = direction.DirectionX,
+                        FacingY = direction.DirectionY
                     };
                     
                     // ✅ Tentar obter vitals da simulação
@@ -741,7 +741,7 @@ public sealed class GameServer : IDisposable
                     Name = mapService.Name,
                     Width = mapService.Width,
                     Height = mapService.Height,
-                    TileData = mapService.Tiles,
+                    TileData = Array.ConvertAll(mapService.Tiles, b => (byte)b),
                     CollisionData = mapService.CollisionMask
                 },
                 LocalPlayer = localSnapshot,
@@ -775,14 +775,14 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.Movement, packet.MouseLook, packet.Buttons))
+        if (_simulation.TryApplyPlayerInput(session.Entity, packet.InputX, packet.InputY, packet.Flags))
         {
             _logger.LogDebug(
-                "Applied input from peer {PeerId}: Movement={Movement}, MouseLook={MouseLook}, Buttons={Buttons}", 
+                "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
                 peer.Id, 
-                packet.Movement, 
-                packet.MouseLook, 
-                packet.Buttons
+                packet.InputX,
+                packet.InputY,
+                packet.Flags
             );
         }
     }

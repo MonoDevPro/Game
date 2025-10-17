@@ -16,7 +16,9 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
     // Posição inicial padrão
     private const int DefaultSpawnX = 5;
     private const int DefaultSpawnY = 5;
-    private const DirectionEnum DefaultDirection = DirectionEnum.South;
+    private const int DefaultSpawnZ = 0;
+    private const int DefaultFacingX = 0;
+    private const int DefaultFacingY = 1;
     
     // ========== RECORDS ==========
     
@@ -121,7 +123,9 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
                 Vocation = characterInfo.Vocation,
                 PositionX = DefaultSpawnX,
                 PositionY = DefaultSpawnY,
-                DirectionEnum = DefaultDirection,
+                PositionZ = DefaultSpawnZ,
+                FacingX = DefaultFacingX,
+                FacingY = DefaultFacingY
             };
 
             character.Stats = CreateInitialStats(character, characterInfo.Vocation);

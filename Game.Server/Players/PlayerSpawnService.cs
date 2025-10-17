@@ -1,9 +1,5 @@
 using Arch.Core;
-using Game.Abstractions;
 using Game.Domain.Enums;
-using Game.Domain.VOs;
-using Game.ECS.Extensions;
-using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
@@ -20,13 +16,12 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        Coordinate startPosition = new(character.PositionX, character.PositionY);
-        DirectionEnum facing = character.DirectionEnum;
-
-        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, startPosition, facing, character.Stats);
+        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, 
+            character.PositionX, character.PositionY, character.PositionZ, character.FacingX, character.FacingY, 
+            character.Stats);
         session.Entity = entity;
 
-        logger.LogInformation("Spawned player {Name} at {Position}", character.Name, startPosition);
+        logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
         return entity;
     }
 
@@ -48,14 +43,16 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var direction, out var speed))
+        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var facing, out var speed))
         {
-            return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
-                character.Gender, character.Vocation, new Coordinate(character.PositionX, 
-                    character.PositionY), character.DirectionEnum.ToCoordinate(), 0f);
+            return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name, 
+                (byte)character.Gender, (byte)character.Vocation, 
+                character.PositionX, character.PositionY, character.PositionZ,
+                character.FacingX, character.FacingY, (float)character.Stats.MovementSpeed);
         }
 
         return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
-            character.Gender, character.Vocation, position, direction.ToCoordinate(), speed);
+            (byte)character.Gender, (byte)character.Vocation, position.X, position.Y, position.Z, facing.DirectionX,
+            facing.DirectionY, speed);
     }
 }

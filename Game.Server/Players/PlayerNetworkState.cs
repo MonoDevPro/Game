@@ -1,6 +1,6 @@
 using Game.Domain.Enums;
-using Game.Domain.VOs;
+using Game.ECS.Components.Primitive;
 
 namespace Game.Server.Players;
 
-public readonly record struct PlayerNetworkState(int NetworkId, Coordinate Position, DirectionEnum Facing, uint Tick);
+public readonly record struct PlayerNetworkState(int NetworkId, Coordinate Position, FacingEnum Facing, uint Tick);

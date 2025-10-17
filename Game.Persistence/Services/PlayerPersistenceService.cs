@@ -41,7 +41,9 @@ internal sealed class PlayerPersistenceService(
             // ✅ Atualizar posição e direção
             character.PositionX = dto.PositionX;
             character.PositionY = dto.PositionY;
-            character.DirectionEnum = dto.Direction;
+            character.PositionZ = dto.PositionZ;
+            character.FacingX = dto.FacingX;
+            character.FacingY = dto.FacingY;
             character.LastUpdatedAt = DateTime.UtcNow;
 
             character.Stats.CurrentHp = dto.CurrentHp;
@@ -88,18 +90,21 @@ internal sealed class PlayerPersistenceService(
 
             character.PositionX = dto.PositionX;
             character.PositionY = dto.PositionY;
-            character.DirectionEnum = dto.Direction;
-            character.LastUpdatedAt = DateTime.UtcNow;
+            character.PositionZ = dto.PositionZ;
+            character.FacingX = dto.FacingX;
+            character.FacingY = dto.FacingY;
 
             await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             logger.LogDebug(
-                "Position persisted for character {CharacterId}: ({X},{Y}) facing {Direction}",
+                "Position persisted for character {CharacterId}: ({X},{Y}, {Z}) facing {FacingX},{FacingY})",
                 dto.CharacterId,
                 dto.PositionX,
                 dto.PositionY,
-                dto.Direction);
+                dto.PositionZ,
+                dto.FacingX,
+                dto.FacingY);
         }
         catch (Exception ex)
         {

@@ -1,9 +1,8 @@
-using Game.Abstractions;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
+using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
-using Game.Network.Security;
 using Game.Persistence;
 using Game.Server;
 using Game.Server.Authentication;
@@ -12,6 +11,7 @@ using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
+using Game.Server.Simulation.Utils;
 
 var builder = CreateHostBuilder(args);
 
@@ -100,5 +100,5 @@ static MapService CreateMapService()
         UsePadded = false
     };
 
-    return MapService.CreateFromEntity(template);
+    return template.CreateFromEntity();
 }

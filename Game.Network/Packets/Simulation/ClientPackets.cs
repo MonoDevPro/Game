@@ -1,4 +1,3 @@
-using Game.Domain.VOs;
 using Game.Network.Abstractions;
 using MemoryPack;
 
@@ -16,7 +15,4 @@ public readonly partial record struct GameConnectPacket(string GameToken) : IPac
 /// Client -> Server player input payload (grid movement and action flags).
 /// </summary>
 [MemoryPackable]
-public readonly partial record struct PlayerInputPacket(
-    GridOffset Movement,
-    GridOffset MouseLook,
-    ushort Buttons) : IPacket;
+public readonly partial record struct PlayerInputPacket(int InputX, int InputY, ushort Flags ) : IPacket;

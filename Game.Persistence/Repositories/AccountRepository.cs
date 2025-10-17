@@ -21,25 +21,25 @@ internal class AccountRepository(GameDbContext context) : Repository<Account>(co
     {
         return await DbSet
             .AsTracking()
-            .FirstOrDefaultAsync(a => a.Username == username, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Username.ToUpper() == username.ToUpperInvariant(), cancellationToken);
     }
 
     public async Task<Account?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await DbSet
-            .FirstOrDefaultAsync(a => a.Email == email, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Email.ToUpper() == email.ToUpperInvariant(), cancellationToken);
     }
 
     public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return await DbSet
-            .AnyAsync(a => a.Username.Equals(username, StringComparison.InvariantCultureIgnoreCase), cancellationToken);
+            .AnyAsync(a => a.Username.ToUpper() == username.ToUpperInvariant(), cancellationToken);
     }
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await DbSet
-            .AnyAsync(a => a.Email.Equals(email, StringComparison.InvariantCultureIgnoreCase), cancellationToken);
+            .AnyAsync(a => a.Email.ToUpper() == email.ToUpperInvariant(), cancellationToken);
     }
 
     public async Task<Account?> GetByUsernameWithCharactersAsync(string username, CancellationToken cancellationToken = default)

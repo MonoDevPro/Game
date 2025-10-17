@@ -60,7 +60,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             entity.HasIndex(e => e.Username)
                 .IsUnique()
                 .HasDatabaseName("IX_Accounts_Username");
-
+                
             entity.HasIndex(e => e.Email)
                 .IsUnique()
                 .HasDatabaseName("IX_Accounts_Email");
@@ -135,9 +135,10 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
-            entity.Property(e => e.DirectionEnum)
-                .HasConversion<string>()
-                .HasMaxLength(10);
+            entity.Property(e => e.FacingX)
+                .HasDefaultValue(0);
+            entity.Property(e => e.FacingY)
+                .HasDefaultValue(1);
 
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);

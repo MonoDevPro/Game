@@ -15,9 +15,11 @@ public class Character : BaseEntity
     public VocationType Vocation { get; set; } = VocationType.Warrior;
     
     // Posição no mundo
-    public DirectionEnum DirectionEnum { get; set; } = DirectionEnum.South;
+    public int FacingX { get; set; }
+    public int FacingY { get; set; }
     public int PositionX { get; set; }
     public int PositionY { get; set; }
+    public int PositionZ { get; set; }
     
     // Relacionamentos
     public int AccountId { get; init; }

@@ -1,5 +1,3 @@
-using Game.Domain.Enums;
-using Game.Domain.VOs;
 using MemoryPack;
 
 namespace Game.Network.Packets.DTOs;
@@ -14,14 +12,17 @@ public partial struct PlayerSnapshot
     public int PlayerId { get; set; }
     public int CharacterId { get; set; }
     public string Name { get; set; } = string.Empty;
-    public Gender Gender { get; set; }
-    public VocationType Vocation { get; set; }
-    public Coordinate Position { get; set; }
-    public Coordinate Facing { get; set; }
+    public byte Gender { get; set; }
+    public byte Vocation { get; set; }
+    public int PositionX { get; set; }
+    public int PositionY { get; set; }
+    public int PositionZ { get; set; }
+    public int FacingX { get; set; }
+    public int FacingY { get; set; }
     public float Speed { get; set; }
 
-    public PlayerSnapshot(int networkId, int playerId, int characterId, string name, Gender gender, 
-        VocationType vocation, Coordinate position, Coordinate facing, float speed)
+    public PlayerSnapshot(int networkId, int playerId, int characterId, string name, byte gender, 
+        byte vocation, int positionX, int positionY, int positionZ, int facingX, int facingY, float speed)
     {
         NetworkId = networkId;
         PlayerId = playerId;
@@ -29,8 +30,11 @@ public partial struct PlayerSnapshot
         Name = name;
         Gender = gender;
         Vocation = vocation;
-        Position = position;
-        Facing = facing;
+        PositionX = positionX;
+        PositionY = positionY;
+        PositionZ = positionZ;
+        FacingX = facingX;
+        FacingY = facingY;
         Speed = speed;
     }
 }

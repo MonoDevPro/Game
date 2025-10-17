@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.VOs;
+using Game.Domain.Enums;
 using Game.Network.Packets.DTOs;
 using Godot;
 
@@ -34,7 +34,7 @@ public partial class PlayerView : Node
     {
         var visual = GetOrCreateVisual(snapshot.NetworkId);
         var treatAsLocal = isLocal || snapshot.NetworkId == _localNetworkId;
-        visual.Update(snapshot, treatAsLocal);
+        visual.UpdateFromSnapshot(snapshot, treatAsLocal);
     }
     
     public void UpdateVitals(int networkId, int currentHp, int maxHp, int currentMp, int maxMp)
@@ -45,11 +45,11 @@ public partial class PlayerView : Node
         }
     }
 
-    public void UpdateFromServer(int networkId, Coordinate position, Coordinate facing, float speed)
+    public void UpdateFromServer(int networkId, int posX, int posY, int posZ, int facingX, int facingY, float speed)
     {
         if (_players.TryGetValue(networkId, out var visual))
         {
-            visual.UpdateFromServer(position, facing, speed);
+            visual.UpdateMovementFromServer(posX, posY, posZ, facingX, facingY, speed);
         }
     }
 

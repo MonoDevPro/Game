@@ -11,12 +11,11 @@ public static class GameArchetypes
         Component<NetworkId>.ComponentType,
         Component<PlayerId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<GridPosition>.ComponentType,
-        Component<Direction>.ComponentType,
+        Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
-        Component<MovementSpeed>.ComponentType,
+        Component<Walkable>.ComponentType,
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
@@ -30,11 +29,10 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<GridPosition>.ComponentType,
-        Component<Direction>.ComponentType,
+        Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<Health>.ComponentType,
-        Component<MovementSpeed>.ComponentType,
+        Component<Walkable>.ComponentType,
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
@@ -47,8 +45,7 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<GridPosition>.ComponentType,
-        Component<Direction>.ComponentType,
+        Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<AttackPower>.ComponentType,
         Component<NetworkDirty>.ComponentType,
@@ -58,7 +55,6 @@ public static class GameArchetypes
     public static readonly ComponentType[] DroppedItem = new[]
     {
         Component<NetworkId>.ComponentType,
-        Component<GridPosition>.ComponentType,
         Component<NetworkDirty>.ComponentType,
     };
 }

@@ -24,7 +24,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Game.Network\Game.Network.csproj" />
-        <ProjectReference Include="..\Game.Abstractions\Game.Abstractions.csproj" />
         <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
         <ProjectReference Include="..\Game.ECS\Game.ECS.csproj" />
         <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
