@@ -1,14 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://cqd358filrk2x"]
+[gd_scene load_steps=3 format=3 uid="uid://cqd358filrk2x"]
 
-[ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/Scenes/Game/GameScript.cs" id="1_wrm1d"]
-[ext_resource type="Script" uid="uid://bjl2pm3j0hjif" path="res://Scripts/Scenes/Game/InputManager.cs" id="2_3dryh"]
-[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Visuals/PlayerView.cs" id="6_21xkr"]
+[ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/Simulation/GameScript.cs" id="1_wrm1d"]
+[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Simulation/Players/PlayerView.cs" id="6_21xkr"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_wrm1d")
-
-[node name="InputManager" type="Node" parent="."]
-script = ExtResource("2_3dryh")
 
 [node name="PlayerView" type="Node" parent="."]
 script = ExtResource("6_21xkr")

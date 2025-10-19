@@ -28,6 +28,8 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(GameDbContext).Assembly);
 
         // Configurar entidades
         ConfigureAccount(modelBuilder);
@@ -38,7 +40,6 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
         ConfigureInventory(modelBuilder);
         ConfigureInventorySlot(modelBuilder);
         ConfigureEquipmentSlot(modelBuilder);
-        ConfigureMap(modelBuilder);
 
         // Seed data
         SeedData(modelBuilder);
@@ -418,46 +419,6 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false)
                 .HasConstraintName("FK_EquipmentSlots_Item");
-        });
-    }
-
-    /// <summary>
-    /// Configuração da entidade Map.
-    /// </summary>
-    private void ConfigureMap(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Map>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.ToTable("Maps");
-
-            // Índices
-            entity.HasIndex(e => e.Name)
-                .IsUnique()
-                .HasDatabaseName("IX_Maps_Name");
-
-            entity.HasIndex(e => e.IsActive)
-                .HasDatabaseName("IX_Maps_IsActive");
-
-            // Propriedades
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(e => e.Width)
-                .IsRequired();
-
-            entity.Property(e => e.Height)
-                .IsRequired();
-
-            entity.Property(e => e.Layers)
-                .IsRequired();
-
-            entity.Property(e => e.BorderBlocked)
-                .HasDefaultValue(true);
-
-            entity.Property(e => e.IsActive)
-                .HasDefaultValue(true);
         });
     }
 

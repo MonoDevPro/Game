@@ -124,7 +124,7 @@ public static class MapSnapshotLoader
     private static byte[] DecompressMortonRLE(byte[] compressed, int width, int height, int layers)
     {
         int tileCount = width * height;
-        var (posToRank, _) = ECS.Utils.MortonHelper.BuildMortonMapping(width, height);
+        var (posToRank, _) = MortonHelper.BuildMortonMapping(width, height);
         var output = new byte[tileCount * layers * 2];
 
         int srcIdx = 0;

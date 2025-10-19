@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Game.Network.Packets.Simulation;
 using Godot;
 
-namespace GodotClient.Simulation.Visuals;
+namespace GodotClient.Simulation.Players;
 
 public partial class PlayerView : Node
 {

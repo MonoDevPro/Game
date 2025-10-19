@@ -3,7 +3,7 @@ using Game.Domain.Enums;
 namespace Game.Domain.Entities;
 
 // Célula do mapa (sem coordenadas — a posição é dada por x,y,z no Map)
-public struct Tile
+public record struct Tile
 {
     public TileType Type { get; set; }
     public byte CollisionMask { get; set; } // 0=livre, 1=bloqueado

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace GodotClient.Simulation.Services;
+namespace GodotClient.Simulation.Players;
 
 public sealed class PlayerIndexService(World world)
 {

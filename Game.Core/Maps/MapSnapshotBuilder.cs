@@ -185,7 +185,7 @@ public static class MapSnapshotBuilder
         
         int tileCount = width * height;
         int layers = data.Length / (tileCount * 2);
-        var (_, rankToPos) = ECS.Utils.MortonHelper.BuildMortonMapping(width, height);
+        var (_, rankToPos) = MortonHelper.BuildMortonMapping(width, height);
 
         using var ms = new MemoryStream();
 

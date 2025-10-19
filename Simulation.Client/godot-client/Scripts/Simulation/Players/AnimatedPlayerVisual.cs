@@ -4,7 +4,7 @@ using Game.Network.Packets.Simulation;
 using Godot;
 using GodotClient.Autoloads;
 
-namespace GodotClient.Simulation.Visuals;
+namespace GodotClient.Simulation.Players;
 
 /// <summary>
 /// Representação visual do jogador com predição local e reconciliação de servidor.
