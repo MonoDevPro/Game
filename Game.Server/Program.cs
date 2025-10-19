@@ -1,6 +1,7 @@
-using Game.Core.MapGame.Services;
+using Game.Core.Maps;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
+using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;
@@ -11,7 +12,6 @@ using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
-using Game.Server.Simulation.Utils;
 
 var builder = CreateHostBuilder(args);
 
@@ -44,8 +44,34 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
-            services.AddSingleton<GameMapService>(CreateMapService());
-                    
+            
+            services.AddSingleton<Map>(sp =>
+            {
+                int width = 200;
+                int height = 200;
+                int layers = 1;
+                var map = new Map("ExampleMap", width, height, layers, borderBlocked: true);
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        var tileType = (x == 0 || y == 0 || x == width - 1 || y == height - 1) ? TileType.Wall : TileType.Floor;
+                        map.SetTile(x, y, 0, new Tile { Type = tileType });
+                    }
+                }
+                return map;
+            });
+            
+            services.AddSingleton<IMapGrid>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<MapGrid>>();
+                var map = sp.GetRequiredService<Map>();
+                MapGridFactory.SetDefaultOptions(MapGridFactoryOptions.Server);
+                var mapGrid = MapGridFactory.Create(map, out var info);
+                logger.LogInformation(info.ToString());
+                return mapGrid;
+            });
+            
             // Network
             //services.AddSingleton<GameServer>();
             services.AddNetworking(new NetworkOptions
@@ -76,29 +102,3 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             logging.ClearProviders();
             logging.AddConsole();
         });
-        
-        
-static GameMapService CreateMapService()
-{
-    const int width = 16;
-    const int height = 16;
-    var tiles = new TileType[width * height];
-    for (var i = 0; i < tiles.Length; i++)
-    {
-        tiles[i] = TileType.Floor;
-    }
-
-    var template = new Map
-    {
-        Id = 1,
-        Name = "TestMap",
-        Width = width,
-        Height = height,
-        Tiles = tiles,
-        CollisionMask = new byte[width * height],
-        BorderBlocked = false,
-        UsePadded = false
-    };
-
-    return template.ToMapService();
-}

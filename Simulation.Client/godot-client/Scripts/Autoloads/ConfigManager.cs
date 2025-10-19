@@ -13,11 +13,11 @@ public partial class ConfigManager : Node
     
     private ClientConfiguration _configuration = new();
     public ClientConfiguration Configuration => _configuration;
-    public override void _Ready()
+    
+    public ConfigManager()
     {
-        base._Ready();
         _instance = this;
-
+        
         try
         {
             var basePath = ProjectSettings.GlobalizePath("res://");
@@ -33,6 +33,11 @@ public partial class ConfigManager : Node
             GD.PushError($"Failed to load configuration: {ex.Message}");
             _configuration = new ClientConfiguration();
         }
+    }   
+    
+    public override void _Ready()
+    {
+        base._Ready();
     }
 
     public NetworkOptions CreateNetworkOptions()

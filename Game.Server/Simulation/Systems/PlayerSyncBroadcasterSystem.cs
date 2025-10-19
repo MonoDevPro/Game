@@ -33,8 +33,9 @@ public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkMan
             input.InputY,
             input.Flags);
         
-        networkManager.SendToAll(
-            packet, 
+        networkManager.SendToAllExcept(
+            excludePeerId: networkId.Value,
+            packet,
             NetworkChannel.Simulation, 
             NetworkDeliveryMethod.ReliableOrdered);
         

@@ -1,6 +1,6 @@
 using Arch.Core;
 using Game.ECS.Components;
-using Game.ECS.Components.Primitive;
+using Game.Network.Packets.Simulation;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
 
@@ -15,25 +15,15 @@ public sealed class PlayerSpawnService(ServerSimulation simulation, ILogger<Play
     {
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
-        
-        GameStats stats = new GameStats(
-            character.Stats.CurrentHp,
-            character.Stats.CurrentMp,
-            character.Stats.MaxHp,
-            character.Stats.MaxMp,
-            character.Stats.HpRegenPerTick(),
-            character.Stats.MpRegenPerTick(),
-            character.Stats.PhysicalAttack,
-            character.Stats.MagicAttack,
-            character.Stats.PhysicalDefense,
-            character.Stats.MagicDefense,
-            character.Stats.AttackSpeed,
-            character.Stats.MovementSpeed
-        );
-        
-        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, 
-            character.PositionX, character.PositionY, character.PositionZ, character.FacingX, character.FacingY, 
-            stats);
+
+        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id,
+            character.PositionX, character.PositionY, character.PositionZ,
+            character.FacingX, character.FacingY,
+            character.Stats.CurrentHp, character.Stats.MaxHp, character.Stats.HpRegenPerTick(),
+            character.Stats.CurrentMp, character.Stats.MaxMp, character.Stats.MpRegenPerTick(),
+            (float)character.Stats.MovementSpeed, (float)character.Stats.AttackSpeed,
+            character.Stats.PhysicalAttack, character.Stats.MagicAttack,
+            character.Stats.PhysicalDefense, character.Stats.MagicDefense);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
@@ -63,11 +53,32 @@ public sealed class PlayerSpawnService(ServerSimulation simulation, ILogger<Play
             return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name, 
                 (byte)character.Gender, (byte)character.Vocation, 
                 character.PositionX, character.PositionY, character.PositionZ,
-                character.FacingX, character.FacingY, (float)character.Stats.MovementSpeed);
+                character.FacingX, character.FacingY, (float)character.Stats.MovementSpeed,
+                character.Stats.CurrentHp, character.Stats.CurrentMp, character.Stats.MaxHp, character.Stats.MaxMp,
+                character.Stats.HpRegenPerTick(), character.Stats.MpRegenPerTick(),
+                character.Stats.PhysicalAttack, character.Stats.MagicAttack,
+                character.Stats.PhysicalDefense, character.Stats.MagicDefense,
+                character.Stats.AttackSpeed, character.Stats.MovementSpeed);
+        }
+        
+        if (!simulation.TryGetPlayerVitals(session.Entity, out PlayerVitalsSnapshot vitals))
+        {
+            vitals = new PlayerVitalsSnapshot(
+                session.Peer.Id,
+                character.Stats.CurrentHp,
+                character.Stats.MaxHp,
+                character.Stats.CurrentMp,
+                character.Stats.MaxMp
+            );
         }
 
         return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
             (byte)character.Gender, (byte)character.Vocation, snapshot.PositionX, snapshot.PositionY, snapshot.PositionZ, snapshot.FacingX,
-            snapshot.FacingY, snapshot.Speed);
+            snapshot.FacingY, snapshot.Speed,
+            vitals.CurrentHp, vitals.CurrentMp, vitals.MaxHp, vitals.MaxMp,
+            character.Stats.HpRegenPerTick(), character.Stats.MpRegenPerTick(),
+            character.Stats.PhysicalAttack, character.Stats.MagicAttack,
+            character.Stats.PhysicalDefense, character.Stats.MagicDefense,
+            character.Stats.AttackSpeed, character.Stats.MovementSpeed);
     }
 }

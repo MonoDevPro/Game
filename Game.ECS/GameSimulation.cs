@@ -3,7 +3,6 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS.Archetypes;
 using Game.ECS.Components;
-using Game.ECS.Components.Primitive;
 using Game.ECS.Utils;
 
 namespace Game.ECS;
@@ -57,20 +56,26 @@ public abstract class GameSimulation
     }
 
     public Entity SpawnPlayer(int playerId, int networkId, 
-        int spawnX, int spawnY, int spawnZ, int facingX, int facingY, GameStats stats)
+        int spawnX, int spawnY, int spawnZ, 
+        int facingX, int facingY,
+        int hp, int maxHp, float hpRegen,
+        int mp, int maxMp, float mpRegen, 
+        float movementSpeed, float attackSpeed,
+        int physicalAttack, int magicAttack,
+        int physicalDefense, int magicDefense)
     {
-        var maxHp = Math.Max(1, stats.MaxHp);
-        var currentHp = Math.Clamp(stats.Hp, 0, maxHp);
-        var hpRegen = Math.Max(0f, stats.HpRegen);
+        hp = Math.Clamp(hp, 0, maxHp);
+        maxHp = Math.Max(1, maxHp);
+        hpRegen = Math.Max(0f, hpRegen);
+        
+        mp = Math.Clamp(mp, 0, maxMp);
+        maxMp = Math.Max(0, maxMp);
+        mpRegen = Math.Max(0f, mpRegen);
 
-        var maxMp = Math.Max(0, stats.MaxMp);
-        var currentMp = Math.Clamp(stats.Mp, 0, maxMp);
-        var mpRegen = Math.Max(0f, stats.MpRegen);
+        var movementModifier = (float)Math.Max(0.1, movementSpeed);
 
-        var movementModifier = (float)Math.Max(0.1, stats.MovementSpeed);
-
-        var attackPower = new AttackPower { Physical = stats.PhysicalAttack, Magical = stats.MagicAttack };
-        var defense = new Defense { Physical = stats.PhysicalDefense, Magical = stats.MagicDefense };
+        var attackPower = new AttackPower { Physical = physicalAttack, Magical = magicAttack };
+        var defense = new Defense { Physical = physicalDefense, Magical = magicDefense };
 
         var entity = World.Create(GameArchetypes.PlayerCharacter);
         var components = new object[]
@@ -81,8 +86,8 @@ public abstract class GameSimulation
             new Facing { DirectionX = facingX, DirectionY = facingY },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
             new Movement { Timer = 0f },
-            new Health { Current = currentHp, Max = maxHp, RegenerationRate = hpRegen },
-            new Mana { Current = currentMp, Max = maxMp, RegenerationRate = mpRegen },
+            new Health { Current = hp, Max = maxHp, RegenerationRate = hpRegen },
+            new Mana { Current = mp, Max = maxMp, RegenerationRate = mpRegen },
             new Walkable { BaseSpeed = 5f, CurrentModifier = movementModifier },
             attackPower,
             defense,

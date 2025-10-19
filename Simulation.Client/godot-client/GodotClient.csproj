@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
+    <Folder Include="Scripts\Simulation\Components\" />
   </ItemGroup>
 
   <ItemGroup>

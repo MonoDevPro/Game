@@ -17,8 +17,7 @@ public partial class NetworkClient : Node
 {
     private static NetworkClient? _instance;
     public static NetworkClient Instance => _instance ?? throw new InvalidOperationException("NetworkClient not initialized");
-    
-    private IServiceProvider? _serviceProvider;
+
     private INetworkManager? _networkManager;
     private ILogger<NetworkClient>? _logger;
 
@@ -28,35 +27,9 @@ public partial class NetworkClient : Node
     {
         base._Ready();
         _instance = this;
-    }
-    
-    /// <summary>
-    /// Inicializa o sistema de rede com as opções fornecidas.
-    /// </summary>
-    public INetworkManager Initialize(NetworkOptions options)
-    {
-        if (_networkManager is not null)
-            return _networkManager;
-
-        var services = new ServiceCollection();
-        services.AddSingleton(options);
-        services.AddLogging(builder =>
-        {
-            builder.AddConsole();
-#if DEBUG
-            builder.SetMinimumLevel(LogLevel.Debug);
-#else
-            builder.SetMinimumLevel(LogLevel.Information);
-#endif
-        });
-
-        services.AddNetworking(options);
-
-        _serviceProvider = services.BuildServiceProvider();
-        _networkManager = _serviceProvider.GetRequiredService<INetworkManager>();
-        _logger = _serviceProvider.GetService<ILogger<NetworkClient>>();
-
-        return _networkManager;
+        
+        _logger = ServicesManager.Instance.GetRequiredService<ILogger<NetworkClient>>();
+        _networkManager = ServicesManager.Instance.GetRequiredService<INetworkManager>();
     }
 
     /// <summary>
@@ -64,13 +37,10 @@ public partial class NetworkClient : Node
     /// </summary>
     public void Start()
     {
-        if (_networkManager is null)
-            throw new InvalidOperationException("NetworkClient must be initialized before starting.");
-
-        if (!_networkManager.IsRunning)
+        if (!NetworkManager.IsRunning)
         {
             _logger?.LogInformation("Starting network client");
-            _networkManager.Initialize();
+            NetworkManager.Initialize();
         }
     }
 
@@ -89,16 +59,5 @@ public partial class NetworkClient : Node
             _logger?.LogInformation("Stopping network client");
             _networkManager.Stop();
         }
-
-        if (_serviceProvider is IDisposable disposable)
-            disposable.Dispose();
-    }
-
-    public T GetRequiredService<T>() where T : notnull
-    {
-        if (_serviceProvider is null)
-            throw new InvalidOperationException("Service provider not initialized.");
-
-        return _serviceProvider.GetRequiredService<T>();
     }
 }

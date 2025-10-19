@@ -450,8 +450,8 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             entity.Property(e => e.Height)
                 .IsRequired();
 
-            entity.Property(e => e.UsePadded)
-                .HasDefaultValue(false);
+            entity.Property(e => e.Layers)
+                .IsRequired();
 
             entity.Property(e => e.BorderBlocked)
                 .HasDefaultValue(true);

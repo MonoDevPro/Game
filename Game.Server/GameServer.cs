@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Core.MapGame.Services;
+using Game.Core.Maps;
+using Game.Domain.Entities;
 using Game.ECS.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
@@ -732,19 +733,12 @@ public sealed class GameServer : IDisposable
             _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
-            var mapService = scope.ServiceProvider.GetRequiredService<GameMapService>();
+            var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-            var gameDataPacket = new GameSnapshot
+            var gameDataPacket = new GameSnapshotPacket
             {
-                MapSnapshot = new MapSnapshot
-                {
-                    Name = mapService.Name,
-                    Width = mapService.Width,
-                    Height = mapService.Height,
-                    TileData = Array.ConvertAll(mapService.Tiles, b => (byte)b),
-                    CollisionData = mapService.CollisionMask
-                },
+                MapSnapshot = MapSnapshotBuilder.CreateSnapshot(currentMap, currentMap.Id),
                 LocalPlayer = localSnapshot,
                 OtherPlayers = othersSnapshots
             };

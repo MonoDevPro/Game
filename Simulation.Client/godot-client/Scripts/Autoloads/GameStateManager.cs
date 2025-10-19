@@ -1,5 +1,4 @@
 using System;
-using Game.Core.MapGame.Services;
 using Game.ECS.Components;
 using Game.Network.Packets.Simulation;
 using Godot;
@@ -18,7 +17,7 @@ public partial class GameStateManager : Node
 
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
-    public GameSnapshot? CurrentGameData { get; set; }
+    public GameSnapshotPacket? CurrentGameData { get; set; }
     
     public override void _Ready()
     {

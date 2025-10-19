@@ -128,9 +128,11 @@ public partial class MenuScript : Control
     {
         base._Ready();
         
+        
+        LoadConfigurations();
+        
         CreateStatusLabel();
         CreateDeleteConfirmationDialog();
-        LoadConfigurations();
         LoadUIComponents();
         InitializeStateMachine();
         InitializeNetwork();
@@ -612,7 +614,7 @@ public partial class MenuScript : Control
         );
         
         // Initialize network manager
-        _network = NetworkClient.Instance.Initialize(_netOptions);
+        _network = NetworkClient.Instance.NetworkManager;
         
         // Register connection events
         _network.OnPeerConnected += OnPeerConnected;
@@ -642,7 +644,7 @@ public partial class MenuScript : Control
     
     private void RegisterConnectedHandlers()
     {
-        _network!.RegisterPacketHandler<GameSnapshot>(HandleGameData);
+        _network!.RegisterPacketHandler<GameSnapshotPacket>(HandleGameData);
     }
     
     // ========== CLEANUP ==========
@@ -678,7 +680,7 @@ public partial class MenuScript : Control
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(); // ✅ NOVO
         
         // Unregister CONNECTED handlers
-        _network.UnregisterPacketHandler<GameSnapshot>();
+        _network.UnregisterPacketHandler<GameSnapshotPacket>();
     }
     
     // ========== UI EVENTS ==========
@@ -1081,7 +1083,7 @@ public partial class MenuScript : Control
     
     // ========== PACKET HANDLERS (CONNECTED) ==========
     
-    private void HandleGameData(INetPeerAdapter peer, ref GameSnapshot packet)
+    private void HandleGameData(INetPeerAdapter peer, ref GameSnapshotPacket packet)
     {
         GD.Print($"[Menu] Received GameDataPacket - Player: {packet.LocalPlayer.Name} (NetID: {packet.LocalPlayer.NetworkId})");
         
