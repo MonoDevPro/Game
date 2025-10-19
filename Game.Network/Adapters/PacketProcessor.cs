@@ -27,7 +27,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
     /// <summary>
     /// Registra handler de pacote CONNECTED (de NetPeer).
     /// </summary>
-    public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct, IPacket
+    public void RegisterHandler<T>(PacketHandler<T> handler) where T : struct
     {
         var hash = GetHash<T>();
         if (_idToHandler.ContainsKey(hash))
@@ -41,7 +41,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
             try
             {
                 var packet = MemoryPackSerializer.Deserialize<T>(reader.GetRemainingBytesSegment());
-                handler(fromPeer, packet);
+                handler(fromPeer, ref packet);
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
     /// <summary>
     /// Desregistra handler de pacote CONNECTED.
     /// </summary>
-    public bool UnregisterHandler<T>() where T : struct, IPacket
+    public bool UnregisterHandler<T>() where T : struct
     {
         var hash = GetHash<T>();
         var result = _idToHandler.Remove(hash);
@@ -102,7 +102,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
     /// <summary>
     /// ✅ Registra handler de pacote UNCONNECTED (sem NetPeer).
     /// </summary>
-    public void RegisterUnconnectedHandler<T>(UnconnectedPacketHandler<T> handler) where T : struct, IPacket
+    public void RegisterUnconnectedHandler<T>(UnconnectedPacketHandler<T> handler) where T : struct
     {
         var hash = GetHash<T>();
         if (_idToUnconnectedHandler.ContainsKey(hash))
@@ -116,7 +116,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
             try
             {
                 var packet = MemoryPackSerializer.Deserialize<T>(reader.GetRemainingBytesSegment());
-                handler(remoteEndPoint, packet);
+                handler(remoteEndPoint, ref packet);
             }
             catch (Exception ex)
             {
@@ -135,7 +135,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
     /// <summary>
     /// ✅ Desregistra handler de pacote UNCONNECTED.
     /// </summary>
-    public bool UnregisterUnconnectedHandler<T>() where T : struct, IPacket
+    public bool UnregisterUnconnectedHandler<T>() where T : struct
     {
         var hash = GetHash<T>();
         var result = _idToUnconnectedHandler.Remove(hash);
@@ -180,7 +180,7 @@ public class PacketProcessor(ILogger<PacketProcessor> logger)
     /// <summary>
     /// Obtém o ID (hash) de um tipo de pacote.
     /// </summary>
-    public ulong GetPacketId<T>() where T : struct, IPacket => GetHash<T>();
+    public ulong GetPacketId<T>() where T : struct => GetHash<T>();
 
     /// <summary>
     /// Obtém o hash do tipo de pacote usando NetworkHasher.

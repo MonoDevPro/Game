@@ -1,6 +1,5 @@
 using System.Net;
 using Game.Network.Abstractions;
-using LiteNetLib.Utils;
 
 namespace Game.Server.Security;
 
@@ -9,7 +8,7 @@ public class NetworkSecurity(int maxMessagesPerSecond)
     private readonly Dictionary<INetPeerAdapter, RateLimiter> _rateLimiters = new();
     private readonly Dictionary<IPEndPoint, RateLimiter> _unconnectedRateLimiters = new();
     
-    public bool ValidateUnconnectedMessage(IPEndPoint endPoint, IPacket packet)
+    public bool ValidateUnconnectedMessage<T>(IPEndPoint endPoint, ref T _) where T : struct
     {
         // 1. Rate limiting
         if (!_unconnectedRateLimiters.TryGetValue(endPoint, out var limiter))
@@ -24,7 +23,7 @@ public class NetworkSecurity(int maxMessagesPerSecond)
         return true;
     }
 
-    public bool ValidateMessage(INetPeerAdapter peer, IPacket packet)
+    public bool ValidateMessage<T>(INetPeerAdapter peer, ref T _) where T : struct
     {
         // 1. Rate limiting
         if (!_rateLimiters.TryGetValue(peer, out var limiter))

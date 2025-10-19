@@ -1,6 +1,6 @@
+using Game.Core.MapGame.Services;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;
@@ -33,7 +33,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton(TimeProvider.System);
             
             // ECS
-            services.AddSingleton<GameSimulation>();
+            services.AddSingleton<ServerSimulation>();
             
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<SessionTokenManager>();
@@ -44,7 +44,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
-            services.AddSingleton<MapService>(CreateMapService());
+            services.AddSingleton<GameMapService>(CreateMapService());
                     
             // Network
             //services.AddSingleton<GameServer>();
@@ -78,7 +78,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
         });
         
         
-static MapService CreateMapService()
+static GameMapService CreateMapService()
 {
     const int width = 16;
     const int height = 16;
@@ -100,5 +100,5 @@ static MapService CreateMapService()
         UsePadded = false
     };
 
-    return template.CreateFromEntity();
+    return template.ToMapService();
 }

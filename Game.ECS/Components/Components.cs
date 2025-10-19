@@ -6,7 +6,6 @@ namespace Game.ECS.Components;
 public struct PlayerControlled;
 public struct AIControlled;
 public struct Dead;
-public struct Invulnerable;
 
 // Identity
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -21,9 +20,6 @@ public struct Health { public int Current; public int Max; public float Regenera
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Mana { public int Current; public int Max; public float RegenerationRate; }
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct PlayerInput { public int InputX; public int InputY; public InputFlags Flags; }
 
 // Transforms
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -51,7 +47,3 @@ public struct Defense { public int Physical; public int Magical; }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct CombatState { public bool InCombat; public uint TargetNetworkId; public float LastAttackTime; }
-
-// Network
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct NetworkDirty { public ulong Flags; }

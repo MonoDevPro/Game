@@ -9,22 +9,23 @@ public static class NetworkDirtyExtensions
     /// Marca entidade como dirty para sincronização (adiciona flags).
     /// Só chama world.Set se houver alteração.
     /// </summary>
-    public static void MarkNetworkDirty(this World world, Entity entity, SyncFlags flags)
+    public static void MarkNetworkDirty(this World world, Entity e, SyncFlags f)
     {
-        ulong f = (ulong)flags;
-        if (world.TryGet(entity, out NetworkDirty dirty))
+        if (!world.IsAlive(e)) return;
+        
+        if (world.TryGet(e, out NetworkDirty dirty))
         {
             // só atualiza se houver diferença
             if ((dirty.Flags & f) != f)
             {
                 dirty.Flags |= f;
-                world.Set(entity, dirty);
+                world.Set(e, dirty);
             }
         }
         else
         {
             // Inicializa LastSyncTick conforme sua lógica (0 == nunca sincronizado)
-            world.Add(entity, new NetworkDirty
+            world.Add(e, new NetworkDirty
             {
                 Flags = f
             });
@@ -37,30 +38,31 @@ public static class NetworkDirtyExtensions
     /// </summary>
     public static bool AddFlags(this ref NetworkDirty dirty, SyncFlags flags)
     {
-        ulong before = dirty.Flags;
-        dirty.Flags |= (ulong)flags;
+        SyncFlags before = dirty.Flags;
+        dirty.Flags |= flags;
         return dirty.Flags != before;
     }
 
     /// <summary>
     /// Remove flags. Se ficar sem flags, remove o componente do World (se existir).
     /// </summary>
-    public static void ClearNetworkDirty(this World world, Entity entity, SyncFlags flags)
+    public static void ClearNetworkDirty(this World world, Entity e, SyncFlags f)
     {
-        ulong f = (ulong)flags;
-        if (world.TryGet(entity, out NetworkDirty dirty))
+        if (!world.IsAlive(e)) return;
+        
+        if (world.TryGet(e, out NetworkDirty dirty))
         {
-            ulong before = dirty.Flags;
+            SyncFlags before = dirty.Flags;
             dirty.Flags &= ~f;
 
             if (dirty.Flags == 0)
             {
-                world.Remove<NetworkDirty>(entity);
+                world.Remove<NetworkDirty>(e);
             }
             else if (dirty.Flags != before)
             {
                 // só Set se realmente mudou
-                world.Set(entity, dirty);
+                world.Set(e, dirty);
             }
         }
     }
@@ -70,18 +72,18 @@ public static class NetworkDirtyExtensions
     /// </summary>
     public static bool RemoveFlags(this ref NetworkDirty dirty, SyncFlags flags)
     {
-        dirty.Flags &= ~(ulong)flags;
+        dirty.Flags &= ~flags;
         return dirty.Flags == 0;
     }
 
     /// <summary>
     /// Verifica se entidade está dirty para as flags informadas.
     /// </summary>
-    public static bool IsNetworkDirty(this World world, Entity entity, SyncFlags flags = SyncFlags.InitialSync)
+    public static bool IsNetworkDirty(this World world, Entity e, SyncFlags flags = SyncFlags.All)
     {
-        if (world.TryGet(entity, out NetworkDirty dirty))
+        if (world.TryGet(e, out NetworkDirty dirty))
         {
-            return (dirty.Flags & (ulong)flags) != 0;
+            return (dirty.Flags & flags) != 0;
         }
         return false;
     }
@@ -89,8 +91,8 @@ public static class NetworkDirtyExtensions
     /// <summary>
     /// Verifica flags na struct.
     /// </summary>
-    public static bool HasFlags(this in NetworkDirty dirty, SyncFlags flags = SyncFlags.InitialSync)
+    public static bool HasFlags(this in NetworkDirty dirty, SyncFlags flags = SyncFlags.All)
     {
-        return (dirty.Flags & (ulong)flags) != 0;
+        return (dirty.Flags & flags) != 0;
     }
 }

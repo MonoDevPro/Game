@@ -21,7 +21,7 @@ public static class DeliveryMethodAdapter
         };
     }
 
-    public static NetworkDeliveryMethod FromLite(this LiteNetLib.DeliveryMethod lite)
+    public static NetworkDeliveryMethod FromLite(this DeliveryMethod lite)
     {
         return lite switch
         {

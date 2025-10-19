@@ -4,7 +4,7 @@ using Game.Server.Simulation;
 namespace Game.Server.Loop;
 
 public class GameLoopService(
-    GameSimulation simulation,
+    ServerSimulation simulation,
     ILogger<GameLoopService> logger)
     : BackgroundService
 {

@@ -1,13 +1,13 @@
+using Game.Core.MapGame.Services;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.ECS.Services;
 
 namespace Game.Server.Simulation.Utils;
 
 public static class MapExtensions
 {
     // Factory
-    public static MapService CreateFromEntity(this Map entity)
+    public static GameMapService ToMapService(this Map entity)
     {
         int w = entity.Width;
         int h = entity.Height;
@@ -18,7 +18,7 @@ public static class MapExtensions
         var expected = w * h;
 
         // defensivo: nunca trabalhar com null
-        TileType[] tiles = Array.ConvertAll(entity.Tiles, b => (TileType)b);
+        TileType[] tiles = entity.Tiles;
         if (tiles.Length != expected)
         {
             var fallbackTiles = new TileType[expected];
@@ -31,10 +31,10 @@ public static class MapExtensions
             collision = new byte[expected]; // default = 0 -> no collision
 
         // cria a instância e popula os arrays internos
-        var ms = new MapService(entity.Id, entity.Name ?? string.Empty, w, h, entity.UsePadded, entity.BorderBlocked);
+        var ms = new GameMapService(entity.Id, entity.Name ?? string.Empty, w, h, entity.UsePadded, entity.BorderBlocked);
 
         // copia os dados reais para o armazenamento interno (considera padded/compact)
-        ms.PopulateFromRowMajor(Array.ConvertAll(tiles, t => (byte)t), collision);
+        ms.PopulateFromRowMajor(tiles, collision);
 
         // reaplica border blocking depois de popular, garantindo consistência
         if (ms.BorderBlocked)

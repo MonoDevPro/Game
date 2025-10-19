@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.ECS.Services;
+using Game.Core.MapGame.Services;
+using Game.ECS.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Menu;
 using Game.Network.Packets.Simulation;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
@@ -37,7 +39,7 @@ public sealed class GameServer : IDisposable
     private readonly PlayerSpawnService _spawnService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameServer> _logger;
-    private readonly GameSimulation _simulation;
+    private readonly ServerSimulation _simulation;
     private readonly NetworkSecurity? _security;
     private readonly SessionTokenManager _tokenManager;
     private readonly int _connectionTimeoutSeconds;
@@ -52,7 +54,7 @@ public sealed class GameServer : IDisposable
         PlayerSessionManager sessionManager,
         PlayerSpawnService spawnService,
         IServiceScopeFactory scopeFactory,
-        GameSimulation simulation,
+        ServerSimulation simulation,
         ILogger<GameServer> logger,
         SessionTokenManager tokenManager, // ✅ Injetar
         NetworkSecurity? security = null)
@@ -80,14 +82,14 @@ public sealed class GameServer : IDisposable
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectPacket>(HandleGameConnect);
-        RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
+        RegisterAndValidate<PlayerInput>(HandlePlayerInput);
     }
 
     
     /// <summary>
     /// Registra handler UNCONNECTED com validação de segurança.
     /// </summary>
-    private void RegisterUnconnectedAndValidate<T>(UnconnectedPacketHandler<T> handler) where T : struct, IPacket
+    private void RegisterUnconnectedAndValidate<T>(UnconnectedPacketHandler<T> handler) where T : struct
     {
         if (_security is not null)
         {
@@ -98,20 +100,20 @@ public sealed class GameServer : IDisposable
         _networkManager.RegisterUnconnectedPacketHandler<T>(handler);
         return;
         
-        void WrappedHandler(IPEndPoint remoteEndPoint, T packet)
+        void WrappedHandler(IPEndPoint remoteEndPoint, ref T packet)
         {
             if (_disposed)
                 return;
             
             if (_security is null)
             {
-                handler(remoteEndPoint, packet);
+                handler(remoteEndPoint, ref packet);
                 return;
             }
                 
-            if (_security.ValidateUnconnectedMessage(remoteEndPoint, packet))
+            if (_security.ValidateUnconnectedMessage(remoteEndPoint, ref packet))
             {
-                handler(remoteEndPoint, packet);
+                handler(remoteEndPoint, ref packet);
             }
             else
             {
@@ -123,7 +125,7 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// Registra handler CONNECTED com validação de segurança.
     /// </summary>
-    private void RegisterAndValidate<T>(PacketHandler<T> handler) where T : struct, IPacket
+    private void RegisterAndValidate<T>(PacketHandler<T> handler) where T : struct
     {
         if (_security is not null)
         {
@@ -134,20 +136,20 @@ public sealed class GameServer : IDisposable
         _networkManager.RegisterPacketHandler<T>(handler);
         return;
         
-        void WrappedHandler(INetPeerAdapter peer, T packet)
+        void WrappedHandler(INetPeerAdapter peer, ref T packet)
         {
             if (_disposed)
                 return;
             
             if (_security is null)
             {
-                handler(peer, packet);
+                handler(peer, ref packet);
                 return;
             }
                 
-            if (_security.ValidateMessage(peer, packet))
+            if (_security.ValidateMessage(peer, ref packet))
             {
-                handler(peer, packet);
+                handler(peer, ref packet);
             }
             else
             {
@@ -250,15 +252,15 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                if (_simulation.TryGetPlayerState(session.Entity, out var position, out var direction, out var speed))
+                if (_simulation.TryGetPlayerState(session.Entity, out var snapshot))
                 {
                     characterPersistData = characterPersistData with
                     {
-                        PositionX = position.X,
-                        PositionY = position.Y,
-                        PositionZ = position.Z,
-                        FacingX = direction.DirectionX,
-                        FacingY = direction.DirectionY
+                        PositionX = snapshot.PositionX,
+                        PositionY = snapshot.PositionY,
+                        PositionZ = snapshot.PositionZ,
+                        FacingX = snapshot.FacingX,
+                        FacingY = snapshot.FacingY
                     };
                     
                     // ✅ Tentar obter vitals da simulação
@@ -308,7 +310,7 @@ public sealed class GameServer : IDisposable
             _security?.RemovePeer(peer);
 
             // ✅ Notifica outros jogadores sobre o despawn
-            var packet = new PlayerDespawnPacket(peer.Id);
+            var packet = new PlayerDespawnSnapshot(peer.Id);
             _networkManager.SendToAll(
                 packet, 
                 NetworkChannel.Simulation, 
@@ -326,7 +328,7 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler UNCONNECTED de login.
     /// </summary>
-    private void HandleLoginRequest(IPEndPoint remoteEndPoint, UnconnectedLoginRequestPacket packet)
+    private void HandleLoginRequest(IPEndPoint remoteEndPoint, ref UnconnectedLoginRequestPacket packet)
     {
         _ = ProcessLoginAsync(remoteEndPoint, packet);
     }
@@ -334,7 +336,7 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler UNCONNECTED de registro.
     /// </summary>
-    private void HandleRegistrationRequest(IPEndPoint remoteEndPoint, UnconnectedRegistrationRequestPacket packet)
+    private void HandleRegistrationRequest(IPEndPoint remoteEndPoint, ref UnconnectedRegistrationRequestPacket packet)
     {
         _ = ProcessRegistrationAsync(remoteEndPoint, packet);
     }
@@ -344,7 +346,7 @@ public sealed class GameServer : IDisposable
     /// PROBLEMA: Não temos como identificar a conta sem conexão!
     /// SOLUÇÃO: Implementar sistema de tokens de sessão.
     /// </summary>
-    private void HandleCharacterCreationRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterCreationRequestPacket packet)
+    private void HandleCharacterCreationRequest(IPEndPoint remoteEndPoint, ref UnconnectedCharacterCreationRequestPacket packet)
     {
         _ = ProcessCharacterCreationAsync(remoteEndPoint, packet);
     }
@@ -354,7 +356,7 @@ public sealed class GameServer : IDisposable
     /// PROBLEMA: Não temos como identificar a conta sem conexão!
     /// SOLUÇÃO: Implementar sistema de tokens de sessão.
     /// </summary>
-    private void HandleCharacterSelectionRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterSelectionRequestPacket packet)
+    private void HandleCharacterSelectionRequest(IPEndPoint remoteEndPoint, ref UnconnectedCharacterSelectionRequestPacket packet)
     {
         _ = ProcessCharacterSelectionAsync(remoteEndPoint, packet);
     }
@@ -569,7 +571,7 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler UNCONNECTED de deleção de personagem.
     /// </summary>
-    private void HandleCharacterDeleteRequest(IPEndPoint remoteEndPoint, UnconnectedCharacterDeleteRequestPacket packet)
+    private void HandleCharacterDeleteRequest(IPEndPoint remoteEndPoint, ref UnconnectedCharacterDeleteRequestPacket packet)
     {
         _ = ProcessCharacterDeleteAsync(remoteEndPoint, packet);
     }
@@ -647,7 +649,7 @@ public sealed class GameServer : IDisposable
     /// ✅ Handler de conexão real com game token.
     /// AQUI é onde o GameDataPacket é enviado!
     /// </summary>
-    private void HandleGameConnect(INetPeerAdapter peer, GameConnectPacket packet)
+    private void HandleGameConnect(INetPeerAdapter peer, ref GameConnectPacket packet)
     {
         _ = ProcessGameConnectAsync(peer, packet);
     }
@@ -727,16 +729,15 @@ public sealed class GameServer : IDisposable
                 .ToArray();
 
             // ✅ 6. Broadcasta spawn para outros jogadores
-            var spawnPacket = new PlayerSpawnPacket(localSnapshot);
-            _networkManager.SendToAllExcept(peer, spawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
-            var mapService = scope.ServiceProvider.GetRequiredService<MapService>();
+            var mapService = scope.ServiceProvider.GetRequiredService<GameMapService>();
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-            var gameDataPacket = new GameDataPacket
+            var gameDataPacket = new GameSnapshot
             {
-                MapData = new MapData
+                MapSnapshot = new MapSnapshot
                 {
                     Name = mapService.Name,
                     Width = mapService.Width,
@@ -767,22 +768,22 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler CONNECTED de input de jogador.
     /// </summary>
-    private void HandlePlayerInput(INetPeerAdapter peer, PlayerInputPacket packet)
+    private void HandlePlayerInput(INetPeerAdapter peer, ref PlayerInput input)
     {
         if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {
             _logger.LogWarning("Received PlayerInputPacket from unknown peer {PeerId}", peer.Id);
             return;
         }
-
-        if (_simulation.TryApplyPlayerInput(session.Entity, packet.InputX, packet.InputY, packet.Flags))
+        
+        if (_simulation.TryApplyPlayerInput(session.Entity, input))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
                 peer.Id, 
-                packet.InputX,
-                packet.InputY,
-                packet.Flags
+                input.InputX,
+                input.InputY,
+                input.Flags
             );
         }
     }
@@ -822,7 +823,7 @@ public sealed class GameServer : IDisposable
         _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteRequestPacket>();
     
         // ✅ Desregistra handlers connected
-        _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
+        _networkManager.UnregisterPacketHandler<PlayerInput>();
         _networkManager.UnregisterPacketHandler<GameConnectPacket>();
     }
 }

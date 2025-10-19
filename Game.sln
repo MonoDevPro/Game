@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Tests", "Game.Tests\Game.Tests.csproj", "{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Core", "Game.Core\Game.Core.csproj", "{9C662232-BB2F-4BD4-958A-69AE5268C128}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,10 @@ Global
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 

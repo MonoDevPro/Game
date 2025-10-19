@@ -15,11 +15,6 @@
   </ItemGroup>
     
   <ItemGroup>
-    <ProjectReference Include="..\..\Game.ECS\Game.ECS.csproj" />
-    <ProjectReference Include="..\..\Game.Network\Game.Network.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="appsettings.json" />
     <Content Include="Scenes\game.tscn" />
     <Content Include="Scenes\menu.tscn" />
@@ -28,6 +23,10 @@
   <ItemGroup>
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Core\Game.Core.csproj" />
   </ItemGroup>
 
 </Project>

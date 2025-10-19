@@ -1,6 +1,6 @@
 using Arch.Core;
-using Game.Domain.Enums;
-using Game.Network.Packets.DTOs;
+using Game.ECS.Components;
+using Game.ECS.Components.Primitive;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
 
@@ -9,16 +9,31 @@ namespace Game.Server.Players;
 /// <summary>
 /// Handles spawning and despawning of player entities within the simulation.
 /// </summary>
-public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<PlayerSpawnService> logger)
+public sealed class PlayerSpawnService(ServerSimulation simulation, ILogger<PlayerSpawnService> logger)
 {
     public Entity SpawnPlayer(PlayerSession session)
     {
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
+        GameStats stats = new GameStats(
+            character.Stats.CurrentHp,
+            character.Stats.CurrentMp,
+            character.Stats.MaxHp,
+            character.Stats.MaxMp,
+            character.Stats.HpRegenPerTick(),
+            character.Stats.MpRegenPerTick(),
+            character.Stats.PhysicalAttack,
+            character.Stats.MagicAttack,
+            character.Stats.PhysicalDefense,
+            character.Stats.MagicDefense,
+            character.Stats.AttackSpeed,
+            character.Stats.MovementSpeed
+        );
+        
         var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id, 
             character.PositionX, character.PositionY, character.PositionZ, character.FacingX, character.FacingY, 
-            character.Stats);
+            stats);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
@@ -43,7 +58,7 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        if (!simulation.TryGetPlayerState(session.Entity, out var position, out var facing, out var speed))
+        if (!simulation.TryGetPlayerState(session.Entity, out PlayerStateSnapshot snapshot))
         {
             return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name, 
                 (byte)character.Gender, (byte)character.Vocation, 
@@ -52,7 +67,7 @@ public sealed class PlayerSpawnService(GameSimulation simulation, ILogger<Player
         }
 
         return new PlayerSnapshot(session.Peer.Id, session.Account.Id, character.Id, character.Name,
-            (byte)character.Gender, (byte)character.Vocation, position.X, position.Y, position.Z, facing.DirectionX,
-            facing.DirectionY, speed);
+            (byte)character.Gender, (byte)character.Vocation, snapshot.PositionX, snapshot.PositionY, snapshot.PositionZ, snapshot.FacingX,
+            snapshot.FacingY, snapshot.Speed);
     }
 }

@@ -13,6 +13,7 @@
         <PackageReference Include="Arch.Relationships" Version="1.0.1" />
         <PackageReference Include="Arch.System" Version="1.1.0" />
         <PackageReference Include="Arch.System.SourceGenerator" Version="2.1.0" />
+        <PackageReference Include="MemoryPack.Core" Version="1.21.4" />
     </ItemGroup>
 
 </Project>
