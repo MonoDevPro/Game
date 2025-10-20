@@ -82,7 +82,7 @@ public sealed class GameServer : IDisposable
         RegisterUnconnectedAndValidate<UnconnectedCharacterDeleteRequestPacket>(HandleCharacterDeleteRequest); // ✅ NOVO
         
         // ✅ CONNECTED PACKETS (In-game)
-        RegisterAndValidate<GameConnectPacket>(HandleGameConnect);
+        RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
         RegisterAndValidate<PlayerInput>(HandlePlayerInput);
     }
 
@@ -650,12 +650,12 @@ public sealed class GameServer : IDisposable
     /// ✅ Handler de conexão real com game token.
     /// AQUI é onde o GameDataPacket é enviado!
     /// </summary>
-    private void HandleGameConnect(INetPeerAdapter peer, ref GameConnectPacket packet)
+    private void HandleGameConnect(INetPeerAdapter peer, ref GameConnectRequestPacket requestPacket)
     {
-        _ = ProcessGameConnectAsync(peer, packet);
+        _ = ProcessGameConnectAsync(peer, requestPacket);
     }
 
-    private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectPacket packet)
+    private async Task ProcessGameConnectAsync(INetPeerAdapter peer, GameConnectRequestPacket requestPacket)
     {
         try
         {
@@ -673,7 +673,7 @@ public sealed class GameServer : IDisposable
             }
 
             // ✅ 1. Valida game token
-            if (!_tokenManager.ValidateAndConsumeGameToken(packet.GameToken, out var accountId, out var characterId))
+            if (!_tokenManager.ValidateAndConsumeGameToken(requestPacket.GameToken, out var accountId, out var characterId))
             {
                 _logger.LogWarning("Invalid or expired game token from peer {PeerId}", peer.Id);
                 peer.Disconnect();
@@ -738,7 +738,7 @@ public sealed class GameServer : IDisposable
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
             var gameDataPacket = new GameSnapshotPacket
             {
-                MapSnapshot = MapSnapshotBuilder.CreateSnapshot(currentMap, currentMap.Id),
+                MapSnapshot = MapSnapshot.CreateSnapshot(currentMap, currentMap.Id),
                 LocalPlayer = localSnapshot,
                 OtherPlayers = othersSnapshots
             };
@@ -818,6 +818,6 @@ public sealed class GameServer : IDisposable
     
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<PlayerInput>();
-        _networkManager.UnregisterPacketHandler<GameConnectPacket>();
+        _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Game.Network;
 using Game.Network.Abstractions;
 using Godot;
@@ -23,6 +24,19 @@ public partial class NetworkClient : Node
 
     public INetworkManager NetworkManager => _networkManager ?? throw new InvalidOperationException("NetworkClient is not initialized.");
 
+    public bool TryGetLocalPlayerNetworkId(out int networkId)
+    {
+        if (_networkManager is not null && 
+            _networkManager.IsRunning && 
+            _networkManager.Peers.PeerCount > 0)
+        {
+            networkId = _networkManager.Peers.GetAllPeers().First().RemoteId;
+            return true;
+        }
+        networkId = -1;
+        return false;
+    }
+    
     public override void _Ready()
     {
         base._Ready();

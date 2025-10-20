@@ -3,27 +3,30 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.DTOs;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Network.Packets.Simulation;
+using Godot;
+using GodotClient.Autoloads;
+using GodotClient.Simulation.Players;
 using GodotClient.Simulation.Systems;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GodotClient.Simulation;
 
+public record PlayerData(int NetworkId, Entity Entity, PlayerVisual Visual);
+
 public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
 {
+    private readonly PlayerIndexService _playerIndexService = new();
+    
     public override void ConfigureSystems(World world, Group<float> group)
     {
         ISystem<float>[] systems =
         [
             new ClientInputSystem(world),
             new MovementSystem(world),
-            new AnimationStateSystem(world),
-            new SpritePlaybackSystem(world),
-            new YSortSystem(world),
             new RemoteInterpolationSystem(world),
-            new VisualLifecycleSystem(world),
 
             new NetworkDirtyMarkingSystem(world),
             new NetworkSenderSystem(world, provider.GetRequiredService<INetworkManager>()),
@@ -32,6 +35,83 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
             // new ClientRenderSystem(world, _gameScript)
         ];
         group.Add(systems);
+    }
+    
+    public PlayerData SpawnPlayer(PlayerSnapshot snapshot)
+    {
+        if (_playerIndexService.TryGetPlayer(snapshot.NetworkId, out var playerData))
+        {
+            _playerIndexService.UnregisterPlayer(snapshot.NetworkId);
+            DespawnEntity(playerData!.Entity);
+            playerData.Visual.QueueFree();
+        }
+
+        bool isLocal = false;
+        if (NetworkClient.Instance.TryGetLocalPlayerNetworkId(out var localNetworkId))
+            isLocal = localNetworkId == snapshot.NetworkId;
+        
+        var world = provider.GetRequiredService<SceneTree>().Root.GetNode<Node2D>("/root/Game/World");
+        var playerVisual = new PlayerVisual
+        {
+            Name = $"Player_{snapshot.NetworkId}"
+        };
+        world.AddChild(playerVisual);
+        playerVisual.UpdateFromSnapshot(snapshot, isLocal);
+        
+        var spawnData = new PlayerSpawnData(
+            snapshot.PlayerId,
+            snapshot.NetworkId,
+            snapshot.PositionX,
+            snapshot.PositionY,
+            snapshot.PositionZ,
+            snapshot.FacingX,
+            snapshot.FacingY,
+            snapshot.Hp,
+            snapshot.MaxHp,
+            snapshot.HpRegen,
+            snapshot.Mp,
+            snapshot.MaxMp,
+            snapshot.MpRegen,
+            (float)snapshot.MovementSpeed,
+            (float)snapshot.AttackSpeed,
+            snapshot.PhysicalAttack,
+            snapshot.MagicAttack,
+            snapshot.PhysicalDefense,
+            snapshot.MagicDefense
+        );
+        var entity = base.SpawnPlayer(spawnData);
+        World.Add<RemoteInterpolation, NodeRef>(entity,
+            new RemoteInterpolation(),
+            new NodeRef { IsVisible = true, Node2D = playerVisual }
+        );
+        if (isLocal)
+        {
+            World.Add<LocalPlayerTag>(entity);
+            playerVisual.Modulate = new Color(0.8f, 1f, 0.8f); // ligeiramente verde
+        }
+        
+        var newPlayerData = new PlayerData(snapshot.NetworkId, entity, playerVisual);
+        _playerIndexService.RegisterPlayer(newPlayerData);
+        return newPlayerData;
+    }
+    
+    public void DespawnPlayer(in PlayerDespawnSnapshot despawn)
+    {
+        if (_playerIndexService.TryGetPlayer(despawn.NetworkId, out var playerData))
+        {
+            DespawnEntity(playerData!.Entity);
+            playerData.Visual.QueueFree();
+            _playerIndexService.UnregisterPlayer(despawn.NetworkId);
+        }
+    }
+
+    public bool ApplyRemotePlayerInput(in PlayerInputSnapshot input)
+    {
+        if (!_playerIndexService.TryGetPlayer(input.NetworkId, out var playerData)) 
+            return false;
+        
+        base.TryApplyPlayerInput(playerData!.Entity, input.Input);
+        return true;
     }
     
     public bool ApplyPlayerVitals(in Entity e, in PlayerVitalsSnapshot snap)
@@ -88,5 +168,26 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
         }
 
         return updated;
+    }
+    
+    public bool TryGetPlayerEntity(int networkId, out Entity entity)
+    {
+        if (_playerIndexService.TryGetPlayer(networkId, out var playerData))
+        {
+            entity = playerData!.Entity;
+            return true;
+        }
+        entity = default;
+        return false;
+    }
+    
+    public void ClearSimulation()
+    {
+        foreach (var player in _playerIndexService.GetAllPlayers())
+        {
+            DespawnEntity(player.Entity);
+            player.Visual.QueueFree();
+        }
+        _playerIndexService.Clear();
     }
 }

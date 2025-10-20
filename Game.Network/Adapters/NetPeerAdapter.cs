@@ -25,6 +25,7 @@ namespace Game.Network.Adapters;
         }
 
         public int Id => Peer.Id;
+        public int RemoteId => Peer.RemoteId;
 
         public IPEndPoint EndPoint => (IPEndPoint)Peer; // NetPeer derives from IPEndPoint
 

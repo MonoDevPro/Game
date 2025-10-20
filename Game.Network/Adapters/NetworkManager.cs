@@ -35,7 +35,7 @@ public class NetworkManager : INetworkManager, IDisposable
 
     public bool IsRunning => _net.IsRunning;
     public IPeerRepository Peers => _listener;
-
+    
     public void Initialize()
     {
         if (_netOptions.IsServer)

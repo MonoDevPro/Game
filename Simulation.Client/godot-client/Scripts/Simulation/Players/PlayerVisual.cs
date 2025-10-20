@@ -1,6 +1,6 @@
 using System;
 using Game.Domain.Enums;
-using Game.Network.Packets.Simulation;
+using Game.ECS.Components;
 using Godot;
 using GodotClient.Autoloads;
 
@@ -11,34 +11,81 @@ namespace GodotClient.Simulation.Players;
 /// Autor: MonoDevPro
 /// Data da Refatoração: 2025-10-14
 /// </summary>
-public sealed partial class AnimatedPlayerVisual : Node2D
+public sealed partial class PlayerVisual : Node2D
 {
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
+    public bool IsLocalPlayer { get; private set; } = false;
     
-    public void UpdateFromSnapshot(PlayerSnapshot snapshot, bool isLocal)
+    public override void _Ready()
     {
-        LoadSprites((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
+        base._Ready();
+        Sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        NameLabel = GetNodeOrNull<Label>("NameLabel");
+        HealthBar = GetNodeOrNull<ProgressBar>("HealthBar");
+        
+        if (Sprite is null)
+            GD.PrintErr("[PlayerVisual] AnimatedSprite2D node not found!");
+        if (NameLabel is null)
+            GD.PrintErr("[PlayerVisual] NameLabel node not found!");
+        if (HealthBar is null)
+            GD.PrintErr("[PlayerVisual] HealthBar node not found!");
+        
+        // Inicialização de nós (igual ao original)
+        Sprite = GetNodeOrNull<AnimatedSprite2D>("Sprite");
+        NameLabel = GetNodeOrNull<Label>("NameLabel");
+        HealthBar = GetNodeOrNull<ProgressBar>("HealthBar");
+
+        if (Sprite == null)
+        {
+            Sprite = new AnimatedSprite2D { Name = "Sprite", Position = Vector2.Zero, Centered = true };
+            AddChild(Sprite);
+        }
+
+        if (NameLabel == null)
+        {
+            NameLabel = new Label
+            {
+                Name = "NameLabel",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Position = new Vector2(-32, -48),
+                Text = string.Empty
+            };
+            NameLabel.AddThemeColorOverride("font_color", Colors.White);
+            AddChild(NameLabel);
+        }
+
+        if (HealthBar == null)
+        {
+            HealthBar = new ProgressBar
+            {
+                Name = "HealthBar",
+                Position = new Vector2(-16, -40),
+                Size = new Vector2(32, 4),
+                MaxValue = 100,
+                Value = 100,
+                ShowPercentage = false
+            };
+            AddChild(HealthBar);
+        }
+    }
+    
+    public void UpdateFromSnapshot(PlayerSnapshot snapshot, bool treatAsLocal)
+    {
+        IsLocalPlayer = treatAsLocal;
+        LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
         UpdateLabel(snapshot.Name);
         UpdateFacing(new Vector2I(snapshot.FacingX, snapshot.FacingY));
         UpdatePosition(new Vector3I(snapshot.PositionX, snapshot.PositionY, snapshot.PositionZ));
         if (Sprite is not null) UpdateAnimationSpeed(Sprite, snapshot.Speed);
     }
 
-    public void UpdateMovementFromServer(int posX, int posY, int posZ, int facingX, int facingY, float speed)
-    {
-        UpdateFacing(new Vector2I(facingX, facingY));
-        UpdatePosition(new Vector3I(posX, posY, posZ));
-        if (Sprite is not null) UpdateAnimationSpeed(Sprite, speed);
-    }
-    
     private void UpdateAnimationSpeed(AnimatedSprite2D sprite, float speed)
     {
         string anim = sprite.Animation;
         if (string.IsNullOrEmpty(anim) || !sprite.SpriteFrames.HasAnimation(anim))
             return;
-
         try
         {
             int frames = sprite.SpriteFrames.GetFrameCount(anim);
@@ -65,7 +112,7 @@ public sealed partial class AnimatedPlayerVisual : Node2D
         ZIndex = gridPos.Z;
     }
 
-    private void LoadSprites(VocationType vocation, Gender gender)
+    private void LoadSprite(VocationType vocation, Gender gender)
     {
         if (Sprite is null) return;
 

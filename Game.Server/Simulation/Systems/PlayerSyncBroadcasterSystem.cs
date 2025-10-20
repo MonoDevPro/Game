@@ -29,9 +29,7 @@ public sealed partial class PlayerSyncBroadcasterSystem(World world, INetworkMan
         
         var packet = new PlayerInputSnapshot(
             networkId.Value,
-            input.InputX,
-            input.InputY,
-            input.Flags);
+            input);
         
         networkManager.SendToAllExcept(
             excludePeerId: networkId.Value,

@@ -304,7 +304,7 @@ public partial class MenuScript : Control
         // Send GameConnectPacket with game token
         if (!string.IsNullOrWhiteSpace(_gameToken))
         {
-            var packet = new GameConnectPacket(_gameToken);
+            var packet = new GameConnectRequestPacket(_gameToken);
             _network?.SendToServer(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             
             GD.Print($"[Menu] Sent GameConnectPacket with token: {_gameToken}");

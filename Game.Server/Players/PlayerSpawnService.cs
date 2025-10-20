@@ -1,5 +1,6 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.DTOs;
 using Game.Network.Packets.Simulation;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
@@ -16,14 +17,29 @@ public sealed class PlayerSpawnService(ServerSimulation simulation, ILogger<Play
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
 
-        var entity = simulation.SpawnPlayer(session.Account.Id, session.Peer.Id,
-            character.PositionX, character.PositionY, character.PositionZ,
-            character.FacingX, character.FacingY,
-            character.Stats.CurrentHp, character.Stats.MaxHp, character.Stats.HpRegenPerTick(),
-            character.Stats.CurrentMp, character.Stats.MaxMp, character.Stats.MpRegenPerTick(),
-            (float)character.Stats.MovementSpeed, (float)character.Stats.AttackSpeed,
-            character.Stats.PhysicalAttack, character.Stats.MagicAttack,
-            character.Stats.PhysicalDefense, character.Stats.MagicDefense);
+        var playerSpawnData = new PlayerSpawnData(
+            session.Account.Id,
+            session.Peer.Id,
+            character.PositionX,
+            character.PositionY,
+            character.PositionZ,
+            character.FacingX,
+            character.FacingY,
+            character.Stats.CurrentHp,
+            character.Stats.MaxHp,
+            character.Stats.HpRegenPerTick(),
+            character.Stats.CurrentMp,
+            character.Stats.MaxMp,
+            character.Stats.MpRegenPerTick(),
+            (float)character.Stats.MovementSpeed,
+            (float)character.Stats.AttackSpeed,
+            character.Stats.PhysicalAttack,
+            character.Stats.MagicAttack,
+            character.Stats.PhysicalDefense,
+            character.Stats.MagicDefense
+        );
+        
+        var entity = simulation.SpawnPlayer(playerSpawnData);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);

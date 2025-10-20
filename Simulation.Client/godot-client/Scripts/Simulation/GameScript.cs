@@ -61,6 +61,7 @@ public partial class GameScript : Node2D
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
 
+            _network.UnregisterPacketHandler<PlayerInputSnapshot>();
             _network.UnregisterPacketHandler<PlayerStateSnapshot>();
             _network.UnregisterPacketHandler<PlayerVitalsSnapshot>();
             _network.UnregisterPacketHandler<PlayerSnapshot>();
@@ -107,8 +108,8 @@ public partial class GameScript : Node2D
         }
 
         // Constrói serviços de mapa (dados + spatial + cache) para uso em sistemas locais (opcional)
-        
-        var mapGrid = MapSnapshotLoader.LoadMapGrid(mapSnap.Value);
+
+        var mapGrid = MapGrid.LoadMapGrid(mapSnap.Value);
         var spatial = new MapSpatial(0, 0, mapSnap.Value.Width, mapSnap.Value.Height);
 
         UpdateStatus($"Playing (NetID: {_localNetworkId})");
@@ -129,6 +130,7 @@ public partial class GameScript : Node2D
 
         _network.OnPeerDisconnected += OnPeerDisconnected;
 
+        _network.RegisterPacketHandler<PlayerInputSnapshot>(HandlePlayerInputSnapshot);
         _network.RegisterPacketHandler<PlayerStateSnapshot>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsSnapshot>(HandlePlayerVitals);
         _network.RegisterPacketHandler<PlayerSnapshot>(HandlePlayerSpawn);
@@ -136,13 +138,25 @@ public partial class GameScript : Node2D
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
+    
+    private void HandlePlayerInputSnapshot(INetPeerAdapter peer, ref PlayerInputSnapshot packet)
+    {
+        if (_simulation is null) return;
+
+        // Resolve entidade por NetworkId no ECS (mapeamento deve ser mantido em um serviço de índice no ECS)
+        if (!TryResolveEntity(packet.NetworkId, out var e))
+            return;
+
+        // Aplica estado autoritativo (posição/facing/speed) na simulação
+        _simulation.ApplyRemotePlayerInput(in packet);
+    }
 
     private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStateSnapshot packet)
     {
         if (_simulation is null) return;
 
         // Resolve entidade por NetworkId no ECS (mapeamento deve ser mantido em um serviço de índice no ECS)
-        if (!TryResolveEntity(packet.PlayerId, out var e))
+        if (!TryResolveEntity(packet.NetworkId, out var e))
             return;
 
         // Aplica estado autoritativo (posição/facing/speed) na simulação
@@ -153,7 +167,7 @@ public partial class GameScript : Node2D
     {
         if (_simulation is null) return;
 
-        if (!TryResolveEntity(packet.PlayerId, out var e))
+        if (!TryResolveEntity(packet.NetworkId, out var e))
             return;
 
         _simulation.ApplyPlayerVitals(e, packet);
@@ -162,33 +176,7 @@ public partial class GameScript : Node2D
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSnapshot snapshot)
     {
         if (_simulation is null) return;
-
-        // Cria/spawna o player na simulação e registra no índice
-        // Observação: SpawnPlayer exige stats; PlayerSnapshot deve carregar dados suficientes para isso.
-        // Ajuste a extração conforme a sua struct snapshot.
-        var entity = _simulation.SpawnPlayer(
-            playerId: snapshot.PlayerId,
-            networkId: snapshot.NetworkId,
-            spawnX: snapshot.PositionX,
-            spawnY: snapshot.PositionY,
-            spawnZ: snapshot.PositionZ,
-            facingX: snapshot.FacingX,
-            facingY: snapshot.FacingY,
-            hp: snapshot.Hp,
-            maxHp: snapshot.MaxHp,
-            hpRegen: snapshot.HpRegen,
-            mp: snapshot.Mp,
-            maxMp: snapshot.MaxMp,
-            mpRegen: snapshot.MpRegen,
-            movementSpeed: (float)snapshot.MovementSpeed,
-            attackSpeed: (float)snapshot.AttackSpeed,
-            physicalAttack: snapshot.PhysicalAttack,
-            magicAttack: snapshot.MagicAttack,
-            physicalDefense: snapshot.PhysicalDefense,
-            magicDefense: snapshot.MagicDefense
-        );
-
-        RegisterEntity(snapshot.NetworkId, entity);
+        _simulation.SpawnPlayer(snapshot);
         UpdateStatus($"{snapshot.Name} joined");
     }
 
@@ -198,8 +186,7 @@ public partial class GameScript : Node2D
 
         if (TryResolveEntity(packet.NetworkId, out var e))
         {
-            _simulation.DespawnEntity(e);
-            UnregisterEntity(packet.NetworkId);
+            _simulation.DespawnPlayer(in packet);
         }
 
         if (packet.NetworkId == _localNetworkId)
@@ -212,25 +199,13 @@ public partial class GameScript : Node2D
 
     // ==================== Entity Index (NetworkId -> Entity) ====================
 
-    // Nota: mantenha o índice real dentro da camada ECS (ex.: PlayerIndexService).
-    // Aqui mantemos apenas um passthrough para facilitar o binding do handler -> ECS.
-    // Substitua as implementações abaixo por forward calls ao seu serviço de índice.
-
-    private readonly System.Collections.Generic.Dictionary<int, Entity> _entityByNetId = new();
-
-    private void RegisterEntity(int networkId, Entity e)
-    {
-        _entityByNetId[networkId] = e;
-    }
-
-    private void UnregisterEntity(int networkId)
-    {
-        _entityByNetId.Remove(networkId);
-    }
-
     private bool TryResolveEntity(int networkId, out Entity e)
     {
-        return _entityByNetId.TryGetValue(networkId, out e);
+        if (_simulation is not null) 
+            return _simulation.TryGetPlayerEntity(networkId, out e);
+        
+        e = default;
+        return false;
     }
 
     // ==================== UI / Disconnect ====================
@@ -247,8 +222,7 @@ public partial class GameScript : Node2D
             _network.Stop();
         }
 
-        // Limpa índice local de entidades
-        _entityByNetId.Clear();
+        _simulation?.ClearSimulation();
 
         // Reseta estado global
         GameStateManager.Instance.ResetState();

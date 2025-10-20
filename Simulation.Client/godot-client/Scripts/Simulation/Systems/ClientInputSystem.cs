@@ -11,12 +11,17 @@ public sealed partial class ClientInputSystem(World world) : GameSystem(world)
 {
     [Query]
     [All<PlayerControlled, PlayerInput>]
-    private void ApplyInput(in Entity e, ref PlayerInput input)
+    private void ClearInput(ref PlayerInput input)
     {
         input.InputX = 0;
         input.InputY = 0;
         input.Flags = 0;
-
+    }
+    
+    [Query]
+    [All<PlayerControlled, LocalPlayerTag, PlayerInput>]
+    private void ApplyInput(in Entity e, ref PlayerInput input)
+    {
         sbyte moveX = 0, moveY = 0;
         if (Input.IsActionPressed("walk_west")) moveX = -1;
         else if (Input.IsActionPressed("walk_east")) moveX = 1;

@@ -1,4 +1,4 @@
-namespace Game.Core.Maps;
+namespace Game.Domain;
 
 public static class MortonHelper
 {

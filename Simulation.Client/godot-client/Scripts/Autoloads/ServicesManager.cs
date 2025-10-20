@@ -27,8 +27,10 @@ public sealed partial class ServicesManager : Node
         });
 
         var netOptions = ConfigManager.Instance.CreateNetworkOptions();
+        services.AddSingleton(GetTree());
         services.AddSingleton(netOptions);
         services.AddNetworking(netOptions);
+
 
         _provider = services.BuildServiceProvider();
     }

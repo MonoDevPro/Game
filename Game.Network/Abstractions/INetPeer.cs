@@ -33,6 +33,7 @@ public interface IPeerRepository
 public interface INetPeerAdapter
 {
     int Id { get; }
+    int RemoteId { get; }
     IPEndPoint EndPoint { get; }
     int Ping { get; }
     int RoundTripTime { get; }

@@ -66,8 +66,8 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             {
                 var logger = sp.GetRequiredService<ILogger<MapGrid>>();
                 var map = sp.GetRequiredService<Map>();
-                MapGridFactory.SetDefaultOptions(MapGridFactoryOptions.Server);
-                var mapGrid = MapGridFactory.Create(map, out var info);
+                MapGrid.SetDefaultOptions(MapGridFactoryOptions.Server);
+                var mapGrid = MapGrid.Create(map, out var info);
                 logger.LogInformation(info.ToString());
                 return mapGrid;
             });

@@ -17,6 +17,7 @@ public static class GameArchetypes
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
         Component<Walkable>.ComponentType,
+        Component<Attackable>.ComponentType,
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,

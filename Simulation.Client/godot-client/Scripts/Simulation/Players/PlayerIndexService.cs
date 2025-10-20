@@ -1,26 +1,36 @@
 using System.Collections.Generic;
-using Arch.Core;
-using Game.ECS.Components;
+using Microsoft.Extensions.Logging;
 
 namespace GodotClient.Simulation.Players;
 
-public sealed class PlayerIndexService(World world)
+public class PlayerIndexService
 {
-    private readonly Dictionary<int, Entity> _byId = new();
-
-    public void RegisterPlayer(Entity e, int playerId)
+    private readonly Dictionary<int, PlayerData> _players = new();
+    
+    public PlayerData RegisterPlayer(PlayerData data)
     {
-        if (world.IsAlive(e))
-            _byId[playerId] = e;
+        _players[data.NetworkId] = data;
+        return data;
     }
-
-    public void UnregisterByEntity(Entity e)
+    
+    public void UnregisterPlayer(int networkId)
     {
-        if (!world.IsAlive(e)) return;
-        // se tiver componente com id, remove
-        if (world.Has<PlayerId>(e))
-            _byId.Remove(world.Get<PlayerId>(e).Value);
+        _players.Remove(networkId);
     }
-
-    public bool TryGet(int playerId, out Entity e) => _byId.TryGetValue(playerId, out e);
+    
+    public bool TryGetPlayer(int networkId, out PlayerData? data)
+    {
+        return _players.TryGetValue(networkId, out data);
+    }
+    
+    public IEnumerable<PlayerData> GetAllPlayers()
+    {
+        return _players.Values;
+    }
+    
+    public void Clear()
+    {
+        _players.Clear();
+    }
+    
 }

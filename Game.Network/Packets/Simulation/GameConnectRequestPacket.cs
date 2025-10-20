@@ -10,4 +10,4 @@ namespace Game.Network.Packets.Simulation;
 /// Data: 2025-01-12 06:37:40
 /// </summary>
 [MemoryPackable]
-public readonly partial record struct GameConnectPacket(string GameToken);
+public readonly partial record struct GameConnectRequestPacket(string GameToken);

@@ -16,7 +16,7 @@ public sealed partial class MovementSystem(World world) : GameSystem(world)
         var (nx, ny) = MovementMath.NormalizeInput(input.InputX, input.InputY);
         velocity.DirectionX = nx;
         velocity.DirectionY = ny;
-        velocity.Speed = MovementMath.ComputeCellsPerSecond(in speed, in input.Flags);
+        velocity.Speed = MovementMath.ComputeCellsPerSecond(in speed, input.Flags);
     }
 
     [Query]

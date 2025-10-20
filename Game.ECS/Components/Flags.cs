@@ -1,6 +1,14 @@
-using System.Runtime.InteropServices;
-
 namespace Game.ECS.Components;
+
+[Flags] 
+public enum InputFlags : ushort 
+{ 
+    None = 0, 
+    ClickLeft = 1 << 0,   // Bit 0
+    ClickRight = 1 << 1,  // Bit 1
+    Attack = 1 << 2,      // Bit 2
+    Sprint = 1 << 3,      // Bit 3
+}
 
 [Flags]
 public enum SyncFlags : ulong
@@ -11,10 +19,4 @@ public enum SyncFlags : ulong
     Facing    = 1 << 2,
     Vitals    = 1 << 3,
     All       = Input | Movement | Facing | Vitals
-}
-
-// Network
-public struct NetworkDirty
-{
-    public SyncFlags Flags;
 }
