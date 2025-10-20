@@ -7,21 +7,9 @@ namespace Game.Network.Packets.Menu;
 /// Server -> Client response to login attempts.
 /// </summary>
 [MemoryPackable]
-public readonly partial struct UnconnectedLoginResponsePacket
+public readonly partial record struct UnconnectedLoginResponsePacket(
+    bool Success, string Message, string? SessionToken, CharMenuData[] CurrentCharacters)
 {
-    public bool Success { get; init; }
-    public string Message { get; init; }
-    public string? SessionToken { get; init; } // ✅ Token de sessão
-    public CharMenuData[] CurrentCharacters { get; init; }
-
-    private UnconnectedLoginResponsePacket(bool success, string message, string? sessionToken, CharMenuData[] currentCharacters)
-    {
-        Success = success;
-        Message = message;
-        SessionToken = sessionToken;
-        CurrentCharacters = currentCharacters;
-    }
-
     public static UnconnectedLoginResponsePacket Failure(string message)
         => new(false, message, null, Array.Empty<CharMenuData>());
 

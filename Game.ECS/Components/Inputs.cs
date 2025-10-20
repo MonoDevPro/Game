@@ -1,8 +1,9 @@
 using System.Runtime.InteropServices;
+using MemoryPack;
 
 namespace Game.ECS.Components;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[MemoryPackable]
 public struct PlayerInput { public sbyte InputX; public sbyte InputY; public InputFlags Flags; }
 
 [Flags] public enum InputFlags : ushort 

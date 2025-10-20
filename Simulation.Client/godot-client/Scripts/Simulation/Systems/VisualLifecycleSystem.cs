@@ -6,9 +6,6 @@ using Godot;
 
 namespace GodotClient.Simulation.Systems;
 
-// Se quiser instanciar cenas/attach por ECS sem AnimatedPlayerVisual centralizado
-public struct VisualPrefab { public string ScenePath; public Node Parent; }
-
 public sealed partial class VisualLifecycleSystem(World world) : GameSystem(world)
 {
     // Cria Node2D/Sprite quando aparecer VisualPrefab e não tiver NodeRef ainda

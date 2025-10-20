@@ -1,5 +1,5 @@
 using System.IO.Compression;
-using Game.ECS.Components;
+using Game.Network.Packets.Simulation;
 
 namespace Game.Core.Maps;
 

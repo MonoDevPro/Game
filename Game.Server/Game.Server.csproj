@@ -27,11 +27,4 @@
         <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     </ItemGroup>
-
-    <ItemGroup>
-      <None Include="..\identifier.sqlite">
-        <Link>identifier.sqlite</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
 </Project>

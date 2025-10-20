@@ -34,37 +34,6 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
         group.Add(systems);
     }
     
-    public void ReceivePlayer(in Entity e, in PlayerSnapshot snap)
-    {
-        ref var position = ref World.Get<Position>(e);
-        position.X = snap.PositionX;
-        position.Y = snap.PositionY;
-        position.Z = snap.PositionZ;
-        
-        ref var facing = ref World.Get<Facing>(e);
-        facing.DirectionX = snap.FacingX;
-        facing.DirectionY = snap.FacingY;
-        
-        ref var velocity = ref World.Get<Velocity>(e);
-        velocity.Speed = snap.Speed;
-    }
-    
-    // Chame isso ao receber um snapshot do servidor
-    public void ReceivePlayerState(in Entity e, in PlayerStateSnapshot snap)
-    {
-        ref var position = ref World.Get<Position>(e);
-        position.X = snap.PositionX;
-        position.Y = snap.PositionY;
-        position.Z = snap.PositionZ;
-        
-        ref var facing = ref World.Get<Facing>(e);
-        facing.DirectionX = snap.FacingX;
-        facing.DirectionY = snap.FacingY;
-        
-        ref var velocity = ref World.Get<Velocity>(e);
-        velocity.Speed = snap.Speed;
-    }
-    
     public bool ApplyPlayerVitals(in Entity e, in PlayerVitalsSnapshot snap)
     {
         bool updated = false;

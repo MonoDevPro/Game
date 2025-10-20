@@ -138,6 +138,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
 
             entity.Property(e => e.FacingX)
                 .HasDefaultValue(0);
+            
             entity.Property(e => e.FacingY)
                 .HasDefaultValue(1);
 

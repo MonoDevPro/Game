@@ -6,11 +6,10 @@ namespace Game.Network.Packets.Menu;
 /// Server -> Client acknowledgement for registration attempts.
 /// </summary>
 [MemoryPackable]
-public partial struct UnconnectedRegistrationResponsePacket(bool success, string message)
+public readonly partial record struct UnconnectedRegistrationResponsePacket(
+    bool Success, 
+    string Message)
 {
-    public bool Success { get; set; } = success;
-    public string Message { get; set; } = message;
-
     public static UnconnectedRegistrationResponsePacket Failure(string message) => new(false, message);
     public static UnconnectedRegistrationResponsePacket Ok() => new(true, string.Empty);
 }

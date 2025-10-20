@@ -12,11 +12,10 @@ public enum AnimState : byte
     Dead = 5
 }
 
-public struct CanInput { }
-
 // Referências Godot que ficam no ECS (adapter para a camada visual)
 public struct NodeRef { public Node2D Node2D; public bool IsVisible; }
 public struct SpriteRef { public AnimatedSprite2D Sprite2D; }
+public struct VisualPrefab { public string ScenePath; public Node Parent; }
 
 // Configuração da animação por entidade (nomes das animações no AnimatedSprite2D)
 public struct VisualAnimSet

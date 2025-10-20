@@ -14,7 +14,6 @@ public enum SyncFlags : ulong
 }
 
 // Network
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct NetworkDirty
 {
     public SyncFlags Flags;
