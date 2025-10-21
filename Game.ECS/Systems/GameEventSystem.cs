@@ -19,7 +19,7 @@ public class GameEventSystem
     public event Action<Entity>? OnPlayerJoined;      // PlayerNetworkId
     public event Action<Entity>? OnPlayerLeft;        // PlayerNetworkId
     
-    public event Action<Entity, sbyte, sbyte, ushort>? OnPlayerInput; // Entity, InputX, InputY, InputFlags
+    public event Action<Entity, sbyte, sbyte, InputFlags>? OnPlayerInput; // Entity, InputX, InputY, InputFlags
     
     // ============================================
     // Gameplay Events
@@ -50,23 +50,14 @@ public class GameEventSystem
     
     
     // ============================================
-    // Network Events
-    // ============================================
-    
-    public event Action<Entity>? OnNetworkDirty;
-    public event Action<Entity>? OnNetworkSync;
-    
-    // ============================================
     // Invoke Methods (called by systems)
     // ============================================
-    
     public void RaiseEntitySpawned(Entity entity) => OnEntitySpawned?.Invoke(entity);
     public void RaiseEntityDespawned(Entity entity) => OnEntityDespawned?.Invoke(entity);
     
     public void RaisePlayerJoined(Entity entity) => OnPlayerJoined?.Invoke(entity);
     public void RaisePlayerLeft(Entity entity) => OnPlayerLeft?.Invoke(entity);
-    
-    public void RaisePlayerInput(Entity entity, sbyte inputX, sbyte inputY, ushort flags) => OnPlayerInput?.Invoke(entity, inputX, inputY, flags);
+    public void RaisePlayerInput(Entity entity, sbyte inputX, sbyte inputY, InputFlags flags) => OnPlayerInput?.Invoke(entity, inputX, inputY, flags);
     
     public void RaiseDamage(Entity? attacker, Entity victim, int damage) => OnDamage?.Invoke(attacker, victim, damage);
     public void RaiseHealHp(Entity? healer, Entity target, int amount) => OnHealHp?.Invoke(healer, target, amount);
@@ -83,6 +74,4 @@ public class GameEventSystem
     
     public void RaiseHealthChanged(Entity entity, int newHealth, int maxHealth) => OnHealthChanged?.Invoke(entity, newHealth, maxHealth);
     public void RaiseManaChanged(Entity entity, int newMana, int maxMana) => OnManaChanged?.Invoke(entity, newMana, maxMana);
-    
-    public void RaiseNetworkSync(Entity entity) => OnNetworkSync?.Invoke(entity);
 }

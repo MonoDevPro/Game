@@ -2,6 +2,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
@@ -10,7 +12,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela IA de NPCs e entidades controladas por IA.
 /// Processa movimento, decisões de combate e comportamento de NPCs.
 /// </summary>
-public sealed partial class AISystem(World world, GameEventSystem events) : GameSystem(world, events)
+public sealed partial class AISystem(World world, GameEventSystem events, EntityFactory factory) : GameSystem(world, events, factory)
 {
     private readonly Random _random = new();
 
@@ -84,7 +86,7 @@ public sealed partial class AISystem(World world, GameEventSystem events) : Game
         bool wasInCombat = combat.InCombat;
         combat.LastAttackTime = 1.5f;
         combat.InCombat = true;
-        combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? (uint)netId.Value : 0;
+        combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? netId.Value : 0;
         
         World.Set(attacker, combat);
 

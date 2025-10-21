@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
 
 namespace Game.ECS.Systems;
 
@@ -9,15 +10,32 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por processar input do jogador local.
 /// Converte input em ações (movimento, ataque, habilidades, etc).
 /// </summary>
-public sealed partial class InputSystem(World world, GameEventSystem events) : GameSystem(world, events)
+public sealed partial class InputSystem(World world, GameEventSystem events, EntityFactory factory) : GameSystem(world, events, factory)
 {
     [Query]
-    [All<LocalPlayerTag, PlayerInput, PlayerControlled>]
-    private void ProcessPlayerInput(in Entity e, in PlayerInput input, [Data] float deltaTime)
+    [All<PlayerControlled, Velocity>]
+    private void ProcessPlayerInput(in Entity e,
+        ref Velocity velocity, in Walkable speed, ref PlayerInput input, [Data] float _)
     {
-        // O sistema de movimento já processa o input
-        // Este sistema pode ser estendido para processar outros tipos de input
-        // como habilidades, usos de itens, etc
+        (input.InputX, input.InputY) = NormalizeInput(input.InputX, input.InputY);
+        velocity.DirectionX = input.InputX;
+        velocity.DirectionY = input.InputY;
+        velocity.Speed = ComputeCellsPerSecond(in speed, input.Flags);
+    }
+    
+    private (sbyte x, sbyte y) NormalizeInput(sbyte inputX, sbyte inputY)
+    {
+        sbyte nx = inputX switch { < 0 => -1, > 0 => 1, _ => 0 };
+        sbyte ny = inputY switch { < 0 => -1, > 0 => 1, _ => 0 };
+        return (nx, ny);
+    }
+    
+    private float ComputeCellsPerSecond(in Walkable walkable, in InputFlags flags)
+    {
+        float speed = walkable.BaseSpeed + walkable.CurrentModifier;
+        if (flags.HasFlag(InputFlags.Sprint))
+            speed *= 1.5f;
+        return speed;
     }
 
     /// <summary>
@@ -36,8 +54,7 @@ public sealed partial class InputSystem(World world, GameEventSystem events) : G
         };
 
         World.Set(entity, input);
-        Events.RaisePlayerInput(entity, inputX, inputY, (ushort)flags);
-
+        Events.RaisePlayerInput(entity, inputX, inputY, flags);
         return true;
     }
 

@@ -4,6 +4,8 @@ using Game.ECS.Entities.Data;
 using Game.ECS.Systems;
 using Arch.Core;
 using Arch.System;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
 
 namespace Game.ECS.Examples;
 
@@ -12,7 +14,7 @@ namespace Game.ECS.Examples;
 /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
 /// Estado autorizado vem do servidor.
 /// </summary>
-public class ClientGameSimulation : GameSimulation
+public sealed class ClientGameSimulation : GameSimulation
 {
     private MovementSystem _movementSystem = null!;
     private InputSystem _inputSystem = null!;
@@ -20,83 +22,72 @@ public class ClientGameSimulation : GameSimulation
     private Entity _localPlayer;
     private int _localNetworkId;
     
-    public ClientGameSimulation() : base()
+    public ClientGameSimulation()
     {
-        ConfigureSystems(World, Systems);
+        ConfigureSystems(World, Events, EntityFactory, Systems);
     }
 
     /// <summary>
     /// Configura sistemas apenas para o cliente.
     /// Ordem: Input → Movement (previsão local) → Sync (recebe correções do servidor)
     /// </summary>
-    public override void ConfigureSystems(World world, Group<float> group)
+    protected override void ConfigureSystems(World world, GameEventSystem gameEvents, EntityFactory factory, Group<float> systems)
     {
         // Sistemas de entrada do jogador
-    _inputSystem = new InputSystem(world, EventSystem);
-        group.Add(_inputSystem);
+        _inputSystem = new InputSystem(world, gameEvents, factory);
+        systems.Add(_inputSystem);
         
         // Sistemas de movimento (previsão local)
-    _movementSystem = new MovementSystem(world, EventSystem);
-        group.Add(_movementSystem);
+        _movementSystem = new MovementSystem(world, gameEvents, factory);
+        systems.Add(_movementSystem);
     }
-
-    public void SpawnLocalPlayer(int playerId, int networkId)
+    
+    public Entity SpawnPlayer(in PlayerCharacter data, bool isLocal)
     {
-        _localNetworkId = networkId;
+        var entity = EntityFactory.CreatePlayer(data);
         
-        var playerData = new PlayerCharacter(
-            PlayerId: playerId,
-            NetworkId: networkId,
-            Name: "You",
-            Level: 1,
-            ClassId: 0,
-            SpawnX: 50, SpawnY: 50, SpawnZ: 0,
-            FacingX: 0, FacingY: 1,
-            Hp: 100, MaxHp: 100, HpRegen: 1f,
-            Mp: 50, MaxMp: 50, MpRegen: 0.5f,
-            MovementSpeed: 1f, AttackSpeed: 1f,
-            PhysicalAttack: 10, MagicAttack: 5,
-            PhysicalDefense: 2, MagicDefense: 1
-        );
-        
-        _localPlayer = SpawnLocalPlayer(playerData);
-        
-        Console.WriteLine($"[CLIENT] Jogador local criado: {playerId} ({networkId})");
-    }
-
-    public void HandlePlayerInput(sbyte inputX, sbyte inputY, InputFlags flags)
-    {
-        if (World.IsAlive(_localPlayer))
+        if (isLocal)
         {
-            _inputSystem.ApplyPlayerInput(_localPlayer, inputX, inputY, flags);
-            Console.WriteLine($"[CLIENT] Input aplicado localmente: ({inputX}, {inputY}, {flags})");
+            World.Add<LocalPlayerTag>(entity);
+            _localPlayer = entity;
+            _localNetworkId = data.NetworkId;
         }
-    }
-
-    public void SpawnRemotePlayer(int networkId, int x, int y)
-    {
-        var playerData = new PlayerCharacter(
-            PlayerId: networkId,
-            NetworkId: networkId,
-            Name: $"Player_{networkId}",
-            Level: 1,
-            ClassId: 0,
-            SpawnX: x, SpawnY: y, SpawnZ: 0,
-            FacingX: 0, FacingY: 1,
-            Hp: 100, MaxHp: 100, HpRegen: 1f,
-            Mp: 50, MaxMp: 50, MpRegen: 0.5f,
-            MovementSpeed: 1f, AttackSpeed: 1f,
-            PhysicalAttack: 10, MagicAttack: 5,
-            PhysicalDefense: 2, MagicDefense: 1
-        );
+        else
+            World.Add<RemotePlayerTag>(entity);
         
-        SpawnRemotePlayer(playerData);
-        Console.WriteLine($"[CLIENT] Jogador remoto apareceu: {networkId} em ({x}, {y})");
+        return entity;
+    }
+    
+    public Entity SpawnNpc(NPCCharacter data)
+    {
+        var entity = EntityFactory.CreateNPC(data);
+        return entity;
     }
 
-    public void DespawnRemotePlayer(int networkId)
+    public Entity SpawnProjectile(ProjectileData data)
     {
-        // Em uma implementação real, encontrar e remover a entidade
-        Console.WriteLine($"[CLIENT] Jogador remoto desapareceu: {networkId}");
+        var entity = EntityFactory.CreateProjectile(data);
+        return entity;
+    }
+
+    public Entity SpawnDroppedItem(DroppedItemData data)
+    {
+        var entity = EntityFactory.CreateDroppedItem(data);
+        return entity;
+    }
+    
+    public bool DespawnEntity(Entity e)
+    {
+        return EntityFactory.DestroyEntity(e);
+    }
+
+    public bool ApplyPlayerInput(sbyte inputX, sbyte inputY, InputFlags flags)
+    {
+        return _inputSystem.ApplyPlayerInput(_localPlayer, inputX, inputY, flags);
+    }
+    
+    public bool ClearPlayerInput()
+    {
+        return _inputSystem.ClearPlayerInput(_localPlayer);
     }
 }

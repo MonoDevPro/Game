@@ -1,10 +1,10 @@
-using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 using Arch.Core;
 using Arch.System;
+using Game.ECS.Entities.Factories;
 
 namespace Game.ECS.Examples;
 
@@ -12,102 +12,85 @@ namespace Game.ECS.Examples;
 /// Exemplo de uso do ECS como SERVIDOR.
 /// O servidor executa a simulação completa com todos os sistemas.
 /// </summary>
-public class ServerGameSimulation : GameSimulation
+public sealed class ServerGameSimulation : GameSimulation
 {
+    private InputSystem _inputSystem = null!;
     private MovementSystem _movementSystem = null!;
     private HealthSystem _healthSystem = null!;
     private CombatSystem _combatSystem = null!;
     private AISystem _aiSystem = null!;
+    private readonly IMapService _mapService;
     
-    private IMapService _mapService = null!;
-    
-    public ServerGameSimulation() : base()
+    public ServerGameSimulation()
     {
         // Registra todos os serviços
         _mapService = new MapService();
-        
         // Configura os sistemas
-        ConfigureSystems(World, Systems);
+        ConfigureSystems(World, Events, EntityFactory, Systems);
     }
 
     /// <summary>
     /// Configura todos os sistemas de servidor.
     /// Ordem importante: Input → Movement → Combat → Sync
     /// </summary>
-    public override void ConfigureSystems(World world, Group<float> group)
+    protected override void ConfigureSystems(World world, GameEventSystem gameEvents, EntityFactory factory, Group<float> systems)
     {
         // Sistemas de entrada (input não vem do servidor, vem do cliente)
         // Mas o servidor valida e aplica
+        _inputSystem = new InputSystem(world, gameEvents, factory);
+        systems.Add(_inputSystem);
         
         // Sistemas de movimento
-    _movementSystem = new MovementSystem(world, EventSystem);
-        group.Add(_movementSystem);
+        _movementSystem = new MovementSystem(world, gameEvents, factory);
+        systems.Add(_movementSystem);
         
         // Sistemas de saúde
-    _healthSystem = new HealthSystem(world, EventSystem);
-        group.Add(_healthSystem);
+        _healthSystem = new HealthSystem(world, gameEvents, factory);
+        systems.Add(_healthSystem);
         
         // Sistemas de combate
-    _combatSystem = new CombatSystem(world, EventSystem);
-        group.Add(_combatSystem);
+        _combatSystem = new CombatSystem(world, gameEvents, factory);
+        systems.Add(_combatSystem);
         
         // Sistemas de IA
-    _aiSystem = new AISystem(world, EventSystem);
-        group.Add(_aiSystem);
-        
+        _aiSystem = new AISystem(world, gameEvents, factory);
+        systems.Add(_aiSystem);
+    }
+    
+    public Entity SpawnPlayer(in PlayerCharacter data)
+    {
+        var entity = EntityFactory.CreatePlayer(data);
+        return entity;
     }
 
-    public void RegisterNewPlayer(int playerId, int networkId)
+    public Entity SpawnNpc(NPCCharacter data)
     {
-        var playerData = new PlayerCharacter(
-            PlayerId: playerId,
-            NetworkId: networkId,
-            Name: $"Player_{playerId}",
-            Level: 1,
-            ClassId: 0,
-            SpawnX: 50, SpawnY: 50, SpawnZ: 0,
-            FacingX: 0, FacingY: 1,
-            Hp: 100, MaxHp: 100, HpRegen: 1f,
-            Mp: 50, MaxMp: 50, MpRegen: 0.5f,
-            MovementSpeed: 1f, AttackSpeed: 1f,
-            PhysicalAttack: 10, MagicAttack: 5,
-            PhysicalDefense: 2, MagicDefense: 1
-        );
-        
-    var player = SpawnRemotePlayer(playerData);
-        
-    Console.WriteLine($"[SERVER] Jogador {playerId} ({networkId}) entrou no servidor");
+        var entity = EntityFactory.CreateNPC(data);
+        return entity;
     }
 
-    public void RemovePlayer(int networkId)
+    public Entity SpawnProjectile(ProjectileData data)
     {
-        // Encontra e remove o jogador
-        // Em uma implementação real, manter um dicionário de networkId -> Entity
-        // TODO: EventSystem.RaisePlayerLeft(networkId);
+        var entity = EntityFactory.CreateProjectile(data);
+        return entity;
     }
 
-    public void SpawnNPC(string name, int npcId, int x, int y)
+    public Entity SpawnDroppedItem(DroppedItemData data)
     {
-        var npcData = new NPCCharacter(
-            NetworkId: npcId,
-            Name: name,
-            PositionX: x, PositionY: y, PositionZ: 0,
-            Hp: 50, MaxHp: 50, HpRegen: 0.5f,
-            PhysicalAttack: 8, MagicAttack: 2,
-            PhysicalDefense: 1, MagicDefense: 0
-        );
-        
-        var npc = SpawnNpc(npcData);
-        
-        // Insere no spatial grid
-        var grid = _mapService.GetMapSpatial(0);
-        grid.Insert(new Position { X = x, Y = y, Z = 0 }, npc);
+        var entity = EntityFactory.CreateDroppedItem(data);
+        return entity;
     }
 
-    public void ApplyPlayerInput(int networkId, sbyte inputX, sbyte inputY, InputFlags flags)
+    public bool DespawnEntity(Entity e)
     {
-        // Em uma implementação real, encontrar a entidade pelo networkId
-        // player.Set(new PlayerInput { InputX = inputX, InputY = inputY, Flags = flags });
-        Console.WriteLine($"[SERVER] Input recebido: {networkId} -> ({inputX}, {inputY}, {flags})");
+        return EntityFactory.DestroyEntity(e);
+    }
+
+    public void ApplyPlayerInput(Entity e, sbyte inputX, sbyte inputY, InputFlags flags)
+    {
+        if (World.IsAlive(e) && World.Has<PlayerControlled>(e))
+        {
+            _inputSystem.ApplyPlayerInput(e, inputX, inputY, flags);
+        }
     }
 }

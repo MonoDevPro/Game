@@ -2,6 +2,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
@@ -10,11 +12,12 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela lógica de combate: ataque, dano, morte.
 /// Processa ataques, aplica dano e gerencia transições para estado Dead.
 /// </summary>
-public sealed partial class CombatSystem(World world, GameEventSystem events) : GameSystem(world, events)
+public sealed partial class CombatSystem(World world, GameEventSystem events, EntityFactory factory) 
+    : GameSystem(world, events, factory)
 {
     [Query]
     [All<Health, CombatState>]
-    private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState csombat, [Data] float deltaTime)
+    private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState combat, [Data] float deltaTime)
     {
         if (health.Current <= 0)
         {

@@ -1,6 +1,7 @@
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Archetypes;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
@@ -67,7 +68,8 @@ public static class ECSIntegrityValidator
         try
         {
             var world = Arch.Core.World.Create();
-            var factory = new EntityFactory(world);
+            var gameEvents = new GameEventSystem();
+            var factory = new EntityFactory(world, gameEvents);
             
             // Verifica métodos existem
             var methods = factory.GetType().GetMethods();

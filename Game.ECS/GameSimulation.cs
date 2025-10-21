@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
+using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Entities;
-using Game.ECS.Entities.Archetypes;
 using Game.ECS.Entities.Data;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Systems;
 using Game.ECS.Utils;
 
@@ -48,41 +49,36 @@ public class FixedTimeStep(float fixedDeltaTime)
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class GameSimulation
+public abstract class GameSimulation : GameSystem
 {
-    protected readonly World World;
     protected readonly Group<float> Systems;
-    protected readonly GameEventSystem EventSystem;
-    protected readonly IEntityFactory EntityFactory;
     
     private readonly FixedTimeStep _fixedTimeStep;
-
-    protected GameSimulation()
-    {
-        World = World.Create(
-            chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
-            minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
-            archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-            entityCapacity: SimulationConfig.EntityCapacity);
-        
-        Systems = new Group<float>(SimulationConfig.SimulationName);
-        EventSystem = new GameEventSystem();
-        EntityFactory = new EntityFactory(World);
-        _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
-    }
     
     /// <summary>
     /// Tick atual da simulação. Incrementa a cada atualização.
     /// </summary>
     public uint CurrentTick { get; private set; }
     
+    protected GameSimulation() : this(World.Create(
+        chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+        minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
+        archetypeCapacity: SimulationConfig.ArchetypeCapacity,
+        entityCapacity: SimulationConfig.EntityCapacity), new GameEventSystem()) { }
+
+    private GameSimulation(World world, GameEventSystem gameEvents) : base(world, gameEvents, new EntityFactory(world, gameEvents))
+    {
+        Systems = new Group<float>(SimulationConfig.SimulationName);
+        _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
+    }
+
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    public abstract void ConfigureSystems(World world, Group<float> group);
+    protected abstract void ConfigureSystems(World world, GameEventSystem gameEvents, EntityFactory factory, Group<float> systems);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Update(float deltaTime)
+    public override void Update(in float deltaTime)
     {
         _fixedTimeStep.Accumulate(deltaTime);
 
@@ -99,58 +95,9 @@ public abstract class GameSimulation
             _fixedTimeStep.Step();
         }
     }
+    public override void BeforeUpdate(in float t) => throw new NotImplementedException();
+    public override void AfterUpdate(in float t) => throw new NotImplementedException();
 
-    public Entity SpawnPlayer(PlayerCharacter data)
-    {
-        var entity = EntityFactory.CreatePlayer(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-    
-    public Entity SpawnLocalPlayer(PlayerCharacter data) 
-    {
-        var entity = EntityFactory.CreateLocalPlayer(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-    
-    public Entity SpawnRemotePlayer(PlayerCharacter data)
-    {
-        var entity = EntityFactory.CreateRemotePlayer(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-
-    public Entity SpawnNpc(NPCCharacter data)
-    {
-        var entity = EntityFactory.CreateNPC(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-
-    public Entity SpawnProjectile(ProjectileData data)
-    {
-        var entity = EntityFactory.CreateProjectile(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-
-    public Entity SpawnDroppedItem(DroppedItemData data)
-    {
-        var entity = EntityFactory.CreateDroppedItem(data);
-        NotifyEntitySpawned(entity);
-        return entity;
-    }
-
-    public void DespawnEntity(Entity entity)
-    {
-        if (World.IsAlive(entity))
-        {
-            NotifyEntityDespawned(entity);
-            World.Destroy(entity);
-        }
-    }
-    
     public bool TryGetPlayerState(Entity entity, 
         out PlayerStateSnapshot snapshot)
     {
@@ -181,31 +128,5 @@ public abstract class GameSimulation
             CurrentMp: mana.Current,
             MaxMp: mana.Max);
         return true;
-    }
-
-    public bool TryApplyPlayerInput(Entity entity, PlayerInput input)
-    {
-        if (World.IsAlive(entity) && World.Has<PlayerInput>(entity))
-        {
-            World.Set(entity, input);
-            return true;
-        }
-        return false;
-    }
-
-    private void NotifyEntitySpawned(Entity entity)
-    {
-        EventSystem.RaiseEntitySpawned(entity);
-
-        if (World.Has<PlayerId>(entity))
-            EventSystem.RaisePlayerJoined(entity);
-    }
-
-    private void NotifyEntityDespawned(Entity entity)
-    {
-        EventSystem.RaiseEntityDespawned(entity);
-
-        if (World.Has<PlayerId>(entity))
-            EventSystem.RaisePlayerLeft(entity);
     }
 }

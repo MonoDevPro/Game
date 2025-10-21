@@ -2,6 +2,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
@@ -10,7 +12,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por regeneração de vida e mana.
 /// Processa entidades que têm Health e Mana, aplicando regeneração por tick.
 /// </summary>
-public sealed partial class HealthSystem(World world, GameEventSystem events) : GameSystem(world, events)
+public sealed partial class HealthSystem(World world, GameEventSystem events, EntityFactory factory) : GameSystem(world, events, factory)
 {
     [Query]
     [All<Health>]

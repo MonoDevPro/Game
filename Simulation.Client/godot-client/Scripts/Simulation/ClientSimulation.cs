@@ -4,16 +4,18 @@ using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.DTOs;
+using Game.ECS.Entities.Data;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.Autoloads;
 using GodotClient.ECS;
 using GodotClient.ECS.Components;
+using GodotClient.ECS.Systems;
 using GodotClient.Simulation.Players;
 using GodotClient.Simulation.Systems;
 using Microsoft.Extensions.DependencyInjection;
-using ClientInputSystem = GodotClient.ECS.Systems.ClientInputSystem;
+using GodotInputSystem = GodotClient.Services.GodotInputSystem;
 using NetworkDirtyMarkingSystem = GodotClient.ECS.Systems.NetworkDirtyMarkingSystem;
 using NetworkSenderSystem = GodotClient.ECS.Systems.NetworkSenderSystem;
 using RemoteInterpolationSystem = GodotClient.ECS.Systems.RemoteInterpolationSystem;
@@ -30,7 +32,7 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
     {
         ISystem<float>[] systems =
         [
-            new ClientInputSystem(world),
+            new GodotInputSystem(world),
             new MovementSystem(world),
             new RemoteInterpolationSystem(world),
 
@@ -64,7 +66,7 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
         world.AddChild(playerVisual);
         playerVisual.UpdateFromSnapshot(snapshot, isLocal);
         
-        var spawnData = new PlayerSpawnData(
+        var playerCharacter = new PlayerCharacter(
             snapshot.PlayerId,
             snapshot.NetworkId,
             snapshot.PositionX,

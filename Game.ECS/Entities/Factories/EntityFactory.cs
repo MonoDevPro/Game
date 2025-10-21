@@ -2,10 +2,11 @@ using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.Entities.Archetypes;
 using Game.ECS.Entities.Data;
+using Game.ECS.Systems;
 
-namespace Game.ECS.Entities;
+namespace Game.ECS.Entities.Factories;
 
-public class EntityFactory(World world) : IEntityFactory
+public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
 {
     public Entity CreatePlayer(in PlayerCharacter data)
     {
@@ -29,20 +30,7 @@ public class EntityFactory(World world) : IEntityFactory
             new PlayerControlled()
         };
         world.SetRange(entity, components);
-        return entity;
-    }
-
-    public Entity CreateRemotePlayer(in PlayerCharacter data)
-    {
-        var entity = CreatePlayer(data);
-        world.Add<RemotePlayerTag>(entity);
-        return entity;
-    }
-
-    public Entity CreateLocalPlayer(in PlayerCharacter data)
-    {
-        var entity = CreatePlayer(data);
-        world.Add<LocalPlayerTag>(entity);
+        events.RaisePlayerJoined(entity);
         return entity;
     }
 
@@ -67,6 +55,7 @@ public class EntityFactory(World world) : IEntityFactory
             new AIControlled()
         };
         world.SetRange(entity, components);
+        events.RaiseEntitySpawned(entity);
         return entity;
     }
 
@@ -85,6 +74,7 @@ public class EntityFactory(World world) : IEntityFactory
             new AttackPower { Physical = data.PhysicalDamage, Magical = data.MagicalDamage },
         };
         world.SetRange(entity, components);
+        events.RaiseEntitySpawned(entity);
         return entity;
     }
 
@@ -100,6 +90,21 @@ public class EntityFactory(World world) : IEntityFactory
             new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
         };
         world.SetRange(entity, components);
+        events.RaiseEntitySpawned(entity);
         return entity;
+    }
+
+    public bool DestroyEntity(Entity entity)
+    {
+        if (!world.IsAlive(entity))
+            return false;
+        
+        if (world.Has<PlayerId>(entity))
+            events.RaisePlayerLeft(entity);
+        else
+            events.RaiseEntityDespawned(entity);
+        
+        world.Destroy(entity);
+        return true;
     }
 }

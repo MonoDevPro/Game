@@ -4,21 +4,11 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
-using GodotClient.ECS.Components;
 
-namespace GodotClient.ECS.Systems;
+namespace GodotClient.Services;
 
-public sealed partial class ClientInputSystem(World world) : GameSystem(world)
+public sealed partial class GodotInputSystem(World world) : GameSystem(world, null, null)
 {
-    [Query]
-    [All<PlayerControlled, PlayerInput>]
-    private void ClearInput(ref PlayerInput input)
-    {
-        input.InputX = 0;
-        input.InputY = 0;
-        input.Flags = 0;
-    }
-    
     [Query]
     [All<PlayerControlled, LocalPlayerTag, PlayerInput>]
     private void ApplyInput(in Entity e, ref PlayerInput input)
