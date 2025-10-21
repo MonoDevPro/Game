@@ -10,7 +10,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela lógica de combate: ataque, dano, morte.
 /// Processa ataques, aplica dano e gerencia transições para estado Dead.
 /// </summary>
-public sealed partial class CombatSystem(World world) : GameSystem(world)
+public sealed partial class CombatSystem(World world, GameEventSystem events) : GameSystem(world, events)
 {
     [Query]
     [All<Health, CombatState>]
@@ -25,6 +25,8 @@ public sealed partial class CombatSystem(World world) : GameSystem(world)
             {
                 World.Add<Dead>(e);
                 World.MarkNetworkDirty(e, SyncFlags.Vitals);
+                Events.RaiseNetworkDirty(e);
+                Events.RaiseDeath(e);
             }
         }
     }
@@ -58,7 +60,7 @@ public sealed partial class CombatSystem(World world) : GameSystem(world)
     /// <summary>
     /// Aplica dano a uma entidade alvo.
     /// </summary>
-    public bool TryDamage(Entity target, int damage)
+    public bool TryDamage(Entity target, int damage, Entity? attacker = null)
     {
         if (!World.IsAlive(target))
             return false;
@@ -66,37 +68,76 @@ public sealed partial class CombatSystem(World world) : GameSystem(world)
         if (!World.TryGet(target, out Health health))
             return false;
 
-        health.Current = Math.Max(0, health.Current - damage);
+        int previous = health.Current;
+        int newValue = Math.Max(0, previous - damage);
+
+        if (newValue == previous)
+            return false;
+
+        health.Current = newValue;
         World.Set(target, health);
         World.MarkNetworkDirty(target, SyncFlags.Vitals);
+        Events.RaiseNetworkDirty(target);
+
+        if (attacker.HasValue)
+        {
+            Events.RaiseDamage(attacker.Value, target, previous - newValue);
+        }
+        else
+        {
+            Events.RaiseDamage(null, target, previous - newValue);
+        }
 
         return true;
     }
 
     /// <summary>
-    /// Restaura vida ou mana de uma entidade (para poções, curas, etc).
+    /// Restaura vida de uma entidade (para poções, curas, etc).
     /// </summary>
-    public bool TryHeal(Entity target, int amount, bool isHeal = true)
+    public bool TryHeal(Entity target, int amount, Entity? healer = null)
     {
         if (!World.IsAlive(target))
             return false;
 
-        if (isHeal && World.TryGet(target, out Health health))
-        {
-            health.Current = Math.Min(health.Current + amount, health.Max);
-            World.Set(target, health);
-            World.MarkNetworkDirty(target, SyncFlags.Vitals);
-            return true;
-        }
+        if (!World.TryGet(target, out Health health))
+            return false;
 
-        if (!isHeal && World.TryGet(target, out Mana mana))
-        {
-            mana.Current = Math.Min(mana.Current + amount, mana.Max);
-            World.Set(target, mana);
-            World.MarkNetworkDirty(target, SyncFlags.Vitals);
-            return true;
-        }
+        int previous = health.Current;
+        int newValue = Math.Min(health.Max, previous + amount);
 
-        return false;
+        if (newValue == previous)
+            return false;
+
+        health.Current = newValue;
+        World.Set(target, health);
+        World.MarkNetworkDirty(target, SyncFlags.Vitals);
+        Events.RaiseNetworkDirty(target);
+        Events.RaiseHeal(healer, target, newValue - previous);
+        return true;
+    }
+
+    /// <summary>
+    /// Restaura mana de uma entidade.
+    /// </summary>
+    public bool TryRestoreMana(Entity target, int amount, Entity? source = null)
+    {
+        if (!World.IsAlive(target))
+            return false;
+
+        if (!World.TryGet(target, out Mana mana))
+            return false;
+
+        int previous = mana.Current;
+        int newValue = Math.Min(mana.Max, previous + amount);
+
+        if (newValue == previous)
+            return false;
+
+        mana.Current = newValue;
+        World.Set(target, mana);
+        World.MarkNetworkDirty(target, SyncFlags.Vitals);
+        Events.RaiseNetworkDirty(target);
+        Events.RaiseHeal(source, target, newValue - previous);
+        return true;
     }
 }

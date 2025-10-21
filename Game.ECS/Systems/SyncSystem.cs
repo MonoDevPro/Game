@@ -10,7 +10,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por coletar estados que precisam ser sincronizados pela rede.
 /// Coleta snapshots de entidades que estão marcadas como NetworkDirty.
 /// </summary>
-public sealed partial class SyncSystem(World world) : GameSystem(world)
+public sealed partial class SyncSystem(World world, GameEventSystem events) : GameSystem(world, events)
 {
     /// <summary>
     /// Coleta snapshots de entrada (input) de jogadores locais que estão dirty.
@@ -87,6 +87,7 @@ public sealed partial class SyncSystem(World world) : GameSystem(world)
         if (World.IsAlive(entity))
         {
             World.ClearNetworkDirty(entity, flags);
+            Events.RaiseNetworkSync(entity);
         }
     }
 

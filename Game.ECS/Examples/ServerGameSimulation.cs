@@ -41,23 +41,23 @@ public class ServerGameSimulation : GameSimulation
         // Mas o servidor valida e aplica
         
         // Sistemas de movimento
-        _movementSystem = new MovementSystem(world);
+    _movementSystem = new MovementSystem(world, EventSystem);
         group.Add(_movementSystem);
         
         // Sistemas de saúde
-        _healthSystem = new HealthSystem(world);
+    _healthSystem = new HealthSystem(world, EventSystem);
         group.Add(_healthSystem);
         
         // Sistemas de combate
-        _combatSystem = new CombatSystem(world);
+    _combatSystem = new CombatSystem(world, EventSystem);
         group.Add(_combatSystem);
         
         // Sistemas de IA
-        _aiSystem = new AISystem(world);
+    _aiSystem = new AISystem(world, EventSystem);
         group.Add(_aiSystem);
         
         // Sistemas de sincronização
-        _syncSystem = new SyncSystem(world);
+    _syncSystem = new SyncSystem(world, EventSystem);
         group.Add(_syncSystem);
         
         // Conecta eventos
@@ -83,13 +83,9 @@ public class ServerGameSimulation : GameSimulation
             PhysicalDefense: 2, MagicDefense: 1
         );
         
-        var player = SpawnRemotePlayer(playerData);
+    var player = SpawnRemotePlayer(playerData);
         
-        // Notifica listeners sobre novo jogador
-        EventSystem.RaisePlayerJoined(networkId);
-        EventSystem.RaiseEntitySpawned(player);
-        
-        Console.WriteLine($"[SERVER] Jogador {playerId} ({networkId}) entrou no servidor");
+    Console.WriteLine($"[SERVER] Jogador {playerId} ({networkId}) entrou no servidor");
     }
 
     public void RemovePlayer(int networkId)
@@ -110,13 +106,11 @@ public class ServerGameSimulation : GameSimulation
             PhysicalDefense: 1, MagicDefense: 0
         );
         
-        var npc = EntityFactory.CreateNPC(npcData);
+        var npc = SpawnNpc(npcData);
         
         // Insere no spatial grid
         var grid = _mapService.GetMapSpatial(0);
         grid.Insert(new Position { X = x, Y = y, Z = 0 }, npc);
-        
-        EventSystem.RaiseEntitySpawned(npc);
     }
 
     public void ApplyPlayerInput(int networkId, sbyte inputX, sbyte inputY, InputFlags flags)

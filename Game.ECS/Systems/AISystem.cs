@@ -10,7 +10,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela IA de NPCs e entidades controladas por IA.
 /// Processa movimento, decisões de combate e comportamento de NPCs.
 /// </summary>
-public sealed partial class AISystem(World world) : GameSystem(world)
+public sealed partial class AISystem(World world, GameEventSystem events) : GameSystem(world, events)
 {
     private readonly Random _random = new();
 
@@ -23,6 +23,9 @@ public sealed partial class AISystem(World world) : GameSystem(world)
         
         if (_random.Next(0, 100) < 20) // 20% de chance de mudar direção a cada frame
         {
+            int previousFacingX = facing.DirectionX;
+            int previousFacingY = facing.DirectionY;
+
             int randomDir = _random.Next(0, 4);
             (vel.DirectionX, vel.DirectionY) = randomDir switch
             {
@@ -38,6 +41,12 @@ public sealed partial class AISystem(World world) : GameSystem(world)
             vel.Speed = 3f; // Velocidade padrão de NPCs
             
             World.MarkNetworkDirty(e, SyncFlags.Movement | SyncFlags.Facing);
+            Events.RaiseNetworkDirty(e);
+
+            if (previousFacingX != facing.DirectionX || previousFacingY != facing.DirectionY)
+            {
+                Events.RaiseFacingChanged(e, facing.DirectionX, facing.DirectionY);
+            }
         }
     }
 
@@ -58,6 +67,7 @@ public sealed partial class AISystem(World world) : GameSystem(world)
                 // IA decide atacar
                 combat.LastAttackTime = 1.5f; // Cooldown de 1.5 segundos
                 World.MarkNetworkDirty(e, SyncFlags.Movement);
+                Events.RaiseNetworkDirty(e);
             }
         }
     }
@@ -76,12 +86,19 @@ public sealed partial class AISystem(World world) : GameSystem(world)
         if (combat.LastAttackTime > 0)
             return false; // Cooldown ainda ativo
 
+        bool wasInCombat = combat.InCombat;
         combat.LastAttackTime = 1.5f;
         combat.InCombat = true;
         combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? (uint)netId.Value : 0;
         
         World.Set(attacker, combat);
         World.MarkNetworkDirty(attacker, SyncFlags.Movement);
+        Events.RaiseNetworkDirty(attacker);
+
+        if (!wasInCombat)
+        {
+            Events.RaiseCombatEnter(attacker);
+        }
 
         return true;
     }
@@ -94,8 +111,17 @@ public sealed partial class AISystem(World world) : GameSystem(world)
         if (!World.IsAlive(entity) || !World.TryGet(entity, out CombatState combat))
             return;
 
+        bool wasInCombat = combat.InCombat;
         combat.InCombat = false;
         combat.TargetNetworkId = 0;
         World.Set(entity, combat);
+
+        World.MarkNetworkDirty(entity, SyncFlags.Movement);
+        Events.RaiseNetworkDirty(entity);
+
+        if (wasInCombat)
+        {
+            Events.RaiseCombatExit(entity);
+        }
     }
 }

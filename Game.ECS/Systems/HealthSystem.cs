@@ -10,7 +10,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por regeneração de vida e mana.
 /// Processa entidades que têm Health e Mana, aplicando regeneração por tick.
 /// </summary>
-public sealed partial class HealthSystem(World world) : GameSystem(world)
+public sealed partial class HealthSystem(World world, GameEventSystem events) : GameSystem(world, events)
 {
     [Query]
     [All<Health>]
@@ -20,10 +20,18 @@ public sealed partial class HealthSystem(World world) : GameSystem(world)
             return;
 
         float regeneration = health.RegenerationRate * deltaTime;
-        health.Current = Math.Min(health.Current + (int)regeneration, health.Max);
-        
+        int previous = health.Current;
+        int regenerated = Math.Min(health.Max, previous + (int)regeneration);
+
+        if (regenerated == previous)
+            return;
+
+        health.Current = regenerated;
+
         // Marca como dirty para sincronização
         World.MarkNetworkDirty(e, SyncFlags.Vitals);
+        Events.RaiseHeal(e, e, regenerated - previous);
+        Events.RaiseNetworkDirty(e);
     }
 
     [Query]
@@ -34,10 +42,17 @@ public sealed partial class HealthSystem(World world) : GameSystem(world)
             return;
 
         float regeneration = mana.RegenerationRate * deltaTime;
-        mana.Current = Math.Min(mana.Current + (int)regeneration, mana.Max);
-        
+        int previous = mana.Current;
+        int regenerated = Math.Min(mana.Max, previous + (int)regeneration);
+
+        if (regenerated == previous)
+            return;
+
+        mana.Current = regenerated;
+
         // Marca como dirty para sincronização
         World.MarkNetworkDirty(e, SyncFlags.Vitals);
+        Events.RaiseNetworkDirty(e);
     }
 
     [Query]

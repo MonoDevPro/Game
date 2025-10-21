@@ -22,8 +22,8 @@ public class GameEventSystem
     // Gameplay Events
     // ============================================
     
-    public event Action<Entity, Entity, int>? OnDamage;  // Attacker, Victim, Damage
-    public event Action<Entity, Entity, int>? OnHeal;    // Healer, Target, Amount
+    public event Action<Entity?, Entity, int>? OnDamage;  // Attacker, Victim, Damage
+    public event Action<Entity?, Entity, int>? OnHeal;    // Healer, Target, Amount
     public event Action<Entity, Entity?>? OnDeath;       // DeadEntity, Killer (nullable)
     
     // ============================================
@@ -59,8 +59,8 @@ public class GameEventSystem
     public void RaisePlayerJoined(int networkId) => OnPlayerJoined?.Invoke(networkId);
     public void RaisePlayerLeft(int networkId) => OnPlayerLeft?.Invoke(networkId);
     
-    public void RaiseDamage(Entity attacker, Entity victim, int damage) => OnDamage?.Invoke(attacker, victim, damage);
-    public void RaiseHeal(Entity healer, Entity target, int amount) => OnHeal?.Invoke(healer, target, amount);
+    public void RaiseDamage(Entity? attacker, Entity victim, int damage) => OnDamage?.Invoke(attacker, victim, damage);
+    public void RaiseHeal(Entity? healer, Entity target, int amount) => OnHeal?.Invoke(healer, target, amount);
     public void RaiseDeath(Entity deadEntity, Entity? killer = null) => OnDeath?.Invoke(deadEntity, killer);
     
     public void RaiseCombatEnter(Entity entity) => OnCombatEnter?.Invoke(entity);

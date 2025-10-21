@@ -33,15 +33,15 @@ public class ClientGameSimulation : GameSimulation
     public override void ConfigureSystems(World world, Group<float> group)
     {
         // Sistemas de entrada do jogador
-        _inputSystem = new InputSystem(world);
+    _inputSystem = new InputSystem(world, EventSystem);
         group.Add(_inputSystem);
         
         // Sistemas de movimento (previsão local)
-        _movementSystem = new MovementSystem(world);
+    _movementSystem = new MovementSystem(world, EventSystem);
         group.Add(_movementSystem);
         
         // Sistemas de sincronização (recebe dados do servidor)
-        _syncSystem = new SyncSystem(world);
+    _syncSystem = new SyncSystem(world, EventSystem);
         group.Add(_syncSystem);
         
         // Conecta eventos

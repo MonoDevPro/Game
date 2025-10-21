@@ -10,7 +10,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por processar input do jogador local.
 /// Converte input em ações (movimento, ataque, habilidades, etc).
 /// </summary>
-public sealed partial class InputSystem(World world) : GameSystem(world)
+public sealed partial class InputSystem(World world, GameEventSystem events) : GameSystem(world, events)
 {
     [Query]
     [All<LocalPlayerTag, PlayerInput, PlayerControlled>]
@@ -38,6 +38,7 @@ public sealed partial class InputSystem(World world) : GameSystem(world)
 
         World.Set(entity, input);
         World.MarkNetworkDirty(entity, SyncFlags.Input);
+        Events.RaiseNetworkDirty(entity);
 
         return true;
     }

@@ -101,18 +101,52 @@ public abstract class GameSimulation
     }
 
     public Entity SpawnPlayer(PlayerCharacter data)
-        => EntityFactory.CreatePlayer(data);
+    {
+        var entity = EntityFactory.CreatePlayer(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
     
     public Entity SpawnLocalPlayer(PlayerCharacter data) 
-        => EntityFactory.CreateLocalPlayer(data);
+    {
+        var entity = EntityFactory.CreateLocalPlayer(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
     
     public Entity SpawnRemotePlayer(PlayerCharacter data)
-        => EntityFactory.CreateRemotePlayer(data);
+    {
+        var entity = EntityFactory.CreateRemotePlayer(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
+
+    public Entity SpawnNpc(NPCCharacter data)
+    {
+        var entity = EntityFactory.CreateNPC(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
+
+    public Entity SpawnProjectile(ProjectileData data)
+    {
+        var entity = EntityFactory.CreateProjectile(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
+
+    public Entity SpawnDroppedItem(DroppedItemData data)
+    {
+        var entity = EntityFactory.CreateDroppedItem(data);
+        NotifyEntitySpawned(entity);
+        return entity;
+    }
 
     public void DespawnEntity(Entity entity)
     {
         if (World.IsAlive(entity))
         {
+            NotifyEntityDespawned(entity);
             World.Destroy(entity);
         }
     }
@@ -157,5 +191,25 @@ public abstract class GameSimulation
             return true;
         }
         return false;
+    }
+
+    private void NotifyEntitySpawned(Entity entity)
+    {
+        EventSystem.RaiseEntitySpawned(entity);
+
+        if (World.Has<PlayerId>(entity) && World.TryGet(entity, out NetworkId netId))
+        {
+            EventSystem.RaisePlayerJoined(netId.Value);
+        }
+    }
+
+    private void NotifyEntityDespawned(Entity entity)
+    {
+        EventSystem.RaiseEntityDespawned(entity);
+
+        if (World.Has<PlayerId>(entity) && World.TryGet(entity, out NetworkId netId))
+        {
+            EventSystem.RaisePlayerLeft(netId.Value);
+        }
     }
 }
