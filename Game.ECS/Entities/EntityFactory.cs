@@ -46,4 +46,64 @@ public class EntityFactory(World world) : IEntityFactory
         world.Add<LocalPlayerTag>(entity);
         return entity;
     }
+
+    /// <summary>
+    /// Cria um NPC com IA controlada.
+    /// </summary>
+    public Entity CreateNPC(in NPCCharacter data)
+    {
+        var entity = world.Create(GameArchetypes.NPCCharacter);
+        var components = new object[]
+        {
+            new NetworkId { Value = data.NetworkId },
+            new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
+            new Facing { DirectionX = 0, DirectionY = 0 },
+            new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
+            new Movement { Timer = 0f },
+            new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
+            new Walkable { BaseSpeed = 3f, CurrentModifier = 1f },
+            new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
+            new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
+            new CombatState { },
+            new NetworkDirty { Flags = SyncFlags.All },
+            new AIControlled()
+        };
+        world.SetRange(entity, components);
+        return entity;
+    }
+
+    /// <summary>
+    /// Cria um projétil (bala, flecha, magia).
+    /// </summary>
+    public Entity CreateProjectile(in ProjectileData data)
+    {
+        var entity = world.Create(GameArchetypes.Projectile);
+        var components = new object[]
+        {
+            new NetworkId { Value = data.NetworkId },
+            new Position { X = data.StartX, Y = data.StartY, Z = data.StartZ },
+            new Facing { DirectionX = data.DirectionX, DirectionY = data.DirectionY },
+            new Velocity { DirectionX = data.DirectionX, DirectionY = data.DirectionY, Speed = data.Speed },
+            new AttackPower { Physical = data.PhysicalDamage, Magical = data.MagicalDamage },
+            new NetworkDirty { Flags = SyncFlags.Movement }
+        };
+        world.SetRange(entity, components);
+        return entity;
+    }
+
+    /// <summary>
+    /// Cria um item solto no chão.
+    /// </summary>
+    public Entity CreateDroppedItem(in DroppedItemData data)
+    {
+        var entity = world.Create(GameArchetypes.DroppedItem);
+        var components = new object[]
+        {
+            new NetworkId { Value = data.NetworkId },
+            new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
+            new NetworkDirty { Flags = SyncFlags.Movement }
+        };
+        world.SetRange(entity, components);
+        return entity;
+    }
 }
