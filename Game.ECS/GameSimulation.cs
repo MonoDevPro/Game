@@ -1,9 +1,11 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.ECS.Archetypes;
 using Game.ECS.Components;
-using Game.ECS.DTOs;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Archetypes;
+using Game.ECS.Entities.Data;
+using Game.ECS.Systems;
 using Game.ECS.Utils;
 
 namespace Game.ECS;
@@ -30,9 +32,24 @@ public class FixedTimeStep(float fixedDeltaTime)
 
 public abstract class GameSimulation
 {
-    protected readonly World World = World.Create();
-    protected readonly Group<float> Systems = new Group<float>("Simulation");
-    private readonly FixedTimeStep _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
+    protected readonly World World;
+    protected readonly Group<float> Systems;
+    private readonly FixedTimeStep _fixedTimeStep;
+    private readonly IEntityFactory _entityFactory;
+
+    protected GameSimulation()
+    {
+        World = World.Create(
+            chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: SimulationConfig.ArchetypeCapacity,
+            entityCapacity: SimulationConfig.EntityCapacity);
+        
+        Systems = new Group<float>(SimulationConfig.SimulationName);
+        _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
+        _entityFactory = new EntityFactory(World);
+    }
+    
     public uint CurrentTick { get; private set; }
     
     public abstract void ConfigureSystems(World world, Group<float> group);
@@ -56,31 +73,14 @@ public abstract class GameSimulation
         }
     }
 
-    public Entity SpawnPlayer(PlayerSpawnData data)
-    {
-        var entity = World.Create(GameArchetypes.PlayerCharacter);
-        var components = new object[]
-        {
-            new NetworkId { Value = data.NetworkId },
-            new PlayerId { Value = data.PlayerId },
-            new Position { X = data.SpawnX, Y = data.SpawnY, Z = data.SpawnZ },
-            new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
-            new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
-            new Movement { Timer = 0f },
-            new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
-            new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
-            new Walkable { BaseSpeed = 5f, CurrentModifier = data.MovementSpeed },
-            new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
-            new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
-            new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
-            new CombatState { },
-            new NetworkDirty { Flags = SyncFlags.All },
-            new PlayerInput(),
-            new PlayerControlled()
-        };
-        World.SetRange(entity, components);
-        return entity;
-    }
+    public Entity SpawnPlayer(PlayerCharacter data)
+        => _entityFactory.CreatePlayer(data);
+    
+    public Entity SpawnLocalPlayer(PlayerCharacter data) 
+        => _entityFactory.CreateLocalPlayer(data);
+    
+    public Entity SpawnRemotePlayer(PlayerCharacter data)
+        => _entityFactory.CreateRemotePlayer(data);
 
     public void DespawnEntity(Entity entity)
     {

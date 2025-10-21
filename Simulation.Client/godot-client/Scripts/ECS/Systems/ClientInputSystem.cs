@@ -4,8 +4,9 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
+using GodotClient.ECS.Components;
 
-namespace GodotClient.Simulation.Systems;
+namespace GodotClient.ECS.Systems;
 
 public sealed partial class ClientInputSystem(World world) : GameSystem(world)
 {

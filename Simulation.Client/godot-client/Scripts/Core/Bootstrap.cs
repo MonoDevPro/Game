@@ -1,7 +1,7 @@
 using Godot;
 using GodotClient.Autoloads;
 
-namespace GodotClient;
+namespace GodotClient.Core;
 
 public partial class Bootstrap : Node
 {

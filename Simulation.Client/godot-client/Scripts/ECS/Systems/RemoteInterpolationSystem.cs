@@ -4,8 +4,9 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
+using GodotClient.ECS.Components;
 
-namespace GodotClient.Simulation.Systems;
+namespace GodotClient.ECS.Systems;
 
 // Suaviza render dos remotos. O Position continua autoritativo.
 // Apenas o Node2D é interpolado; quando chega próximo do alvo, commit no Position opcionalmente.

@@ -5,7 +5,7 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.ECS.Utils;
 
-namespace GodotClient.Simulation.Systems;
+namespace GodotClient.ECS.Systems;
 
 public sealed partial class NetworkDirtyMarkingSystem(World world) : GameSystem(world)
 {

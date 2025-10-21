@@ -8,9 +8,15 @@ using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.Autoloads;
+using GodotClient.ECS;
+using GodotClient.ECS.Components;
 using GodotClient.Simulation.Players;
 using GodotClient.Simulation.Systems;
 using Microsoft.Extensions.DependencyInjection;
+using ClientInputSystem = GodotClient.ECS.Systems.ClientInputSystem;
+using NetworkDirtyMarkingSystem = GodotClient.ECS.Systems.NetworkDirtyMarkingSystem;
+using NetworkSenderSystem = GodotClient.ECS.Systems.NetworkSenderSystem;
+using RemoteInterpolationSystem = GodotClient.ECS.Systems.RemoteInterpolationSystem;
 
 namespace GodotClient.Simulation;
 
@@ -95,7 +101,7 @@ public sealed class ClientSimulation(IServiceProvider provider) : GameSimulation
         return newPlayerData;
     }
     
-    public void DespawnPlayer(in PlayerDespawnSnapshot despawn)
+    public void DespawnPlayer(in PlayerDespawn despawn)
     {
         if (_playerIndexService.TryGetPlayer(despawn.NetworkId, out var playerData))
         {

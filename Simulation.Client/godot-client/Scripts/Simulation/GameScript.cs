@@ -65,7 +65,7 @@ public partial class GameScript : Node2D
             _network.UnregisterPacketHandler<PlayerStateSnapshot>();
             _network.UnregisterPacketHandler<PlayerVitalsSnapshot>();
             _network.UnregisterPacketHandler<PlayerSnapshot>();
-            _network.UnregisterPacketHandler<PlayerDespawnSnapshot>();
+            _network.UnregisterPacketHandler<PlayerDespawn>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -134,7 +134,7 @@ public partial class GameScript : Node2D
         _network.RegisterPacketHandler<PlayerStateSnapshot>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsSnapshot>(HandlePlayerVitals);
         _network.RegisterPacketHandler<PlayerSnapshot>(HandlePlayerSpawn);
-        _network.RegisterPacketHandler<PlayerDespawnSnapshot>(HandlePlayerDespawn);
+        _network.RegisterPacketHandler<PlayerDespawn>(HandlePlayerDespawn);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -180,7 +180,7 @@ public partial class GameScript : Node2D
         UpdateStatus($"{snapshot.Name} joined");
     }
 
-    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerDespawnSnapshot packet)
+    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerDespawn packet)
     {
         if (_simulation is null) return;
 

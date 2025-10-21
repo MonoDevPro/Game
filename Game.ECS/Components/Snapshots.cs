@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using Game.ECS.Entities;
 using MemoryPack;
 
 namespace Game.ECS.Components;
@@ -6,7 +6,9 @@ namespace Game.ECS.Components;
 [MemoryPackable]
 public readonly partial record struct PlayerInputSnapshot(
     int NetworkId,
-    PlayerInput Input);
+    sbyte InputX, 
+    sbyte InputY, 
+    InputFlags Flags);
 
 [MemoryPackable]
 public readonly partial record struct PlayerStateSnapshot(
@@ -28,31 +30,4 @@ public readonly partial record struct PlayerVitalsSnapshot(
 );
 
 [MemoryPackable]
-public readonly partial record struct PlayerDespawnSnapshot(int NetworkId);
-
-[MemoryPackable]
-public readonly partial record struct PlayerSnapshot(
-    int NetworkId,
-    int PlayerId,
-    int CharacterId,
-    string Name,
-    byte Gender,
-    byte Vocation,
-    int PositionX,
-    int PositionY,
-    int PositionZ,
-    int FacingX,
-    int FacingY,
-    float Speed,
-    int Hp,
-    int Mp,
-    int MaxHp,
-    int MaxMp,
-    float HpRegen,
-    float MpRegen,
-    int PhysicalAttack,
-    int MagicAttack,
-    int PhysicalDefense,
-    int MagicDefense,
-    double AttackSpeed,
-    double MovementSpeed);
+public readonly partial record struct PlayerDespawn(int NetworkId);

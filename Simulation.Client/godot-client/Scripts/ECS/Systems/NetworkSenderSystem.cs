@@ -6,7 +6,7 @@ using Game.ECS.Systems;
 using Game.ECS.Utils;
 using Game.Network.Abstractions;
 
-namespace GodotClient.Simulation.Systems;
+namespace GodotClient.ECS.Systems;
 
 /// <summary>
 /// Sistema de sincronização de rede de alta performance.

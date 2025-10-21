@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Archetypes;
+namespace Game.ECS.Entities.Archetypes;
 
 public static class GameArchetypes
 {

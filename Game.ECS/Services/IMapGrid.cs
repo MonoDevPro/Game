@@ -4,10 +4,9 @@ namespace Game.ECS.Services;
 
 public interface IMapGrid
 {
-    bool InBounds(int x, int y, int z);
-    bool InBounds(in Position p);
-    Position ClampToBounds(in Position p);
-    bool IsBlocked(in Position p);
-    bool AnyBlockedInArea(int minX, int minY, int maxX, int maxY);
-    int CountBlockedInArea(int minX, int minY, int maxX, int maxY);
+    bool InBounds(Position p);
+    Position ClampToBounds(Position p);
+    bool IsBlocked(Position p);
+    bool AnyBlockedInArea(Position min, Position max);
+    int CountBlockedInArea(Position min, Position max);
 }

@@ -23,6 +23,9 @@
   <ItemGroup>
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
+    <Folder Include="Scripts\Networking\" />
+    <Folder Include="Scripts\Services\" />
+    <Folder Include="Scripts\UI\HUD\" />
   </ItemGroup>
 
   <ItemGroup>

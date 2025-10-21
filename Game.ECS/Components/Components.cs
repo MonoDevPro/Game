@@ -2,6 +2,10 @@ using MemoryPack;
 
 namespace Game.ECS.Components;
 
+// Tags optionais
+public struct LocalPlayerTag { }
+public struct RemotePlayerTag { }
+
 // Tags
 public struct PlayerControlled;
 public struct AIControlled;
@@ -15,7 +19,7 @@ public struct NetworkId { public int Value; }
 public struct NetworkDirty { public SyncFlags Flags; }
 
 // Inputs
-[MemoryPackable] 
+[MemoryPackable]
 public struct PlayerInput { public sbyte InputX; public sbyte InputY; public InputFlags Flags; };
 
 // Gameplay
