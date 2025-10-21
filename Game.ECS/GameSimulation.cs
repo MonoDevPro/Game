@@ -197,19 +197,15 @@ public abstract class GameSimulation
     {
         EventSystem.RaiseEntitySpawned(entity);
 
-        if (World.Has<PlayerId>(entity) && World.TryGet(entity, out NetworkId netId))
-        {
-            EventSystem.RaisePlayerJoined(netId.Value);
-        }
+        if (World.Has<PlayerId>(entity))
+            EventSystem.RaisePlayerJoined(entity);
     }
 
     private void NotifyEntityDespawned(Entity entity)
     {
         EventSystem.RaiseEntityDespawned(entity);
 
-        if (World.Has<PlayerId>(entity) && World.TryGet(entity, out NetworkId netId))
-        {
-            EventSystem.RaisePlayerLeft(netId.Value);
-        }
+        if (World.Has<PlayerId>(entity))
+            EventSystem.RaisePlayerLeft(entity);
     }
 }

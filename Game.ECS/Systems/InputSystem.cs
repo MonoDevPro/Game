@@ -2,7 +2,6 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
-using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
 
@@ -37,8 +36,7 @@ public sealed partial class InputSystem(World world, GameEventSystem events) : G
         };
 
         World.Set(entity, input);
-        World.MarkNetworkDirty(entity, SyncFlags.Input);
-        Events.RaiseNetworkDirty(entity);
+        Events.RaisePlayerInput(entity, inputX, inputY, (ushort)flags);
 
         return true;
     }

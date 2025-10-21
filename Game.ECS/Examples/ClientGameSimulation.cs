@@ -16,7 +16,6 @@ public class ClientGameSimulation : GameSimulation
 {
     private MovementSystem _movementSystem = null!;
     private InputSystem _inputSystem = null!;
-    private SyncSystem _syncSystem = null!;
     
     private Entity _localPlayer;
     private int _localNetworkId;
@@ -39,14 +38,6 @@ public class ClientGameSimulation : GameSimulation
         // Sistemas de movimento (previsão local)
     _movementSystem = new MovementSystem(world, EventSystem);
         group.Add(_movementSystem);
-        
-        // Sistemas de sincronização (recebe dados do servidor)
-    _syncSystem = new SyncSystem(world, EventSystem);
-        group.Add(_syncSystem);
-        
-        // Conecta eventos
-        _syncSystem.OnPlayerStateSnapshot += HandleServerStateUpdate;
-        _syncSystem.OnPlayerVitalsSnapshot += HandleServerVitalsUpdate;
     }
 
     public void SpawnLocalPlayer(int playerId, int networkId)
@@ -79,60 +70,6 @@ public class ClientGameSimulation : GameSimulation
         {
             _inputSystem.ApplyPlayerInput(_localPlayer, inputX, inputY, flags);
             Console.WriteLine($"[CLIENT] Input aplicado localmente: ({inputX}, {inputY}, {flags})");
-        }
-    }
-
-    /// <summary>
-    /// Recebe atualização de estado do servidor.
-    /// Compara com a previsão local e reconcilia se necessário.
-    /// </summary>
-    private void HandleServerStateUpdate(PlayerStateSnapshot snapshot)
-    {
-        if (snapshot.NetworkId != _localNetworkId)
-        {
-            // Atualização de outro jogador (remoto)
-            Console.WriteLine($"[CLIENT] Atualização de outro jogador: {snapshot.NetworkId} em ({snapshot.PositionX}, {snapshot.PositionY})");
-            return;
-        }
-
-        // Atualização do nosso jogador local
-        if (World.IsAlive(_localPlayer) && World.TryGet(_localPlayer, out Position pos))
-        {
-            // Verifica se precisa reconciliar (servidor discorda da posição local)
-            if (pos.X != snapshot.PositionX || pos.Y != snapshot.PositionY)
-            {
-                Console.WriteLine($"[CLIENT] Reconciliação: local ({pos.X}, {pos.Y}) -> servidor ({snapshot.PositionX}, {snapshot.PositionY})");
-                
-                // Aplica a posição do servidor (fonte de verdade)
-                pos.X = snapshot.PositionX;
-                pos.Y = snapshot.PositionY;
-                World.Set(_localPlayer, pos);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Recebe atualização de vitals do servidor.
-    /// </summary>
-    private void HandleServerVitalsUpdate(PlayerVitalsSnapshot snapshot)
-    {
-        if (snapshot.NetworkId != _localNetworkId)
-        {
-            Console.WriteLine($"[CLIENT] Vitals de outro jogador: {snapshot.NetworkId} HP {snapshot.CurrentHp}/{snapshot.MaxHp}");
-            return;
-        }
-
-        // Atualização dos nossos vitals
-        if (World.IsAlive(_localPlayer) && World.TryGet(_localPlayer, out Health health))
-        {
-            if (health.Current != snapshot.CurrentHp || health.Max != snapshot.MaxHp)
-            {
-                health.Current = snapshot.CurrentHp;
-                health.Max = snapshot.MaxHp;
-                World.Set(_localPlayer, health);
-                
-                Console.WriteLine($"[CLIENT] Vitals atualizados: HP {health.Current}/{health.Max}");
-            }
         }
     }
 

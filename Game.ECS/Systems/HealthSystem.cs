@@ -29,9 +29,7 @@ public sealed partial class HealthSystem(World world, GameEventSystem events) : 
         health.Current = regenerated;
 
         // Marca como dirty para sincronização
-        World.MarkNetworkDirty(e, SyncFlags.Vitals);
-        Events.RaiseHeal(e, e, regenerated - previous);
-        Events.RaiseNetworkDirty(e);
+        Events.RaiseHealHp(e, e, regenerated - previous);
     }
 
     [Query]
@@ -50,9 +48,7 @@ public sealed partial class HealthSystem(World world, GameEventSystem events) : 
 
         mana.Current = regenerated;
 
-        // Marca como dirty para sincronização
-        World.MarkNetworkDirty(e, SyncFlags.Vitals);
-        Events.RaiseNetworkDirty(e);
+        Events.RaiseHealMp(e, e, regenerated - previous);
     }
 
     [Query]

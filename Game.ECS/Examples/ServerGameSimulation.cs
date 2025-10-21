@@ -18,7 +18,6 @@ public class ServerGameSimulation : GameSimulation
     private HealthSystem _healthSystem = null!;
     private CombatSystem _combatSystem = null!;
     private AISystem _aiSystem = null!;
-    private SyncSystem _syncSystem = null!;
     
     private IMapService _mapService = null!;
     
@@ -56,14 +55,6 @@ public class ServerGameSimulation : GameSimulation
     _aiSystem = new AISystem(world, EventSystem);
         group.Add(_aiSystem);
         
-        // Sistemas de sincronização
-    _syncSystem = new SyncSystem(world, EventSystem);
-        group.Add(_syncSystem);
-        
-        // Conecta eventos
-        _syncSystem.OnPlayerInputSnapshot += HandlePlayerInput;
-        _syncSystem.OnPlayerStateSnapshot += HandlePlayerState;
-        _syncSystem.OnPlayerVitalsSnapshot += HandlePlayerVitals;
     }
 
     public void RegisterNewPlayer(int playerId, int networkId)
@@ -92,7 +83,7 @@ public class ServerGameSimulation : GameSimulation
     {
         // Encontra e remove o jogador
         // Em uma implementação real, manter um dicionário de networkId -> Entity
-        EventSystem.RaisePlayerLeft(networkId);
+        // TODO: EventSystem.RaisePlayerLeft(networkId);
     }
 
     public void SpawnNPC(string name, int npcId, int x, int y)
@@ -118,23 +109,5 @@ public class ServerGameSimulation : GameSimulation
         // Em uma implementação real, encontrar a entidade pelo networkId
         // player.Set(new PlayerInput { InputX = inputX, InputY = inputY, Flags = flags });
         Console.WriteLine($"[SERVER] Input recebido: {networkId} -> ({inputX}, {inputY}, {flags})");
-    }
-
-    private void HandlePlayerInput(PlayerInputSnapshot snapshot)
-    {
-        // Serializa e envia para todos os clientes
-        Console.WriteLine($"[SERVER] Sincronizando input: {snapshot}");
-    }
-
-    private void HandlePlayerState(PlayerStateSnapshot snapshot)
-    {
-        // Serializa e envia para todos os clientes
-        Console.WriteLine($"[SERVER] Sincronizando estado: Player {snapshot.NetworkId} em ({snapshot.PositionX}, {snapshot.PositionY})");
-    }
-
-    private void HandlePlayerVitals(PlayerVitalsSnapshot snapshot)
-    {
-        // Serializa e envia para todos os clientes
-        Console.WriteLine($"[SERVER] Sincronizando vitals: Player {snapshot.NetworkId} -> HP {snapshot.CurrentHp}/{snapshot.MaxHp}");
     }
 }

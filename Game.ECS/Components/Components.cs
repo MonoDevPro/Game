@@ -20,11 +20,6 @@ public struct PlayerId { public int Value; }
 public struct NetworkId { public int Value; }
 
 // ============================================
-// Network - Sincronização de rede
-// ============================================
-public struct NetworkDirty { public SyncFlags Flags; }
-
-// ============================================
 // Inputs - Entrada do jogador
 // ============================================
 [MemoryPackable]

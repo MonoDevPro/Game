@@ -14,7 +14,7 @@ public sealed partial class CombatSystem(World world, GameEventSystem events) : 
 {
     [Query]
     [All<Health, CombatState>]
-    private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState combat, [Data] float deltaTime)
+    private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState csombat, [Data] float deltaTime)
     {
         if (health.Current <= 0)
         {
@@ -24,8 +24,6 @@ public sealed partial class CombatSystem(World world, GameEventSystem events) : 
             if (!World.Has<Dead>(e))
             {
                 World.Add<Dead>(e);
-                World.MarkNetworkDirty(e, SyncFlags.Vitals);
-                Events.RaiseNetworkDirty(e);
                 Events.RaiseDeath(e);
             }
         }
@@ -76,18 +74,12 @@ public sealed partial class CombatSystem(World world, GameEventSystem events) : 
 
         health.Current = newValue;
         World.Set(target, health);
-        World.MarkNetworkDirty(target, SyncFlags.Vitals);
-        Events.RaiseNetworkDirty(target);
 
         if (attacker.HasValue)
-        {
             Events.RaiseDamage(attacker.Value, target, previous - newValue);
-        }
         else
-        {
             Events.RaiseDamage(null, target, previous - newValue);
-        }
-
+        
         return true;
     }
 
@@ -110,9 +102,7 @@ public sealed partial class CombatSystem(World world, GameEventSystem events) : 
 
         health.Current = newValue;
         World.Set(target, health);
-        World.MarkNetworkDirty(target, SyncFlags.Vitals);
-        Events.RaiseNetworkDirty(target);
-        Events.RaiseHeal(healer, target, newValue - previous);
+        Events.RaiseHealHp(healer, target, newValue - previous);
         return true;
     }
 
@@ -135,9 +125,7 @@ public sealed partial class CombatSystem(World world, GameEventSystem events) : 
 
         mana.Current = newValue;
         World.Set(target, mana);
-        World.MarkNetworkDirty(target, SyncFlags.Vitals);
-        Events.RaiseNetworkDirty(target);
-        Events.RaiseHeal(source, target, newValue - previous);
+        Events.RaiseHealHp(source, target, newValue - previous);
         return true;
     }
 }

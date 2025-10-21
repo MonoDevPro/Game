@@ -32,7 +32,6 @@ public static class GameArchetypes
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<NetworkDirty>.ComponentType,
         Component<PlayerInput>.ComponentType,
         Component<PlayerControlled>.ComponentType,
     };
@@ -58,7 +57,6 @@ public static class GameArchetypes
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<NetworkDirty>.ComponentType,
         Component<AIControlled>.ComponentType,
     };
 
@@ -77,7 +75,6 @@ public static class GameArchetypes
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<AttackPower>.ComponentType,
-        Component<NetworkDirty>.ComponentType,
     };
 
     // ============================================
@@ -92,7 +89,6 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<NetworkDirty>.ComponentType,
     };
 
     // ============================================

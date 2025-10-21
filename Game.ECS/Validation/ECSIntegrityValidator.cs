@@ -50,7 +50,6 @@ public static class ECSIntegrityValidator
         var combatSystem = typeof(CombatSystem);
         var aiSystem = typeof(AISystem);
         var inputSystem = typeof(InputSystem);
-        var syncSystem = typeof(SyncSystem);
         var eventSystem = typeof(GameEventSystem);
         
         Console.WriteLine("  ✓ MovementSystem");
@@ -58,7 +57,6 @@ public static class ECSIntegrityValidator
         Console.WriteLine("  ✓ CombatSystem");
         Console.WriteLine("  ✓ AISystem");
         Console.WriteLine("  ✓ InputSystem");
-        Console.WriteLine("  ✓ SyncSystem");
         Console.WriteLine("  ✓ GameEventSystem");
     }
 

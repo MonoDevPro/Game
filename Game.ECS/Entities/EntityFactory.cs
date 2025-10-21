@@ -25,7 +25,6 @@ public class EntityFactory(World world) : IEntityFactory
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { },
-            new NetworkDirty { Flags = SyncFlags.All },
             new PlayerInput { },
             new PlayerControlled()
         };
@@ -65,7 +64,6 @@ public class EntityFactory(World world) : IEntityFactory
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { },
-            new NetworkDirty { Flags = SyncFlags.All },
             new AIControlled()
         };
         world.SetRange(entity, components);
@@ -85,7 +83,6 @@ public class EntityFactory(World world) : IEntityFactory
             new Facing { DirectionX = data.DirectionX, DirectionY = data.DirectionY },
             new Velocity { DirectionX = data.DirectionX, DirectionY = data.DirectionY, Speed = data.Speed },
             new AttackPower { Physical = data.PhysicalDamage, Magical = data.MagicalDamage },
-            new NetworkDirty { Flags = SyncFlags.Movement }
         };
         world.SetRange(entity, components);
         return entity;
@@ -101,7 +98,6 @@ public class EntityFactory(World world) : IEntityFactory
         {
             new NetworkId { Value = data.NetworkId },
             new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
-            new NetworkDirty { Flags = SyncFlags.Movement }
         };
         world.SetRange(entity, components);
         return entity;

@@ -1,4 +1,5 @@
 using Arch.Core;
+using Game.ECS.Components;
 
 namespace Game.ECS.Systems;
 
@@ -15,15 +16,18 @@ public class GameEventSystem
     public event Action<Entity>? OnEntitySpawned;
     public event Action<Entity>? OnEntityDespawned;
     
-    public event Action<int>? OnPlayerJoined;      // PlayerNetworkId
-    public event Action<int>? OnPlayerLeft;        // PlayerNetworkId
+    public event Action<Entity>? OnPlayerJoined;      // PlayerNetworkId
+    public event Action<Entity>? OnPlayerLeft;        // PlayerNetworkId
+    
+    public event Action<Entity, sbyte, sbyte, ushort>? OnPlayerInput; // Entity, InputX, InputY, InputFlags
     
     // ============================================
     // Gameplay Events
     // ============================================
     
     public event Action<Entity?, Entity, int>? OnDamage;  // Attacker, Victim, Damage
-    public event Action<Entity?, Entity, int>? OnHeal;    // Healer, Target, Amount
+    public event Action<Entity?, Entity, int>? OnHealHp;    // Healer, Target, Amount
+    public event Action<Entity?, Entity, int>? OnHealMp;    // Healer, Target, Amount
     public event Action<Entity, Entity?>? OnDeath;       // DeadEntity, Killer (nullable)
     
     // ============================================
@@ -41,6 +45,9 @@ public class GameEventSystem
     
     public event Action<Entity, int, int>? OnPositionChanged;  // Entity, NewX, NewY
     public event Action<Entity, int, int>? OnFacingChanged;    // Entity, DirectionX, DirectionY
+    public event Action<Entity, int, int>? OnHealthChanged;    // Entity, NewHealth, MaxHealth
+    public event Action<Entity, int, int>? OnManaChanged;      // Entity, NewMana, MaxMana
+    
     
     // ============================================
     // Network Events
@@ -56,11 +63,14 @@ public class GameEventSystem
     public void RaiseEntitySpawned(Entity entity) => OnEntitySpawned?.Invoke(entity);
     public void RaiseEntityDespawned(Entity entity) => OnEntityDespawned?.Invoke(entity);
     
-    public void RaisePlayerJoined(int networkId) => OnPlayerJoined?.Invoke(networkId);
-    public void RaisePlayerLeft(int networkId) => OnPlayerLeft?.Invoke(networkId);
+    public void RaisePlayerJoined(Entity entity) => OnPlayerJoined?.Invoke(entity);
+    public void RaisePlayerLeft(Entity entity) => OnPlayerLeft?.Invoke(entity);
+    
+    public void RaisePlayerInput(Entity entity, sbyte inputX, sbyte inputY, ushort flags) => OnPlayerInput?.Invoke(entity, inputX, inputY, flags);
     
     public void RaiseDamage(Entity? attacker, Entity victim, int damage) => OnDamage?.Invoke(attacker, victim, damage);
-    public void RaiseHeal(Entity? healer, Entity target, int amount) => OnHeal?.Invoke(healer, target, amount);
+    public void RaiseHealHp(Entity? healer, Entity target, int amount) => OnHealHp?.Invoke(healer, target, amount);
+    public void RaiseHealMp(Entity? healer, Entity target, int amount) => OnHealMp?.Invoke(healer, target, amount);
     public void RaiseDeath(Entity deadEntity, Entity? killer = null) => OnDeath?.Invoke(deadEntity, killer);
     
     public void RaiseCombatEnter(Entity entity) => OnCombatEnter?.Invoke(entity);
@@ -71,6 +81,8 @@ public class GameEventSystem
     public void RaisePositionChanged(Entity entity, int x, int y) => OnPositionChanged?.Invoke(entity, x, y);
     public void RaiseFacingChanged(Entity entity, int dx, int dy) => OnFacingChanged?.Invoke(entity, dx, dy);
     
-    public void RaiseNetworkDirty(Entity entity) => OnNetworkDirty?.Invoke(entity);
+    public void RaiseHealthChanged(Entity entity, int newHealth, int maxHealth) => OnHealthChanged?.Invoke(entity, newHealth, maxHealth);
+    public void RaiseManaChanged(Entity entity, int newMana, int maxMana) => OnManaChanged?.Invoke(entity, newMana, maxMana);
+    
     public void RaiseNetworkSync(Entity entity) => OnNetworkSync?.Invoke(entity);
 }

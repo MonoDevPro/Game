@@ -40,9 +40,6 @@ public sealed partial class AISystem(World world, GameEventSystem events) : Game
             facing.DirectionY = vel.DirectionY;
             vel.Speed = 3f; // Velocidade padrão de NPCs
             
-            World.MarkNetworkDirty(e, SyncFlags.Movement | SyncFlags.Facing);
-            Events.RaiseNetworkDirty(e);
-
             if (previousFacingX != facing.DirectionX || previousFacingY != facing.DirectionY)
             {
                 Events.RaiseFacingChanged(e, facing.DirectionX, facing.DirectionY);
@@ -66,8 +63,6 @@ public sealed partial class AISystem(World world, GameEventSystem events) : Game
             {
                 // IA decide atacar
                 combat.LastAttackTime = 1.5f; // Cooldown de 1.5 segundos
-                World.MarkNetworkDirty(e, SyncFlags.Movement);
-                Events.RaiseNetworkDirty(e);
             }
         }
     }
@@ -92,8 +87,6 @@ public sealed partial class AISystem(World world, GameEventSystem events) : Game
         combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? (uint)netId.Value : 0;
         
         World.Set(attacker, combat);
-        World.MarkNetworkDirty(attacker, SyncFlags.Movement);
-        Events.RaiseNetworkDirty(attacker);
 
         if (!wasInCombat)
         {
@@ -115,9 +108,6 @@ public sealed partial class AISystem(World world, GameEventSystem events) : Game
         combat.InCombat = false;
         combat.TargetNetworkId = 0;
         World.Set(entity, combat);
-
-        World.MarkNetworkDirty(entity, SyncFlags.Movement);
-        Events.RaiseNetworkDirty(entity);
 
         if (wasInCombat)
         {
