@@ -1,3 +1,4 @@
+using System;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -17,6 +18,7 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
 {
     [Query]
     [All<Health, CombatState>]
+    [None<Dead>]
     private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState combat, [Data] float deltaTime)
     {
         if (health.Current <= 0)
@@ -34,6 +36,7 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
 
     [Query]
     [All<Attackable, CombatState, AttackPower>]
+    [None<Dead>]
     private void ProcessAttackCooldown(in Entity e, ref Attackable attackable, ref CombatState combat, [Data] float deltaTime)
     {
         if (combat.LastAttackTime > 0)
@@ -59,31 +62,69 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
     }
 
     /// <summary>
+    /// Realiza um ataque corpo-a-corpo com validações de cooldown e alcance.
+    /// </summary>
+    public bool TryAttack(Entity attacker, Entity target)
+    {
+        if (!World.IsAlive(attacker) || !World.IsAlive(target))
+            return false;
+
+        if (!World.TryGet(attacker, out Position attackerPos) ||
+            !World.TryGet(target, out Position targetPos) ||
+            !World.TryGet(attacker, out AttackPower attackPower) ||
+            !World.TryGet(target, out Defense defense) ||
+            !World.TryGet(attacker, out CombatState combat) ||
+            !World.TryGet(attacker, out Attackable attackable))
+            return false;
+
+        if (combat.LastAttackTime > 0f)
+            return false;
+
+        int distance = attackerPos.ManhattanDistance(targetPos);
+        if (distance > SimulationConfig.MaxMeleeAttackRange)
+            return false;
+
+        if (World.Has<Dead>(target) || World.Has<Invulnerable>(target))
+            return false;
+
+    float baseSpeed = Math.Max(0.1f, attackable.BaseSpeed);
+    float modifier = Math.Max(0.1f, attackable.CurrentModifier);
+    float attacksPerSecond = baseSpeed * modifier;
+    combat.LastAttackTime = 1f / attacksPerSecond;
+        bool wasInCombat = combat.InCombat;
+        combat.InCombat = true;
+        combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? netId.Value : 0;
+        World.Set(attacker, combat);
+
+        if (World.Has<DirtyFlags>(attacker))
+        {
+            ref DirtyFlags attackerDirty = ref World.Get<DirtyFlags>(attacker);
+            attackerDirty.MarkDirty(DirtyComponentType.Combat);
+        }
+
+        int damage = CalculateDamage(attackPower, defense);
+        if (ApplyDamageInternal(target, damage, attacker))
+        {
+            if (!wasInCombat)
+                Events.RaiseCombatEnter(attacker);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Aplica dano a uma entidade alvo.
     /// </summary>
     public bool TryDamage(Entity target, int damage, Entity? attacker = null)
     {
-        if (!World.IsAlive(target))
+        if (!World.IsAlive(target) || !World.Has<Health>(target))
             return false;
 
-        if (!World.TryGet(target, out Health health))
+        if (damage <= 0)
             return false;
 
-        int previous = health.Current;
-        int newValue = Math.Max(0, previous - damage);
-
-        if (newValue == previous)
-            return false;
-
-        health.Current = newValue;
-        World.Set(target, health);
-
-        if (attacker.HasValue)
-            Events.RaiseDamage(attacker.Value, target, previous - newValue);
-        else
-            Events.RaiseDamage(null, target, previous - newValue);
-        
-        return true;
+        return ApplyDamageInternal(target, damage, attacker);
     }
 
     /// <summary>
@@ -105,6 +146,13 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
 
         health.Current = newValue;
         World.Set(target, health);
+
+        if (World.Has<DirtyFlags>(target))
+        {
+            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
+            dirty.MarkDirty(DirtyComponentType.Health);
+        }
+
         Events.RaiseHealHp(healer, target, newValue - previous);
         return true;
     }
@@ -128,7 +176,43 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
 
         mana.Current = newValue;
         World.Set(target, mana);
-        Events.RaiseHealHp(source, target, newValue - previous);
+
+        if (World.Has<DirtyFlags>(target))
+        {
+            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
+            dirty.MarkDirty(DirtyComponentType.Mana);
+        }
+
+        Events.RaiseHealMp(source, target, newValue - previous);
+        return true;
+    }
+
+    private bool ApplyDamageInternal(Entity target, int damage, Entity? attacker)
+    {
+        ref Health health = ref World.Get<Health>(target);
+        int previous = health.Current;
+        int newValue = Math.Max(0, previous - damage);
+
+        if (newValue == previous)
+            return false;
+
+        health.Current = newValue;
+        World.Set(target, health);
+
+        if (World.Has<DirtyFlags>(target))
+        {
+            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
+            dirty.MarkDirty(DirtyComponentType.Health);
+        }
+
+        Events.RaiseDamage(attacker, target, previous - newValue);
+
+        if (health.Current <= 0 && !World.Has<Dead>(target))
+        {
+            World.Add<Dead>(target);
+            Events.RaiseDeath(target, attacker);
+        }
+
         return true;
     }
 }

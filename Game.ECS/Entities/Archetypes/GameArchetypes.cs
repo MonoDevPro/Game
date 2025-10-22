@@ -21,6 +21,7 @@ public static class GameArchetypes
     {
         Component<NetworkId>.ComponentType,
         Component<PlayerId>.ComponentType,
+    Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
@@ -34,6 +35,7 @@ public static class GameArchetypes
         Component<CombatState>.ComponentType,
         Component<PlayerInput>.ComponentType,
         Component<PlayerControlled>.ComponentType,
+        Component<DirtyFlags>.ComponentType,
     };
 
     // ============================================
@@ -47,6 +49,7 @@ public static class GameArchetypes
     public static readonly ComponentType[] NPCCharacter = new[]
     {
         Component<NetworkId>.ComponentType,
+    Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
@@ -58,6 +61,8 @@ public static class GameArchetypes
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
         Component<AIControlled>.ComponentType,
+        Component<AIState>.ComponentType,
+        Component<DirtyFlags>.ComponentType,
     };
 
     // ============================================
@@ -71,6 +76,7 @@ public static class GameArchetypes
     public static readonly ComponentType[] Projectile = new[]
     {
         Component<NetworkId>.ComponentType,
+        Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
@@ -88,6 +94,7 @@ public static class GameArchetypes
     public static readonly ComponentType[] DroppedItem = new[]
     {
         Component<NetworkId>.ComponentType,
+        Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
     };
 
@@ -102,6 +109,7 @@ public static class GameArchetypes
     public static readonly ComponentType[] InteractiveObject = new[]
     {
         Component<NetworkId>.ComponentType,
+        Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
     };
 }

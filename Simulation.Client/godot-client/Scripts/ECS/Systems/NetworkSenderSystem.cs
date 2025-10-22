@@ -16,19 +16,11 @@ namespace GodotClient.ECS.Systems;
 /// Autor: MonoDevPro
 /// Data: 2025-01-11 01:39:21
 /// </summary>
-public sealed partial class NetworkSenderSystem(World world, INetworkManager networkManager) 
-    : GameSystem(world: world)
+public sealed partial class NetworkSenderSystem(World world, INetworkManager networkManager)
 {
-    /// <summary>
-    /// Envia input para servidor e registra em buffer de predição
-    /// </summary>
-    [Query]
-    [All<PlayerControlled, PlayerInput, NetworkDirty>]
-    private void SendInputToServer(in Entity entity, ref PlayerInput input, ref NetworkDirty dirty,
-        [Data] float delta)
+    public void SendInputToServer(Entity entity, sbyte inputX, sbyte inputY, InputFlags flags)
     {
-        if (!dirty.HasFlags(SyncFlags.Movement))
-            return;
+        if 
         
         networkManager.SendToServer(input, NetworkChannel.Simulation, 
             NetworkDeliveryMethod.ReliableOrdered);

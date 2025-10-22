@@ -15,6 +15,7 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
         {
             new NetworkId { Value = data.NetworkId },
             new PlayerId { Value = data.PlayerId },
+            new MapId { Value = data.MapId },
             new Position { X = data.SpawnX, Y = data.SpawnY, Z = data.SpawnZ },
             new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
@@ -27,7 +28,8 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { },
             new PlayerInput { },
-            new PlayerControlled()
+            new PlayerControlled(),
+            new DirtyFlags()
         };
         world.SetRange(entity, components);
         events.RaisePlayerJoined(entity);
@@ -43,6 +45,7 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
+            new MapId { Value = data.MapId },
             new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
             new Facing { DirectionX = 0, DirectionY = 0 },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
@@ -52,7 +55,14 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { },
-            new AIControlled()
+            new AIControlled(),
+            new AIState
+            {
+                DecisionCooldown = 0f,
+                CurrentBehavior = AIBehavior.Wander,
+                TargetNetworkId = 0
+            },
+            new DirtyFlags()
         };
         world.SetRange(entity, components);
         events.RaiseEntitySpawned(entity);
@@ -68,6 +78,7 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
+            new MapId { Value = data.MapId },
             new Position { X = data.StartX, Y = data.StartY, Z = data.StartZ },
             new Facing { DirectionX = data.DirectionX, DirectionY = data.DirectionY },
             new Velocity { DirectionX = data.DirectionX, DirectionY = data.DirectionY, Speed = data.Speed },
@@ -87,6 +98,7 @@ public class EntityFactory(World world, GameEventSystem events) : IEntityFactory
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
+            new MapId { Value = data.MapId },
             new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
         };
         world.SetRange(entity, components);

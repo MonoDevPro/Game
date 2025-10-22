@@ -45,8 +45,6 @@ public class GameEventSystem
     
     public event Action<Entity, int, int>? OnPositionChanged;  // Entity, NewX, NewY
     public event Action<Entity, int, int>? OnFacingChanged;    // Entity, DirectionX, DirectionY
-    public event Action<Entity, int, int>? OnHealthChanged;    // Entity, NewHealth, MaxHealth
-    public event Action<Entity, int, int>? OnManaChanged;      // Entity, NewMana, MaxMana
     
     
     // ============================================
@@ -71,7 +69,4 @@ public class GameEventSystem
     
     public void RaisePositionChanged(Entity entity, int x, int y) => OnPositionChanged?.Invoke(entity, x, y);
     public void RaiseFacingChanged(Entity entity, int dx, int dy) => OnFacingChanged?.Invoke(entity, dx, dy);
-    
-    public void RaiseHealthChanged(Entity entity, int newHealth, int maxHealth) => OnHealthChanged?.Invoke(entity, newHealth, maxHealth);
-    public void RaiseManaChanged(Entity entity, int newMana, int maxMana) => OnManaChanged?.Invoke(entity, newMana, maxMana);
 }

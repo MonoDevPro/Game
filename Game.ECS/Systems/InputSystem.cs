@@ -14,6 +14,7 @@ public sealed partial class InputSystem(World world, GameEventSystem events, Ent
 {
     [Query]
     [All<PlayerControlled, Velocity>]
+    [None<Dead>]
     private void ProcessPlayerInput(in Entity e,
         ref Velocity velocity, in Walkable speed, ref PlayerInput input, [Data] float _)
     {

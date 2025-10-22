@@ -18,9 +18,7 @@ public class MapSpatial : IMapSpatial
     {
         var key = (position.X, position.Y);
         if (!_grid.ContainsKey(key))
-        {
             _grid[key] = [];
-        }
 
         _grid[key].Add(entity);
     }

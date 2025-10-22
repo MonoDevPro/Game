@@ -1,6 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.DTOs;
+using Game.ECS.Entities.Data;
 using Game.Network.Packets.Simulation;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
@@ -17,7 +18,7 @@ public sealed class PlayerSpawnService(ServerSimulation simulation, ILogger<Play
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
 
-        var playerSpawnData = new PlayerSpawnData(
+        var playerSpawnData = new PlayerCharacter(
             session.Account.Id,
             session.Peer.Id,
             character.PositionX,

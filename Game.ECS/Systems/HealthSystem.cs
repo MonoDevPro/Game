@@ -15,8 +15,9 @@ namespace Game.ECS.Systems;
 public sealed partial class HealthSystem(World world, GameEventSystem events, EntityFactory factory) : GameSystem(world, events, factory)
 {
     [Query]
-    [All<Health>]
-    private void ProcessHealthRegeneration(in Entity e, ref Health health, [Data] float deltaTime)
+    [All<Health, DirtyFlags>]
+    [None<Dead>]
+    private void ProcessHealthRegeneration(in Entity e, ref Health health, ref DirtyFlags dirty, [Data] float deltaTime)
     {
         if (health.Current >= health.Max)
             return;
@@ -29,14 +30,16 @@ public sealed partial class HealthSystem(World world, GameEventSystem events, En
             return;
 
         health.Current = regenerated;
+        dirty.MarkDirty(DirtyComponentType.Health);
 
         // Marca como dirty para sincronização
         Events.RaiseHealHp(e, e, regenerated - previous);
     }
 
     [Query]
-    [All<Mana>]
-    private void ProcessManaRegeneration(in Entity e, ref Mana mana, [Data] float deltaTime)
+    [All<Mana, DirtyFlags>]
+    [None<Dead>]
+    private void ProcessManaRegeneration(in Entity e, ref Mana mana, ref DirtyFlags dirty, [Data] float deltaTime)
     {
         if (mana.Current >= mana.Max)
             return;
@@ -49,6 +52,7 @@ public sealed partial class HealthSystem(World world, GameEventSystem events, En
             return;
 
         mana.Current = regenerated;
+        dirty.MarkDirty(DirtyComponentType.Mana);
 
         Events.RaiseHealMp(e, e, regenerated - previous);
     }

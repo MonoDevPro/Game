@@ -14,7 +14,8 @@ public readonly record struct PlayerCharacter(
     int Mp, int MaxMp, float MpRegen,
     float MovementSpeed, float AttackSpeed,
     int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense);
+    int PhysicalDefense, int MagicDefense,
+    int MapId = 0);
 
 /// <summary>
 /// Dados de um NPC (controlado por IA).
@@ -26,7 +27,8 @@ public readonly record struct NPCCharacter(
     int PositionX, int PositionY, int PositionZ,
     int Hp, int MaxHp, float HpRegen,
     int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense);
+    int PhysicalDefense, int MagicDefense,
+    int MapId = 0);
 
 /// <summary>
 /// Dados de um projétil.
@@ -38,7 +40,8 @@ public readonly record struct ProjectileData(
     int StartX, int StartY, int StartZ,
     int DirectionX, int DirectionY,
     float Speed,
-    int PhysicalDamage, int MagicalDamage);
+    int PhysicalDamage, int MagicalDamage,
+    int MapId = 0);
 
 /// <summary>
 /// Dados de um item solto no mapa.
@@ -48,4 +51,5 @@ public readonly record struct DroppedItemData(
     int NetworkId,
     int ItemId,
     int PositionX, int PositionY, int PositionZ,
-    int Quantity);
+    int Quantity,
+    int MapId = 0);

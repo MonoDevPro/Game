@@ -7,4 +7,5 @@ public interface IMapService
     
     void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial);
     void UnregisterMap(int mapId);
+    bool HasMap(int mapId);
 }

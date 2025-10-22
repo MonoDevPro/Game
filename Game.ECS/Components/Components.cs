@@ -1,3 +1,4 @@
+using System;
 using MemoryPack;
 
 namespace Game.ECS.Components;
@@ -20,6 +21,11 @@ public struct PlayerId { public int Value; }
 public struct NetworkId { public int Value; }
 
 // ============================================
+// World Context - Informações de mapa
+// ============================================
+public struct MapId { public int Value; }
+
+// ============================================
 // Inputs - Entrada do jogador
 // ============================================
 [MemoryPackable]
@@ -34,7 +40,20 @@ public struct Mana { public int Current; public int Max; public float Regenerati
 // ============================================
 // Transform - Posicionamento
 // ============================================
-public struct Position { public int X; public int Y; public int Z; }
+public struct Position
+{
+	public int X;
+	public int Y;
+	public int Z;
+
+	/// <summary>
+	/// Distância Manhattan (taxicab) em células.
+	/// </summary>
+	public readonly int ManhattanDistance(Position other)
+	{
+		return Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
+	}
+}
 public struct Velocity { public int DirectionX; public int DirectionY; public float Speed; }
 public struct PreviousPosition { public int X; public int Y; public int Z; } // Para reconciliação
 
@@ -71,3 +90,60 @@ public struct ItemCooldown { public float RemainingTime; }
 // Respawn - Reaparição
 // ============================================
 public struct RespawnData { public float RespawnTimer; public int RespawnMapId; public int RespawnX; public int RespawnY; }
+
+// ============================================
+// AI - Estado e comportamento
+// ============================================
+public struct AIState
+{
+	public float DecisionCooldown;
+	public AIBehavior CurrentBehavior;
+	public int TargetNetworkId;
+}
+
+public enum AIBehavior : byte
+{
+	Idle,
+	Wander,
+	Patrol,
+	Chase,
+	Attack,
+	Flee
+}
+
+// ============================================
+// Network Sync - Flags de sujidade
+// ============================================
+public struct DirtyFlags
+{
+	public ushort Flags;
+
+	public void MarkDirty(DirtyComponentType type)
+	{
+		Flags |= (ushort)(1 << (int)type);
+	}
+
+	public void ClearDirty(DirtyComponentType type)
+	{
+		Flags &= (ushort)~(1 << (int)type);
+	}
+
+	public bool IsDirty(DirtyComponentType type)
+	{
+		return (Flags & (ushort)(1 << (int)type)) != 0;
+	}
+
+	public void ClearAll()
+	{
+		Flags = 0;
+	}
+}
+
+public enum DirtyComponentType : byte
+{
+	Position = 0,
+	Health = 1,
+	Mana = 2,
+	Facing = 3,
+	Combat = 4,
+}

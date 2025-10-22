@@ -19,6 +19,7 @@ public sealed class ServerGameSimulation : GameSimulation
     private HealthSystem _healthSystem = null!;
     private CombatSystem _combatSystem = null!;
     private AISystem _aiSystem = null!;
+    private SyncSystem _syncSystem = null!;
     private readonly IMapService _mapService;
     
     public ServerGameSimulation()
@@ -41,7 +42,7 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(_inputSystem);
         
         // Sistemas de movimento
-        _movementSystem = new MovementSystem(world, gameEvents, factory);
+        _movementSystem = new MovementSystem(world, gameEvents, factory, _mapService);
         systems.Add(_movementSystem);
         
         // Sistemas de saúde
@@ -53,36 +54,48 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(_combatSystem);
         
         // Sistemas de IA
-        _aiSystem = new AISystem(world, gameEvents, factory);
+        _aiSystem = new AISystem(world, gameEvents, factory, _mapService, _combatSystem);
         systems.Add(_aiSystem);
+
+        // Sistemas de sincronização de estado
+        _syncSystem = new SyncSystem(world, gameEvents, factory);
+        systems.Add(_syncSystem);
     }
     
     public Entity SpawnPlayer(in PlayerCharacter data)
     {
         var entity = EntityFactory.CreatePlayer(data);
+        RegisterSpatial(entity);
         return entity;
     }
 
     public Entity SpawnNpc(NPCCharacter data)
     {
         var entity = EntityFactory.CreateNPC(data);
+        RegisterSpatial(entity);
         return entity;
     }
 
     public Entity SpawnProjectile(ProjectileData data)
     {
         var entity = EntityFactory.CreateProjectile(data);
+        if (World.Has<Position>(entity))
+            RegisterSpatial(entity);
         return entity;
     }
 
     public Entity SpawnDroppedItem(DroppedItemData data)
     {
         var entity = EntityFactory.CreateDroppedItem(data);
+        if (World.Has<Position>(entity))
+            RegisterSpatial(entity);
         return entity;
     }
 
     public bool DespawnEntity(Entity e)
     {
+        if (World.Has<Position>(e))
+            UnregisterSpatial(e);
         return EntityFactory.DestroyEntity(e);
     }
 
@@ -92,5 +105,57 @@ public sealed class ServerGameSimulation : GameSimulation
         {
             _inputSystem.ApplyPlayerInput(e, inputX, inputY, flags);
         }
+    }
+
+    private void RegisterSpatial(Entity entity)
+    {
+        if (!World.Has<Position>(entity))
+            return;
+
+        int mapId = 0;
+        if (World.Has<MapId>(entity))
+        {
+            ref MapId mapComponent = ref World.Get<MapId>(entity);
+            mapId = mapComponent.Value;
+        }
+
+        if (!_mapService.HasMap(mapId))
+        {
+            _mapService.RegisterMap(mapId, new MapGrid(100, 100), new MapSpatial());
+        }
+
+        var spatial = _mapService.GetMapSpatial(mapId);
+        ref Position position = ref World.Get<Position>(entity);
+        spatial.Insert(position, entity);
+    }
+
+    private void UnregisterSpatial(Entity entity)
+    {
+        if (!World.Has<Position>(entity))
+            return;
+
+        int mapId = 0;
+        if (World.Has<MapId>(entity))
+        {
+            ref MapId mapComponent = ref World.Get<MapId>(entity);
+            mapId = mapComponent.Value;
+        }
+
+        if (!_mapService.HasMap(mapId))
+            return;
+
+        var spatial = _mapService.GetMapSpatial(mapId);
+        ref Position position = ref World.Get<Position>(entity);
+        spatial.Remove(position, entity);
+    }
+
+    public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
+    {
+        _mapService.RegisterMap(mapId, grid, spatial);
+    }
+
+    public void UnregisterMap(int mapId)
+    {
+        _mapService.UnregisterMap(mapId);
     }
 }
