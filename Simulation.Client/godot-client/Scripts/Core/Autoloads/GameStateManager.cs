@@ -1,9 +1,8 @@
 using System;
-using Game.ECS.Components;
-using Game.Network.Packets.Simulation;
+using Game.Network.Packets.Game;
 using Godot;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 /// <summary>
 /// Gerencia estado global do jogo (persist entre cenas).
@@ -17,7 +16,7 @@ public partial class GameStateManager : Node
 
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
-    public GameSnapshotPacket? CurrentGameData { get; set; }
+    public GameDataPacket? CurrentGameData { get; set; }
     
     public override void _Ready()
     {

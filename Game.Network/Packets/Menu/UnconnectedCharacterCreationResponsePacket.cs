@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-using Game.Network.Packets.DTOs;
 using MemoryPack;
 
 namespace Game.Network.Packets.Menu;

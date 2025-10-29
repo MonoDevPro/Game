@@ -1,10 +1,9 @@
-using Game.Server.Players;
-using Game.Server.Simulation;
+using Game.ECS.Examples;
 
 namespace Game.Server.Loop;
 
 public class GameLoopService(
-    ServerSimulation simulation,
+    ServerGameSimulation simulation,
     ILogger<GameLoopService> logger)
     : BackgroundService
 {

@@ -1,20 +1,19 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Core.Maps;
 using Game.Domain.Entities;
 using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
+using Game.ECS.Examples;
 using Game.Network.Abstractions;
-using Game.Network.Packets;
-using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Game;
+using Game.Network.Packets.Game.Extensions;
 using Game.Network.Packets.Menu;
-using Game.Network.Packets.Simulation;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
-using Game.Server.Simulation;
 
 namespace Game.Server;
 
@@ -40,7 +39,7 @@ public sealed class GameServer : IDisposable
     private readonly PlayerSpawnService _spawnService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameServer> _logger;
-    private readonly ServerSimulation _simulation;
+    private readonly ServerGameSimulation _simulation;
     private readonly NetworkSecurity? _security;
     private readonly SessionTokenManager _tokenManager;
     private readonly int _connectionTimeoutSeconds;
@@ -55,7 +54,7 @@ public sealed class GameServer : IDisposable
         PlayerSessionManager sessionManager,
         PlayerSpawnService spawnService,
         IServiceScopeFactory scopeFactory,
-        ServerSimulation simulation,
+        ServerGameSimulation simulation,
         ILogger<GameServer> logger,
         SessionTokenManager tokenManager, // ✅ Injetar
         NetworkSecurity? security = null)
@@ -253,27 +252,19 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                if (_simulation.TryGetPlayerState(session.Entity, out var snapshot))
+                if (_simulation.World.TryBuildPlayerSnapshot(session.Entity, out var snapshot))
                 {
                     characterPersistData = characterPersistData with
                     {
-                        PositionX = snapshot.PositionX,
-                        PositionY = snapshot.PositionY,
-                        PositionZ = snapshot.PositionZ,
+                        PositionX = snapshot.SpawnX,
+                        PositionY = snapshot.SpawnY,
+                        PositionZ = snapshot.SpawnZ,
                         FacingX = snapshot.FacingX,
-                        FacingY = snapshot.FacingY
+                        FacingY = snapshot.FacingY,
+                        CurrentHp = snapshot.Hp,
+                        CurrentMp = snapshot.Mp
                     };
                     
-                    // ✅ Tentar obter vitals da simulação
-                    if (_simulation.TryGetPlayerVitals(session.Entity, out var vitals))
-                    {
-                        characterPersistData = characterPersistData with
-                        {
-                            CurrentHp = vitals.CurrentHp,
-                            CurrentMp = vitals.CurrentMp
-                        };
-                    }
-
                     // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
                     using var scope = _scopeFactory.CreateScope();
                     var persistence = scope.ServiceProvider.GetRequiredService<IPlayerPersistenceService>();
@@ -311,7 +302,7 @@ public sealed class GameServer : IDisposable
             _security?.RemovePeer(peer);
 
             // ✅ Notifica outros jogadores sobre o despawn
-            var packet = new PlayerDespawn(peer.Id);
+            var packet = new PlayerDespawnSnapshot(peer.Id);
             _networkManager.SendToAll(
                 packet, 
                 NetworkChannel.Simulation, 
@@ -726,9 +717,9 @@ public sealed class GameServer : IDisposable
             var localSnapshot = _spawnService.BuildSnapshot(session);
             var othersSnapshots = _sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(existing => _spawnService.BuildSnapshot(existing))
+                .Select(s => _spawnService.BuildSnapshot(session))
                 .ToArray();
-
+            
             // ✅ 6. Broadcasta spawn para outros jogadores
             _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
@@ -736,9 +727,9 @@ public sealed class GameServer : IDisposable
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-            var gameDataPacket = new GameSnapshotPacket
+            var gameDataPacket = new GameDataPacket
             {
-                MapSnapshot = MapSnapshot.CreateSnapshot(currentMap, currentMap.Id),
+                MapDto = currentMap.ToMapDto(currentMap.Id),
                 LocalPlayer = localSnapshot,
                 OtherPlayers = othersSnapshots
             };
@@ -770,7 +761,7 @@ public sealed class GameServer : IDisposable
             return;
         }
         
-        if (_simulation.TryApplyPlayerInput(session.Entity, input))
+        if (_simulation.ApplyPlayerInput(session.Entity, input.InputX, input.InputY, input.Flags))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",

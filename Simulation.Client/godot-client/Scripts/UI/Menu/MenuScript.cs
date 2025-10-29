@@ -7,10 +7,12 @@ using Game.ECS.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets;
 using Game.Network.Packets.DTOs;
+using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
 using Game.Network.Packets.Simulation;
 using Godot;
 using GodotClient.Autoloads;
+using GameStateManager = GodotClient.Core.Autoloads.GameStateManager;
 
 namespace GodotClient.Menu;
 
@@ -644,7 +646,7 @@ public partial class MenuScript : Control
     
     private void RegisterConnectedHandlers()
     {
-        _network!.RegisterPacketHandler<GameSnapshotPacket>(HandleGameData);
+        _network!.RegisterPacketHandler<GameDataPacket>(HandleGameData);
     }
     
     // ========== CLEANUP ==========
@@ -680,7 +682,7 @@ public partial class MenuScript : Control
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(); // ✅ NOVO
         
         // Unregister CONNECTED handlers
-        _network.UnregisterPacketHandler<GameSnapshotPacket>();
+        _network.UnregisterPacketHandler<GameDataPacket>();
     }
     
     // ========== UI EVENTS ==========
@@ -1083,7 +1085,7 @@ public partial class MenuScript : Control
     
     // ========== PACKET HANDLERS (CONNECTED) ==========
     
-    private void HandleGameData(INetPeerAdapter peer, ref GameSnapshotPacket packet)
+    private void HandleGameData(INetPeerAdapter peer, ref GameDataPacket packet)
     {
         GD.Print($"[Menu] Received GameDataPacket - Player: {packet.LocalPlayer.Name} (NetID: {packet.LocalPlayer.NetworkId})");
         

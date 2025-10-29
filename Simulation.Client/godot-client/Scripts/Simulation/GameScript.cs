@@ -1,11 +1,12 @@
 using System;
 using Arch.Core;
-using Game.Core.Maps;
-using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
+using Game.ECS.Examples;
+using Game.ECS.Services;
 using Game.Network.Abstractions;
-using Game.Network.Packets.Simulation;
 using Godot;
 using GodotClient.Autoloads;
+using GodotClient.Core.Autoloads;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GodotClient.Simulation;
@@ -20,7 +21,7 @@ namespace GodotClient.Simulation;
 public partial class GameScript : Node2D
 {
     private INetworkManager? _network;
-    private ClientSimulation? _simulation;
+    private ClientGameSimulation? _simulation;
 
     private int _localNetworkId = -1;
     private Label? _statusLabel;
@@ -36,7 +37,7 @@ public partial class GameScript : Node2D
 
         // 2) Boot de simulação (fornece INetworkManager via DI para os sistemas que precisarem)
         var provider = BuildServiceProvider(_network);
-        _simulation = new ClientSimulation(provider);
+        _simulation = new ClientGameSimulation();
 
         // 3) Carrega dados iniciais (NetworkId local, snapshot de mapa, etc.)
         LoadGameData();
@@ -61,11 +62,11 @@ public partial class GameScript : Node2D
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
 
-            _network.UnregisterPacketHandler<PlayerInputSnapshot>();
+            _network.UnregisterPacketHandler<PlayerPositionSnapshot>();
             _network.UnregisterPacketHandler<PlayerStateSnapshot>();
             _network.UnregisterPacketHandler<PlayerVitalsSnapshot>();
             _network.UnregisterPacketHandler<PlayerSnapshot>();
-            _network.UnregisterPacketHandler<PlayerDespawn>();
+            _network.UnregisterPacketHandler<PlayerDespawnSnapshot>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -98,7 +99,7 @@ public partial class GameScript : Node2D
         _localNetworkId = gameState.LocalNetworkId;
 
         // Mapa (predição clientside e navegação opcional)
-        var mapSnap = gameState.CurrentGameData?.MapSnapshot;
+        var mapSnap = gameState.CurrentGameData?.MapDto;
         if (mapSnap is null)
         {
             GD.PushError("[GameClient] Map data is null! Returning to menu...");
@@ -130,16 +131,16 @@ public partial class GameScript : Node2D
 
         _network.OnPeerDisconnected += OnPeerDisconnected;
 
-        _network.RegisterPacketHandler<PlayerInputSnapshot>(HandlePlayerInputSnapshot);
+        _network.RegisterPacketHandler<PlayerPositionSnapshot>(HandlePlayerInputSnapshot);
         _network.RegisterPacketHandler<PlayerStateSnapshot>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsSnapshot>(HandlePlayerVitals);
         _network.RegisterPacketHandler<PlayerSnapshot>(HandlePlayerSpawn);
-        _network.RegisterPacketHandler<PlayerDespawn>(HandlePlayerDespawn);
+        _network.RegisterPacketHandler<PlayerDespawnSnapshot>(HandlePlayerDespawn);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
     
-    private void HandlePlayerInputSnapshot(INetPeerAdapter peer, ref PlayerInputSnapshot packet)
+    private void HandlePlayerInputSnapshot(INetPeerAdapter peer, ref PlayerPositionSnapshot packet)
     {
         if (_simulation is null) return;
 
@@ -180,7 +181,7 @@ public partial class GameScript : Node2D
         UpdateStatus($"{snapshot.Name} joined");
     }
 
-    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerDespawn packet)
+    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerDespawnSnapshot packet)
     {
         if (_simulation is null) return;
 

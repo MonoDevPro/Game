@@ -1,4 +1,4 @@
-namespace Game.ECS.Utils;
+namespace Game.ECS;
 
 public static class SimulationConfig
 {

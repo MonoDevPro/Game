@@ -5,30 +5,21 @@ namespace Game.ECS.Services;
 /// <summary>
 /// Implementação padrão de IMapGrid para gerenciar limites e bloqueios de mapa.
 /// </summary>
-public class MapGrid : IMapGrid
+public class MapGrid(int width, int height, bool[,]? blockedCells = null) : IMapGrid
 {
-    private readonly int _width;
-    private readonly int _height;
-    private readonly bool[,] _blocked;
-
-    public MapGrid(int width, int height, bool[,]? blockedCells = null)
-    {
-        _width = width;
-        _height = height;
-        _blocked = blockedCells ?? new bool[width, height];
-    }
+    private readonly bool[,] _blocked = blockedCells ?? new bool[width, height];
 
     public bool InBounds(Position p)
     {
-        return p.X >= 0 && p.X < _width && p.Y >= 0 && p.Y < _height;
+        return p.X >= 0 && p.X < width && p.Y >= 0 && p.Y < height;
     }
 
     public Position ClampToBounds(Position p)
     {
         return new Position
         {
-            X = Math.Max(0, Math.Min(p.X, _width - 1)),
-            Y = Math.Max(0, Math.Min(p.Y, _height - 1)),
+            X = Math.Max(0, Math.Min(p.X, width - 1)),
+            Y = Math.Max(0, Math.Min(p.Y, height - 1)),
             Z = p.Z
         };
     }
@@ -44,9 +35,9 @@ public class MapGrid : IMapGrid
     public bool AnyBlockedInArea(Position min, Position max)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
-        int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
+        int maxX = Math.Min(width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
-        int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
+        int maxY = Math.Min(height - 1, Math.Max(min.Y, max.Y));
 
         for (int x = minX; x <= maxX; x++)
         {
@@ -63,9 +54,9 @@ public class MapGrid : IMapGrid
     public int CountBlockedInArea(Position min, Position max)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
-        int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
+        int maxX = Math.Min(width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
-        int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
+        int maxY = Math.Min(height - 1, Math.Max(min.Y, max.Y));
 
         int count = 0;
         for (int x = minX; x <= maxX; x++)
@@ -94,5 +85,5 @@ public class MapGrid : IMapGrid
     /// <summary>
     /// Obtém as dimensões do mapa.
     /// </summary>
-    public (int Width, int Height) GetDimensions() => (_width, _height);
+    public (int Width, int Height) GetDimensions() => (_width: width, _height: height);
 }

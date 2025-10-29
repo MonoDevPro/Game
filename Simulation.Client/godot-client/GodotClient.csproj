@@ -18,13 +18,14 @@
     <Content Include="appsettings.json" />
     <Content Include="Scenes\game.tscn" />
     <Content Include="Scenes\menu.tscn" />
+    <Content Include="Scripts\ECS\Systems\NetworkSenderSystem.cs.new" />
+    <Content Include="Scripts\Simulation\ClientSimulation.cs.new" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
     <Folder Include="Scripts\ECS\Entities\" />
-    <Folder Include="Scripts\Networking\" />
     <Folder Include="Scripts\UI\HUD\" />
   </ItemGroup>
 

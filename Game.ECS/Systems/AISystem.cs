@@ -6,7 +6,6 @@ using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
-using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
 
@@ -14,18 +13,10 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela IA de NPCs e entidades controladas por IA.
 /// Processa movimento, decisões de combate e comportamento de NPCs.
 /// </summary>
-public sealed partial class AISystem : GameSystem
+public sealed partial class AISystem(World world, IMapService mapService, CombatSystem combatSystem, GameEventSystem eventSystem)
+    : GameSystem(world, eventSystem)
 {
-    private readonly IMapService _mapService;
-    private readonly CombatSystem _combatSystem;
     private readonly Random _random = new();
-
-    public AISystem(World world, GameEventSystem events, EntityFactory factory, IMapService mapService, CombatSystem combatSystem)
-        : base(world, events, factory)
-    {
-        _mapService = mapService;
-        _combatSystem = combatSystem;
-    }
 
     [Query]
     [All<AIControlled, AIState, Position, Velocity, Facing>]
@@ -101,13 +92,12 @@ public sealed partial class AISystem : GameSystem
                 combat.InCombat = false;
                 combat.TargetNetworkId = 0;
                 dirty.MarkDirty(DirtyComponentType.Combat);
-                Events.RaiseCombatExit(e);
             }
 
             return;
         }
 
-        if (_combatSystem.TryAttack(e, target))
+        if (combatSystem.TryAttack(e, target))
         {
             aiState.CurrentBehavior = AIBehavior.Attack;
             if (World.TryGet(target, out NetworkId netId))
@@ -145,7 +135,7 @@ public sealed partial class AISystem : GameSystem
 
         if (previousX != facing.DirectionX || previousY != facing.DirectionY)
         {
-            Events.RaiseFacingChanged(entity, facing.DirectionX, facing.DirectionY);
+            // TODO: Marcar sujidade do Facing se necessário
         }
     }
 
@@ -161,7 +151,7 @@ public sealed partial class AISystem : GameSystem
     /// </summary>
     public bool TryAIAttack(Entity attacker, Entity target)
     {
-        return _combatSystem.TryAttack(attacker, target);
+        return combatSystem.TryAttack(attacker, target);
     }
 
     /// <summary>
@@ -191,13 +181,11 @@ public sealed partial class AISystem : GameSystem
             aiState.CurrentBehavior = AIBehavior.Wander;
             aiState.TargetNetworkId = 0;
         }
-
-        Events.RaiseCombatExit(entity);
     }
 
     private bool TryAcquireTarget(in Entity self, in Position position, in MapId mapId, out Entity target)
     {
-        var spatial = _mapService.GetMapSpatial(mapId.Value);
+        var spatial = mapService.GetMapSpatial(mapId.Value);
         int radius = SimulationConfig.MaxMeleeAttackRange;
 
         var min = new Position { X = position.X - radius, Y = position.Y - radius, Z = position.Z };

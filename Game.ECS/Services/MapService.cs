@@ -14,24 +14,14 @@ public class MapService : IMapService
         RegisterMap(0, new MapGrid(100, 100), new MapSpatial());
     }
 
-    public IMapGrid GetMapGrid(int mapId)
-    {
-        if (_grids.TryGetValue(mapId, out var grid))
-        {
-            return grid;
-        }
-
-        throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
-    }
+    public IMapGrid GetMapGrid(int mapId) => 
+        _grids.TryGetValue(mapId, out var grid) 
+        ? grid 
+        : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
 
     public IMapSpatial GetMapSpatial(int mapId)
     {
-        if (_spatials.TryGetValue(mapId, out var spatial))
-        {
-            return spatial;
-        }
-
-        throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
+        return _spatials.TryGetValue(mapId, out var spatial) ? spatial : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
     }
 
     /// <summary>

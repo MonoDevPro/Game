@@ -1,8 +1,6 @@
-using Game.ECS.Components;
-using Game.Network.Abstractions;
 using MemoryPack;
 
-namespace Game.Network.Packets.Simulation;
+namespace Game.Network.Packets.Game;
 
 /// <summary>
 /// Client -> Server: Conecta ao jogo com token (CONNECTED).

@@ -7,7 +7,8 @@ using Godot;
 
 namespace GodotClient.Services;
 
-public sealed partial class GodotInputSystem(World world) : GameSystem(world, null, null)
+public sealed partial class GodotInputSystem(World world, GameEventSystem eventSystem)
+    : GameSystem(world, eventSystem)
 {
     [Query]
     [All<PlayerControlled, LocalPlayerTag, PlayerInput>]
@@ -26,11 +27,9 @@ public sealed partial class GodotInputSystem(World world) : GameSystem(world, nu
         if (Input.IsActionPressed("attack"))      buttons |= InputFlags.Attack;
         if (Input.IsActionPressed("sprint"))      buttons |= InputFlags.Sprint;
 
-        if (moveX != 0 || moveY != 0 || buttons != 0)
-        {
-            input.InputX = moveX;
-            input.InputY = moveY;
-            input.Flags = buttons;
-        }
+        // Always apply input to allow stopping movement when keys are released
+        input.InputX = moveX;
+        input.InputY = moveY;
+        input.Flags = buttons;
     }
 }

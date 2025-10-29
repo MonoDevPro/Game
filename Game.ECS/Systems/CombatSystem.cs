@@ -5,7 +5,6 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
 
@@ -13,8 +12,8 @@ namespace Game.ECS.Systems;
 /// Sistema responsável pela lógica de combate: ataque, dano, morte.
 /// Processa ataques, aplica dano e gerencia transições para estado Dead.
 /// </summary>
-public sealed partial class CombatSystem(World world, GameEventSystem events, EntityFactory factory) 
-    : GameSystem(world, events, factory)
+public sealed partial class CombatSystem(World world, GameEventSystem eventSystem) 
+    : GameSystem(world, eventSystem)
 {
     [Query]
     [All<Health, CombatState>]
@@ -24,13 +23,8 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
         if (health.Current <= 0)
         {
             health.Current = 0;
-            
-            // Marca como morto se ainda não estiver
-            if (!World.Has<Dead>(e))
-            {
-                World.Add<Dead>(e);
-                Events.RaiseDeath(e);
-            }
+            World.Add<Dead>(e);
+            GameEvents.RaiseDeath(e);
         }
     }
 
@@ -87,10 +81,10 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
         if (World.Has<Dead>(target) || World.Has<Invulnerable>(target))
             return false;
 
-    float baseSpeed = Math.Max(0.1f, attackable.BaseSpeed);
-    float modifier = Math.Max(0.1f, attackable.CurrentModifier);
-    float attacksPerSecond = baseSpeed * modifier;
-    combat.LastAttackTime = 1f / attacksPerSecond;
+        float baseSpeed = Math.Max(0.1f, attackable.BaseSpeed);
+        float modifier = Math.Max(0.1f, attackable.CurrentModifier);
+        float attacksPerSecond = baseSpeed * modifier;
+        combat.LastAttackTime = 1f / attacksPerSecond;
         bool wasInCombat = combat.InCombat;
         combat.InCombat = true;
         combat.TargetNetworkId = World.TryGet(target, out NetworkId netId) ? netId.Value : 0;
@@ -105,8 +99,8 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
         int damage = CalculateDamage(attackPower, defense);
         if (ApplyDamageInternal(target, damage, attacker))
         {
-            if (!wasInCombat)
-                Events.RaiseCombatEnter(attacker);
+            // TODO: RaiseCombatEnter event
+            if (!wasInCombat) return true;
             return true;
         }
 
@@ -147,13 +141,11 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
         health.Current = newValue;
         World.Set(target, health);
 
-        if (World.Has<DirtyFlags>(target))
-        {
-            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
-            dirty.MarkDirty(DirtyComponentType.Health);
-        }
-
-        Events.RaiseHealHp(healer, target, newValue - previous);
+        if (!World.Has<DirtyFlags>(target)) 
+            return true;
+        
+        ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
+        dirty.MarkDirty(DirtyComponentType.Health);
         return true;
     }
 
@@ -177,13 +169,11 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
         mana.Current = newValue;
         World.Set(target, mana);
 
-        if (World.Has<DirtyFlags>(target))
-        {
-            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
-            dirty.MarkDirty(DirtyComponentType.Mana);
-        }
-
-        Events.RaiseHealMp(source, target, newValue - previous);
+        if (!World.Has<DirtyFlags>(target)) 
+            return true;
+        
+        ref DirtyFlags dirty = ref World.Get<DirtyFlags>(target);
+        dirty.MarkDirty(DirtyComponentType.Mana);
         return true;
     }
 
@@ -205,13 +195,8 @@ public sealed partial class CombatSystem(World world, GameEventSystem events, En
             dirty.MarkDirty(DirtyComponentType.Health);
         }
 
-        Events.RaiseDamage(attacker, target, previous - newValue);
-
         if (health.Current <= 0 && !World.Has<Dead>(target))
-        {
             World.Add<Dead>(target);
-            Events.RaiseDeath(target, attacker);
-        }
 
         return true;
     }

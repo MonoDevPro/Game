@@ -1,6 +1,6 @@
-using Game.Core.Maps;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
+using Game.ECS.Examples;
 using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
@@ -11,7 +11,6 @@ using Game.Server.Loop;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
-using Game.Server.Simulation;
 
 var builder = CreateHostBuilder(args);
 
@@ -33,7 +32,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton(TimeProvider.System);
             
             // ECS
-            services.AddSingleton<ServerSimulation>();
+            services.AddSingleton<ServerGameSimulation>();
             
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<SessionTokenManager>();
@@ -60,16 +59,6 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
                     }
                 }
                 return map;
-            });
-            
-            services.AddSingleton<IMapGrid>(sp =>
-            {
-                var logger = sp.GetRequiredService<ILogger<MapGrid>>();
-                var map = sp.GetRequiredService<Map>();
-                MapGrid.SetDefaultOptions(MapGridFactoryOptions.Server);
-                var mapGrid = MapGrid.Create(map, out var info);
-                logger.LogInformation(info.ToString());
-                return mapGrid;
             });
             
             // Network

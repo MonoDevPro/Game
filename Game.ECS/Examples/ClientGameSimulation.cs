@@ -1,11 +1,9 @@
-using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
 using Game.ECS.Systems;
 using Arch.Core;
 using Arch.System;
-using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
+using Game.ECS.Services;
 
 namespace Game.ECS.Examples;
 
@@ -22,29 +20,31 @@ public sealed class ClientGameSimulation : GameSimulation
     private Entity _localPlayer;
     private int _localNetworkId;
     
-    public ClientGameSimulation()
+    public ClientGameSimulation(GameEventSystem? gameEvents = null, IMapService? mapService = null)
+        : base(gameEvents ?? new GameEventSystem(),
+            mapService ?? new MapService())
     {
-        ConfigureSystems(World, Events, EntityFactory, Systems);
+        ConfigureSystems(World, GameEvents, Systems);
     }
 
     /// <summary>
     /// Configura sistemas apenas para o cliente.
     /// Ordem: Input → Movement (previsão local) → Sync (recebe correções do servidor)
     /// </summary>
-    protected override void ConfigureSystems(World world, GameEventSystem gameEvents, EntityFactory factory, Group<float> systems)
+    protected override void ConfigureSystems(World world, GameEventSystem eventSystem, Group<float> systems)
     {
         // Sistemas de entrada do jogador
-        _inputSystem = new InputSystem(world, gameEvents, factory);
+        _inputSystem = new InputSystem(world, eventSystem);
         systems.Add(_inputSystem);
         
         // Sistemas de movimento (previsão local)
-        _movementSystem = new MovementSystem(world, gameEvents, factory);
+        _movementSystem = new MovementSystem(world, eventSystem);
         systems.Add(_movementSystem);
     }
     
-    public Entity SpawnPlayer(in PlayerCharacter data, bool isLocal)
+    public Entity SpawnPlayer(PlayerSnapshot data, bool isLocal)
     {
-        var entity = EntityFactory.CreatePlayer(data);
+        var entity = World.CreatePlayer(base.PlayerIndex, data);
         
         if (isLocal)
         {
@@ -58,36 +58,21 @@ public sealed class ClientGameSimulation : GameSimulation
         return entity;
     }
     
-    public Entity SpawnNpc(NPCCharacter data)
+    public bool ApplyPositionFromServer(PlayerPositionSnapshot snapshot)
     {
-        var entity = EntityFactory.CreateNPC(data);
-        return entity;
-    }
-
-    public Entity SpawnProjectile(ProjectileData data)
-    {
-        var entity = EntityFactory.CreateProjectile(data);
-        return entity;
-    }
-
-    public Entity SpawnDroppedItem(DroppedItemData data)
-    {
-        var entity = EntityFactory.CreateDroppedItem(data);
-        return entity;
+        if (snapshot.NetworkId == _localNetworkId)
+            return false; // Ignora correções para o jogador local (previsão local)
+        
+        if (!base.PlayerIndex.TryGetEntity(snapshot.NetworkId, out var entity))
+            return false;
+        
+        var player = entity;
+        if (!World.IsAlive(player))
+            return false;
+        
+        World.Set(player, snapshot.PositionX, snapshot.PositionY, snapshot.PositionZ);
+        return true;
     }
     
-    public bool DespawnEntity(Entity e)
-    {
-        return EntityFactory.DestroyEntity(e);
-    }
-
-    public bool ApplyPlayerInput(sbyte inputX, sbyte inputY, InputFlags flags)
-    {
-        return _inputSystem.ApplyPlayerInput(_localPlayer, inputX, inputY, flags);
-    }
-    
-    public bool ClearPlayerInput()
-    {
-        return _inputSystem.ClearPlayerInput(_localPlayer);
-    }
+}
 }

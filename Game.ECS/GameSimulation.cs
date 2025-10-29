@@ -1,13 +1,10 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Arch.System.SourceGenerator;
 using Game.ECS.Components;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Data;
-using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Repositories;
+using Game.ECS.Services;
 using Game.ECS.Systems;
-using Game.ECS.Utils;
 
 namespace Game.ECS;
 
@@ -52,30 +49,32 @@ public class FixedTimeStep(float fixedDeltaTime)
 public abstract class GameSimulation : GameSystem
 {
     protected readonly Group<float> Systems;
-    
     private readonly FixedTimeStep _fixedTimeStep;
-    
-    /// <summary>
-    /// Tick atual da simulação. Incrementa a cada atualização.
-    /// </summary>
     public uint CurrentTick { get; private set; }
     
-    protected GameSimulation() : this(World.Create(
-        chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+    protected readonly IMapService MapService;
+    
+    protected readonly EventBus EventBus = new();
+    
+    protected readonly PlayerIndex PlayerIndex = new();
+    
+    protected GameSimulation(GameEventSystem eventSystem, IMapService mapService) : this(
+        World.Create(chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
         minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
         archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-        entityCapacity: SimulationConfig.EntityCapacity), new GameEventSystem()) { }
+        entityCapacity: SimulationConfig.EntityCapacity), eventSystem, mapService) { }   
 
-    private GameSimulation(World world, GameEventSystem gameEvents) : base(world, gameEvents, new EntityFactory(world, gameEvents))
+    private GameSimulation(World world, GameEventSystem eventSystem, IMapService mapService) : base(world, eventSystem)
     {
         Systems = new Group<float>(SimulationConfig.SimulationName);
         _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
+        MapService = mapService;
     }
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, GameEventSystem gameEvents, EntityFactory factory, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, GameEventSystem eventSystem, Group<float> systems);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)
@@ -97,36 +96,66 @@ public abstract class GameSimulation : GameSystem
     }
     public override void BeforeUpdate(in float t) => throw new NotImplementedException();
     public override void AfterUpdate(in float t) => throw new NotImplementedException();
-
-    public bool TryGetPlayerState(Entity entity, 
-        out PlayerStateSnapshot snapshot)
+    
+    public virtual bool ApplyPlayerInput(Entity entity, sbyte inputX, sbyte inputY, InputFlags flags)
     {
-        ref NetworkId netId = ref World.Get<NetworkId>(entity);
-        ref Position position = ref World.Get<Position>(entity);
-        ref Facing facing = ref World.Get<Facing>(entity);
-        ref Walkable walkable = ref World.Get<Walkable>(entity);
-        snapshot = new PlayerStateSnapshot(
-            NetworkId: netId.Value,
-            PositionX: position.X,
-            PositionY: position.Y,
-            PositionZ: position.Z,
-            FacingX: facing.DirectionX,
-            FacingY: facing.DirectionY,
-            Speed: walkable.BaseSpeed * walkable.CurrentModifier);
+        if (!World.IsAlive(entity) || !World.Has<PlayerControlled>(entity))
+            return false;
+
+        var input = new PlayerInput { InputX = inputX, InputY = inputY, Flags = flags };
+        World.Set(entity, input);
         return true;
     }
-
-    public bool TryGetPlayerVitals(Entity entity, out PlayerVitalsSnapshot vitals)
+    
+    public void RegisterSpatial(Entity entity)
     {
-        ref NetworkId netId = ref World.Get<NetworkId>(entity);
-        ref Health health = ref World.Get<Health>(entity);
-        ref Mana mana = ref World.Get<Mana>(entity);
-        vitals = new PlayerVitalsSnapshot(
-            NetworkId: netId.Value,
-            CurrentHp: health.Current,
-            MaxHp: health.Max,
-            CurrentMp: mana.Current,
-            MaxMp: mana.Max);
-        return true;
+        if (!World.Has<Position>(entity))
+            return;
+
+        int mapId = 0;
+        if (World.Has<MapId>(entity))
+        {
+            ref MapId mapComponent = ref World.Get<MapId>(entity);
+            mapId = mapComponent.Value;
+        }
+
+        if (!MapService.HasMap(mapId))
+        {
+            MapService.RegisterMap(mapId, new MapGrid(100, 100), new MapSpatial());
+        }
+
+        var spatial = MapService.GetMapSpatial(mapId);
+        ref Position position = ref World.Get<Position>(entity);
+        spatial.Insert(position, entity);
+    }
+
+    public void UnregisterSpatial(Entity entity)
+    {
+        if (!World.Has<Position>(entity))
+            return;
+
+        int mapId = 0;
+        if (World.Has<MapId>(entity))
+        {
+            ref MapId mapComponent = ref World.Get<MapId>(entity);
+            mapId = mapComponent.Value;
+        }
+
+        if (!MapService.HasMap(mapId))
+            return;
+
+        var spatial = MapService.GetMapSpatial(mapId);
+        ref Position position = ref World.Get<Position>(entity);
+        spatial.Remove(position, entity);
+    }
+
+    public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
+    {
+        MapService.RegisterMap(mapId, grid, spatial);
+    }
+
+    public void UnregisterMap(int mapId)
+    {
+        MapService.UnregisterMap(mapId);
     }
 }

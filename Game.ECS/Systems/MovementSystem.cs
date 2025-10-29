@@ -2,27 +2,17 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
-using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
 
-public sealed partial class MovementSystem : GameSystem
+public sealed partial class MovementSystem(
+    World world,
+    IMapService mapService, GameEventSystem eventSystem)
+    : GameSystem(world, eventSystem)
 {
-    private readonly IMapService _mapService;
-
-    public MovementSystem(World world, GameEventSystem events, EntityFactory factory)
-        : this(world, events, factory, new MapService())
-    {
-    }
-
-    public MovementSystem(World world, GameEventSystem events, EntityFactory factory, IMapService mapService)
-        : base(world, events, factory)
-    {
-        _mapService = mapService;
-    }
+    public MovementSystem(World world, GameEventSystem eventSystem)
+        : this(world, new MapService(), eventSystem) { }
 
     [Query]
     [All<PlayerControlled, Facing, Velocity, DirtyFlags>]
@@ -37,10 +27,7 @@ public sealed partial class MovementSystem : GameSystem
         facing.DirectionY = velocity.DirectionY;
 
         if (previousX != facing.DirectionX || previousY != facing.DirectionY)
-        {
             dirty.MarkDirty(DirtyComponentType.Facing);
-            Events.RaiseFacingChanged(e, facing.DirectionX, facing.DirectionY);
-        }
     }
 
     [Query]
@@ -49,10 +36,7 @@ public sealed partial class MovementSystem : GameSystem
     private void ProcessMovement(in Entity e, ref Position pos, ref Movement movement, ref Velocity velocity, ref DirtyFlags dirty, in MapId mapId, [Data] float deltaTime)
     {
         if (TryStep(e, ref pos, ref movement, ref velocity, in mapId, deltaTime))
-        {
             dirty.MarkDirty(DirtyComponentType.Position);
-            Events.RaisePositionChanged(e, pos.X, pos.Y);
-        }
     }
 
     private bool TryStep(in Entity entity, ref Position pos, ref Movement movement, ref Velocity vel, in MapId mapId, float dt)
@@ -71,23 +55,23 @@ public sealed partial class MovementSystem : GameSystem
             Z = pos.Z
         };
 
-        var mapGrid = _mapService.GetMapGrid(mapId.Value);
+        var mapGrid = mapService.GetMapGrid(mapId.Value);
         if (!mapGrid.InBounds(newPos))
         {
-            vel.Speed = 0f;
+            // Block movement but keep velocity for continuous input
             return false;
         }
 
         if (mapGrid.IsBlocked(newPos))
         {
-            vel.Speed = 0f;
+            // Block movement but keep velocity for continuous input
             return false;
         }
 
-        var mapSpatial = _mapService.GetMapSpatial(mapId.Value);
+        var mapSpatial = mapService.GetMapSpatial(mapId.Value);
         if (mapSpatial.TryGetFirstAt(newPos, out var occupant) && occupant != entity)
         {
-            vel.Speed = 0f;
+            // Block movement but keep velocity for continuous input
             return false;
         }
 
@@ -100,7 +84,7 @@ public sealed partial class MovementSystem : GameSystem
         }
 
         pos = newPos;
-        vel.Speed = 0f;
+        // Keep velocity alive for continuous movement
         return true;
     }
 }

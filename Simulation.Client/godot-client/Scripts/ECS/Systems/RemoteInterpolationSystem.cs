@@ -8,27 +8,33 @@ using GodotClient.ECS.Components;
 
 namespace GodotClient.ECS.Systems;
 
-// Suaviza render dos remotos. O Position continua autoritativo.
-// Apenas o Node2D é interpolado; quando chega próximo do alvo, commit no Position opcionalmente.
-public sealed partial class RemoteInterpolationSystem(World world) : GameSystem(world)
+/// <summary>
+/// Sistema de interpolação para jogadores remotos.
+/// Suaviza a renderização entre snapshots do servidor.
+/// </summary>
+public sealed partial class RemoteInterpolationSystem(World world, GameEventSystem eventSystem)
+    : GameSystem(world, eventSystem)
 {
     private const float PixelsPerCell = 32f;
 
     [Query]
-    [All<Position, NodeRef, RemoteInterpolation>]
+    [All<Position, NodeRef, RemoteInterpolation, RemotePlayerTag>]
     private void LerpRemote(in Entity e, ref Position pos, ref NodeRef node, in RemoteInterpolation interp, [Data] float dt)
     {
-        if (!node.IsVisible) return;
+        if (!node.IsVisible || node.Node2D == null) 
+            return;
 
         Vector2 current = node.Node2D.GlobalPosition;
         Vector2 target  = new(pos.X * PixelsPerCell, pos.Y * PixelsPerCell);
 
-        Vector2 next = current.Lerp(target, interp.LerpAlpha <= 0f ? 0.15f : interp.LerpAlpha);
+        float alpha = interp.LerpAlpha <= 0f ? 0.15f : interp.LerpAlpha;
+        Vector2 next = current.Lerp(target, alpha);
         node.Node2D.GlobalPosition = next;
 
-        if ((next - target).LengthSquared() <= (interp.ThresholdPx <= 0f ? 1f : interp.ThresholdPx) * (interp.ThresholdPx <= 0f ? 1f : interp.ThresholdPx))
+        float threshold = interp.ThresholdPx <= 0f ? 2f : interp.ThresholdPx;
+        if ((next - target).LengthSquared() <= threshold * threshold)
         {
-            // opcional: commit pos visual ao alvo
+            // Snap ao alvo quando próximo o suficiente
             node.Node2D.GlobalPosition = target;
         }
     }

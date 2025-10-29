@@ -1,6 +1,6 @@
 using System;
 using Game.Domain.Enums;
-using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
 using Godot;
 using GodotClient.Autoloads;
 
@@ -74,11 +74,11 @@ public sealed partial class PlayerVisual : Node2D
     public void UpdateFromSnapshot(PlayerSnapshot snapshot, bool treatAsLocal)
     {
         IsLocalPlayer = treatAsLocal;
-        LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
+        LoadSprite(VocationType.Archer, Gender.Male);
         UpdateLabel(snapshot.Name);
         UpdateFacing(new Vector2I(snapshot.FacingX, snapshot.FacingY));
-        UpdatePosition(new Vector3I(snapshot.PositionX, snapshot.PositionY, snapshot.PositionZ));
-        if (Sprite is not null) UpdateAnimationSpeed(Sprite, snapshot.Speed);
+        UpdatePosition(new Vector3I(snapshot.SpawnX, snapshot.SpawnY, snapshot.SpawnZ));
+        if (Sprite is not null) UpdateAnimationSpeed(Sprite, snapshot.MovementSpeed);
     }
 
     private void UpdateAnimationSpeed(AnimatedSprite2D sprite, float speed)

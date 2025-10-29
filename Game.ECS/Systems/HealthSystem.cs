@@ -4,7 +4,6 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Utils;
 
 namespace Game.ECS.Systems;
 
@@ -12,7 +11,8 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por regeneração de vida e mana.
 /// Processa entidades que têm Health e Mana, aplicando regeneração por tick.
 /// </summary>
-public sealed partial class HealthSystem(World world, GameEventSystem events, EntityFactory factory) : GameSystem(world, events, factory)
+public sealed partial class HealthSystem(World world, GameEventSystem eventSystem)
+    : GameSystem(world, eventSystem)
 {
     [Query]
     [All<Health, DirtyFlags>]
@@ -31,9 +31,6 @@ public sealed partial class HealthSystem(World world, GameEventSystem events, En
 
         health.Current = regenerated;
         dirty.MarkDirty(DirtyComponentType.Health);
-
-        // Marca como dirty para sincronização
-        Events.RaiseHealHp(e, e, regenerated - previous);
     }
 
     [Query]
@@ -53,8 +50,6 @@ public sealed partial class HealthSystem(World world, GameEventSystem events, En
 
         mana.Current = regenerated;
         dirty.MarkDirty(DirtyComponentType.Mana);
-
-        Events.RaiseHealMp(e, e, regenerated - previous);
     }
 
     [Query]

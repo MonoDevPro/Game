@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+using Game.ECS.Entities.Factories;
 
 namespace GodotClient.Simulation.Players;
 
 public class PlayerIndexService
 {
-    private readonly Dictionary<int, PlayerData> _players = new();
+    private readonly Dictionary<int, PlayerSnapshot> _players = new();
     
-    public PlayerData RegisterPlayer(PlayerData data)
+    public PlayerSnapshot RegisterPlayer(PlayerSnapshot data)
     {
         _players[data.NetworkId] = data;
         return data;
@@ -18,12 +18,12 @@ public class PlayerIndexService
         _players.Remove(networkId);
     }
     
-    public bool TryGetPlayer(int networkId, out PlayerData? data)
+    public bool TryGetPlayer(int networkId, out PlayerSnapshot data)
     {
         return _players.TryGetValue(networkId, out data);
     }
     
-    public IEnumerable<PlayerData> GetAllPlayers()
+    public IEnumerable<PlayerSnapshot> GetAllPlayers()
     {
         return _players.Values;
     }
