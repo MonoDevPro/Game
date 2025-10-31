@@ -11,7 +11,7 @@ public enum DirtyComponentType : ushort
     Health   = 1 << 1,
     Mana     = 1 << 2,
     Facing   = 1 << 3,
-    Combat   = 1 << 4,
+    Input    = 1 << 4,
 	
     All	     = ushort.MaxValue
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Game.Domain.Enums;
 using Godot;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 /// <summary>
 /// Gerenciador centralizado de assets com cache e pré-carregamento.

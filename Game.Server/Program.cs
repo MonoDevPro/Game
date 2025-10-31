@@ -1,12 +1,12 @@
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.ECS.Examples;
 using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;
 using Game.Server;
 using Game.Server.Authentication;
+using Game.Server.ECS;
 using Game.Server.Loop;
 using Game.Server.Players;
 using Game.Server.Security;

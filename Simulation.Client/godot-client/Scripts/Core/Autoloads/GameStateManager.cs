@@ -16,7 +16,7 @@ public partial class GameStateManager : Node
 
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
-    public GameDataPacket? CurrentGameData { get; set; }
+    public PlayerJoinPacket? CurrentGameData { get; set; }
     
     public override void _Ready()
     {

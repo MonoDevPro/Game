@@ -1,12 +1,13 @@
 using System;
 using Arch.Core;
-using Game.ECS.Entities.Factories;
-using Game.ECS.Examples;
+using Game.Core.Extensions;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
+using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Autoloads;
 using GodotClient.Core.Autoloads;
+using GodotClient.ECS;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GodotClient.Simulation;
@@ -36,7 +37,6 @@ public partial class GameScript : Node2D
         _network = NetworkClient.Instance.NetworkManager;
 
         // 2) Boot de simulação (fornece INetworkManager via DI para os sistemas que precisarem)
-        var provider = BuildServiceProvider(_network);
         _simulation = new ClientGameSimulation();
 
         // 3) Carrega dados iniciais (NetworkId local, snapshot de mapa, etc.)
@@ -62,24 +62,14 @@ public partial class GameScript : Node2D
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
 
-            _network.UnregisterPacketHandler<PlayerPositionSnapshot>();
-            _network.UnregisterPacketHandler<PlayerStateSnapshot>();
-            _network.UnregisterPacketHandler<PlayerVitalsSnapshot>();
-            _network.UnregisterPacketHandler<PlayerSnapshot>();
-            _network.UnregisterPacketHandler<PlayerDespawnSnapshot>();
+            _network.UnregisterPacketHandler<PlayerJoinPacket>();
+            _network.UnregisterPacketHandler<PlayerLeftPacket>();
+            _network.UnregisterPacketHandler<PlayerStatePacket>();
+            _network.UnregisterPacketHandler<PlayerVitalsPacket>();
+            _network.UnregisterPacketHandler<PlayerDataPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
-    }
-
-    // ==================== Boot/DI ====================
-
-    private static IServiceProvider BuildServiceProvider(INetworkManager? network)
-    {
-        var sc = new ServiceCollection();
-        if (network is not null)
-            sc.AddSingleton(network);
-        return sc.BuildServiceProvider();
     }
 
     // ==================== Game Data / Map ====================
@@ -99,7 +89,7 @@ public partial class GameScript : Node2D
         _localNetworkId = gameState.LocalNetworkId;
 
         // Mapa (predição clientside e navegação opcional)
-        var mapSnap = gameState.CurrentGameData?.MapDto;
+        var mapSnap = gameState.CurrentGameData?.MapDataPacket;
         if (mapSnap is null)
         {
             GD.PushError("[GameClient] Map data is null! Returning to menu...");
@@ -108,11 +98,23 @@ public partial class GameScript : Node2D
             return;
         }
 
-        // Constrói serviços de mapa (dados + spatial + cache) para uso em sistemas locais (opcional)
-
-        var mapGrid = MapGrid.LoadMapGrid(mapSnap.Value);
-        var spatial = new MapSpatial(0, 0, mapSnap.Value.Width, mapSnap.Value.Height);
-
+        var width = mapSnap.Value.Width;
+        var height = mapSnap.Value.Height;
+        var layers = mapSnap.Value.Layers;
+        bool[,,] collisionMasks = new bool[width, height, layers];
+        
+        for (var z = 0; z < layers; z++)
+        {
+            var collisionLayer = mapSnap.Value.LoadCollisionLayer(z);
+            for (var x = 0; x < width; x++)
+                for (var y = 0; y < height; y++)
+                    collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
+        }
+        
+        var mapGrid = new MapGrid(width, height, layers, collisionMasks);
+        var spatial = new MapSpatial();
+        
+        _simulation?.RegisterMap(mapSnap.Value.MapId, mapGrid, spatial);
         UpdateStatus($"Playing (NetID: {_localNetworkId})");
 
         // Limpa estado global após carregar (não precisamos manter o snapshot no autoload)
@@ -130,83 +132,50 @@ public partial class GameScript : Node2D
         }
 
         _network.OnPeerDisconnected += OnPeerDisconnected;
-
-        _network.RegisterPacketHandler<PlayerPositionSnapshot>(HandlePlayerInputSnapshot);
-        _network.RegisterPacketHandler<PlayerStateSnapshot>(HandlePlayerState);
-        _network.RegisterPacketHandler<PlayerVitalsSnapshot>(HandlePlayerVitals);
-        _network.RegisterPacketHandler<PlayerSnapshot>(HandlePlayerSpawn);
-        _network.RegisterPacketHandler<PlayerDespawnSnapshot>(HandlePlayerDespawn);
+        
+        _network.RegisterPacketHandler<PlayerDataPacket>(HandlePlayerSpawn);
+        _network.RegisterPacketHandler<PlayerLeftPacket>(HandlePlayerDespawn);
+        _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
+        _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
     
-    private void HandlePlayerInputSnapshot(INetPeerAdapter peer, ref PlayerPositionSnapshot packet)
+
+    private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
     {
-        if (_simulation is null) return;
-
-        // Resolve entidade por NetworkId no ECS (mapeamento deve ser mantido em um serviço de índice no ECS)
-        if (!TryResolveEntity(packet.NetworkId, out var e))
-            return;
-
         // Aplica estado autoritativo (posição/facing/speed) na simulação
-        _simulation.ApplyRemotePlayerInput(in packet);
+        _simulation?.ApplyPlayerState(packet.ToPlayerStateData());
     }
 
-    private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStateSnapshot packet)
+    private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)
     {
-        if (_simulation is null) return;
-
-        // Resolve entidade por NetworkId no ECS (mapeamento deve ser mantido em um serviço de índice no ECS)
-        if (!TryResolveEntity(packet.NetworkId, out var e))
-            return;
-
-        // Aplica estado autoritativo (posição/facing/speed) na simulação
-        _simulation.ApplyStateFromServer(e, packet);
+        _simulation?.ApplyPlayerVitals(packet.ToPlayerVitalsData());
     }
 
-    private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsSnapshot packet)
+    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerDataPacket data)
     {
         if (_simulation is null) return;
-
-        if (!TryResolveEntity(packet.NetworkId, out var e))
-            return;
-
-        _simulation.ApplyPlayerVitals(e, packet);
+        
+        var playerVisual = new PlayerVisual();
+        playerVisual.Name = $"Player_{data.NetworkId}";
+        
+        Entity entity = data.NetworkId == _localNetworkId 
+            ? _simulation.SpawnLocalPlayer(data.ToPlayerData(), playerVisual) 
+            : _simulation.SpawnRemotePlayer(data.ToPlayerData(), playerVisual);
+        
+        UpdateStatus($"{data.Name} joined");
     }
-
-    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSnapshot snapshot)
+    
+    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerLeftPacket packet)
     {
-        if (_simulation is null) return;
-        _simulation.SpawnPlayer(snapshot);
-        UpdateStatus($"{snapshot.Name} joined");
-    }
-
-    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerDespawnSnapshot packet)
-    {
-        if (_simulation is null) return;
-
-        if (TryResolveEntity(packet.NetworkId, out var e))
-        {
-            _simulation.DespawnPlayer(in packet);
-        }
-
+        _simulation?.DespawnPlayer(packet.NetworkId);
         if (packet.NetworkId == _localNetworkId)
         {
             GD.PushWarning("[GameClient] You have been disconnected from the server!");
             UpdateStatus("You have been disconnected from the server");
             DisconnectAndReturnToMenu();
         }
-    }
-
-    // ==================== Entity Index (NetworkId -> Entity) ====================
-
-    private bool TryResolveEntity(int networkId, out Entity e)
-    {
-        if (_simulation is not null) 
-            return _simulation.TryGetPlayerEntity(networkId, out e);
-        
-        e = default;
-        return false;
     }
 
     // ==================== UI / Disconnect ====================
@@ -223,7 +192,7 @@ public partial class GameScript : Node2D
             _network.Stop();
         }
 
-        _simulation?.ClearSimulation();
+        _simulation?.Dispose();
 
         // Reseta estado global
         GameStateManager.Instance.ResetState();

@@ -12,30 +12,30 @@ namespace GodotClient.ECS.Systems;
 /// Sistema de interpolação para jogadores remotos.
 /// Suaviza a renderização entre snapshots do servidor.
 /// </summary>
-public sealed partial class RemoteInterpolationSystem(World world, GameEventSystem eventSystem)
-    : GameSystem(world, eventSystem)
+public sealed partial class RemoteInterpolationSystem(World world)
+    : GameSystem(world)
 {
     private const float PixelsPerCell = 32f;
 
     [Query]
-    [All<Position, NodeRef, RemoteInterpolation, RemotePlayerTag>]
-    private void LerpRemote(in Entity e, ref Position pos, ref NodeRef node, in RemoteInterpolation interp, [Data] float dt)
+    [All<Position, VisualReference, RemoteInterpolation, RemotePlayerTag>]
+    private void LerpRemote(in Entity e, ref Position pos, ref VisualReference node, in RemoteInterpolation interp, [Data] float dt)
     {
-        if (!node.IsVisible || node.Node2D == null) 
+        if (!node.IsVisible) 
             return;
 
-        Vector2 current = node.Node2D.GlobalPosition;
+        Vector2 current = node.VisualNode.GlobalPosition;
         Vector2 target  = new(pos.X * PixelsPerCell, pos.Y * PixelsPerCell);
 
         float alpha = interp.LerpAlpha <= 0f ? 0.15f : interp.LerpAlpha;
         Vector2 next = current.Lerp(target, alpha);
-        node.Node2D.GlobalPosition = next;
+        node.VisualNode.GlobalPosition = next;
 
         float threshold = interp.ThresholdPx <= 0f ? 2f : interp.ThresholdPx;
         if ((next - target).LengthSquared() <= threshold * threshold)
         {
             // Snap ao alvo quando próximo o suficiente
-            node.Node2D.GlobalPosition = target;
+            node.VisualNode.GlobalPosition = target;
         }
     }
 }

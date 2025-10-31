@@ -8,13 +8,10 @@ namespace Game.ECS.Systems;
 /// </summary>
 public abstract partial class GameSystem : BaseSystem<World, float>
 {
-    protected GameEventSystem GameEvents;
-    
     /// <summary>
     /// Base abstrata para todos os sistemas do jogo.
     /// </summary>
-    protected GameSystem(World world, GameEventSystem gameEvents) : base(world)
+    protected GameSystem(World world) : base(world)
     {
-        GameEvents = gameEvents;
     }
 }

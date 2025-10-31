@@ -5,22 +5,42 @@ namespace Game.ECS.Services;
 /// <summary>
 /// Implementação padrão de IMapGrid para gerenciar limites e bloqueios de mapa.
 /// </summary>
-public class MapGrid(int width, int height, bool[,]? blockedCells = null) : IMapGrid
+/// <summary>
+/// Implementação padrão de IMapGrid para gerenciar limites e bloqueios de mapa (agora com suporte a camadas Z).
+/// </summary>
+public class MapGrid : IMapGrid
 {
-    private readonly bool[,] _blocked = blockedCells ?? new bool[width, height];
+    private readonly int _width;
+    private readonly int _height;
+    private readonly int _layers;
+    // blocked[x,y,z]
+    private readonly bool[,,] _blocked;
+
+    public MapGrid(int width, int height, int layers = 1, bool[,,]? blockedCells = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(layers);
+        _width = width;
+        _height = height;
+        _layers = layers;
+        _blocked = blockedCells ?? new bool[width, height, layers];
+    }
 
     public bool InBounds(Position p)
     {
-        return p.X >= 0 && p.X < width && p.Y >= 0 && p.Y < height;
+        return p.X >= 0 && p.X < _width
+            && p.Y >= 0 && p.Y < _height
+            && p.Z >= 0 && p.Z < _layers;
     }
 
     public Position ClampToBounds(Position p)
     {
         return new Position
         {
-            X = Math.Max(0, Math.Min(p.X, width - 1)),
-            Y = Math.Max(0, Math.Min(p.Y, height - 1)),
-            Z = p.Z
+            X = Math.Max(0, Math.Min(p.X, _width - 1)),
+            Y = Math.Max(0, Math.Min(p.Y, _height - 1)),
+            Z = Math.Max(0, Math.Min(p.Z, _layers - 1))
         };
     }
 
@@ -29,24 +49,23 @@ public class MapGrid(int width, int height, bool[,]? blockedCells = null) : IMap
         if (!InBounds(p))
             return true; // Fora do mapa é considerado bloqueado
 
-        return _blocked[p.X, p.Y];
+        return _blocked[p.X, p.Y, p.Z];
     }
 
     public bool AnyBlockedInArea(Position min, Position max)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
-        int maxX = Math.Min(width - 1, Math.Max(min.X, max.X));
+        int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
-        int maxY = Math.Min(height - 1, Math.Max(min.Y, max.Y));
+        int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
+        int minZ = Math.Max(0, Math.Min(min.Z, max.Z));
+        int maxZ = Math.Min(_layers - 1, Math.Max(min.Z, max.Z));
 
-        for (int x = minX; x <= maxX; x++)
-        {
-            for (int y = minY; y <= maxY; y++)
-            {
-                if (_blocked[x, y])
-                    return true;
-            }
-        }
+        for (int z = minZ; z <= maxZ; z++)
+            for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
+                    if (_blocked[x, y, z])
+                        return true;
 
         return false;
     }
@@ -54,19 +73,18 @@ public class MapGrid(int width, int height, bool[,]? blockedCells = null) : IMap
     public int CountBlockedInArea(Position min, Position max)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
-        int maxX = Math.Min(width - 1, Math.Max(min.X, max.X));
+        int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
-        int maxY = Math.Min(height - 1, Math.Max(min.Y, max.Y));
+        int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
+        int minZ = Math.Max(0, Math.Min(min.Z, max.Z));
+        int maxZ = Math.Min(_layers - 1, Math.Max(min.Z, max.Z));
 
         int count = 0;
-        for (int x = minX; x <= maxX; x++)
-        {
-            for (int y = minY; y <= maxY; y++)
-            {
-                if (_blocked[x, y])
-                    count++;
-            }
-        }
+        for (int z = minZ; z <= maxZ; z++)
+            for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
+                    if (_blocked[x, y, z])
+                        count++;
 
         return count;
     }
@@ -78,12 +96,12 @@ public class MapGrid(int width, int height, bool[,]? blockedCells = null) : IMap
     {
         if (InBounds(p))
         {
-            _blocked[p.X, p.Y] = blocked;
+            _blocked[p.X, p.Y, p.Z] = blocked;
         }
     }
 
     /// <summary>
     /// Obtém as dimensões do mapa.
     /// </summary>
-    public (int Width, int Height) GetDimensions() => (_width: width, _height: height);
+    public (int Width, int Height, int Layers) GetDimensions() => (_width, _height, _layers);
 }

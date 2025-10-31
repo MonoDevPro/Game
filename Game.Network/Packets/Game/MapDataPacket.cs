@@ -4,7 +4,7 @@ using MemoryPack;
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct MapDto(
+public readonly partial record struct MapDataPacket(
     int MapId,
     string Name,
     ushort Width,
@@ -44,7 +44,7 @@ public readonly partial record struct MapDto(
     /// <summary>
     /// Snapshot vazio (útil para testes).
     /// </summary>
-    public static MapDto Empty => new(
+    public static MapDataPacket Empty => new(
         MapId: 0,
         Name: string.Empty,
         Width: 0,

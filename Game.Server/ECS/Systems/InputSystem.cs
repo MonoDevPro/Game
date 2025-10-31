@@ -2,15 +2,16 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Systems;
 
-namespace Game.ECS.Systems;
+namespace Game.Server.ECS.Systems;
 
 /// <summary>
 /// Sistema responsável por processar input do jogador local.
 /// Converte input em ações (movimento, ataque, habilidades, etc).
 /// </summary>
-public sealed partial class InputSystem(World world, GameEventSystem eventSystem)
-    : GameSystem(world, eventSystem)
+public sealed partial class InputSystem(World world)
+    : GameSystem(world)
 {
     [Query]
     [All<PlayerControlled, Velocity>]
@@ -23,7 +24,6 @@ public sealed partial class InputSystem(World world, GameEventSystem eventSystem
             velocity.Stop();
             return;
         }
-        
         var (normalizedX, normalizedY) = NormalizeInput(input.InputX, input.InputY);
         velocity.DirectionX = normalizedX;
         velocity.DirectionY = normalizedY;

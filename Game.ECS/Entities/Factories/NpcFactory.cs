@@ -1,15 +1,13 @@
 using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.Entities.Archetypes;
-using MemoryPack;
 
 namespace Game.ECS.Entities.Factories;
 
 /// <summary>
 /// Dados de um NPC (controlado por IA).
 /// </summary>
-[MemoryPackable]
-public readonly partial record struct NPCSnapshot(
+public readonly record struct NPCData(
     int NetworkId,
     int PositionX, int PositionY, int PositionZ,
     int Hp, int MaxHp, float HpRegen,
@@ -21,8 +19,7 @@ public readonly partial record struct NPCSnapshot(
 // NPC Snapshots
 // ============================================
 
-[MemoryPackable]
-public readonly partial record struct NpcStateSnapshot(
+public readonly record struct NpcStateData(
     int NetworkId,
     int PositionX,
     int PositionY,
@@ -38,7 +35,7 @@ public static class NpcFactory
     /// <summary>
     /// Cria um NPC com IA controlada.
     /// </summary>
-    public static Entity CreateNPC(this World world, in NPCSnapshot data)
+    public static Entity CreateNPC(this World world, in NPCData data)
     {
         var entity = world.Create(GameArchetypes.NPCCharacter);
         var components = new object[]
@@ -67,7 +64,7 @@ public static class NpcFactory
         return entity;
     }
     
-    public static NPCSnapshot BuildNPCSnapshot(this World world, Entity entity)
+    public static NPCData BuildNPCSnapshot(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
@@ -76,7 +73,7 @@ public static class NpcFactory
         ref var attackPower = ref world.Get<AttackPower>(entity);
         ref var defense = ref world.Get<Defense>(entity);
 
-        return new NPCSnapshot
+        return new NPCData
         {
             NetworkId = networkId.Value, MapId = mapId.Value,
             PositionX = position.X, PositionY = position.Y, PositionZ = position.Z,
@@ -86,7 +83,7 @@ public static class NpcFactory
         };
     }
     
-    public static NpcStateSnapshot BuildNpcStateSnapshot(this World world, Entity entity)
+    public static NpcStateData BuildNpcStateSnapshot(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
@@ -94,7 +91,7 @@ public static class NpcFactory
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var health = ref world.Get<Health>(entity);
 
-        return new NpcStateSnapshot
+        return new NpcStateData
         {
             NetworkId = networkId.Value,
             PositionX = position.X,

@@ -1,16 +1,15 @@
 using System.Collections.Concurrent;
 using System.Net;
+using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Examples;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
-using Game.Network.Packets.Game.Extensions;
 using Game.Network.Packets.Menu;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
+using Game.Server.ECS;
 using Game.Server.Players;
 using Game.Server.Security;
 using Game.Server.Sessions;
@@ -82,7 +81,7 @@ public sealed class GameServer : IDisposable
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
-        RegisterAndValidate<PlayerInput>(HandlePlayerInput);
+        RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
     }
 
     
@@ -302,7 +301,7 @@ public sealed class GameServer : IDisposable
             _security?.RemovePeer(peer);
 
             // ✅ Notifica outros jogadores sobre o despawn
-            var packet = new PlayerDespawnSnapshot(peer.Id);
+            var packet = new PlayerLeftPacket(peer.Id);
             _networkManager.SendToAll(
                 packet, 
                 NetworkChannel.Simulation, 
@@ -714,22 +713,22 @@ public sealed class GameServer : IDisposable
             _spawnService.SpawnPlayer(session);
 
             // ✅ 5. Monta dados do jogo
-            var localSnapshot = _spawnService.BuildSnapshot(session);
+            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerDataPacket();
             var othersSnapshots = _sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(s => _spawnService.BuildSnapshot(session))
+                .Select(s => _spawnService.BuildSnapshot(session).ToPlayerDataPacket())
                 .ToArray();
             
             // ✅ 6. Broadcasta spawn para outros jogadores
-            _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept<PlayerDataPacket>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-            var gameDataPacket = new GameDataPacket
+            var gameDataPacket = new PlayerJoinPacket
             {
-                MapDto = currentMap.ToMapDto(currentMap.Id),
+                MapDataPacket = currentMap.ToMapDto(currentMap.Id),
                 LocalPlayer = localSnapshot,
                 OtherPlayers = othersSnapshots
             };
@@ -753,7 +752,7 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler CONNECTED de input de jogador.
     /// </summary>
-    private void HandlePlayerInput(INetPeerAdapter peer, ref PlayerInput input)
+    private void HandlePlayerInput(INetPeerAdapter peer, ref PlayerInputPacket input)
     {
         if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
         {
@@ -761,7 +760,7 @@ public sealed class GameServer : IDisposable
             return;
         }
         
-        if (_simulation.ApplyPlayerInput(session.Entity, input.InputX, input.InputY, input.Flags))
+        if (_simulation.ApplyPlayerInput(session.Entity, input.ToPlayerInput()))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
@@ -808,7 +807,7 @@ public sealed class GameServer : IDisposable
         _networkManager.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteRequestPacket>();
     
         // ✅ Desregistra handlers connected
-        _networkManager.UnregisterPacketHandler<PlayerInput>();
         _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
+        _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
     }
 }

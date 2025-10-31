@@ -2,9 +2,9 @@ using System;
 using Game.Domain.Enums;
 using Game.ECS.Entities.Factories;
 using Godot;
-using GodotClient.Autoloads;
+using GodotClient.Core.Autoloads;
 
-namespace GodotClient.Simulation.Players;
+namespace GodotClient.Simulation;
 
 /// <summary>
 /// Representação visual do jogador com predição local e reconciliação de servidor.
@@ -71,14 +71,14 @@ public sealed partial class PlayerVisual : Node2D
         }
     }
     
-    public void UpdateFromSnapshot(PlayerSnapshot snapshot, bool treatAsLocal)
+    public void UpdateFromSnapshot(PlayerData data, bool treatAsLocal)
     {
         IsLocalPlayer = treatAsLocal;
         LoadSprite(VocationType.Archer, Gender.Male);
-        UpdateLabel(snapshot.Name);
-        UpdateFacing(new Vector2I(snapshot.FacingX, snapshot.FacingY));
-        UpdatePosition(new Vector3I(snapshot.SpawnX, snapshot.SpawnY, snapshot.SpawnZ));
-        if (Sprite is not null) UpdateAnimationSpeed(Sprite, snapshot.MovementSpeed);
+        UpdateLabel(data.Name);
+        UpdateFacing(new Vector2I(data.FacingX, data.FacingY));
+        UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
+        if (Sprite is not null) UpdateAnimationSpeed(Sprite, data.MovementSpeed);
     }
 
     private void UpdateAnimationSpeed(AnimatedSprite2D sprite, float speed)

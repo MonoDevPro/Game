@@ -3,18 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Game.Domain.Enums;
-using Game.ECS.Components;
 using Game.Network.Abstractions;
-using Game.Network.Packets;
-using Game.Network.Packets.DTOs;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
-using Game.Network.Packets.Simulation;
 using Godot;
 using GodotClient.Autoloads;
-using GameStateManager = GodotClient.Core.Autoloads.GameStateManager;
+using GodotClient.Core.Autoloads;
 
-namespace GodotClient.Menu;
+namespace GodotClient.UI.Menu;
 
 /// <summary>
 /// Controlador do menu principal com autenticação completa usando UNCONNECTED packets.
@@ -646,7 +642,7 @@ public partial class MenuScript : Control
     
     private void RegisterConnectedHandlers()
     {
-        _network!.RegisterPacketHandler<GameDataPacket>(HandleGameData);
+        _network!.RegisterPacketHandler<PlayerJoinPacket>(HandleGameData);
     }
     
     // ========== CLEANUP ==========
@@ -682,7 +678,7 @@ public partial class MenuScript : Control
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(); // ✅ NOVO
         
         // Unregister CONNECTED handlers
-        _network.UnregisterPacketHandler<GameDataPacket>();
+        _network.UnregisterPacketHandler<PlayerJoinPacket>();
     }
     
     // ========== UI EVENTS ==========
@@ -1085,7 +1081,7 @@ public partial class MenuScript : Control
     
     // ========== PACKET HANDLERS (CONNECTED) ==========
     
-    private void HandleGameData(INetPeerAdapter peer, ref GameDataPacket packet)
+    private void HandleGameData(INetPeerAdapter peer, ref PlayerJoinPacket packet)
     {
         GD.Print($"[Menu] Received GameDataPacket - Player: {packet.LocalPlayer.Name} (NetID: {packet.LocalPlayer.NetworkId})");
         

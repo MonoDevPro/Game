@@ -58,13 +58,13 @@ public abstract class GameSimulation : GameSystem
     
     protected readonly PlayerIndex PlayerIndex = new();
     
-    protected GameSimulation(GameEventSystem eventSystem, IMapService mapService) : this(
+    protected GameSimulation(IMapService mapService) : this(
         World.Create(chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
         minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
         archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-        entityCapacity: SimulationConfig.EntityCapacity), eventSystem, mapService) { }   
+        entityCapacity: SimulationConfig.EntityCapacity), mapService) { }   
 
-    private GameSimulation(World world, GameEventSystem eventSystem, IMapService mapService) : base(world, eventSystem)
+    private GameSimulation(World world, IMapService mapService) : base(world)
     {
         Systems = new Group<float>(SimulationConfig.SimulationName);
         _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
@@ -74,7 +74,7 @@ public abstract class GameSimulation : GameSystem
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, GameEventSystem eventSystem, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, Group<float> systems);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)
@@ -97,17 +97,7 @@ public abstract class GameSimulation : GameSystem
     public override void BeforeUpdate(in float t) => throw new NotImplementedException();
     public override void AfterUpdate(in float t) => throw new NotImplementedException();
     
-    public virtual bool ApplyPlayerInput(Entity entity, sbyte inputX, sbyte inputY, InputFlags flags)
-    {
-        if (!World.IsAlive(entity) || !World.Has<PlayerControlled>(entity))
-            return false;
-
-        var input = new PlayerInput { InputX = inputX, InputY = inputY, Flags = flags };
-        World.Set(entity, input);
-        return true;
-    }
-    
-    public void RegisterSpatial(Entity entity)
+    protected void RegisterSpatial(Entity entity)
     {
         if (!World.Has<Position>(entity))
             return;
@@ -121,7 +111,8 @@ public abstract class GameSimulation : GameSystem
 
         if (!MapService.HasMap(mapId))
         {
-            MapService.RegisterMap(mapId, new MapGrid(100, 100), new MapSpatial());
+            // aqui escolha o número de layers correto para esse mapa; por ora usamos 1
+            MapService.RegisterMap(mapId, new MapGrid(100, 100, layers: 3), new MapSpatial());
         }
 
         var spatial = MapService.GetMapSpatial(mapId);
@@ -129,7 +120,7 @@ public abstract class GameSimulation : GameSystem
         spatial.Insert(position, entity);
     }
 
-    public void UnregisterSpatial(Entity entity)
+    protected void UnregisterSpatial(Entity entity)
     {
         if (!World.Has<Position>(entity))
             return;
@@ -157,5 +148,12 @@ public abstract class GameSimulation : GameSystem
     public void UnregisterMap(int mapId)
     {
         MapService.UnregisterMap(mapId);
+    }
+    
+    public override void Dispose()
+    {
+        Systems.Dispose();
+        PlayerIndex.Clear();
+        base.Dispose();
     }
 }

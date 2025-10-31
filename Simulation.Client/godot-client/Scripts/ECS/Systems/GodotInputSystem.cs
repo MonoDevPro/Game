@@ -5,10 +5,10 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
 
-namespace GodotClient.Services;
+namespace GodotClient.ECS.Systems;
 
-public sealed partial class GodotInputSystem(World world, GameEventSystem eventSystem)
-    : GameSystem(world, eventSystem)
+public sealed partial class GodotInputSystem(World world)
+    : GameSystem(world)
 {
     [Query]
     [All<PlayerControlled, LocalPlayerTag, PlayerInput>]

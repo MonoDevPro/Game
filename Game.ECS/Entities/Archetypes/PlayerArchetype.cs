@@ -36,11 +36,4 @@ public static partial class GameArchetypes
         Component<PlayerControlled>.ComponentType,
         Component<DirtyFlags>.ComponentType
     ];
-    
-    public static readonly ComponentType[] PlayerLocalCharacter =
-    PlayerCharacter.Append(Component<LocalPlayerTag>.ComponentType).ToArray();
-    
-    public static readonly ComponentType[] PlayerRemoteCharacter =
-        PlayerCharacter.Append(Component<RemotePlayerTag>.ComponentType).ToArray();
-    
 }

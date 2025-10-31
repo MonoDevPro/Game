@@ -1,16 +1,14 @@
 using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.Entities.Archetypes;
-using Game.ECS.Services;
-using MemoryPack;
+using Game.ECS.Entities.Repositories;
 
 namespace Game.ECS.Entities.Factories;
 
 /// <summary>
 /// Dados completos de um jogador (usado no spawn).
 /// </summary>
-[MemoryPackable]
-public readonly partial record struct PlayerSnapshot(
+public readonly record struct PlayerData(
     int PlayerId, int NetworkId,
     string Name, byte Gender, byte Vocation,
     int SpawnX, int SpawnY, int SpawnZ,
@@ -22,45 +20,24 @@ public readonly partial record struct PlayerSnapshot(
     int PhysicalDefense, int MagicDefense,
     int MapId = 0);
 
-[MemoryPackable]
-public readonly partial record struct PlayerStateSnapshot(
+public readonly record struct PlayerStateData(
     int NetworkId,
-    int PositionX, 
-    int PositionY, 
-    int PositionZ, 
-    int FacingX, 
-    int FacingY, 
-    float Speed);
+    int PositionX,
+    int PositionY,
+    int PositionZ,
+    int FacingX,
+    int FacingY);
 
-[MemoryPackable]
-public readonly partial record struct PlayerVitalsSnapshot(
+public readonly record struct PlayerVitalsData(
     int NetworkId, 
     int CurrentHp, 
     int MaxHp, 
     int CurrentMp, 
     int MaxMp);
 
-[MemoryPackable]
-public readonly partial record struct PlayerDespawnSnapshot(int Id);
-
-[MemoryPackable]
-public readonly partial record struct PlayerPositionSnapshot(
-    int NetworkId, 
-    int PositionX, 
-    int PositionY, 
-    int PositionZ);
-
-[MemoryPackable]
-public readonly partial record struct PlayerMapChangeSnapshot(
-    int NetworkId, 
-    int NewMapId, 
-    int PositionX, 
-    int PositionY, 
-    int PositionZ);
-
 public static partial class EntityFactory
 {
-    public static Entity CreatePlayer(this World world, EntityIndex<int> index, in PlayerSnapshot data)
+    public static Entity CreatePlayer(this World world, PlayerIndex index, in PlayerData data)
     {
         var entity = world.Create(GameArchetypes.PlayerCharacter);
         var components = new object[]
@@ -88,36 +65,21 @@ public static partial class EntityFactory
         return entity;
     }
     
-    public static Entity CreateLocalPlayer(this World world, EntityIndex<int> index, in PlayerSnapshot data)
+    public static bool TryDestroyPlayer(this World world, PlayerIndex index, int playerId)
     {
-        var entity = world.CreatePlayer(index, data);
-        world.Add<LocalPlayerTag>(entity);
-        return entity;
-    }
-    
-    public static Entity CreateRemotePlayer(this World world, EntityIndex<int> index, in PlayerSnapshot data)
-    {
-        var entity = world.CreatePlayer(index, data);
-        world.Add<RemotePlayerTag>(entity);
-        return entity;
-    }
-    
-    public static bool TryDestroyPlayer(this World world, EntityIndex<int> index, Entity entity)
-    {
-        if (!world.IsAlive(entity) || !world.Has<PlayerId>(entity))
+        if (!index.TryGetEntity(playerId, out var entity))
             return false;
         
-        ref var playerId = ref world.Get<PlayerId>(entity);
         index.RemoveByEntity(entity);
         world.Destroy(entity);
         return true;
     }
     
-    public static bool TryBuildPlayerSnapshot(this World world, Entity entity, out PlayerSnapshot snapshot)
+    public static bool TryBuildPlayerSnapshot(this World world, Entity entity, out PlayerData data)
     {
         if (!world.IsAlive(entity))
         {
-            snapshot = default;
+            data = default;
             return false;
         }
         ref var networkId = ref world.Get<NetworkId>(entity);
@@ -132,7 +94,7 @@ public static partial class EntityFactory
         ref var attackPower = ref world.Get<AttackPower>(entity);
         ref var defense = ref world.Get<Defense>(entity);
 
-        snapshot = new PlayerSnapshot
+        data = new PlayerData
         {
             NetworkId = networkId.Value, PlayerId = playerId.Value, MapId = mapId.Value,
             SpawnX = position.X, SpawnY = position.Y, SpawnZ = position.Z,
@@ -146,19 +108,18 @@ public static partial class EntityFactory
         return true;
     }
     
-    public static bool TryBuildPlayerStateSnapshot(this World world, Entity entity, out PlayerStateSnapshot snapshot)
+    public static bool TryBuildPlayerStateSnapshot(this World world, Entity entity, out PlayerStateData data)
     {
         if (!world.IsAlive(entity))
         {
-            snapshot = default;
+            data = default;
             return false;
         }
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
         
-        snapshot = new PlayerStateSnapshot
+        data = new PlayerStateData
         {
             NetworkId = networkId.Value,
             PositionX = position.X,
@@ -166,77 +127,28 @@ public static partial class EntityFactory
             PositionZ = position.Z,
             FacingX = facing.DirectionX,
             FacingY = facing.DirectionY,
-            Speed = walkable.BaseSpeed * walkable.CurrentModifier
         };
         return true;
     }
     
-    public static bool TryBuildPlayerVitalsSnapshot(this World world, Entity entity, out PlayerVitalsSnapshot snapshot)
+    public static bool TryBuildPlayerVitalsSnapshot(this World world, Entity entity, out PlayerVitalsData data)
     {
         if (!world.IsAlive(entity))
         {
-            snapshot = default;
+            data = default;
             return false;
         }
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
 
-        snapshot = new PlayerVitalsSnapshot
+        data = new PlayerVitalsData
         {
             NetworkId = networkId.Value,
             CurrentHp = health.Current,
             MaxHp = health.Max,
             CurrentMp = mana.Current,
             MaxMp = mana.Max
-        };
-        return true;
-    }
-    
-    public static PlayerDespawnSnapshot BuildPlayerDespawnSnapshot(this World world, Entity entity)
-    {
-        ref var networkId = ref world.Get<NetworkId>(entity);
-        return new PlayerDespawnSnapshot(networkId.Value);
-    }
-    
-    public static bool TryBuildPlayerPositionSnapshot(this World world, Entity entity, out PlayerPositionSnapshot snapshot)
-    {
-        if (!world.IsAlive(entity))
-        {
-            snapshot = default;
-            return false;
-        }
-        ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var position = ref world.Get<Position>(entity);
-
-        snapshot = new PlayerPositionSnapshot
-        {
-            NetworkId = networkId.Value,
-            PositionX = position.X,
-            PositionY = position.Y,
-            PositionZ = position.Z
-        };
-        return true;
-    }
-    
-    public static bool TryBuildPlayerMapChangeSnapshot(this World world, Entity entity, out PlayerMapChangeSnapshot snapshot)
-    {
-        if (!world.IsAlive(entity))
-        {
-            snapshot = default;
-            return false;
-        }
-        ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var mapId = ref world.Get<MapId>(entity);
-        ref var position = ref world.Get<Position>(entity);
-
-        snapshot = new PlayerMapChangeSnapshot
-        {
-            NetworkId = networkId.Value,
-            NewMapId = mapId.Value,
-            PositionX = position.X,
-            PositionY = position.Y,
-            PositionZ = position.Z
         };
         return true;
     }

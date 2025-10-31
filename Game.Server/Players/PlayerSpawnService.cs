@@ -1,6 +1,7 @@
 using Arch.Core;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Examples;
+using Game.ECS.Entities.Repositories;
+using Game.Server.ECS;
 using Game.Server.Sessions;
 
 namespace Game.Server.Players;
@@ -8,7 +9,7 @@ namespace Game.Server.Players;
 /// <summary>
 /// Handles spawning and despawning of player entities within the simulation.
 /// </summary>
-public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<PlayerSpawnService> logger)
+public sealed class PlayerSpawnService(ServerGameSimulation simulation, PlayerIndex playerIndex, ILogger<PlayerSpawnService> logger)
 {
     public Entity SpawnPlayer(PlayerSession session)
     {
@@ -16,7 +17,8 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<
             ?? throw new InvalidOperationException("No character selected for session.");
 
         var entity = simulation.World.CreatePlayer(
-            new PlayerSnapshot(
+            playerIndex,
+            new PlayerData(
             session.Account.Id,
             session.Peer.Id,
             character.Name,
@@ -39,7 +41,8 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<
             character.Stats.MagicAttack,
             character.Stats.PhysicalDefense,
             character.Stats.MagicDefense
-        ), session.Account.Id);
+        ));
+        
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
@@ -59,14 +62,14 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<
         session.Entity = Entity.Null;
     }
 
-    public PlayerSnapshot BuildSnapshot(PlayerSession session)
+    public PlayerData BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        if (!simulation.World.TryBuildPlayerSnapshot(session.Entity, out PlayerSnapshot snapshot))
+        if (!simulation.World.TryBuildPlayerSnapshot(session.Entity, out PlayerData snapshot))
         {
-            return new PlayerSnapshot(
+            return new PlayerData(
                 session.Account.Id,
                 session.Peer.Id,
                 character.Name,

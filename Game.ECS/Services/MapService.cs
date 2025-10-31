@@ -32,6 +32,13 @@ public class MapService : IMapService
         _grids[mapId] = grid;
         _spatials[mapId] = spatial;
     }
+    
+    // Se preferir, exponha um helper para criar map default com layers:
+    public void RegisterMap(int mapId, int width, int height, int layers = 1)
+    {
+        _grids[mapId] = new MapGrid(width, height, layers);
+        _spatials[mapId] = new MapSpatial();
+    }
 
     /// <summary>
     /// Remove um mapa do serviço.

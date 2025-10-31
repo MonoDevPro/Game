@@ -1,20 +1,20 @@
-using System;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
+using Game.ECS.Logic;
 using Game.ECS.Services;
+using Game.ECS.Systems;
 
-namespace Game.ECS.Systems;
+namespace Game.Server.ECS.Systems;
 
 /// <summary>
 /// Sistema responsável pela IA de NPCs e entidades controladas por IA.
 /// Processa movimento, decisões de combate e comportamento de NPCs.
 /// </summary>
-public sealed partial class AISystem(World world, IMapService mapService, CombatSystem combatSystem, GameEventSystem eventSystem)
-    : GameSystem(world, eventSystem)
+public sealed partial class AISystem(World world, IMapService mapService)
+    : GameSystem(world)
 {
     private readonly Random _random = new();
 
@@ -91,13 +91,12 @@ public sealed partial class AISystem(World world, IMapService mapService, Combat
             {
                 combat.InCombat = false;
                 combat.TargetNetworkId = 0;
-                dirty.MarkDirty(DirtyComponentType.Combat);
             }
 
             return;
         }
 
-        if (combatSystem.TryAttack(e, target))
+        if (CombatLogic.TryAttack(World, e, target))
         {
             aiState.CurrentBehavior = AIBehavior.Attack;
             if (World.TryGet(target, out NetworkId netId))
@@ -151,7 +150,7 @@ public sealed partial class AISystem(World world, IMapService mapService, Combat
     /// </summary>
     public bool TryAIAttack(Entity attacker, Entity target)
     {
-        return combatSystem.TryAttack(attacker, target);
+        return CombatLogic.TryAttack(World, attacker, target);
     }
 
     /// <summary>
@@ -172,7 +171,6 @@ public sealed partial class AISystem(World world, IMapService mapService, Combat
         if (World.Has<DirtyFlags>(entity))
         {
             ref DirtyFlags dirty = ref World.Get<DirtyFlags>(entity);
-            dirty.MarkDirty(DirtyComponentType.Combat);
         }
 
         if (World.Has<AIState>(entity))
