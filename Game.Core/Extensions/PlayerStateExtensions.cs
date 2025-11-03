@@ -14,8 +14,7 @@ public static class PlayerStateExtensions
             packet.Position.Z,
             packet.Facing.DirectionX,
             packet.Facing.DirectionY);
-            
-    }
+    }   
     
     public static PlayerStatePacket ToPlayerStatePacket(this PlayerStateData playerStateData)
     {

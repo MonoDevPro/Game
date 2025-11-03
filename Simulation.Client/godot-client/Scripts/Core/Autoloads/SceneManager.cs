@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Godot;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 /// <summary>
 /// Gerenciador centralizado de cenas com transições suaves.

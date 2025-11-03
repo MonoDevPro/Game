@@ -1,12 +1,10 @@
 using System;
 using System.Linq;
-using Game.Network;
 using Game.Network.Abstractions;
 using Godot;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 /// <summary>
 /// Gerenciador de rede do client Godot.

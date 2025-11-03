@@ -55,7 +55,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
                     for (int x = 0; x < width; x++)
                     {
                         var tileType = (x == 0 || y == 0 || x == width - 1 || y == height - 1) ? TileType.Wall : TileType.Floor;
-                        map.SetTile(x, y, 0, new Tile { Type = tileType });
+                        map.SetTile(x, y, 0, new Tile { Type = tileType, CollisionMask = 0 });
                     }
                 }
                 return map;

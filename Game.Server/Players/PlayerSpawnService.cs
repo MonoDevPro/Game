@@ -1,6 +1,5 @@
 using Arch.Core;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Entities.Repositories;
 using Game.Server.ECS;
 using Game.Server.Sessions;
 
@@ -9,16 +8,14 @@ namespace Game.Server.Players;
 /// <summary>
 /// Handles spawning and despawning of player entities within the simulation.
 /// </summary>
-public sealed class PlayerSpawnService(ServerGameSimulation simulation, PlayerIndex playerIndex, ILogger<PlayerSpawnService> logger)
+public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<PlayerSpawnService> logger)
 {
     public Entity SpawnPlayer(PlayerSession session)
     {
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
 
-        var entity = simulation.World.CreatePlayer(
-            playerIndex,
-            new PlayerData(
+        var playerData = new PlayerData(
             session.Account.Id,
             session.Peer.Id,
             character.Name,
@@ -40,9 +37,9 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, PlayerIn
             character.Stats.PhysicalAttack,
             character.Stats.MagicAttack,
             character.Stats.PhysicalDefense,
-            character.Stats.MagicDefense
-        ));
-        
+            character.Stats.MagicDefense);
+
+        var entity = simulation.CreatePlayer(playerData);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
@@ -57,7 +54,7 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, PlayerIn
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
         
-        simulation.World.Destroy(session.Entity);
+        simulation.DestroyPlayer(session.Entity);
         logger.LogInformation("Despawned player {Name}", character.Name);
         session.Entity = Entity.Null;
     }

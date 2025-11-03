@@ -4,17 +4,19 @@ using Godot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 public sealed partial class ServicesManager : Node
 {
     private static ServicesManager? _instance;
     public static ServicesManager Instance => _instance ?? throw new InvalidOperationException("ServicesManager not initialized");
 
-    private IServiceProvider _provider;
+    private IServiceProvider? _provider;
     
-    public ServicesManager()
+    public override void _Ready()
     {
+        base._Ready();
+        
         var services = new ServiceCollection();
         services.AddLogging(builder =>
         {
@@ -30,14 +32,7 @@ public sealed partial class ServicesManager : Node
         services.AddSingleton(GetTree());
         services.AddSingleton(netOptions);
         services.AddNetworking(netOptions);
-
-
         _provider = services.BuildServiceProvider();
-    }
-    
-    public override void _Ready()
-    {
-        base._Ready();
         _instance = this;
         GD.Print("[ServicesManager] Initialized");
     }

@@ -61,13 +61,13 @@ public static partial class EntityFactory
             new DirtyFlags()
         };
         world.SetRange(entity, components);
-        index.AddMapping(data.PlayerId, entity);
+        index.AddMapping(data.NetworkId, entity);
         return entity;
     }
     
-    public static bool TryDestroyPlayer(this World world, PlayerIndex index, int playerId)
+    public static bool TryDestroyPlayer(this World world, PlayerIndex index, int networkId)
     {
-        if (!index.TryGetEntity(playerId, out var entity))
+        if (!index.TryGetEntity(networkId, out var entity))
             return false;
         
         index.RemoveByEntity(entity);

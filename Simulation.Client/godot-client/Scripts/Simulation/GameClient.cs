@@ -1,14 +1,14 @@
 using System;
+using System.Linq;
 using Arch.Core;
 using Game.Core.Extensions;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Godot;
-using GodotClient.Autoloads;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GodotClient.Simulation;
 
@@ -19,17 +19,24 @@ namespace GodotClient.Simulation;
 /// - Registra handlers de rede e encaminha snapshots para a simulação
 /// - Roda o loop de simulação (fixed-timestep) em _Process
 /// </summary>
-public partial class GameScript : Node2D
+public partial class GameClient : Node2D
 {
+    public static GameClient Instance { get; private set; } = null!;
+    public ClientGameSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
+    
     private INetworkManager? _network;
     private ClientGameSimulation? _simulation;
 
     private int _localNetworkId = -1;
     private Label? _statusLabel;
+    
+    private Node2D EntitiesRoot => GetNode<Node2D>("Entities");
 
     public override void _Ready()
     {
         base._Ready();
+        
+        Instance = this;
 
         CreateStatusLabel();
 
@@ -37,7 +44,7 @@ public partial class GameScript : Node2D
         _network = NetworkClient.Instance.NetworkManager;
 
         // 2) Boot de simulação (fornece INetworkManager via DI para os sistemas que precisarem)
-        _simulation = new ClientGameSimulation();
+        _simulation = new ClientGameSimulation(_network);
 
         // 3) Carrega dados iniciais (NetworkId local, snapshot de mapa, etc.)
         LoadGameData();
@@ -61,12 +68,11 @@ public partial class GameScript : Node2D
         if (_network is not null)
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
-
-            _network.UnregisterPacketHandler<PlayerJoinPacket>();
+            
+            _network.UnregisterPacketHandler<PlayerDataPacket>();
             _network.UnregisterPacketHandler<PlayerLeftPacket>();
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerVitalsPacket>();
-            _network.UnregisterPacketHandler<PlayerDataPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -110,15 +116,48 @@ public partial class GameScript : Node2D
                 for (var y = 0; y < height; y++)
                     collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
         }
+        // Registra logs dos mapas
+        GD.Print($"[GameClient] Loaded map '{mapSnap.Value.MapId}' ({width}x{height}x{layers})");
+        GD.Print($"[GameClient] Collision cells: {collisionMasks.Cast<bool>().Count(b => b)}/{width * height * layers}");
         
         var mapGrid = new MapGrid(width, height, layers, collisionMasks);
         var spatial = new MapSpatial();
         
         _simulation?.RegisterMap(mapSnap.Value.MapId, mapGrid, spatial);
         UpdateStatus($"Playing (NetID: {_localNetworkId})");
+        
+        // Carrega visuais dos jogadores
+        LoadPlayerVisuals();
+        
+        
+        GD.Print("[GameClient] Game data loaded");
+    }
+    
+    private void LoadPlayerVisuals()
+    {
+        var gameState = GameStateManager.Instance;
+        if (gameState.CurrentGameData is null) return;
+        
+        var localPlayer = gameState.CurrentGameData.Value.LocalPlayer;
+        var remotePlayers = gameState.CurrentGameData.Value.OtherPlayers;
+        SpawnPlayerVisual(localPlayer.ToPlayerData(), true);
+        
+        foreach (var data in remotePlayers)
+            SpawnPlayerVisual(data.ToPlayerData(), false);
+    }
+    
+    private void SpawnPlayerVisual(in PlayerData data, bool isLocal)
+    {
+        var playerVisual = new PlayerVisual();
+        playerVisual.Name = $"Player_{data.NetworkId}";
+        
+        EntitiesRoot.AddChild(playerVisual);
 
-        // Limpa estado global após carregar (não precisamos manter o snapshot no autoload)
-        gameState.ResetState();
+        Entity entity = isLocal 
+            ? _simulation!.SpawnLocalPlayer(data, playerVisual) 
+            : _simulation!.SpawnRemotePlayer(data, playerVisual);
+
+        playerVisual.UpdateFromSnapshot(data, isLocal);
     }
 
     // ==================== Network Handlers ====================
@@ -140,31 +179,30 @@ public partial class GameScript : Node2D
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
-    
 
     private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
     {
         // Aplica estado autoritativo (posição/facing/speed) na simulação
         _simulation?.ApplyPlayerState(packet.ToPlayerStateData());
+        
+        GD.Print($"[GameClient] Received PlayerStatePacket for NetworkId {packet.NetworkId}");
     }
 
     private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)
     {
         _simulation?.ApplyPlayerVitals(packet.ToPlayerVitalsData());
+        GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
 
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerDataPacket data)
     {
         if (_simulation is null) return;
-        
-        var playerVisual = new PlayerVisual();
-        playerVisual.Name = $"Player_{data.NetworkId}";
-        
-        Entity entity = data.NetworkId == _localNetworkId 
-            ? _simulation.SpawnLocalPlayer(data.ToPlayerData(), playerVisual) 
-            : _simulation.SpawnRemotePlayer(data.ToPlayerData(), playerVisual);
-        
+        var isLocal = data.NetworkId == _localNetworkId;
+        var playerData = data.ToPlayerData();
+        SpawnPlayerVisual(playerData, isLocal);
         UpdateStatus($"{data.Name} joined");
+        
+        GD.Print($"[GameClient] Spawned player '{data.Name}' (NetID: {data.NetworkId})");
     }
     
     private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerLeftPacket packet)
@@ -176,6 +214,8 @@ public partial class GameScript : Node2D
             UpdateStatus("You have been disconnected from the server");
             DisconnectAndReturnToMenu();
         }
+        
+        GD.Print($"[GameClient] Despawned player (NetID: {packet.NetworkId})");
     }
 
     // ==================== UI / Disconnect ====================
@@ -188,9 +228,7 @@ public partial class GameScript : Node2D
 
         // Para rede
         if (_network?.IsRunning == true)
-        {
             _network.Stop();
-        }
 
         _simulation?.Dispose();
 
@@ -227,9 +265,8 @@ public partial class GameScript : Node2D
     private void UpdateStatus(string message)
     {
         if (_statusLabel is not null)
-        {
             _statusLabel.Text = message;
-        }
+        
         GD.Print($"[GameClient] {message}");
     }
 }

@@ -76,7 +76,7 @@ public sealed partial class PlayerVisual : Node2D
         IsLocalPlayer = treatAsLocal;
         LoadSprite(VocationType.Archer, Gender.Male);
         UpdateLabel(data.Name);
-        UpdateFacing(new Vector2I(data.FacingX, data.FacingY));
+        UpdateFacing(new Vector2I(data.FacingX, data.FacingY), false);
         UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
         if (Sprite is not null) UpdateAnimationSpeed(Sprite, data.MovementSpeed);
     }
@@ -120,11 +120,10 @@ public sealed partial class PlayerVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateFacing(Vector2I facing)
+    public void UpdateFacing(Vector2I facing, bool isMoving)
     {
         if (Sprite is null) return;
 
-        bool isMoving = facing.X != 0 || facing.Y != 0;
         UpdateAnimationState(Sprite, facing, isMoving);
     }
     

@@ -3,7 +3,7 @@ using Game.Network.Abstractions;
 using Godot;
 using Microsoft.Extensions.Configuration;
 
-namespace GodotClient.Autoloads;
+namespace GodotClient.Core.Autoloads;
 
 public partial class ConfigManager : Node
 {

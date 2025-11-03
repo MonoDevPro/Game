@@ -7,34 +7,38 @@ using Game.ECS.Logic;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
-namespace Game.Server.ECS.Systems;
+namespace GodotClient.ECS.Systems;
 
-public sealed partial class MovementSystem(World world, IMapService mapService)
+public sealed partial class LocalMovementSystem(World world, IMapService mapService) 
     : GameSystem(world)
 {
-    public MovementSystem(World world)
-        : this(world, new MapService()) { }
-
     [Query]
-    [All<PlayerControlled, Facing, Velocity, DirtyFlags>]
+    [All<LocalPlayerTag, PlayerControlled, Velocity>]
     [None<Dead>]
-    private void ProcessEntityFacing(in Entity e, in Velocity velocity, ref Facing facing, ref DirtyFlags dirty, [Data] float _)
+    private void UpdateVelocity(in Entity e,
+        ref Velocity velocity, in Walkable speed, ref PlayerInput input, [Data] in float _)
     {
-        if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
-        int previousX = facing.DirectionX;
-        int previousY = facing.DirectionY;
-
-        facing.DirectionX = velocity.DirectionX;
-        facing.DirectionY = velocity.DirectionY;
-
-        if (previousX != facing.DirectionX || previousY != facing.DirectionY)
-            dirty.MarkDirty(DirtyComponentType.Facing);
+        var (normalizedX, normalizedY) = MovementLogic.NormalizeInput(input.InputX, input.InputY);
+        velocity.DirectionX = normalizedX;
+        velocity.DirectionY = normalizedY;
+        
+        if (velocity is not { DirectionX: 0, DirectionY: 0 })
+            velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, input.Flags);
     }
     
     [Query]
-    [All<Position, Movement, Velocity, Walkable, DirtyFlags, MapId>]
+    [All<PlayerControlled, LocalPlayerTag, Facing>]
+    private void UpdateFacing(in Entity e, in Velocity velocity, ref Facing facing)
+    {
+        if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
+        facing.DirectionX = velocity.DirectionX;
+        facing.DirectionY = velocity.DirectionY;
+    }
+
+    [Query]
+    [All<LocalPlayerTag, Position, Movement, Velocity, Walkable, MapId>]
     [None<Dead>]
-    private void ProcessMovement(in Entity e, ref Position pos, ref Movement movement, ref Velocity velocity, ref DirtyFlags dirty, in MapId mapId, [Data] float deltaTime)
+    private void ProcessMovement(in Entity e, ref Position pos, ref Movement movement, ref Velocity velocity, in MapId mapId, [Data] float deltaTime)
     {
         if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
         
@@ -56,15 +60,14 @@ public sealed partial class MovementSystem(World world, IMapService mapService)
             spatial.Insert(candidatePos, e);
         }
         pos = candidatePos;
-        dirty.MarkDirty(DirtyComponentType.Position);
     }
-    
+
     [Query]
-    [All<Velocity>]
+    [All<LocalPlayerTag, Velocity>]
     private void DecayVelocity(in Entity e, ref Velocity velocity, [Data] float deltaTime)
     {
         // desacelera velocity gradualmente quando não há input
-        if (velocity is { DirectionX: 0, DirectionY: 0 })
+        if (velocity.DirectionX == 0 && velocity.DirectionY == 0)
         {
             float decayRate = 10f; // unidades por segundo ao quadrado
             velocity.Speed -= decayRate * deltaTime;

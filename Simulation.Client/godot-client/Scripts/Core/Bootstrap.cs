@@ -1,5 +1,5 @@
 using Godot;
-using GodotClient.Autoloads;
+using GodotClient.Core.Autoloads;
 
 namespace GodotClient.Core;
 

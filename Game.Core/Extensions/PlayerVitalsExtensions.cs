@@ -8,7 +8,7 @@ public static class PlayerVitalsExtensions
     public static PlayerVitalsData ToPlayerVitalsData(this PlayerVitalsPacket packet)
     {
         return new PlayerVitalsData(
-            packet.PlayerId,
+            packet.NetworkId,
             packet.Health.Current,
             packet.Health.Max,
             packet.Mana.Current,

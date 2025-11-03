@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
@@ -49,7 +50,22 @@ public sealed class ServerGameSimulation : GameSimulation
         // Sistemas de atualização de entidades
         systems.Add(new ServerSyncSystem(world, _networkManager));
     }
+
+    public Entity CreatePlayer(in PlayerData data)
+    {
+        var entity = World.CreatePlayer(PlayerIndex, data);
+        RegisterSpatial(entity);
+        return entity;
+    }
     
+    public bool DestroyPlayer(Entity entity)
+    {
+        PlayerIndex.RemoveByEntity(entity);
+        UnregisterSpatial(entity);
+        World.Destroy(entity);
+        return true;
+    }
+
     public bool ApplyPlayerInput(Entity e, PlayerInput data)
     {
         ref var input = ref World.Get<PlayerInput>(e);
@@ -58,5 +74,4 @@ public sealed class ServerGameSimulation : GameSimulation
         input.Flags = data.Flags;
         return true;
     }
-    
 }

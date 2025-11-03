@@ -6,6 +6,7 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Adapters;
+using Godot;
 using LiteNetLib;
 
 namespace GodotClient.ECS.Systems;
@@ -13,7 +14,7 @@ namespace GodotClient.ECS.Systems;
 /// <summary>
 /// Sistema responsável por coletar componentes marcados como dirty e emitir atualizações de estado.
 /// </summary>
-public sealed partial class ClientSyncSystem(World world, PacketSender sender) : GameSystem(world)
+public sealed partial class ClientSyncSystem(World world, INetworkManager sender) : GameSystem(world)
 {
     [Query]
     [All<LocalPlayerTag, NetworkId, DirtyFlags>]
@@ -29,7 +30,8 @@ public sealed partial class ClientSyncSystem(World world, PacketSender sender) :
         if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out PlayerInput input))
         {
             var inputPacket = input.ToPlayerInputPacket();
-            sender.SendToServer(ref inputPacket, NetworkChannel.Simulation, DeliveryMethod.ReliableOrdered);
+            sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            GD.PrintErr($"[ClientSyncSystem] Sent PlayerInputPacket: InputX={inputPacket.InputX}, InputY={inputPacket.InputY}, Flags={inputPacket.Flags}");
         }
     }
 }

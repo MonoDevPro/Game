@@ -5,6 +5,6 @@ namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
 public readonly partial record struct PlayerVitalsPacket(
-    int PlayerId,
+    int NetworkId,
     Health Health,
     Mana Mana);

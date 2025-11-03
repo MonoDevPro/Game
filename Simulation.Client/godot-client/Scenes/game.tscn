@@ -1,12 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://cqd358filrk2x"]
+[gd_scene load_steps=2 format=3 uid="uid://cqd358filrk2x"]
 
-[ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/Simulation/GameScript.cs" id="1_wrm1d"]
-[ext_resource type="Script" uid="uid://dwb7ejj0mfxpx" path="res://Scripts/Simulation/Players/PlayerView.cs" id="6_21xkr"]
+[ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/Simulation/GameClient.cs" id="1_qxrlw"]
 
-[node name="Game" type="Node2D"]
-script = ExtResource("1_wrm1d")
-
-[node name="PlayerView" type="Node" parent="."]
-script = ExtResource("6_21xkr")
+[node name="GameClient" type="Node2D"]
+script = ExtResource("1_qxrlw")
 
 [node name="Entities" type="Node2D" parent="."]

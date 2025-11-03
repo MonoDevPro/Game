@@ -7,7 +7,6 @@ using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
 using Godot;
-using GodotClient.Autoloads;
 using GodotClient.Core.Autoloads;
 
 namespace GodotClient.UI.Menu;

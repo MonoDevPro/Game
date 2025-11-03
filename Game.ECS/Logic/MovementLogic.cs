@@ -31,11 +31,10 @@ public static class MovementLogic
     {
         newPosition = current;
 
-        if (vel.DirectionX == 0 && vel.DirectionY == 0) return MovementResult.None;
+        if (vel is { DirectionX: 0, DirectionY: 0 }) return MovementResult.None;
         if (vel.Speed <= 0f) return MovementResult.None;
 
-        float newTimer = movement.Timer + vel.Speed * deltaTime;
-        if (newTimer < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
+        if (movement.Timer < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
 
         // compute candidate
         newPosition = new Position
@@ -56,5 +55,20 @@ public static class MovementLogic
         }
 
         return MovementResult.Allowed;
+    }
+    
+    public static float ComputeCellsPerSecond(in Walkable walkable, in InputFlags flags)
+    {
+        float speed = walkable.BaseSpeed + walkable.CurrentModifier;
+        if (flags.HasFlag(InputFlags.Sprint))
+            speed *= 1.5f;
+        return speed;
+    }
+    
+    public static (sbyte x, sbyte y) NormalizeInput(sbyte inputX, sbyte inputY)
+    {
+        sbyte nx = inputX switch { < 0 => -1, > 0 => 1, _ => 0 };
+        sbyte ny = inputY switch { < 0 => -1, > 0 => 1, _ => 0 };
+        return (nx, ny);
     }
 }

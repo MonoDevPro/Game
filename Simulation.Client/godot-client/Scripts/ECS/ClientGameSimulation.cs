@@ -6,8 +6,7 @@ using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Repositories;
 using Game.ECS.Entities.Updates;
 using Game.ECS.Services;
-using Game.ECS.Systems;
-using Godot;
+using Game.Network.Abstractions;
 using GodotClient.ECS.Components;
 using GodotClient.ECS.Systems;
 using GodotClient.Simulation;
@@ -21,9 +20,12 @@ namespace GodotClient.ECS;
 /// </summary>
 public sealed class ClientGameSimulation : GameSimulation
 {
-    public ClientGameSimulation(IMapService? mapService = null)
+    private INetworkManager NetworkManager { get; }
+    
+    public ClientGameSimulation(INetworkManager networkManager, IMapService? mapService = null)
         : base(mapService ?? new MapService())
     {
+        NetworkManager = networkManager;
         ConfigureSystems(World, Systems);
     }
 
@@ -36,34 +38,62 @@ public sealed class ClientGameSimulation : GameSimulation
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));
         
-        // Sistemas de sincronização com o servidor
+        // Sistemas de movimento com predição local
+        systems.Add(new LocalMovementSystem(world, MapService));
+
+        // Atualização do nó do jogador local (renderização suave entre tiles)
+        systems.Add(new LocalVisualUpdateSystem(world));
+        
+        systems.Add(new AnimationSystem(world));
+        
+        // Sistemas de sincronização com o servidor (remotos interpolados)
         systems.Add(new RemoteInterpolationSystem(world));
+        
+        systems.Add(new ClientSyncSystem(world, NetworkManager));
     }
     
+    public bool HasPlayerEntity(int playerId)
+    {
+        if (PlayerIndex.TryGetEntity(playerId, out var entity))
+            return World.IsAlive(entity);
+        
+        return false;
+    }
+
     public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
     public bool ApplyPlayerState(PlayerStateData data) => World.ApplyPlayerState(PlayerIndex, data);
     public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyPlayerVitals(PlayerIndex, data);
-    public bool DespawnPlayer(int playerId) => World.TryDestroyPlayer(PlayerIndex, playerId);
+    public bool DespawnPlayer(int networkId) => DestroyPlayer(networkId);
     public Entity SpawnLocalPlayer(PlayerData data, PlayerVisual visual) 
-        => CreateLocalPlayer(World, PlayerIndex, data, visual);
+        => CreateLocalPlayer(PlayerIndex, data, visual);
     public Entity SpawnRemotePlayer(PlayerData data, PlayerVisual visual) 
-        => CreateRemotePlayer(World, PlayerIndex, data, visual);
+        => CreateRemotePlayer(PlayerIndex, data, visual);
     
-    private static Entity CreateLocalPlayer(World world, PlayerIndex index, in PlayerData data, PlayerVisual visual)
+    private Entity CreateLocalPlayer(PlayerIndex index, in PlayerData data, PlayerVisual visual)
     {
-        var entity = world.CreatePlayer(index, data);
-        world.Add<LocalPlayerTag, VisualReference>(entity,
+        var entity = World.CreatePlayer(index, data);
+        World.Add<LocalPlayerTag, VisualReference>(entity,
             new LocalPlayerTag(),
             new VisualReference { VisualNode = visual, IsVisible = true });
+        RegisterSpatial(entity);
         return entity;
     }
-    private static Entity CreateRemotePlayer(World world, PlayerIndex index, in PlayerData data, PlayerVisual visual)
+    private Entity CreateRemotePlayer(PlayerIndex index, in PlayerData data, PlayerVisual visual)
     {
-        var entity = world.CreatePlayer(index, data);
-        world.Add<RemotePlayerTag, RemoteInterpolation, VisualReference>(entity,
+        var entity = World.CreatePlayer(index, data);
+        World.Add<RemotePlayerTag, RemoteInterpolation, VisualReference>(entity,
             new RemotePlayerTag(),
             new RemoteInterpolation { LerpAlpha = 0.15f, ThresholdPx = 2f },
             new VisualReference { VisualNode = visual, IsVisible = true });
+        RegisterSpatial(entity);
         return entity;
     }
+    private bool DestroyPlayer(int networkId)
+    {
+        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        UnregisterSpatial(entity);
+        return World.TryDestroyPlayer(PlayerIndex, networkId);;
+    }
+    
 }
