@@ -61,18 +61,4 @@ public sealed partial class LocalMovementSystem(World world, IMapService mapServ
         }
         pos = candidatePos;
     }
-
-    [Query]
-    [All<LocalPlayerTag, Velocity>]
-    private void DecayVelocity(in Entity e, ref Velocity velocity, [Data] float deltaTime)
-    {
-        // desacelera velocity gradualmente quando não há input
-        if (velocity.DirectionX == 0 && velocity.DirectionY == 0)
-        {
-            float decayRate = 10f; // unidades por segundo ao quadrado
-            velocity.Speed -= decayRate * deltaTime;
-            if (velocity.Speed < 0f)
-                velocity.Speed = 0f;
-        }
-    }
 }

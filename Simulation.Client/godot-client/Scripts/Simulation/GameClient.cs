@@ -182,10 +182,10 @@ public partial class GameClient : Node2D
 
     private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
     {
-        // Aplica estado autoritativo (posição/facing/speed) na simulação
+        // ✅ Jogadores remotos aplicam snapshot autoritativo
         _simulation?.ApplyPlayerState(packet.ToPlayerStateData());
-        
-        GD.Print($"[GameClient] Received PlayerStatePacket for NetworkId {packet.NetworkId}");
+    
+        GD.Print($"[GameClient] Applied server state for remote player {packet.NetworkId}");
     }
 
     private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)

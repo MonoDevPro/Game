@@ -17,13 +17,3 @@ public struct VisualReference
     public bool IsVisible;
     public int VisualId;        // ID opcional para lookup
 }
-
-/// <summary>
-/// Dados de interpolao para entidades remotas.
-/// Suaviza a renderizao entre snapshots do servidor.
-/// </summary>
-public struct RemoteInterpolation
-{
-    public float LerpAlpha;     // Fator de interpolao (0..1, tipicamente 0.1-0.2)
-    public float ThresholdPx;   // Limiar em pixels para snap ao alvo
-}

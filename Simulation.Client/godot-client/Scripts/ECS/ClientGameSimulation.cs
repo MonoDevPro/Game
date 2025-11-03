@@ -44,11 +44,11 @@ public sealed class ClientGameSimulation : GameSimulation
         // Atualização do nó do jogador local (renderização suave entre tiles)
         systems.Add(new LocalVisualUpdateSystem(world));
         
-        // Animação do jogador local
-        systems.Add(new LocalAnimationSystem(world));
-        
         // ✅ NOVO: Movimento suave para jogadores remotos
         systems.Add(new RemoteInterpolationSystem(world));
+        
+        // Animação do jogador local
+        systems.Add(new PlayerAnimationSystem(world));
     
         // Sincronização com o servidor
         systems.Add(new ClientSyncSystem(world, NetworkManager));
@@ -83,9 +83,8 @@ public sealed class ClientGameSimulation : GameSimulation
     private Entity CreateRemotePlayer(PlayerIndex index, in PlayerData data, PlayerVisual visual)
     {
         var entity = World.CreatePlayer(index, data);
-        World.Add<RemotePlayerTag, RemoteInterpolation, VisualReference>(entity,
+        World.Add<RemotePlayerTag, VisualReference>(entity,
             new RemotePlayerTag(),
-            new RemoteInterpolation { LerpAlpha = 0.15f, ThresholdPx = 2f },
             new VisualReference { VisualNode = visual, IsVisible = true });
         RegisterSpatial(entity);
         return entity;
