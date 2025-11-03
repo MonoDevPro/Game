@@ -26,10 +26,13 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         var dirtyFlags = dirty;
         dirty.ClearAll();
 
-        if (dirtyFlags.IsDirty(DirtyComponentType.Position | DirtyComponentType.Facing) &&
-            World.TryGet(entity, out Position position) && World.TryGet(entity, out Facing facing))
+        if (dirtyFlags.IsDirty(
+                DirtyComponentType.Position | DirtyComponentType.Facing | DirtyComponentType.Velocity) &&
+            World.TryGet(entity, out Position position) && 
+            World.TryGet(entity, out Facing facing) &&
+            World.TryGet(entity, out Velocity velocity))
         {
-            var updatePacket = new PlayerStatePacket(networkId.Value, position, facing);
+            var updatePacket = new PlayerStatePacket(networkId.Value, position, velocity, facing);
             sender.SendToAll(updatePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
 

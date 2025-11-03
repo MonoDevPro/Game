@@ -7,4 +7,5 @@ namespace Game.Network.Packets.Game;
 public readonly partial record struct PlayerStatePacket(
     int NetworkId,
     Position Position,
+    Velocity Velocity,
     Facing Facing);

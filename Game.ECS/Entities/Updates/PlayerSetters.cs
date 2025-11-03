@@ -13,9 +13,13 @@ public static class PlayerSetters
             return false;
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
+        ref var velocity = ref world.Get<Velocity>(entity);
         position.X = data.PositionX;
         position.Y = data.PositionY;
         position.Z = data.PositionZ;
+        velocity.DirectionX = data.VelocityX;
+        velocity.DirectionY = data.VelocityY;
+        velocity.Speed = data.Speed;
         facing.DirectionX = data.FacingX;
         facing.DirectionY = data.FacingY;
         return true;

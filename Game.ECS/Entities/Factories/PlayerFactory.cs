@@ -25,6 +25,9 @@ public readonly record struct PlayerStateData(
     int PositionX,
     int PositionY,
     int PositionZ,
+    int VelocityX,
+    int VelocityY,
+    float Speed,
     int FacingX,
     int FacingY);
 
@@ -118,6 +121,7 @@ public static partial class EntityFactory
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
+        ref var velocity = ref world.Get<Velocity>(entity);
         
         data = new PlayerStateData
         {
@@ -125,6 +129,9 @@ public static partial class EntityFactory
             PositionX = position.X,
             PositionY = position.Y,
             PositionZ = position.Z,
+            VelocityX = velocity.DirectionX,
+            VelocityY = velocity.DirectionY,
+            Speed = velocity.Speed,
             FacingX = facing.DirectionX,
             FacingY = facing.DirectionY,
         };

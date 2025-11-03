@@ -18,10 +18,29 @@ public sealed partial class InputSystem(World world)
     [All<PlayerControlled, Velocity>]
     [None<Dead>]
     private void ProcessPlayerInput(in Entity e,
-        ref Velocity velocity, in Walkable speed, ref PlayerInput input, [Data] in float _)
+        ref Velocity velocity, in Walkable speed, ref PlayerInput input, ref DirtyFlags dirty, [Data] in float _)
     {
-        (velocity.DirectionX, velocity.DirectionY) = MovementLogic.NormalizeInput(input.InputX, input.InputY);
-        if (velocity is not { DirectionX: 0, DirectionY: 0 })
-            velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, input.Flags);
+        sbyte newDirX = input.InputX;
+        sbyte newDirY = input.InputY;
+
+        // ✅ Se não há input, zera direção
+        if (newDirX == 0 && newDirY == 0)
+        {
+            if (velocity.DirectionX != 0 || velocity.DirectionY != 0 || velocity.Speed != 0f)
+            {
+                velocity.DirectionX = 0;
+                velocity.DirectionY = 0;
+                velocity.Speed = 0f;
+                dirty.MarkDirty(DirtyComponentType.Velocity);
+            }
+        }
+        else
+        {
+            // Atualiza velocity baseado em input
+            velocity.DirectionX = newDirX;
+            velocity.DirectionY = newDirY;
+            velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, in input.Flags);
+            dirty.MarkDirty(DirtyComponentType.Velocity);
+        }
     }
 }

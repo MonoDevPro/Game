@@ -44,11 +44,13 @@ public sealed class ClientGameSimulation : GameSimulation
         // Atualização do nó do jogador local (renderização suave entre tiles)
         systems.Add(new LocalVisualUpdateSystem(world));
         
-        systems.Add(new AnimationSystem(world));
+        // Animação do jogador local
+        systems.Add(new LocalAnimationSystem(world));
         
-        // Sistemas de sincronização com o servidor (remotos interpolados)
+        // ✅ NOVO: Movimento suave para jogadores remotos
         systems.Add(new RemoteInterpolationSystem(world));
-        
+    
+        // Sincronização com o servidor
         systems.Add(new ClientSyncSystem(world, NetworkManager));
     }
     

@@ -9,11 +9,11 @@ using GodotClient.Simulation;
 
 namespace GodotClient.ECS.Systems;
 
-public sealed partial class AnimationSystem(World world)
+public sealed partial class LocalAnimationSystem(World world)
     : GameSystem(world)
 {
     [Query]
-    [All<PlayerControlled>]
+    [All<LocalPlayerTag, PlayerControlled>]
     private void UpdateAnimations(in Entity e, ref VisualReference visual, in Velocity velocity, in Facing facing)
     {
         if (visual.VisualNode is not PlayerVisual player)

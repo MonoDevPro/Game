@@ -12,6 +12,7 @@ public enum DirtyComponentType : ushort
     Mana     = 1 << 2,
     Facing   = 1 << 3,
     Input    = 1 << 4,
+    Velocity = 1 << 5,
 	
     All	     = ushort.MaxValue
 }
