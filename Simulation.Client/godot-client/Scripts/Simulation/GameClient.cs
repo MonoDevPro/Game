@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Arch.Core;
 using Game.Core.Extensions;
+using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
@@ -9,6 +10,7 @@ using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
+using GodotClient.ECS.Components;
 
 namespace GodotClient.Simulation;
 
@@ -113,8 +115,8 @@ public partial class GameClient : Node2D
         {
             var collisionLayer = mapSnap.Value.LoadCollisionLayer(z);
             for (var x = 0; x < width; x++)
-                for (var y = 0; y < height; y++)
-                    collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
+            for (var y = 0; y < height; y++)
+                collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
         }
         // Registra logs dos mapas
         GD.Print($"[GameClient] Loaded map '{mapSnap.Value.MapId}' ({width}x{height}x{layers})");
@@ -182,10 +184,34 @@ public partial class GameClient : Node2D
 
     private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
     {
-        // ✅ Jogadores remotos aplicam snapshot autoritativo
-        _simulation?.ApplyPlayerState(packet.ToPlayerStateData());
+        // Remotos: aplica tudo
+        if (packet.NetworkId != _localNetworkId)
+        {
+            _simulation?.ApplyPlayerState(packet.ToPlayerStateData());
+            return;
+        }
+
+        // Local: reconciliação inteligente
+        if (_simulation is null || !_simulation.TryGetPlayerEntity(packet.NetworkId, out var entity))
+            return;
+
+        ref var localPos = ref _simulation.World.Get<Position>(entity);
+        int deltaX = Math.Abs(localPos.X - packet.Position.X);
+        int deltaY = Math.Abs(localPos.Y - packet.Position.Y);
     
-        GD.Print($"[GameClient] Applied server state for remote player {packet.NetworkId}");
+        const int threshold = 1;
+        if (deltaX > threshold || deltaY > threshold)
+        {
+            // Grande divergência → servidor manda
+            _simulation.World.Get<Movement>(entity).Timer = 0f; // Reset timer
+            _simulation.ApplyPlayerState(packet.ToPlayerStateData());
+        }
+        else
+        {
+            // Pequena divergência → confia no cliente, só atualiza velocity/facing
+            _simulation.World.Get<Velocity>(entity) = packet.Velocity;
+            _simulation.World.Get<Facing>(entity) = packet.Facing;
+        }
     }
 
     private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)

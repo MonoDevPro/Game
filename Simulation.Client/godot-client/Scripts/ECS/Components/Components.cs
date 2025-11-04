@@ -1,3 +1,4 @@
+using Game.ECS.Components;
 using Godot;
 
 namespace GodotClient.ECS.Components;
@@ -17,3 +18,4 @@ public struct VisualReference
     public bool IsVisible;
     public int VisualId;        // ID opcional para lookup
 }
+
