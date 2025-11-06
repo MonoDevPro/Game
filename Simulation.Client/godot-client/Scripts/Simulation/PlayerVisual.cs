@@ -1,5 +1,6 @@
 using System;
 using Game.Domain.Enums;
+using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
 using Godot;
 using GodotClient.Core.Autoloads;
@@ -16,6 +17,7 @@ public sealed partial class PlayerVisual : Node2D
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
+    private FacingEnum _currentFacing = FacingEnum.South;
     
     public static PlayerVisual Create()
     {
@@ -116,22 +118,20 @@ public sealed partial class PlayerVisual : Node2D
 
     public void UpdateFacing(Vector2I facing, bool isMoving)
     {
+        _currentFacing = ConvertToFacingEnum(facing.X, facing.Y);
         if (Sprite is null) return;
-
-        UpdateAnimationState(Sprite, facing, isMoving);
+        UpdateAnimationState(Sprite, isMoving);
     }
     
-    private void UpdateAnimationState(AnimatedSprite2D sprite, Vector2I facing, bool isMoving)
+    private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving)
     {
         // Determina animação baseado no movimento
         string animation = isMoving ? "walk" : "idle";
         
-        FacingEnum facingEnum = ConvertToFacingEnum(facing.X, facing.Y);
-        
         // Atualiza direção (flip horizontal se necessário)
-        sprite.FlipH = facingEnum == FacingEnum.West;
+        sprite.FlipH = _currentFacing == FacingEnum.West;
         
-        string animName = facingEnum switch
+        string animName = _currentFacing switch
         {
             FacingEnum.South or FacingEnum.SouthEast or FacingEnum.SouthWest => $"{animation}_south",
             FacingEnum.North or FacingEnum.NorthEast or FacingEnum.NorthWest => $"{animation}_north",
@@ -144,6 +144,36 @@ public sealed partial class PlayerVisual : Node2D
         
         sprite.Animation = animName;
         sprite.Play();
+    }
+    
+    public void PlayAttackAnimation(AttackAnimationType animationType)
+    {
+        if (Sprite is null) 
+            return;
+
+        string animName = animationType switch
+        {
+            AttackAnimationType.Basic => "attack",
+            AttackAnimationType.Heavy => "attack",
+            AttackAnimationType.Critical => "attack",
+            AttackAnimationType.Magic => "attack",
+            _ => "attack"
+        };
+        
+        Sprite.FlipH = _currentFacing == FacingEnum.West;
+        animName = _currentFacing switch
+        {
+            FacingEnum.South or FacingEnum.SouthEast or FacingEnum.SouthWest => $"{animName}_south",
+            FacingEnum.North or FacingEnum.NorthEast or FacingEnum.NorthWest => $"{animName}_north",
+            FacingEnum.East or FacingEnum.West => $"{animName}_side",
+            _ => $"{animName}_south",
+        };
+
+        if (Sprite.Animation == animName) 
+            return;
+        
+        Sprite.Animation = animName;
+        Sprite.Play();
     }
     
     private FacingEnum ConvertToFacingEnum(int facingX, int facingY)

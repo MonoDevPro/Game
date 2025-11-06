@@ -6,13 +6,14 @@ namespace Game.ECS.Components;
 [Flags]
 public enum DirtyComponentType : ushort
 {
-    None     = 0,
-    Position = 1 << 0,
-    Health   = 1 << 1,
-    Mana     = 1 << 2,
-    Facing   = 1 << 3,
-    Input    = 1 << 4,
-    Velocity = 1 << 5,
+    None          = 0,
+    Position      = 1 << 0,
+    Health        = 1 << 1,
+    Mana          = 1 << 2,
+    Facing        = 1 << 3,
+    Input         = 1 << 4,
+    Velocity      = 1 << 5,
+    CombatState   = 1 << 6,
 	
     All	     = ushort.MaxValue
 }

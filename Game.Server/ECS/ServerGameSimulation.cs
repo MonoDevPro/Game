@@ -42,7 +42,7 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new HealthSystem(world));
         
         // Sistemas de combate
-        systems.Add(new CombatSystem(world));
+        systems.Add(new CombatSystem(world, MapService));
         
         // Sistemas de IA
         systems.Add(new AISystem(world, MapService));

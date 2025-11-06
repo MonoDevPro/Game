@@ -32,15 +32,33 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             World.TryGet(entity, out Facing facing) &&
             World.TryGet(entity, out Velocity velocity))
         {
-            var updatePacket = new PlayerStatePacket(networkId.Value, position, velocity, facing);
+            var updatePacket = new StatePacket(networkId.Value, position, velocity, facing);
             sender.SendToAll(updatePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
 
         if (dirtyFlags.IsDirty(DirtyComponentType.Health | DirtyComponentType.Mana) &&
             World.TryGet(entity, out Health health) && World.TryGet(entity, out Mana mana))
         {
-            var updatePacket = new PlayerVitalsPacket(networkId.Value, health, mana);
+            var updatePacket = new VitalsPacket(networkId.Value, health, mana);
             sender.SendToAll(updatePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
+        
+        // ← NOVO: Sincronizar ataques
+        if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
+            World.TryGet(entity, out CombatState combat) &&
+            World.TryGet(entity, out AttackAnimation attackAnim) &&
+            attackAnim.IsActive)
+        {
+            var attackPacket = new AttackPacket(
+                networkId.Value,
+                attackAnim.DefenderNetworkId,
+                attackAnim.Damage,
+                attackAnim.WasHit,
+                attackAnim.RemainingDuration,
+                attackAnim.AnimationType);
+
+            sender.SendToAll(attackPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        }
+        
     }
 }

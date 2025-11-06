@@ -88,10 +88,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
                 aiState.CurrentBehavior = AIBehavior.Wander;
 
             if (combat.InCombat)
-            {
                 combat.InCombat = false;
-                combat.TargetNetworkId = 0;
-            }
 
             return;
         }
@@ -165,7 +162,6 @@ public sealed partial class AISystem(World world, IMapService mapService)
             return;
 
         combat.InCombat = false;
-        combat.TargetNetworkId = 0;
         World.Set(entity, combat);
 
         if (World.Has<DirtyFlags>(entity))

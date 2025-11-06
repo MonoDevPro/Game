@@ -52,13 +52,11 @@ public static class CombatLogic
         float attacksPerSecond = baseSpeed * modifier;
         combat.LastAttackTime = 1f / attacksPerSecond;
         combat.InCombat = true;
-        combat.TargetNetworkId = world.TryGet(target, out NetworkId netId) ? netId.Value : 0;
         world.Set(attacker, combat);
 
         int damage = CalculateDamage(attackPower, defense);
         if (ApplyDamageInternal(world, target, damage, attacker))
             return true;
-
         return false;
     }
 

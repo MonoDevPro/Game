@@ -21,6 +21,7 @@ public sealed class ClientGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
     private readonly IMapService? _mapService;
+    private ClientVisualSyncSystem? _visualSyncSystem;
 
     /// <summary>
     /// Exemplo de uso do ECS como CLIENTE.
@@ -44,11 +45,9 @@ public sealed class ClientGameSimulation : GameSimulation
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));
         
-        // ✅ NOVO: Movimento suave para jogadores remotos
-        systems.Add(new PlayerInterpolationSystem(world));
-        
-        // Animação do jogador local
-        systems.Add(new PlayerAnimationSystem(world));
+        // Sync de nós visuais
+        _visualSyncSystem = new ClientVisualSyncSystem(world, GameClient.Instance.EntitiesRoot);
+        systems.Add(_visualSyncSystem);
     
         // Sincronização com o servidor
         systems.Add(new NetworkSyncSystem(world, _networkManager));
@@ -66,32 +65,27 @@ public sealed class ClientGameSimulation : GameSimulation
     private Entity CreateLocalPlayer(in PlayerData data, PlayerVisual visual)
     {
         var entity = World.CreatePlayer(PlayerIndex, data);
-        World.Add<LocalPlayerTag, VisualReference>(entity,
-            new LocalPlayerTag(),
-            new VisualReference { VisualNode = visual, IsVisible = true });
+        World.Add<LocalPlayerTag>(entity, new LocalPlayerTag());
         RegisterSpatial(entity);
+        _visualSyncSystem?.RegisterVisual(data.NetworkId, visual);
+        visual.UpdateFromSnapshot(data);
         return entity;
     }
     private Entity CreateRemotePlayer(in PlayerData data, PlayerVisual visual)
     {
         var entity = World.CreatePlayer(PlayerIndex, data);
-        World.Add<RemotePlayerTag, VisualReference>(entity,
-            new RemotePlayerTag(),
-            new VisualReference { VisualNode = visual, IsVisible = true });
+        World.Add<RemotePlayerTag>(entity, new RemotePlayerTag());
         RegisterSpatial(entity);
+        _visualSyncSystem?.RegisterVisual(data.NetworkId, visual);
+        visual.UpdateFromSnapshot(data);
         return entity;
     }
     private bool DestroyPlayer(int networkId)
     {
         if (!PlayerIndex.TryGetEntity(networkId, out var entity))
             return false;
-        
         UnregisterSpatial(entity);
-        
-        if (World.Has<VisualReference>(entity))
-            World.Get<VisualReference>(entity).VisualNode.QueueFree();
-        
+        _visualSyncSystem?.UnregisterVisual(networkId);
         return World.TryDestroyPlayer(PlayerIndex, networkId);;
     }
-    
 }

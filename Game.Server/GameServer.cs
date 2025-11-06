@@ -301,7 +301,7 @@ public sealed class GameServer : IDisposable
             _security?.RemovePeer(peer);
 
             // ✅ Notifica outros jogadores sobre o despawn
-            var packet = new PlayerLeftPacket(peer.Id);
+            var packet = new LeftPacket(peer.Id);
             _networkManager.SendToAll(
                 packet, 
                 NetworkChannel.Simulation, 

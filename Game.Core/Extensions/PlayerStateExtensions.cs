@@ -5,7 +5,7 @@ namespace Game.Core.Extensions;
 
 public static class PlayerStateExtensions
 {
-    public static PlayerStateData ToPlayerStateData(this PlayerStatePacket packet)
+    public static PlayerStateData ToPlayerStateData(this StatePacket packet)
     {
         return new PlayerStateData(
             packet.NetworkId,
@@ -19,9 +19,9 @@ public static class PlayerStateExtensions
             packet.Facing.DirectionY);
     }   
     
-    public static PlayerStatePacket ToPlayerStatePacket(this PlayerStateData playerStateData)
+    public static StatePacket ToPlayerStatePacket(this PlayerStateData playerStateData)
     {
-        return new PlayerStatePacket(
+        return new StatePacket(
             playerStateData.NetworkId,
             new ECS.Components.Position
             {

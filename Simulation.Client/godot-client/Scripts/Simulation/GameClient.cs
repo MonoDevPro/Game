@@ -32,7 +32,7 @@ public partial class GameClient : Node2D
     private int _localNetworkId = -1;
     private Label? _statusLabel;
     
-    private Node2D EntitiesRoot => GetNode<Node2D>("Entities");
+    public Node2D EntitiesRoot => GetNode<Node2D>("Entities");
 
     public override void _Ready()
     {
@@ -72,9 +72,10 @@ public partial class GameClient : Node2D
             _network.OnPeerDisconnected -= OnPeerDisconnected;
             
             _network.UnregisterPacketHandler<PlayerDataPacket>();
-            _network.UnregisterPacketHandler<PlayerLeftPacket>();
-            _network.UnregisterPacketHandler<PlayerStatePacket>();
-            _network.UnregisterPacketHandler<PlayerVitalsPacket>();
+            _network.UnregisterPacketHandler<LeftPacket>();
+            _network.UnregisterPacketHandler<StatePacket>();
+            _network.UnregisterPacketHandler<VitalsPacket>();
+            _network.UnregisterPacketHandler<AttackPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -150,18 +151,16 @@ public partial class GameClient : Node2D
     
     private void SpawnPlayerVisual(in PlayerData data, bool isLocal)
     {
-        var playerVisual = PlayerVisual.Create();
-        playerVisual.Name = $"Player_{data.NetworkId}";
+        
         
         GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {isLocal})");
         
-        EntitiesRoot.AddChild(playerVisual);
-
+        var playerVisual = PlayerVisual.Create();
+        playerVisual.Name = $"Player_{data.NetworkId}";
         Entity entity = isLocal 
             ? _simulation!.SpawnLocalPlayer(data, playerVisual) 
             : _simulation!.SpawnRemotePlayer(data, playerVisual);
 
-        playerVisual.UpdateFromSnapshot(data);
     }
 
     // ==================== Network Handlers ====================
@@ -177,14 +176,15 @@ public partial class GameClient : Node2D
         _network.OnPeerDisconnected += OnPeerDisconnected;
         
         _network.RegisterPacketHandler<PlayerDataPacket>(HandlePlayerSpawn);
-        _network.RegisterPacketHandler<PlayerLeftPacket>(HandlePlayerDespawn);
-        _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
-        _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
+        _network.RegisterPacketHandler<LeftPacket>(HandlePlayerDespawn);
+        _network.RegisterPacketHandler<StatePacket>(HandlePlayerState);
+        _network.RegisterPacketHandler<VitalsPacket>(HandlePlayerVitals);
+        _network.RegisterPacketHandler<AttackPacket>(HandleAttackPacket);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
 
-    private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
+    private void HandlePlayerState(INetPeerAdapter peer, ref StatePacket packet)
     {
         // Remotos: aplica tudo
         if (packet.NetworkId != _localNetworkId)
@@ -216,7 +216,7 @@ public partial class GameClient : Node2D
         }
     }
 
-    private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)
+    private void HandlePlayerVitals(INetPeerAdapter peer, ref VitalsPacket packet)
     {
         _simulation?.ApplyPlayerVitals(packet.ToPlayerVitalsData());
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
@@ -233,7 +233,7 @@ public partial class GameClient : Node2D
         GD.Print($"[GameClient] Spawned player '{data.Name}' (NetID: {data.NetworkId})");
     }
     
-    private void HandlePlayerDespawn(INetPeerAdapter peer, ref PlayerLeftPacket packet)
+    private void HandlePlayerDespawn(INetPeerAdapter peer, ref LeftPacket packet)
     {
         _simulation?.DespawnPlayer(packet.NetworkId);
         if (packet.NetworkId == _localNetworkId)
@@ -244,6 +244,33 @@ public partial class GameClient : Node2D
         }
         
         GD.Print($"[GameClient] Despawned player (NetID: {packet.NetworkId})");
+    }
+    
+    private void HandleAttackPacket(INetPeerAdapter peer, ref AttackPacket packet)
+    {
+        var simulation = _simulation ?? throw new InvalidOperationException("Simulation not initialized");
+    
+        // Encontra o atacante
+        if (!simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attacker))
+            return;
+
+        // Encontra o defensor
+        if (!simulation.TryGetPlayerEntity(packet.DefenderNetworkId, out var defender))
+            return;
+
+        // Adiciona componente de animação de ataque ao atacante
+        var attackAnim = new AttackAnimation
+        {
+            DefenderNetworkId = packet.DefenderNetworkId,
+            RemainingDuration = packet.AttackDuration,
+            Damage = packet.Damage,
+            WasHit = packet.WasHit,
+            AnimationType = packet.AnimationType
+        };
+
+        simulation.World.Add(attacker, attackAnim);
+
+        GD.Print($"[GameClient] Attack animation: {packet.AttackerNetworkId} -> {packet.DefenderNetworkId}, Damage: {packet.Damage}");
     }
 
     // ==================== UI / Disconnect ====================
