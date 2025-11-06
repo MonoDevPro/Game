@@ -5,32 +5,32 @@ namespace Game.Core.Extensions;
 
 public static class PlayerDataExtensions
 {
-    public static PlayerDataPacket ToPlayerDataPacket(this PlayerData playerDataPacket)
+    public static PlayerDataPacket ToPlayerDataPacket(this PlayerData playerData)
     {
         return new PlayerDataPacket(
-            playerDataPacket.PlayerId,
-            playerDataPacket.NetworkId,
-            playerDataPacket.Name,
-            playerDataPacket.Gender,
-            playerDataPacket.Vocation,
-            playerDataPacket.SpawnX,
-            playerDataPacket.SpawnY,
-            playerDataPacket.SpawnZ,
-            playerDataPacket.FacingX,
-            playerDataPacket.FacingY,
-            playerDataPacket.Hp,
-            playerDataPacket.MaxHp,
-            playerDataPacket.HpRegen,
-            playerDataPacket.Mp,
-            playerDataPacket.MaxMp,
-            playerDataPacket.MpRegen,
-            playerDataPacket.MovementSpeed,
-            playerDataPacket.AttackSpeed,
-            playerDataPacket.PhysicalAttack,
-            playerDataPacket.MagicAttack,
-            playerDataPacket.PhysicalDefense,
-            playerDataPacket.MagicDefense,
-            playerDataPacket.MapId);
+            playerData.PlayerId,
+            playerData.NetworkId,
+            playerData.Name,
+            playerData.Gender,
+            playerData.Vocation,
+            playerData.SpawnX,
+            playerData.SpawnY,
+            playerData.SpawnZ,
+            playerData.FacingX,
+            playerData.FacingY,
+            playerData.Hp,
+            playerData.MaxHp,
+            playerData.HpRegen,
+            playerData.Mp,
+            playerData.MaxMp,
+            playerData.MpRegen,
+            playerData.MovementSpeed,
+            playerData.AttackSpeed,
+            playerData.PhysicalAttack,
+            playerData.MagicAttack,
+            playerData.PhysicalDefense,
+            playerData.MagicDefense,
+            playerData.MapId);
     }
 
     public static PlayerData ToPlayerData(this PlayerDataPacket packet)

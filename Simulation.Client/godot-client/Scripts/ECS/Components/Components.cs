@@ -19,3 +19,8 @@ public struct VisualReference
     public int VisualId;        // ID opcional para lookup
 }
 
+public struct SpriteReference
+{
+    public AnimatedSprite2D SpriteNode; // AnimatedSprite2D no Godot
+    public int SpriteId;              // ID opcional para lookup
+}

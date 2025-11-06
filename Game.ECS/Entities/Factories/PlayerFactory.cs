@@ -40,7 +40,7 @@ public readonly record struct PlayerVitalsData(
 
 public static partial class EntityFactory
 {
-    public static Entity CreatePlayer(this World world, PlayerIndex index, in PlayerData data)
+    public static Entity CreatePlayer(this World world, PlayerIndex? index, in PlayerData data)
     {
         var entity = world.Create(GameArchetypes.PlayerCharacter);
         var components = new object[]
@@ -64,7 +64,7 @@ public static partial class EntityFactory
             new DirtyFlags()
         };
         world.SetRange(entity, components);
-        index.AddMapping(data.NetworkId, entity);
+        index?.AddMapping(data.NetworkId, entity);
         return entity;
     }
     
@@ -72,7 +72,6 @@ public static partial class EntityFactory
     {
         if (!index.TryGetEntity(networkId, out var entity))
             return false;
-        
         index.RemoveByEntity(entity);
         world.Destroy(entity);
         return true;

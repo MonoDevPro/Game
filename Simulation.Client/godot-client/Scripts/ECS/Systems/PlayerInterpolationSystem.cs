@@ -9,18 +9,18 @@ using GodotClient.ECS.Components;
 namespace GodotClient.ECS.Systems;
 
 /// <summary>
-/// Sistema de interpolação VISUAL para jogadores remotos.
+/// Sistema de interpolação VISUAL para jogadores.
 /// NÃO modifica componentes lógicos (Position, Velocity, Facing).
 /// Apenas atualiza a posição visual do node.
 /// </summary>
-public sealed partial class RemoteInterpolationSystem(World world)
+public sealed partial class PlayerInterpolationSystem(World world)
     : GameSystem(world)
 {
     private const float PixelsPerCell = 32f;
     private const float LerpSpeed = 0.15f;
 
     [Query]
-    [All<RemotePlayerTag, Position, Velocity, VisualReference>]
+    [All<PlayerControlled, Position, Velocity, VisualReference>]
     private void InterpolatePosition(
         in Entity e, 
         in Position pos, 
@@ -49,9 +49,7 @@ public sealed partial class RemoteInterpolationSystem(World world)
         // Snap quando muito próximo
         const float snapThreshold = 2f;
         if (current.DistanceSquaredTo(target) <= snapThreshold * snapThreshold)
-        {
             node.VisualNode.GlobalPosition = target;
-        }
     }
     
     // ❌ REMOVIDO: UpdateFacing e UpdateAnimations

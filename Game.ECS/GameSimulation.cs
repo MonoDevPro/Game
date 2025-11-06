@@ -53,9 +53,6 @@ public abstract class GameSimulation : GameSystem
     public uint CurrentTick { get; private set; }
     
     protected readonly IMapService MapService;
-    
-    protected readonly EventBus EventBus = new();
-    
     protected readonly PlayerIndex PlayerIndex = new();
     
     protected GameSimulation(IMapService mapService) : this(
@@ -97,7 +94,7 @@ public abstract class GameSimulation : GameSystem
     public override void BeforeUpdate(in float t) => throw new NotImplementedException();
     public override void AfterUpdate(in float t) => throw new NotImplementedException();
     
-    protected void RegisterSpatial(Entity entity)
+    public void RegisterSpatial(Entity entity)
     {
         if (!World.Has<Position>(entity))
             return;
@@ -120,7 +117,7 @@ public abstract class GameSimulation : GameSystem
         spatial.Insert(position, entity);
     }
 
-    protected void UnregisterSpatial(Entity entity)
+    public void UnregisterSpatial(Entity entity)
     {
         if (!World.Has<Position>(entity))
             return;

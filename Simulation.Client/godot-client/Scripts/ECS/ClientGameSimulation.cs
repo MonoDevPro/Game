@@ -3,7 +3,6 @@ using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Entities.Repositories;
 using Game.ECS.Entities.Updates;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
@@ -20,12 +19,19 @@ namespace GodotClient.ECS;
 /// </summary>
 public sealed class ClientGameSimulation : GameSimulation
 {
-    private INetworkManager NetworkManager { get; }
-    
-    public ClientGameSimulation(INetworkManager networkManager, IMapService? mapService = null)
-        : base(mapService ?? new MapService())
+    private readonly INetworkManager _networkManager;
+    private readonly IMapService? _mapService;
+
+    /// <summary>
+    /// Exemplo de uso do ECS como CLIENTE.
+    /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
+    /// Estado autorizado vem do servidor.
+    /// </summary>
+    public ClientGameSimulation(INetworkManager networkManager, 
+        IMapService? mapService = null) : base(mapService ??= new MapService())
     {
-        NetworkManager = networkManager;
+        _networkManager = networkManager;
+        _mapService = mapService;
         ConfigureSystems(World, Systems);
     }
 
@@ -39,19 +45,16 @@ public sealed class ClientGameSimulation : GameSimulation
         systems.Add(new GodotInputSystem(world));
         
         // Sistemas de movimento com predição local
-        systems.Add(new LocalMovementSystem(world, MapService));
+        systems.Add(new LocalMovementSystem(world, _mapService));
 
-        // Atualização do nó do jogador local (renderização suave entre tiles)
-        systems.Add(new LocalVisualUpdateSystem(world));
-        
         // ✅ NOVO: Movimento suave para jogadores remotos
-        systems.Add(new RemoteInterpolationSystem(world));
+        systems.Add(new PlayerInterpolationSystem(world));
         
         // Animação do jogador local
         systems.Add(new PlayerAnimationSystem(world));
     
         // Sincronização com o servidor
-        systems.Add(new ClientSyncSystem(world, NetworkManager));
+        systems.Add(new ClientSyncSystem(world, _networkManager));
     }
     
     public bool HasPlayerEntity(int playerId)
@@ -67,22 +70,22 @@ public sealed class ClientGameSimulation : GameSimulation
     public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyPlayerVitals(PlayerIndex, data);
     public bool DespawnPlayer(int networkId) => DestroyPlayer(networkId);
     public Entity SpawnLocalPlayer(PlayerData data, PlayerVisual visual) 
-        => CreateLocalPlayer(PlayerIndex, data, visual);
+        => CreateLocalPlayer(data, visual);
     public Entity SpawnRemotePlayer(PlayerData data, PlayerVisual visual) 
-        => CreateRemotePlayer(PlayerIndex, data, visual);
+        => CreateRemotePlayer(data, visual);
     
-    private Entity CreateLocalPlayer(PlayerIndex index, in PlayerData data, PlayerVisual visual)
+    private Entity CreateLocalPlayer(in PlayerData data, PlayerVisual visual)
     {
-        var entity = World.CreatePlayer(index, data);
+        var entity = World.CreatePlayer(PlayerIndex, data);
         World.Add<LocalPlayerTag, VisualReference>(entity,
             new LocalPlayerTag(),
             new VisualReference { VisualNode = visual, IsVisible = true });
         RegisterSpatial(entity);
         return entity;
     }
-    private Entity CreateRemotePlayer(PlayerIndex index, in PlayerData data, PlayerVisual visual)
+    private Entity CreateRemotePlayer(in PlayerData data, PlayerVisual visual)
     {
-        var entity = World.CreatePlayer(index, data);
+        var entity = World.CreatePlayer(PlayerIndex, data);
         World.Add<RemotePlayerTag, VisualReference>(entity,
             new RemotePlayerTag(),
             new VisualReference { VisualNode = visual, IsVisible = true });
@@ -93,7 +96,12 @@ public sealed class ClientGameSimulation : GameSimulation
     {
         if (!PlayerIndex.TryGetEntity(networkId, out var entity))
             return false;
+        
         UnregisterSpatial(entity);
+        
+        if (World.Has<VisualReference>(entity))
+            World.Get<VisualReference>(entity).VisualNode.QueueFree();
+        
         return World.TryDestroyPlayer(PlayerIndex, networkId);;
     }
     

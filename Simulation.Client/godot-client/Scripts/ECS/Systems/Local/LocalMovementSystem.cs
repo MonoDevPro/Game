@@ -9,7 +9,7 @@ using Game.ECS.Systems;
 
 namespace GodotClient.ECS.Systems;
 
-public sealed partial class LocalMovementSystem(World world, IMapService mapService) 
+public sealed partial class LocalMovementSystem(World world, IMapService? mapService) 
     : GameSystem(world)
 {
     [Query]
@@ -27,15 +27,6 @@ public sealed partial class LocalMovementSystem(World world, IMapService mapServ
     }
     
     [Query]
-    [All<PlayerControlled, LocalPlayerTag, Facing>]
-    private void UpdateFacing(in Entity e, in Velocity velocity, ref Facing facing)
-    {
-        if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
-        facing.DirectionX = velocity.DirectionX;
-        facing.DirectionY = velocity.DirectionY;
-    }
-
-    [Query]
     [All<LocalPlayerTag, Position, Movement, Velocity, Walkable, MapId>]
     [None<Dead>]
     private void ProcessMovement(in Entity e, ref Position pos, ref Movement movement, ref Velocity velocity, in MapId mapId, [Data] float deltaTime)
@@ -43,8 +34,8 @@ public sealed partial class LocalMovementSystem(World world, IMapService mapServ
         if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
         
         movement.Timer += velocity.Speed * deltaTime;
-        var grid = mapService.GetMapGrid(mapId.Value);
-        var spatial = mapService.GetMapSpatial(mapId.Value);
+        var grid = mapService?.GetMapGrid(mapId.Value);
+        var spatial = mapService?.GetMapSpatial(mapId.Value);
         
         if (MovementLogic.TryComputeStep(e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos) 
             != MovementLogic.MovementResult.Allowed)
@@ -54,7 +45,7 @@ public sealed partial class LocalMovementSystem(World world, IMapService mapServ
             movement.Timer -= SimulationConfig.CellSize;
 
         // movimento permitido ->
-        if (!spatial.Update(pos, candidatePos, e))
+        if (spatial is not null && !spatial.Update(pos, candidatePos, e))
         {
             spatial.Remove(pos, e);
             spatial.Insert(candidatePos, e);

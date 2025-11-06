@@ -8,12 +8,6 @@ public class MapService : IMapService
     private readonly Dictionary<int, IMapGrid> _grids = [];
     private readonly Dictionary<int, IMapSpatial> _spatials = [];
 
-    public MapService()
-    {
-        // Inicializa com um mapa padrão (ID 0)
-        RegisterMap(0, new MapGrid(100, 100), new MapSpatial());
-    }
-
     public IMapGrid GetMapGrid(int mapId) => 
         _grids.TryGetValue(mapId, out var grid) 
         ? grid 

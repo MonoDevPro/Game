@@ -11,15 +11,15 @@ namespace GodotClient.Simulation;
 /// Autor: MonoDevPro
 /// Data da Refatoração: 2025-10-14
 /// </summary>
-public sealed partial class PlayerVisual : Node2D
+public sealed partial class NpcVisual : Node2D
 {
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
     
-    public static PlayerVisual Create()
+    public static NpcVisual Create()
     {
-        return GD.Load<PackedScene>("res://Scenes/Prefabs/PlayerVisual.tscn").Instantiate<PlayerVisual>();
+        return GD.Load<PackedScene>("res://Scenes/Prefabs/NpcVisual.tscn").Instantiate<NpcVisual>();
     }
     
     public override void _Ready()
@@ -31,14 +31,14 @@ public sealed partial class PlayerVisual : Node2D
         
         if (Sprite == null)
         {
-            GD.PrintErr("[PlayerVisual] AnimatedSprite2D node not found!");
-            Sprite = new AnimatedSprite2D { Name = "Sprite", Position = Vector2.Zero, Centered = true };
+            GD.PrintErr("[NpcVisual] AnimatedSprite2D node not found!");
+            Sprite = new AnimatedSprite2D { Name = "AnimatedSprite2D", Position = Vector2.Zero, Centered = true };
             AddChild(Sprite);
         }
 
         if (NameLabel == null)
         {
-            GD.PrintErr("[PlayerVisual] NameLabel node not found!");
+            GD.PrintErr("[NpcVisual] NameLabel node not found!");
             NameLabel = new Label
             {
                 Name = "NameLabel",
@@ -52,7 +52,7 @@ public sealed partial class PlayerVisual : Node2D
 
         if (HealthBar == null)
         {
-            GD.PrintErr("[PlayerVisual] HealthBar node not found!");
+            GD.PrintErr("[NpcVisual] HealthBar node not found!");
             HealthBar = new ProgressBar
             {
                 Name = "HealthBar",

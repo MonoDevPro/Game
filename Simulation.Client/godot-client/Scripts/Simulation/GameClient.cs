@@ -150,8 +150,10 @@ public partial class GameClient : Node2D
     
     private void SpawnPlayerVisual(in PlayerData data, bool isLocal)
     {
-        var playerVisual = new PlayerVisual();
+        var playerVisual = PlayerVisual.Create();
         playerVisual.Name = $"Player_{data.NetworkId}";
+        
+        GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {isLocal})");
         
         EntitiesRoot.AddChild(playerVisual);
 
@@ -159,7 +161,7 @@ public partial class GameClient : Node2D
             ? _simulation!.SpawnLocalPlayer(data, playerVisual) 
             : _simulation!.SpawnRemotePlayer(data, playerVisual);
 
-        playerVisual.UpdateFromSnapshot(data, isLocal);
+        playerVisual.UpdateFromSnapshot(data);
     }
 
     // ==================== Network Handlers ====================
@@ -198,9 +200,9 @@ public partial class GameClient : Node2D
         ref var localPos = ref _simulation.World.Get<Position>(entity);
         int deltaX = Math.Abs(localPos.X - packet.Position.X);
         int deltaY = Math.Abs(localPos.Y - packet.Position.Y);
-    
+        
         const int threshold = 1;
-        if (deltaX > threshold || deltaY > threshold)
+        if (deltaX >= threshold || deltaY >= threshold)
         {
             // Grande divergência → servidor manda
             _simulation.World.Get<Movement>(entity).Timer = 0f; // Reset timer
