@@ -44,9 +44,6 @@ public sealed class ClientGameSimulation : GameSimulation
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));
         
-        // Sistemas de movimento com predição local
-        systems.Add(new LocalMovementSystem(world, _mapService));
-
         // ✅ NOVO: Movimento suave para jogadores remotos
         systems.Add(new PlayerInterpolationSystem(world));
         
@@ -54,17 +51,9 @@ public sealed class ClientGameSimulation : GameSimulation
         systems.Add(new PlayerAnimationSystem(world));
     
         // Sincronização com o servidor
-        systems.Add(new ClientSyncSystem(world, _networkManager));
+        systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
-    public bool HasPlayerEntity(int playerId)
-    {
-        if (PlayerIndex.TryGetEntity(playerId, out var entity))
-            return World.IsAlive(entity);
-        
-        return false;
-    }
-
     public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
     public bool ApplyPlayerState(PlayerStateData data) => World.ApplyPlayerState(PlayerIndex, data);
     public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyPlayerVitals(PlayerIndex, data);

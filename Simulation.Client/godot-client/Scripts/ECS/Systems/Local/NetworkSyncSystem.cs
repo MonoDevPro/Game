@@ -14,7 +14,7 @@ namespace GodotClient.ECS.Systems;
 /// <summary>
 /// Sistema responsável por coletar componentes marcados como dirty e emitir atualizações de estado.
 /// </summary>
-public sealed partial class ClientSyncSystem(World world, INetworkManager sender) : GameSystem(world)
+public sealed partial class NetworkSyncSystem(World world, INetworkManager sender) : GameSystem(world)
 {
     [Query]
     [All<LocalPlayerTag, NetworkId, DirtyFlags>]

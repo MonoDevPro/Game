@@ -41,10 +41,15 @@ public sealed partial class MovementSystem(World world, IMapService mapService)
         movement.Timer += velocity.Speed * deltaTime;
         var grid = mapService.GetMapGrid(mapId.Value);
         var spatial = mapService.GetMapSpatial(mapId.Value);
+
+        var moveResult = MovementLogic.TryComputeStep(e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
         
-        if (MovementLogic.TryComputeStep(e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos) 
-            != MovementLogic.MovementResult.Allowed)
+        if (moveResult != MovementLogic.MovementResult.Allowed && 
+            moveResult != MovementLogic.MovementResult.None)
+        {
+            movement.Timer = 0f;
             return;
+        }
         
         if (movement.Timer >= SimulationConfig.CellSize)
             movement.Timer -= SimulationConfig.CellSize;

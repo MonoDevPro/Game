@@ -66,13 +66,13 @@ public sealed partial class NpcVisual : Node2D
         }
     }
     
-    public void UpdateFromSnapshot(PlayerData data)
+    public void UpdateFromSnapshot(NPCData data)
     {
         LoadSprite(VocationType.Archer, Gender.Male);
-        UpdateName(data.Name);
-        UpdateFacing(new Vector2I(data.FacingX, data.FacingY), false);
-        UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
-        if (Sprite is not null) UpdateAnimationSpeed(Sprite, data.MovementSpeed);
+        UpdateName("NPC " + data.NetworkId);
+        UpdateFacing(new Vector2I(0, 1), false);
+        UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.PositionZ));
+        if (Sprite is not null) UpdateAnimationSpeed(Sprite, 1f);
     }
 
     private void UpdateAnimationSpeed(AnimatedSprite2D sprite, float speed)
