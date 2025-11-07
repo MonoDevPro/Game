@@ -259,7 +259,7 @@ public partial class GameClient : Node2D
             return;
 
         // Adiciona componente de animação de ataque ao atacante
-        var attackAnim = new AttackAnimation
+        var attackAnim = new AttackState
         {
             DefenderNetworkId = packet.DefenderNetworkId,
             RemainingDuration = packet.AttackDuration,

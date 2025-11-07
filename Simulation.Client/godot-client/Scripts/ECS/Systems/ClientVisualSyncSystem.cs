@@ -28,11 +28,11 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     }
 
     [Query]
-    [All<NetworkId, AttackAnimation>]
+    [All<NetworkId, AttackState>]
     private void SyncAttackAnimations(
         in Entity e,
         in NetworkId networkId,
-        ref AttackAnimation attackAnim,
+        ref AttackState attackAnim,
         [Data] float deltaTime)
     {
         if (_visuals.TryGetValue(networkId.Value, out var visual))
@@ -46,7 +46,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         // - Shake de câmera
         // - Sons
         if (attackAnim.RemainingDuration <= 0)
-            World.Remove<AttackAnimation>(e);
+            World.Remove<AttackState>(e);
     }
     
     [Query]

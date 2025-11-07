@@ -14,7 +14,6 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<
     {
         var character = session.SelectedCharacter 
             ?? throw new InvalidOperationException("No character selected for session.");
-
         var playerData = new PlayerData(
             session.Account.Id,
             session.Peer.Id,

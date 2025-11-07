@@ -26,30 +26,22 @@ public class Stats : BaseEntity
     public int CurrentMp { get; set; } = 30;
     
     // Atributos Totais (Base + Bônus de Equipamento) [NotMapped - calculados]
-    [NotMapped]
-    public int TotalStrength => BaseStrength + BonusStrength;
+    [NotMapped] public int TotalStrength => BaseStrength + BonusStrength;
     
-    [NotMapped]
-    public int TotalDexterity => BaseDexterity + BonusDexterity;
+    [NotMapped] public int TotalDexterity => BaseDexterity + BonusDexterity;
     
-    [NotMapped]
-    public int TotalIntelligence => BaseIntelligence + BonusIntelligence;
+    [NotMapped] public int TotalIntelligence => BaseIntelligence + BonusIntelligence;
     
-    [NotMapped]
-    public int TotalConstitution => BaseConstitution + BonusConstitution;
+    [NotMapped] public int TotalConstitution => BaseConstitution + BonusConstitution;
     
-    [NotMapped]
-    public int TotalSpirit => BaseSpirit + BonusSpirit;
+    [NotMapped] public int TotalSpirit => BaseSpirit + BonusSpirit;
     
     // Bônus de Equipamento (calculados externamente, não persistidos)
-    [NotMapped]
-    public int BonusStrength { get; set; }
+    [NotMapped] public int BonusStrength { get; set; }
     
-    [NotMapped]
-    public int BonusDexterity { get; set; }
+    [NotMapped] public int BonusDexterity { get; set; }
     
-    [NotMapped]
-    public int BonusIntelligence { get; set; }
+    [NotMapped] public int BonusIntelligence { get; set; }
     
     [NotMapped]
     public int BonusConstitution { get; set; }

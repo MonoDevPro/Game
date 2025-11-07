@@ -46,7 +46,7 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         // ← NOVO: Sincronizar ataques
         if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
             World.TryGet(entity, out CombatState combat) &&
-            World.TryGet(entity, out AttackAnimation attackAnim) &&
+            World.TryGet(entity, out AttackState attackAnim) &&
             attackAnim.IsActive)
         {
             var attackPacket = new AttackPacket(

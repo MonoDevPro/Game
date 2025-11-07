@@ -10,7 +10,7 @@ public struct CombatState { public bool InCombat; public float LastAttackTime; }
 /// <summary>
 /// Componente que armazena informações sobre o ataque em progresso.
 /// </summary>
-public struct AttackAnimation
+public struct AttackState
 {
     public int DefenderNetworkId;
     public float RemainingDuration;

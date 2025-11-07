@@ -16,7 +16,7 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class CombatSystem(World world, IMapService mapService) 
     : GameSystem(world)
 {
-    private const float BaseAttackAnimationDuration = 0.6f;
+    private const float BaseAttackAnimationDuration = 1f;
     
     /// <summary>
     /// Processa ataques do player baseado no input do jogador.
@@ -53,7 +53,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                     World.Get<AttackPower>(e),
                     World.Get<Defense>(target));
 
-                var attackAnim = new AttackAnimation
+                var attackAnim = new AttackState
                 {
                     DefenderNetworkId = World.Get<NetworkId>(target).Value,
                     RemainingDuration = BaseAttackAnimationDuration,
@@ -65,6 +65,20 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                 World.Add(e, attackAnim);
                 dirty.MarkDirty(DirtyComponentType.CombatState);
             }
+        }
+        else
+        {
+            var attackAnim = new AttackState
+            {
+                DefenderNetworkId = 0,
+                RemainingDuration = BaseAttackAnimationDuration,
+                Damage = 0,
+                WasHit = false,
+                AnimationType = AttackAnimationType.Basic
+            };
+
+            World.Add(e, attackAnim);
+            dirty.MarkDirty(DirtyComponentType.CombatState);
         }
 
         // Limpa a flag de ataque após o processamento
