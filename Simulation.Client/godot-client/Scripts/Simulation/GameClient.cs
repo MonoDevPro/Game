@@ -75,7 +75,8 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<LeftPacket>();
             _network.UnregisterPacketHandler<StatePacket>();
             _network.UnregisterPacketHandler<VitalsPacket>();
-            _network.UnregisterPacketHandler<AttackPacket>();
+            _network.UnregisterPacketHandler<CombatStatePacket>();
+            _network.UnregisterPacketHandler<AttackResultPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -179,7 +180,8 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<LeftPacket>(HandlePlayerDespawn);
         _network.RegisterPacketHandler<StatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<VitalsPacket>(HandlePlayerVitals);
-        _network.RegisterPacketHandler<AttackPacket>(HandleAttackPacket);
+        _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
+        _network.RegisterPacketHandler<AttackResultPacket>(HandleAttackResult);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -246,31 +248,60 @@ public partial class GameClient : Node2D
         GD.Print($"[GameClient] Despawned player (NetID: {packet.NetworkId})");
     }
     
-    private void HandleAttackPacket(INetPeerAdapter peer, ref AttackPacket packet)
+    private void HandleCombatState(INetPeerAdapter peer, ref CombatStatePacket packet)
     {
-        var simulation = _simulation ?? throw new InvalidOperationException("Simulation not initialized");
-    
-        // Encontra o atacante
-        if (!simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attacker))
+        if (_simulation is null)
             return;
 
-        // Encontra o defensor
-        if (!simulation.TryGetPlayerEntity(packet.DefenderNetworkId, out var defender))
+        // Localiza entidade do atacante
+        if (!_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity))
             return;
 
-        // Adiciona componente de animação de ataque ao atacante
-        var attackAnim = new AttackState
+        // Se quiser armazenar algo temporário no ECS local para animação:
+        var attackAnim = new AttackAction
         {
             DefenderNetworkId = packet.DefenderNetworkId,
+            Type = packet.Type,
             RemainingDuration = packet.AttackDuration,
-            Damage = packet.Damage,
-            WasHit = packet.WasHit,
-            AnimationType = packet.AnimationType
+            WillHit = true, // ou false se quiser só visual; verdadeiro será sobrescrito pelo AttackResult
+            Damage = 0      // será atualizado quando AttackResult chegar
         };
+        _simulation.World.Add(attackerEntity, attackAnim);
 
-        simulation.World.Add(attacker, attackAnim);
+        // Visual: dispara animação (se já tiver referência a PlayerVisual)
+        if (_simulation.TryGetPlayerVisual(packet.AttackerNetworkId, out var visual))
+            visual?.PlayAttackAnimation(packet.Type);
 
-        GD.Print($"[GameClient] Attack animation: {packet.AttackerNetworkId} -> {packet.DefenderNetworkId}, Damage: {packet.Damage}");
+        GD.Print($"[GameClient] CombatStatePacket received: Attacker={packet.AttackerNetworkId}, Defender={packet.DefenderNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
+    }
+
+    private void HandleAttackResult(INetPeerAdapter peer, ref AttackResultPacket packet)
+    {
+        if (_simulation is null)
+            return;
+
+        // Atualiza efeitos no defensor (ex: pop de dano)
+        if (_simulation.TryGetPlayerEntity(packet.DefenderNetworkId, out var defenderEntity))
+        {
+            // Aplicar efeitos visuais (ex: flash, números de dano)
+            if (_simulation.TryGetPlayerVisual(packet.DefenderNetworkId, out var defenderVisual))
+            {
+                // Exemplo simples: troca cor rápida
+                defenderVisual.Modulate = packet.WasHit ? Colors.Red : Colors.Gray;
+                defenderVisual.CreateFloatingDamageLabel(packet.Damage, packet.IsCritical);
+            }
+        }
+
+        // Atualiza AttackAction do atacante (se quiser refletir dano final)
+        if (_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity) &&
+            _simulation.World.TryGet(attackerEntity, out AttackAction action))
+        {
+            action.Damage = packet.Damage;
+            action.WillHit = packet.WasHit;
+            _simulation.World.Set(attackerEntity, action);
+        }
+
+        GD.Print($"[GameClient] AttackResultPacket: Att={packet.AttackerNetworkId} Def={packet.DefenderNetworkId} Dmg={packet.Damage} Hit={packet.WasHit} Crit={packet.IsCritical}");
     }
 
     // ==================== UI / Disconnect ====================

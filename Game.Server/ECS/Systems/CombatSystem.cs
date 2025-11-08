@@ -9,18 +9,11 @@ using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
-/// <summary>
-/// Sistema responsável pela lógica de combate: ataque, dano, morte.
-/// Processa ataques, aplica dano e gerencia transições para estado Dead.
-/// </summary>
 public sealed partial class CombatSystem(World world, IMapService mapService) 
     : GameSystem(world)
 {
     private const float BaseAttackAnimationDuration = 1f;
-    
-    /// <summary>
-    /// Processa ataques do player baseado no input do jogador.
-    /// </summary>
+
     [Query]
     [All<PlayerInput, PlayerControlled, Position, CombatState, Attackable, AttackPower>]
     [None<Dead>]
@@ -34,32 +27,53 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
         ref DirtyFlags dirty,
         [Data] float deltaTime)
     {
-        // Reduz cooldown
-        if (combat.LastAttackTime > 0)
-            combat.LastAttackTime -= deltaTime;
+        // Reduz cooldown (helper mantém clamped)
+        CombatLogic.ReduceCooldown(ref combat, deltaTime);
 
         // Se o player não ativou a flag de ataque, sair
         if ((input.Flags & InputFlags.Attack) == 0)
             return;
 
-        // Busca o alvo mais próximo (ou alvo pré-selecionado)
+        // Reset da flag de ataque (consumir input)
+        input.Flags &= ~InputFlags.Attack;
+
+        // Busca o alvo na célula à frente
         if (TryFindNearestTarget(mapId, position, facing, out Entity target))
         {
-            if (CombatLogic.TryAttack(World, e, target))
+            // Usa TryAttack com out damage para manter consistência com pacote
+            if (CombatLogic.TryAttack(World, e, target, AttackType.Basic, out int damage))
             {
-                // Ataque bem-sucedido!
-                // Adiciona componente de animação de ataque
-                int damage = CombatLogic.CalculateDamage(
-                    World.Get<AttackPower>(e),
-                    World.Get<Defense>(target));
-
-                var attackAnim = new AttackState
+                var attackAnim = new AttackAction
                 {
                     DefenderNetworkId = World.Get<NetworkId>(target).Value,
+                    Type = AttackType.Basic,
                     RemainingDuration = BaseAttackAnimationDuration,
+                    WillHit = true,
                     Damage = damage,
-                    WasHit = true,
-                    AnimationType = AttackAnimationType.Basic
+                };
+
+                World.Add(e, attackAnim);
+                dirty.MarkDirty(DirtyComponentType.CombatState);
+            }
+            // Caso falhe por concorrência (alvo morreu/deixou de ser válido entre o check e o ataque),
+            // você pode disparar um whiff opcional:
+            else
+            {
+                // Aplicar cooldown de whiff opcionalmente
+                if (World.TryGet(e, out Attackable atk))
+                {
+                    combat.LastAttackTime = MathF.Max(combat.LastAttackTime,
+                        CombatLogic.CalculateAttackCooldownSeconds(in atk, AttackType.Basic));
+                    combat.InCombat = true;
+                }
+
+                var attackAnim = new AttackAction
+                {
+                    DefenderNetworkId = 0,
+                    Type = AttackType.Basic,
+                    RemainingDuration = BaseAttackAnimationDuration,
+                    WillHit = false,
+                    Damage = 0,
                 };
 
                 World.Add(e, attackAnim);
@@ -68,43 +82,44 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
         }
         else
         {
-            var attackAnim = new AttackState
+            // Sem alvo à frente → animação de "whiff" e cooldown, para evitar spam
+            if (World.TryGet(e, out Attackable atk))
+            {
+                combat.LastAttackTime = MathF.Max(combat.LastAttackTime,
+                    CombatLogic.CalculateAttackCooldownSeconds(in atk, AttackType.Basic));
+                combat.InCombat = true;
+            }
+
+            var attackAnim = new AttackAction
             {
                 DefenderNetworkId = 0,
+                Type = AttackType.Basic,
                 RemainingDuration = BaseAttackAnimationDuration,
+                WillHit = false,
                 Damage = 0,
-                WasHit = false,
-                AnimationType = AttackAnimationType.Basic
             };
 
             World.Add(e, attackAnim);
             dirty.MarkDirty(DirtyComponentType.CombatState);
         }
-
-        // Limpa a flag de ataque após o processamento
-        input.Flags &= ~InputFlags.Attack;
     }
 
-    /// <summary>
-    /// Encontra o alvo mais próximo para ataque.
-    /// </summary>
-    private bool TryFindNearestTarget(in MapId playerMap, in Position playerPos, in Facing playerFacing,
-        out Entity nearestTarget)
+    private bool TryFindNearestTarget(in MapId playerMap, in Position playerPos, in Facing playerFacing, out Entity nearestTarget)
     {
         var spatial = mapService.GetMapSpatial(playerMap.Value);
-        
+
         nearestTarget = Entity.Null;
         var targetPosition = new Position(
             playerPos.X + playerFacing.DirectionX,
             playerPos.Y + playerFacing.DirectionY,
             playerPos.Z);
-        
+
         if (!spatial.TryGetFirstAt(targetPosition, out nearestTarget))
             return false;
-        
+
         if (World.Has<Dead>(nearestTarget) || !World.Has<Attackable>(nearestTarget))
             return false;
-        
+
         return true;
     }
 

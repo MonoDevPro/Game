@@ -26,17 +26,20 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         if (_visuals.Remove(networkId, out var visual))
             visual.QueueFree();
     }
+    public bool TryGetVisual(int networkId, out PlayerVisual? visual) =>
+        _visuals.TryGetValue(networkId, out visual);
 
     [Query]
-    [All<NetworkId, AttackState>]
-    private void SyncAttackAnimations(
+    [All<NetworkId, AttackAction>]
+    private void SyncPlayerAnimations(
         in Entity e,
         in NetworkId networkId,
-        ref AttackState attackAnim,
+        ref AttackAction attackAnim,
+        in Velocity velocity,
         [Data] float deltaTime)
     {
         if (_visuals.TryGetValue(networkId.Value, out var visual))
-            visual.PlayAttackAnimation(attackAnim.AnimationType);
+            visual.PlayAttackAnimation(attackAnim.Type);
         
         attackAnim.RemainingDuration -= deltaTime;
         // Enquanto a animação está ativa, o visual já foi atualizado
@@ -46,7 +49,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         // - Shake de câmera
         // - Sons
         if (attackAnim.RemainingDuration <= 0)
-            World.Remove<AttackState>(e);
+            World.Remove<AttackAction>(e);
     }
     
     [Query]

@@ -93,7 +93,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
             return;
         }
 
-        if (CombatLogic.TryAttack(World, e, target))
+        if (CombatLogic.TryAttack(World, e, target, AttackType.Basic, out _))
         {
             aiState.CurrentBehavior = AIBehavior.Attack;
             if (World.TryGet(target, out NetworkId netId))
@@ -147,7 +147,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
     /// </summary>
     public bool TryAIAttack(Entity attacker, Entity target)
     {
-        return CombatLogic.TryAttack(World, attacker, target);
+        return CombatLogic.TryAttack(World, attacker, target, AttackType.Basic, out _);
     }
 
     /// <summary>

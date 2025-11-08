@@ -6,24 +6,23 @@ namespace Game.ECS.Components;
 public struct Attackable { public float BaseSpeed; public float CurrentModifier; }
 public struct AttackPower { public int Physical; public int Magical; }
 public struct Defense { public int Physical; public int Magical; }
+
+/// Estado de combate básico (mantém cooldown)
 public struct CombatState { public bool InCombat; public float LastAttackTime; }
-/// <summary>
-/// Componente que armazena informações sobre o ataque em progresso.
-/// </summary>
-public struct AttackState
+
+public struct AttackAction
 {
-    public int DefenderNetworkId;
-    public float RemainingDuration;
-    public int Damage;
-    public bool WasHit;
-    public AttackAnimationType AnimationType;
-    public bool IsActive => RemainingDuration > 0;
+    public int DefenderNetworkId;     // network id do alvo
+    public AttackType Type;           // tipo de animação/ataque
+    public float RemainingDuration;   // tempo restante da animação (s)
+    public bool WillHit;              // se o ataque vai acertar (para efeitos)
+    public int Damage;                // dano calculado que será aplicado (opcional)
 }
 
 /// <summary>
 /// Tipos de animação de ataque disponíveis.
 /// </summary>
-public enum AttackAnimationType : byte
+public enum AttackType : byte
 {
     Basic = 0,          // Ataque básico
     Heavy = 1,          // Ataque carregado

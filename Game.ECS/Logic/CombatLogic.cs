@@ -3,29 +3,65 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Logic;
 
-public static class CombatLogic
+public static partial class CombatLogic
 {
-        /// <summary>
+    // Limites de sanidade para taxa de ataque (ataques por segundo)
+    private const float MinAttacksPerSecond = 0.1f;
+    private const float MaxAttacksPerSecond = 20f;
+
+    public static float GetAttackTypeSpeedMultiplier(AttackType type) => type switch
+    {
+        AttackType.Basic    => 1.00f,
+        AttackType.Heavy    => 0.60f,
+        AttackType.Critical => 0.80f,
+        AttackType.Magic    => 0.90f,
+        _ => 1.00f
+    };
+
+    public static float CalculateAttackCooldownSeconds(in Attackable attackable, AttackType type = AttackType.Basic, float externalMultiplier = 1f)
+    {
+        float baseSpeed = MathF.Max(0.05f, attackable.BaseSpeed);
+        float modifier  = MathF.Max(0.05f, attackable.CurrentModifier);
+        float typeMul   = MathF.Max(0.05f, GetAttackTypeSpeedMultiplier(type));
+        float extraMul  = MathF.Max(0.05f, externalMultiplier);
+
+        float aps = baseSpeed * modifier * typeMul * extraMul;
+        if (aps < MinAttacksPerSecond) aps = MinAttacksPerSecond;
+        else if (aps > MaxAttacksPerSecond) aps = MaxAttacksPerSecond;
+
+        return 1f / aps;
+    }
+
+    public static void ReduceCooldown(ref CombatState combat, float deltaTime)
+    {
+        if (combat.LastAttackTime <= 0f) return;
+        combat.LastAttackTime = MathF.Max(0f, combat.LastAttackTime - deltaTime);
+    }
+}
+
+public static partial class CombatLogic
+{
+    /// <summary>
     /// Calcula o dano total considerando ataque físico/mágico e defesa da vítima.
     /// </summary>
     public static int CalculateDamage(in AttackPower attack, in Defense defense, bool isMagical = false)
     {
         int attackPower = isMagical ? attack.Magical : attack.Physical;
         int defensePower = isMagical ? defense.Magical : defense.Physical;
-        
-        // Defesa reduz dano: max(1, ataque - defesa)
+
         int baseDamage = Math.Max(1, attackPower - defensePower);
-        
-        // Variação aleatória: ±20%
         float variance = 0.8f + (float)Random.Shared.NextDouble() * 0.4f;
         return (int)(baseDamage * variance);
     }
 
     /// <summary>
     /// Realiza um ataque corpo-a-corpo com validações de cooldown e alcance.
+    /// Agora retorna o dano aplicado via out damage para manter consistência com o que será enviado aos clientes.
     /// </summary>
-    public static bool TryAttack(World world, Entity attacker, Entity target)
+    public static bool TryAttack(World world, Entity attacker, Entity target, AttackType attackType, out int damage)
     {
+        damage = 0;
+
         if (!world.IsAlive(attacker) || !world.IsAlive(target))
             return false;
 
@@ -47,22 +83,14 @@ public static class CombatLogic
         if (world.Has<Dead>(target) || world.Has<Invulnerable>(target))
             return false;
 
-        float baseSpeed = Math.Max(0.1f, attackable.BaseSpeed);
-        float modifier = Math.Max(0.1f, attackable.CurrentModifier);
-        float attacksPerSecond = baseSpeed * modifier;
-        combat.LastAttackTime = 1f / attacksPerSecond;
+        combat.LastAttackTime = CalculateAttackCooldownSeconds(in attackable, attackType);
         combat.InCombat = true;
         world.Set(attacker, combat);
 
-        int damage = CalculateDamage(attackPower, defense);
-        if (ApplyDamageInternal(world, target, damage, attacker))
-            return true;
-        return false;
+        damage = CalculateDamage(attackPower, defense);
+        return ApplyDamageInternal(world, target, damage, attacker);
     }
 
-    /// <summary>
-    /// Aplica dano a uma entidade alvo.
-    /// </summary>
     public static bool TryDamage(World world, Entity target, int damage, Entity? attacker = null)
     {
         if (!world.IsAlive(target) || !world.Has<Health>(target))
@@ -74,9 +102,6 @@ public static class CombatLogic
         return ApplyDamageInternal(world, target, damage, attacker);
     }
 
-    /// <summary>
-    /// Restaura vida de uma entidade (para poções, curas, etc).
-    /// </summary>
     public static bool TryHeal(World world, Entity target, int amount, Entity? healer = null)
     {
         if (!world.IsAlive(target))
@@ -96,9 +121,6 @@ public static class CombatLogic
         return true;
     }
 
-    /// <summary>
-    /// Restaura mana de uma entidade.
-    /// </summary>
     public static bool TryRestoreMana(World world, Entity target, int amount, Entity? source = null)
     {
         if (!world.IsAlive(target))

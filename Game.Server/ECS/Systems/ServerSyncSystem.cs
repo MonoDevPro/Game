@@ -22,43 +22,69 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
     {
         if (dirty.IsEmpty) return;
 
-        // Capture snapshot of dirty flags
+        // Snapshot e limpa
         var dirtyFlags = dirty;
         dirty.ClearAll();
 
+        // Estado de movimento
         if (dirtyFlags.IsDirty(
                 DirtyComponentType.Position | DirtyComponentType.Facing | DirtyComponentType.Velocity) &&
             World.TryGet(entity, out Position position) && 
             World.TryGet(entity, out Facing facing) &&
             World.TryGet(entity, out Velocity velocity))
         {
-            var updatePacket = new StatePacket(networkId.Value, position, velocity, facing);
-            sender.SendToAll(updatePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var statePacket = new StatePacket(networkId.Value, position, velocity, facing);
+            sender.SendToAll(statePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
 
+        // Vitals
         if (dirtyFlags.IsDirty(DirtyComponentType.Health | DirtyComponentType.Mana) &&
             World.TryGet(entity, out Health health) && World.TryGet(entity, out Mana mana))
         {
-            var updatePacket = new VitalsPacket(networkId.Value, health, mana);
-            sender.SendToAll(updatePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var vitalsPacket = new VitalsPacket(networkId.Value, health, mana);
+            sender.SendToAll(vitalsPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
-        
-        // ← NOVO: Sincronizar ataques
-        if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
-            World.TryGet(entity, out CombatState combat) &&
-            World.TryGet(entity, out AttackState attackAnim) &&
-            attackAnim.IsActive)
-        {
-            var attackPacket = new AttackPacket(
-                networkId.Value,
-                attackAnim.DefenderNetworkId,
-                attackAnim.Damage,
-                attackAnim.WasHit,
-                attackAnim.RemainingDuration,
-                attackAnim.AnimationType);
 
-            sender.SendToAll(attackPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        }
+        // Combate (estado + resultado)
+        if (!dirtyFlags.IsDirty(DirtyComponentType.CombatState) ||
+            !World.TryGet(entity, out CombatState combat)) 
+            return;
         
+        // Se existir AttackAction, enviamos o estado de ataque (animação)
+        if (!World.TryGet(entity, out AttackAction attackAction)) 
+            return;
+            
+        // Pacote de início de animação
+        var combatPacket = new CombatStatePacket(
+            AttackerNetworkId: networkId.Value,
+            DefenderNetworkId: attackAction.DefenderNetworkId,
+            Type: attackAction.Type,
+            AttackDuration: attackAction.RemainingDuration,
+            CooldownRemaining: combat.LastAttackTime
+        );
+
+        sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+        // Se o ataque efetivamente irá acertar, também enviamos o resultado
+        if (attackAction.WillHit)
+        {
+            // crítico simples (exemplo: AttackType.Critical)
+            bool isCritical = attackAction.Type == AttackType.Critical;
+
+            var resultPacket = new AttackResultPacket(
+                AttackerNetworkId: networkId.Value,
+                DefenderNetworkId: attackAction.DefenderNetworkId,
+                Damage: attackAction.Damage,
+                WasHit: true,
+                IsCritical: isCritical,
+                AnimationType: attackAction.Type,
+                TimeToLive: 1.0f // tempo para exibir número de dano
+            );
+
+            sender.SendToAll(resultPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        }
+                
+        // Consumir AttackAction (não reenviar em próximos ticks)
+        World.Remove<AttackAction>(entity);
     }
 }

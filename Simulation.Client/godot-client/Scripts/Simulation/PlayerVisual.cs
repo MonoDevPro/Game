@@ -146,17 +146,17 @@ public sealed partial class PlayerVisual : Node2D
         sprite.Play();
     }
     
-    public void PlayAttackAnimation(AttackAnimationType animationType)
+    public void PlayAttackAnimation(AttackType type)
     {
         if (Sprite is null) 
             return;
 
-        string animName = animationType switch
+        string animName = type switch
         {
-            AttackAnimationType.Basic => "attack",
-            AttackAnimationType.Heavy => "attack",
-            AttackAnimationType.Critical => "attack",
-            AttackAnimationType.Magic => "attack",
+            AttackType.Basic => "attack",
+            AttackType.Heavy => "attack",
+            AttackType.Critical => "attack",
+            AttackType.Magic => "attack",
             _ => "attack"
         };
         
@@ -205,5 +205,21 @@ public sealed partial class PlayerVisual : Node2D
     {
         if (NameLabel is not null)
             NameLabel.Text = name;
+    }
+    
+    // Exemplo simples de label flutuante de dano
+    public void CreateFloatingDamageLabel(int damage, bool critical)
+    {
+        if (damage <= 0) return;
+        var label = new Label
+        {
+            Text = critical ? $"{damage}!" : damage.ToString(),
+            Position = new Vector2(0, -24),
+            Modulate = critical ? Colors.Yellow : Colors.White
+        };
+        AddChild(label);
+        var tween = CreateTween();
+        tween.TweenProperty(label, "position:y", label.Position.Y - 16, 0.6f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        tween.TweenCallback(Callable.From(() => label.QueueFree()));
     }
 }

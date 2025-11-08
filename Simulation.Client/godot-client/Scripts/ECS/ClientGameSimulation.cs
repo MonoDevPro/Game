@@ -62,6 +62,16 @@ public sealed class ClientGameSimulation : GameSimulation
     public Entity SpawnRemotePlayer(PlayerData data, PlayerVisual visual) 
         => CreateRemotePlayer(data, visual);
     
+    // Visual
+    public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
+    {
+        if (_visualSyncSystem != null) 
+            return _visualSyncSystem.TryGetVisual(networkId, out visual!);
+        visual = null!;
+        return false;
+    }
+
+
     private Entity CreateLocalPlayer(in PlayerData data, PlayerVisual visual)
     {
         var entity = World.CreatePlayer(PlayerIndex, data);
