@@ -5,7 +5,7 @@ namespace Game.Core.Extensions;
 
 public static class PlayerVitalsExtensions
 {
-    public static PlayerVitalsData ToPlayerVitalsData(this VitalsPacket packet)
+    public static PlayerVitalsData ToPlayerVitalsData(this PlayerVitalsPacket packet)
     {
         return new PlayerVitalsData(
             packet.NetworkId,
@@ -15,9 +15,9 @@ public static class PlayerVitalsExtensions
             packet.Mana.Max);
     }
     
-    public static VitalsPacket ToPlayerVitalsPacket(this PlayerVitalsData playerVitalsData)
+    public static PlayerVitalsPacket ToPlayerVitalsPacket(this PlayerVitalsData playerVitalsData)
     {
-        return new VitalsPacket(
+        return new PlayerVitalsPacket(
             playerVitalsData.NetworkId,
             new ECS.Components.Health
             {

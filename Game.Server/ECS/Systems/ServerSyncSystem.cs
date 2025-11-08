@@ -33,7 +33,7 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             World.TryGet(entity, out Facing facing) &&
             World.TryGet(entity, out Velocity velocity))
         {
-            var statePacket = new StatePacket(networkId.Value, position, velocity, facing);
+            var statePacket = new PlayerStatePacket(networkId.Value, position, velocity, facing);
             sender.SendToAll(statePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
 
@@ -41,7 +41,7 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         if (dirtyFlags.IsDirty(DirtyComponentType.Health | DirtyComponentType.Mana) &&
             World.TryGet(entity, out Health health) && World.TryGet(entity, out Mana mana))
         {
-            var vitalsPacket = new VitalsPacket(networkId.Value, health, mana);
+            var vitalsPacket = new PlayerVitalsPacket(networkId.Value, health, mana);
             sender.SendToAll(vitalsPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
 

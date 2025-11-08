@@ -43,17 +43,26 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
             // Usa TryAttack com out damage para manter consistência com pacote
             if (CombatLogic.TryAttack(World, e, target, AttackType.Basic, out int damage))
             {
-                var attackAnim = new AttackAction
+                // Marcar HP do alvo como dirty para enviar vitals
+                if (World.Has<DirtyFlags>(target))
                 {
-                    DefenderNetworkId = World.Get<NetworkId>(target).Value,
-                    Type = AttackType.Basic,
-                    RemainingDuration = BaseAttackAnimationDuration,
-                    WillHit = true,
-                    Damage = damage,
-                };
-
-                World.Add(e, attackAnim);
-                dirty.MarkDirty(DirtyComponentType.CombatState);
+                    ref DirtyFlags targetDirty = ref World.Get<DirtyFlags>(target);
+                    targetDirty.MarkDirty(DirtyComponentType.Health);
+                }
+                
+                if (!World.Has<AttackAction>(e))
+                {
+                    var attackAnim = new AttackAction
+                    {
+                        DefenderNetworkId = World.Get<NetworkId>(target).Value,
+                        Type = AttackType.Basic,
+                        RemainingDuration = BaseAttackAnimationDuration,
+                        WillHit = true,
+                        Damage = damage,
+                    };
+                    World.Add(e, attackAnim);
+                    dirty.MarkDirty(DirtyComponentType.CombatState);
+                }
             }
             // Caso falhe por concorrência (alvo morreu/deixou de ser válido entre o check e o ataque),
             // você pode disparar um whiff opcional:

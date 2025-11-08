@@ -73,8 +73,8 @@ public partial class GameClient : Node2D
             
             _network.UnregisterPacketHandler<PlayerDataPacket>();
             _network.UnregisterPacketHandler<LeftPacket>();
-            _network.UnregisterPacketHandler<StatePacket>();
-            _network.UnregisterPacketHandler<VitalsPacket>();
+            _network.UnregisterPacketHandler<PlayerStatePacket>();
+            _network.UnregisterPacketHandler<PlayerVitalsPacket>();
             _network.UnregisterPacketHandler<CombatStatePacket>();
             _network.UnregisterPacketHandler<AttackResultPacket>();
         }
@@ -178,15 +178,15 @@ public partial class GameClient : Node2D
         
         _network.RegisterPacketHandler<PlayerDataPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<LeftPacket>(HandlePlayerDespawn);
-        _network.RegisterPacketHandler<StatePacket>(HandlePlayerState);
-        _network.RegisterPacketHandler<VitalsPacket>(HandlePlayerVitals);
+        _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
+        _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
         _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
         _network.RegisterPacketHandler<AttackResultPacket>(HandleAttackResult);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
 
-    private void HandlePlayerState(INetPeerAdapter peer, ref StatePacket packet)
+    private void HandlePlayerState(INetPeerAdapter peer, ref PlayerStatePacket packet)
     {
         // Remotos: aplica tudo
         if (packet.NetworkId != _localNetworkId)
@@ -218,7 +218,7 @@ public partial class GameClient : Node2D
         }
     }
 
-    private void HandlePlayerVitals(INetPeerAdapter peer, ref VitalsPacket packet)
+    private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)
     {
         _simulation?.ApplyPlayerVitals(packet.ToPlayerVitalsData());
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
