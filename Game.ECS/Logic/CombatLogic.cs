@@ -41,6 +41,8 @@ public static partial class CombatLogic
 
 public static partial class CombatLogic
 {
+    public static bool CanAttack(in CombatState combat) => combat.LastAttackTime <= 0f;
+    
     /// <summary>
     /// Calcula o dano total considerando ataque físico/mágico e defesa da vítima.
     /// </summary>
@@ -73,7 +75,7 @@ public static partial class CombatLogic
             !world.TryGet(attacker, out Attackable attackable))
             return false;
 
-        if (combat.LastAttackTime > 0f)
+        if (!CanAttack(in combat))
             return false;
 
         int distance = attackerPos.ManhattanDistance(targetPos);

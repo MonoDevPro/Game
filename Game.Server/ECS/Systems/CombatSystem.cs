@@ -16,7 +16,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
 
     [Query]
     [All<PlayerInput, PlayerControlled, Position, CombatState, Attackable, AttackPower>]
-    [None<Dead>]
+    [None<AttackAction, Dead>]
     private void ProcessPlayerAttack(
         in Entity e,
         ref PlayerInput input,
@@ -29,13 +29,12 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
     {
         // Reduz cooldown (helper mantém clamped)
         CombatLogic.ReduceCooldown(ref combat, deltaTime);
-
+        
         // Se o player não ativou a flag de ataque, sair
-        if ((input.Flags & InputFlags.Attack) == 0)
-            return;
-
-        // Reset da flag de ataque (consumir input)
-        input.Flags &= ~InputFlags.Attack;
+        if ((input.Flags & InputFlags.Attack) == 0) return;
+        
+        // Se estiver em cooldown, sair
+        if (!CombatLogic.CanAttack(in combat)) return;
 
         // Busca o alvo na célula à frente
         if (TryFindNearestTarget(mapId, position, facing, out Entity target))
@@ -45,47 +44,17 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
             {
                 // Marcar HP do alvo como dirty para enviar vitals
                 if (World.Has<DirtyFlags>(target))
-                {
-                    ref DirtyFlags targetDirty = ref World.Get<DirtyFlags>(target);
-                    targetDirty.MarkDirty(DirtyComponentType.Health);
-                }
+                    World.Get<DirtyFlags>(target).MarkDirty(DirtyComponentType.Health);
                 
-                if (!World.Has<AttackAction>(e))
+                var attackAction = new AttackAction
                 {
-                    var attackAnim = new AttackAction
-                    {
-                        DefenderNetworkId = World.Get<NetworkId>(target).Value,
-                        Type = AttackType.Basic,
-                        RemainingDuration = BaseAttackAnimationDuration,
-                        WillHit = true,
-                        Damage = damage,
-                    };
-                    World.Add(e, attackAnim);
-                    dirty.MarkDirty(DirtyComponentType.CombatState);
-                }
-            }
-            // Caso falhe por concorrência (alvo morreu/deixou de ser válido entre o check e o ataque),
-            // você pode disparar um whiff opcional:
-            else
-            {
-                // Aplicar cooldown de whiff opcionalmente
-                if (World.TryGet(e, out Attackable atk))
-                {
-                    combat.LastAttackTime = MathF.Max(combat.LastAttackTime,
-                        CombatLogic.CalculateAttackCooldownSeconds(in atk, AttackType.Basic));
-                    combat.InCombat = true;
-                }
-
-                var attackAnim = new AttackAction
-                {
-                    DefenderNetworkId = 0,
+                    DefenderNetworkId = World.Get<NetworkId>(target).Value,
                     Type = AttackType.Basic,
                     RemainingDuration = BaseAttackAnimationDuration,
-                    WillHit = false,
-                    Damage = 0,
+                    WillHit = true,
+                    Damage = damage,
                 };
-
-                World.Add(e, attackAnim);
+                World.Add(e, attackAction);
                 dirty.MarkDirty(DirtyComponentType.CombatState);
             }
         }
@@ -99,7 +68,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                 combat.InCombat = true;
             }
 
-            var attackAnim = new AttackAction
+            var attackAction = new AttackAction
             {
                 DefenderNetworkId = 0,
                 Type = AttackType.Basic,
@@ -107,8 +76,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                 WillHit = false,
                 Damage = 0,
             };
-
-            World.Add(e, attackAnim);
+            World.Add(e, attackAction);
             dirty.MarkDirty(DirtyComponentType.CombatState);
         }
     }

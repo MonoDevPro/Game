@@ -19,7 +19,7 @@ position = Vector2(32, 32)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Pivot"]
 sprite_frames = ExtResource("2_no1hx")
-animation = &"idle_south"
+animation = &"attack_south"
 
 [node name="NameLabel" type="Label" parent="Pivot"]
 anchors_preset = 7

@@ -12,12 +12,19 @@ namespace GodotClient.Simulation;
 /// Autor: MonoDevPro
 /// Data da Refatoração: 2025-10-14
 /// </summary>
+[Tool]
 public sealed partial class PlayerVisual : Node2D
 {
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
     private FacingEnum _currentFacing = FacingEnum.South;
+    
+    [ExportToolButton("Attack Animation")]
+    public Callable PlayAttack => Callable.From(() =>
+    {
+        PlayAttackAnimation(AttackType.Basic);
+    });
     
     public static PlayerVisual Create()
     {
@@ -66,6 +73,8 @@ public sealed partial class PlayerVisual : Node2D
             };
             AddChild(HealthBar);
         }
+        
+        GD.Print("[PlayerVisual] Ready completed.");
     }
     
     public void UpdateFromSnapshot(PlayerData data)
@@ -168,6 +177,8 @@ public sealed partial class PlayerVisual : Node2D
             FacingEnum.East or FacingEnum.West => $"{animName}_side",
             _ => $"{animName}_south",
         };
+        
+        GD.Print($"[PlayerVisual] Playing attack animation: {animName}");
 
         if (Sprite.Animation == animName) 
             return;
