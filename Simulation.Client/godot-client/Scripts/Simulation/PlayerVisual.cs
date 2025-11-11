@@ -22,12 +22,20 @@ public sealed partial class PlayerVisual : Node2D
     
     private float _movementAnimationDuration = 1f;
     private float _attackAnimationDuration = 1f;
-    
-    public static PlayerVisual Create()
+
+    public static PlayerVisual Create(bool isLocal = false)
     {
-        return GD.Load<PackedScene>("res://Scenes/Prefabs/PlayerVisual.tscn").Instantiate<PlayerVisual>();
+        var playerVisual = GD.Load<PackedScene>("res://Scenes/Prefabs/PlayerVisual.tscn").Instantiate<PlayerVisual>();
+        // Camera para jogador local
+        if (isLocal)
+        {
+            var playerCamera = GD.Load<PackedScene>("res://Scenes/Prefabs/PlayerCamera.tscn").Instantiate<Camera2D>();
+            playerVisual.AddChild(playerCamera);
+            playerCamera.MakeCurrent();
+        }
+        return playerVisual;
     }
-    
+
     public override void _Ready()
     {
         base._Ready();

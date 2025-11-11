@@ -32,7 +32,7 @@ public partial class GameClient : Node2D
     private int _localNetworkId = -1;
     private Label? _statusLabel;
     
-    public Node2D EntitiesRoot => GetNode<Node2D>("Entities");
+    public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");
 
     public override void _Ready()
     {
@@ -156,7 +156,7 @@ public partial class GameClient : Node2D
         
         GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {isLocal})");
         
-        var playerVisual = PlayerVisual.Create();
+        var playerVisual = PlayerVisual.Create(isLocal);
         playerVisual.Name = $"Player_{data.NetworkId}";
         Entity entity = isLocal 
             ? _simulation!.SpawnLocalPlayer(data, playerVisual) 
