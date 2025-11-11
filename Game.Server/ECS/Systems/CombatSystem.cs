@@ -24,7 +24,6 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
         in Facing facing,
         in Position position,
         in MapId mapId,
-        ref DirtyFlags dirty,
         [Data] float deltaTime)
     {
         // Reduz cooldown (helper mantém clamped)
@@ -54,8 +53,10 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                     WillHit = true,
                     Damage = damage,
                 };
-                World.Add(e, attackAction);
+                var dirty = World.Get<DirtyFlags>(e);
                 dirty.MarkDirty(DirtyComponentType.CombatState);
+                World.Set(e, dirty);
+                World.Add(e, attackAction);
             }
         }
         else
@@ -76,8 +77,10 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
                 WillHit = false,
                 Damage = 0,
             };
-            World.Add(e, attackAction);
+            var dirty = World.Get<DirtyFlags>(e);
             dirty.MarkDirty(DirtyComponentType.CombatState);
+            World.Set(e, dirty);
+            World.Add(e, attackAction);
         }
     }
 

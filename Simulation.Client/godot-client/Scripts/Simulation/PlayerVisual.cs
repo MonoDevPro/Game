@@ -20,11 +20,8 @@ public sealed partial class PlayerVisual : Node2D
     public ProgressBar? HealthBar;
     private FacingEnum _currentFacing = FacingEnum.South;
     
-    [ExportToolButton("Attack Animation")]
-    public Callable PlayAttack => Callable.From(() =>
-    {
-        PlayAttackAnimation(AttackType.Basic);
-    });
+    private float _movementAnimationDuration = 1f;
+    private float _attackAnimationDuration = 1f;
     
     public static PlayerVisual Create()
     {
@@ -83,34 +80,53 @@ public sealed partial class PlayerVisual : Node2D
         UpdateName(data.Name);
         UpdateFacing(new Vector2I(data.FacingX, data.FacingY), false);
         UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
-        if (Sprite is not null) UpdateAnimationSpeed(Sprite, data.MovementSpeed);
+        UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
+        UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
     }
-
-    private void UpdateAnimationSpeed(AnimatedSprite2D sprite, float speed)
+    
+    private void UpdateAnimationSpeed(float movementDuration = 1f, float attackDuration = 1f)
     {
-        string anim = sprite.Animation;
-        if (string.IsNullOrEmpty(anim) || !sprite.SpriteFrames.HasAnimation(anim))
+        if (movementDuration < 0.1f) movementDuration = 0.1f;
+        if (attackDuration < 0.1f) attackDuration = 0.1f;
+        _movementAnimationDuration = movementDuration;
+        _attackAnimationDuration = attackDuration;
+        RefreshAnimationSpeeds();
+    }
+    
+    public void RefreshAnimationSpeeds()
+    {
+        if (Sprite is null) 
+            return;
+        
+        string anim = Sprite.Animation;
+        if (string.IsNullOrEmpty(anim) || !Sprite.SpriteFrames.HasAnimation(anim))
             return;
         try
         {
-            int frames = sprite.SpriteFrames.GetFrameCount(anim);
+            int frames = Sprite.SpriteFrames.GetFrameCount(anim);
             // Se for idle, mantemos uma velocidade baixa para idle (evita "parado" com 0/0)
             if (anim.StartsWith("idle", StringComparison.OrdinalIgnoreCase))
-                sprite.SpriteFrames.SetAnimationSpeed(anim, 1f); // idle sempre 1
+                Sprite.SpriteFrames.SetAnimationSpeed(anim, 1f); // idle sempre 1
+            else if (anim.StartsWith("attack", StringComparison.OrdinalIgnoreCase))
+            {
+                // frames / seconds = frames per second
+                float targetFps = MathF.Max(0.05f, frames / _attackAnimationDuration);
+                Sprite.SpriteFrames.SetAnimationSpeed(anim, targetFps);
+            }
             else
             {
                 // frames * tilesPerSecond => frames/sec
-                float targetFps = MathF.Max(0.05f, frames * speed);
-                sprite.SpriteFrames.SetAnimationSpeed(anim, targetFps);
+                float targetFps = MathF.Max(0.05f, frames * _movementAnimationDuration);
+                Sprite.SpriteFrames.SetAnimationSpeed(anim, targetFps);
             }
         }
         catch
         {
             // fallback seguro
-            sprite.SpriteFrames.SetAnimationSpeed(anim, MathF.Max(1f, speed));
+            Sprite.SpriteFrames.SetAnimationSpeed(anim, MathF.Max(1f, _movementAnimationDuration));
         }
     }
-    
+
     private void UpdatePosition(Vector3I gridPos)
     {
         Position = new Vector2(gridPos.X, gridPos.Y);
@@ -125,17 +141,21 @@ public sealed partial class PlayerVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateFacing(Vector2I facing, bool isMoving)
+    public void UpdateFacing(Vector2I facing, bool isMoving = false, bool isAttacking = false)
     {
         _currentFacing = ConvertToFacingEnum(facing.X, facing.Y);
         if (Sprite is null) return;
-        UpdateAnimationState(Sprite, isMoving);
+        
+        UpdateAnimationState(Sprite, isMoving, isAttacking);
     }
     
-    private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving)
+    private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving = false, bool isAttacking = false)
     {
-        // Determina animação baseado no movimento
+        // Determina animação
         string animation = isMoving ? "walk" : "idle";
+        string attackAnimation = isAttacking ? "attack" : string.Empty;
+        if (!string.IsNullOrEmpty(attackAnimation))
+            animation = attackAnimation;
         
         // Atualiza direção (flip horizontal se necessário)
         sprite.FlipH = _currentFacing == FacingEnum.West;
@@ -153,38 +173,8 @@ public sealed partial class PlayerVisual : Node2D
         
         sprite.Animation = animName;
         sprite.Play();
-    }
-    
-    public void PlayAttackAnimation(AttackType type)
-    {
-        if (Sprite is null) 
-            return;
-
-        string animName = type switch
-        {
-            AttackType.Basic => "attack",
-            AttackType.Heavy => "attack",
-            AttackType.Critical => "attack",
-            AttackType.Magic => "attack",
-            _ => "attack"
-        };
         
-        Sprite.FlipH = _currentFacing == FacingEnum.West;
-        animName = _currentFacing switch
-        {
-            FacingEnum.South or FacingEnum.SouthEast or FacingEnum.SouthWest => $"{animName}_south",
-            FacingEnum.North or FacingEnum.NorthEast or FacingEnum.NorthWest => $"{animName}_north",
-            FacingEnum.East or FacingEnum.West => $"{animName}_side",
-            _ => $"{animName}_south",
-        };
-        
-        GD.Print($"[PlayerVisual] Playing attack animation: {animName}");
-
-        if (Sprite.Animation == animName) 
-            return;
-        
-        Sprite.Animation = animName;
-        Sprite.Play();
+        RefreshAnimationSpeeds();
     }
     
     private FacingEnum ConvertToFacingEnum(int facingX, int facingY)
@@ -225,7 +215,7 @@ public sealed partial class PlayerVisual : Node2D
         var label = new Label
         {
             Text = critical ? $"{damage}!" : damage.ToString(),
-            Position = new Vector2(0, -24),
+            Position = new Vector2(32, -24),
             Modulate = critical ? Colors.Yellow : Colors.White
         };
         AddChild(label);
@@ -233,4 +223,14 @@ public sealed partial class PlayerVisual : Node2D
         tween.TweenProperty(label, "position:y", label.Position.Y - 16, 0.6f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
         tween.TweenCallback(Callable.From(() => label.QueueFree()));
     }
+    
+    public void ChangeTempColor(Color color, float duration = 0.3f)
+    {
+        if (Sprite is null) return;
+        var originalColor = Sprite.Modulate;
+        Sprite.Modulate = color;
+        var tween = CreateTween();
+        tween.TweenProperty(Sprite, "modulate", originalColor, duration).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+    
 }

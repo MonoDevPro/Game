@@ -220,7 +220,14 @@ public partial class GameClient : Node2D
 
     private void HandlePlayerVitals(INetPeerAdapter peer, ref PlayerVitalsPacket packet)
     {
-        _simulation?.ApplyPlayerVitals(packet.ToPlayerVitalsData());
+        if (_simulation is null)
+            return;
+        
+        _simulation.ApplyPlayerVitals(packet.ToPlayerVitalsData());
+        
+        if (_simulation.TryGetPlayerVisual(packet.NetworkId, out var visual))
+            visual.UpdateVitals(packet.Health.Current, packet.Health.Max, packet.Mana.Current, packet.Mana.Max);
+        
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
 
@@ -268,10 +275,6 @@ public partial class GameClient : Node2D
         };
         _simulation.World.Add(attackerEntity, attackAnim);
 
-        // Visual: dispara animação (se já tiver referência a PlayerVisual)
-        if (_simulation.TryGetPlayerVisual(packet.AttackerNetworkId, out var visual))
-            visual?.PlayAttackAnimation(packet.Type);
-
         GD.Print($"[GameClient] CombatStatePacket received: Attacker={packet.AttackerNetworkId}, Defender={packet.DefenderNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
 
@@ -287,7 +290,9 @@ public partial class GameClient : Node2D
             if (_simulation.TryGetPlayerVisual(packet.DefenderNetworkId, out var defenderVisual))
             {
                 // Exemplo simples: troca cor rápida
-                defenderVisual.Modulate = packet.WasHit ? Colors.Red : Colors.Gray;
+                if (packet.WasHit)
+                    defenderVisual.ChangeTempColor(Colors.Red, 0.2f);
+                
                 defenderVisual.CreateFloatingDamageLabel(packet.Damage, packet.IsCritical);
             }
         }

@@ -30,39 +30,37 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         _visuals.TryGetValue(networkId, out visual);
 
     [Query]
-    [All<NetworkId, AttackAction>]
-    private void SyncPlayerAnimations(
+    [All<NetworkId, PlayerControlled, AttackAction>]
+    private void SyncPlayerAttackAction(
         in Entity e,
-        in NetworkId networkId,
-        ref AttackAction attackAnim,
-        in Velocity velocity,
+        ref AttackAction action,
         [Data] float deltaTime)
     {
-        if (_visuals.TryGetValue(networkId.Value, out var visual))
-            visual.PlayAttackAnimation(attackAnim.Type);
-        
-        attackAnim.RemainingDuration -= deltaTime;
+        action.RemainingDuration -= deltaTime;
         // Enquanto a animação está ativa, o visual já foi atualizado
         // Aqui você pode adicionar lógica extra como:
         // - Efeitos de impacto
         // - Números de dano flutuando
         // - Shake de câmera
         // - Sons
-        if (attackAnim.RemainingDuration <= 0)
+        if (action.RemainingDuration <= 0)
             World.Remove<AttackAction>(e);
     }
     
     [Query]
     [All<NetworkId>] // ✅ Sem tag específica - aplica a TODOS
-    private void SyncMovementAnimations(
+    private void SyncPlayerAnimations(
         in Entity e, 
         in NetworkId networkId,
         in Velocity velocity, 
         in Facing facing)
     {
         if (_visuals.TryGetValue(networkId.Value, out var visual)) 
+        {
+            var isAttacking = World.Has<AttackAction>(e);
             visual.UpdateFacing(new Vector2I(facing.DirectionX, facing.DirectionY), 
-                velocity.Speed > 0f);
+                velocity.Speed > 0f && !isAttacking, isAttacking);
+        }
     }
     
     [Query]
