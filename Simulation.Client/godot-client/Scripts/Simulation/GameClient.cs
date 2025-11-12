@@ -133,7 +133,6 @@ public partial class GameClient : Node2D
         // Carrega visuais dos jogadores
         LoadPlayerVisuals();
         
-        
         GD.Print("[GameClient] Game data loaded");
     }
     
@@ -152,16 +151,19 @@ public partial class GameClient : Node2D
     
     private void SpawnPlayerVisual(in PlayerData data, bool isLocal)
     {
-        
-        
+        if (_simulation is null) return;
         GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {isLocal})");
         
-        var playerVisual = PlayerVisual.Create(isLocal);
+        var playerVisual = PlayerVisual.Create();
         playerVisual.Name = $"Player_{data.NetworkId}";
-        Entity entity = isLocal 
-            ? _simulation!.SpawnLocalPlayer(data, playerVisual) 
-            : _simulation!.SpawnRemotePlayer(data, playerVisual);
 
+        if (isLocal)
+        {
+            _simulation.SpawnLocalPlayer(data, playerVisual);
+            playerVisual.MakeCamera();
+            return;
+        }
+        _simulation.SpawnRemotePlayer(data, playerVisual);
     }
 
     // ==================== Network Handlers ====================

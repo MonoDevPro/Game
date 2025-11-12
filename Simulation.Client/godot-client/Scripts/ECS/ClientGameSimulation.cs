@@ -4,9 +4,7 @@ using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Updates;
-using Game.ECS.Services;
 using Game.Network.Abstractions;
-using GodotClient.ECS.Components;
 using GodotClient.ECS.Systems;
 using GodotClient.Simulation;
 
@@ -20,7 +18,6 @@ namespace GodotClient.ECS;
 public sealed class ClientGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
-    private readonly IMapService? _mapService;
     private ClientVisualSyncSystem? _visualSyncSystem;
 
     /// <summary>
@@ -28,11 +25,9 @@ public sealed class ClientGameSimulation : GameSimulation
     /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
     /// Estado autorizado vem do servidor.
     /// </summary>
-    public ClientGameSimulation(INetworkManager networkManager, 
-        IMapService? mapService = null) : base(mapService ??= new MapService())
+    public ClientGameSimulation(INetworkManager networkManager)
     {
         _networkManager = networkManager;
-        _mapService = mapService;
         ConfigureSystems(World, Systems);
     }
 
@@ -70,7 +65,6 @@ public sealed class ClientGameSimulation : GameSimulation
         visual = null!;
         return false;
     }
-
 
     private Entity CreateLocalPlayer(in PlayerData data, PlayerVisual visual)
     {

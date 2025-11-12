@@ -52,19 +52,20 @@ public abstract class GameSimulation : GameSystem
     private readonly FixedTimeStep _fixedTimeStep;
     public uint CurrentTick { get; private set; }
     
-    protected readonly IMapService MapService;
+    protected IMapService? MapService;
     protected readonly PlayerIndex PlayerIndex = new();
     
-    protected GameSimulation(IMapService mapService) : this(
+    protected GameSimulation(IMapService? mapService = null) : this(
         World.Create(chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
         minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
         archetypeCapacity: SimulationConfig.ArchetypeCapacity,
         entityCapacity: SimulationConfig.EntityCapacity), mapService) { }   
 
-    private GameSimulation(World world, IMapService mapService) : base(world)
+    private GameSimulation(World world, IMapService? mapService) : base(world)
     {
         Systems = new Group<float>(SimulationConfig.SimulationName);
         _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
+        
         MapService = mapService;
     }
 
@@ -96,6 +97,9 @@ public abstract class GameSimulation : GameSystem
     
     public void RegisterSpatial(Entity entity)
     {
+        if (MapService == null)
+            return;
+        
         if (!World.Has<Position>(entity))
             return;
 
@@ -119,6 +123,9 @@ public abstract class GameSimulation : GameSystem
 
     public void UnregisterSpatial(Entity entity)
     {
+        if (MapService == null)
+            return;
+        
         if (!World.Has<Position>(entity))
             return;
 
@@ -139,11 +146,16 @@ public abstract class GameSimulation : GameSystem
 
     public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
     {
+        MapService ??= new MapService();
+
         MapService.RegisterMap(mapId, grid, spatial);
     }
 
     public void UnregisterMap(int mapId)
     {
+        if (MapService == null)
+            return;
+        
         MapService.UnregisterMap(mapId);
     }
     
