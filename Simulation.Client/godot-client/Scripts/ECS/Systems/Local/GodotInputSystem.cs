@@ -12,6 +12,7 @@ public sealed partial class GodotInputSystem(World world)
 {
     [Query]
     [All<PlayerControlled, LocalPlayerTag, PlayerInput>]
+    [None<Dead>]
     private void ApplyInput(in Entity e, ref PlayerInput input, ref DirtyFlags dirty, [Data] float deltaTime)
     {
         sbyte moveX = 0, moveY = 0;

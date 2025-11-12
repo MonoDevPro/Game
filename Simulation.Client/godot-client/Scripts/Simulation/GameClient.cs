@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Arch.Core;
 using Game.Core.Extensions;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
@@ -10,7 +9,6 @@ using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
-using GodotClient.ECS.Components;
 
 namespace GodotClient.Simulation;
 
@@ -225,10 +223,22 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
         
+        
+        // Localiza entidade do atacante
+        if (!_simulation.TryGetPlayerEntity(packet.NetworkId, out var playerEntity))
+            return;
+        
+        if (!_simulation.TryGetPlayerVisual(packet.NetworkId, out var playerVisual))
+            return;
+        
+        if (packet.Health.Current <= 0 && !_simulation.World.Has<Dead>(playerEntity))
+            _simulation.World.Add(playerEntity, new Dead());
+        else if (_simulation.World.Has<Dead>(playerEntity))
+            _simulation.World.Remove<Dead>(playerEntity);
+        
         _simulation.ApplyPlayerVitals(packet.ToPlayerVitalsData());
         
-        if (_simulation.TryGetPlayerVisual(packet.NetworkId, out var visual))
-            visual.UpdateVitals(packet.Health.Current, packet.Health.Max, packet.Mana.Current, packet.Mana.Max);
+        playerVisual.UpdateVitals(packet.Health.Current, packet.Health.Max, packet.Mana.Current, packet.Mana.Max);
         
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
@@ -310,6 +320,7 @@ public partial class GameClient : Node2D
 
         GD.Print($"[GameClient] AttackResultPacket: Att={packet.AttackerNetworkId} Def={packet.DefenderNetworkId} Dmg={packet.Damage} Hit={packet.WasHit} Crit={packet.IsCritical}");
     }
+    
 
     // ==================== UI / Disconnect ====================
 

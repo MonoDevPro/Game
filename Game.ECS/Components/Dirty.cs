@@ -15,7 +15,7 @@ public enum DirtyComponentType : ushort
     Velocity      = 1 << 5,
     CombatState   = 1 << 6,
 	
-    All	     = ushort.MaxValue
+    All	     = Position | Health | Mana | Facing | Input | Velocity | CombatState
 }
 
 public struct DirtyFlags

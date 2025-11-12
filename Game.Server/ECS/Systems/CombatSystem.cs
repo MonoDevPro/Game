@@ -1,7 +1,6 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Logic;
 using Game.ECS.Services;
@@ -9,7 +8,7 @@ using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
-public sealed partial class CombatSystem(World world, IMapService mapService) 
+public sealed partial class CombatSystem(World world, IMapService mapService, ILogger<CombatSystem>? logger = null) 
     : GameSystem(world)
 {
     private const float BaseAttackAnimationDuration = 1f;
@@ -36,7 +35,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
         if (!CombatLogic.CanAttack(in combat)) return;
 
         // Busca o alvo na célula à frente
-        if (TryFindNearestTarget(mapId, position, facing, out Entity target))
+        if (CombatLogic.TryFindNearestTarget(World, mapService, mapId, position, facing, out Entity target))
         {
             // Usa TryAttack com out damage para manter consistência com pacote
             if (CombatLogic.TryAttack(World, e, target, AttackType.Basic, out int damage))
@@ -81,37 +80,6 @@ public sealed partial class CombatSystem(World world, IMapService mapService)
             dirty.MarkDirty(DirtyComponentType.CombatState);
             World.Set(e, dirty);
             World.Add(e, attackAction);
-        }
-    }
-
-    private bool TryFindNearestTarget(in MapId playerMap, in Position playerPos, in Facing playerFacing, out Entity nearestTarget)
-    {
-        var spatial = mapService.GetMapSpatial(playerMap.Value);
-
-        nearestTarget = Entity.Null;
-        var targetPosition = new Position(
-            playerPos.X + playerFacing.DirectionX,
-            playerPos.Y + playerFacing.DirectionY,
-            playerPos.Z);
-
-        if (!spatial.TryGetFirstAt(targetPosition, out nearestTarget))
-            return false;
-
-        if (World.Has<Dead>(nearestTarget) || !World.Has<Attackable>(nearestTarget))
-            return false;
-
-        return true;
-    }
-
-    [Query]
-    [All<Health, CombatState>]
-    [None<Dead>]
-    private void ProcessTakeDamage(in Entity e, ref Health health, ref CombatState combat, [Data] float deltaTime)
-    {
-        if (health.Current <= 0)
-        {
-            health.Current = 0;
-            World.Add<Dead>(e);
         }
     }
 }

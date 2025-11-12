@@ -25,7 +25,7 @@ public sealed partial class PlayerVisual : DefaultVisual
     {
         LoadSprite(VocationType.Archer, Gender.Male);
         UpdateName(data.Name);
-        UpdateFacing(new Vector2I(data.FacingX, data.FacingY), false);
+        UpdateAnimationState(new Vector2I(data.FacingX, data.FacingY), false, false);
         UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
         UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
         UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);

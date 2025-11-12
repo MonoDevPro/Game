@@ -20,7 +20,7 @@ public sealed partial class NpcVisual : DefaultVisual
     {
         LoadSprite(VocationType.Archer, Gender.Male);
         UpdateName("NPC " + data.NetworkId);
-        UpdateFacing(new Vector2I(0, 1), false);
+        UpdateAnimationState(new Vector2I(0, 1), false, false);
         UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.PositionZ));
         UpdateVitals(data.Hp, data.MaxHp, 0, 0);
         if (Sprite is not null) UpdateAnimationSpeed(1f, 1f);

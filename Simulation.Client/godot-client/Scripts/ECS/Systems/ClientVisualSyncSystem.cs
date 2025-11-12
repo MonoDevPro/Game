@@ -57,9 +57,14 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     {
         if (_visuals.TryGetValue(networkId.Value, out var visual)) 
         {
-            var isAttacking = World.Has<AttackAction>(e);
-            visual.UpdateFacing(new Vector2I(facing.DirectionX, facing.DirectionY), 
-                velocity.Speed > 0f && !isAttacking, isAttacking);
+            var isDead = World.Has<Dead>(e);
+            var isAttacking = World.Has<AttackAction>(e) && !isDead;
+            var isMoving = velocity.Speed > 0f && !isAttacking && !isDead;
+            var facingDir = isDead 
+                ? Vector2I.Zero 
+                : new Vector2I(facing.DirectionX, facing.DirectionY);
+            
+            visual.UpdateAnimationState(facingDir, isMoving, isAttacking);
         }
     }
     

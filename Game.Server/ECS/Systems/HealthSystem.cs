@@ -10,7 +10,7 @@ namespace Game.Server.ECS.Systems;
 /// Sistema responsável por regeneração de vida e mana.
 /// Processa entidades que têm Health e Mana, aplicando regeneração por tick.
 /// </summary>
-public sealed partial class HealthSystem(World world)
+public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? logger = null)
     : GameSystem(world)
 {
     [Query]
@@ -50,12 +50,39 @@ public sealed partial class HealthSystem(World world)
         mana.Current = regenerated;
         dirty.MarkDirty(DirtyComponentType.Mana);
     }
-
+    
     [Query]
-    [All<Dead>]
-    private void ProcessDeadEntities(in Entity e, ref CombatState combat, [Data] float deltaTime)
+    [All<Health, CombatState>]
+    [None<Dead>]
+    private void ProcessDeath(
+        in Entity entity, 
+        ref Health health, 
+        ref CombatState combat, 
+        ref DirtyFlags dirty)
     {
-        // Aqui pode haver lógica adicional para entidades mortas
-        // Por exemplo: ragdoll timeout, respawn timer, etc
+        if (health.Current > 0)
+            return;
+
+        // ✅ Marca como morto
+        World.Add<Dead>(entity);
+        
+        // ✅ Reseta combate
+        combat.InCombat = false;
+        
+        dirty.MarkDirty(DirtyComponentType.Health | DirtyComponentType.CombatState);
+
+        if (World.TryGet(entity, out NetworkId netId))
+        {
+            logger?.LogInformation("Entity {NetworkId} died", netId.Value);
+        
+            // ✅ Se for jogador, o ReviveSystem cuidará do resto
+            if (World.Has<PlayerControlled>(entity))
+            {
+                logger?.LogInformation(
+                    "Player {NetworkId} will be revived in {Time}s",
+                    netId.Value,
+                    5f); // DefaultReviveTime
+            }
+        }
     }
 }

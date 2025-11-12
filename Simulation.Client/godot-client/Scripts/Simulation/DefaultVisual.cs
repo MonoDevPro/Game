@@ -124,13 +124,6 @@ public abstract partial class DefaultVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateFacing(Vector2I facing, bool isMoving = false, bool isAttacking = false)
-    {
-        _currentFacing = ConvertToFacingEnum(facing.X, facing.Y);
-        if (Sprite is null) return;
-        UpdateAnimationState(Sprite, isMoving, isAttacking);
-    }
-    
     public void UpdateAnimationState(Vector2I facing, bool isMoving = false, bool isAttacking = false)
     {
         _currentFacing = ConvertToFacingEnum(facing.X, facing.Y);
@@ -146,6 +139,10 @@ public abstract partial class DefaultVisual : Node2D
         if (!string.IsNullOrEmpty(attackAnimation))
             animation = attackAnimation;
         
+        //Dead animation has priority
+        if (!isMoving && !isAttacking && _currentFacing == FacingEnum.None)
+            animation = "dead";
+        
         // Atualiza direção (flip horizontal se necessário)
         sprite.FlipH = _currentFacing == FacingEnum.West;
         
@@ -154,7 +151,7 @@ public abstract partial class DefaultVisual : Node2D
             FacingEnum.South or FacingEnum.SouthEast or FacingEnum.SouthWest => $"{animation}_south",
             FacingEnum.North or FacingEnum.NorthEast or FacingEnum.NorthWest => $"{animation}_north",
             FacingEnum.East or FacingEnum.West => $"{animation}_side",
-            _ => $"{animation}_south",
+            _ => $"{animation}",
         };
 
         if (sprite.Animation == animName) 

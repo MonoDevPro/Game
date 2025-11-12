@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" load_steps=32 format=3 uid="uid://u1vc6x2nldgn"]
+[gd_resource type="SpriteFrames" load_steps=33 format=3 uid="uid://u1vc6x2nldgn"]
 
 [ext_resource type="Texture2D" uid="uid://dlyjeicf6f5ij" path="res://Assets/Sprites/Characters/Archer/archer_unisex.png" id="1_6xeli"]
 
@@ -37,6 +37,10 @@ region = Rect2(768, 0, 64, 64)
 [sub_resource type="AtlasTexture" id="AtlasTexture_q5f5l"]
 atlas = ExtResource("1_6xeli")
 region = Rect2(832, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6xeli"]
+atlas = ExtResource("1_6xeli")
+region = Rect2(640, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wqg81"]
 atlas = ExtResource("1_6xeli")
@@ -164,6 +168,14 @@ animations = [{
 }],
 "loop": true,
 "name": &"attack_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6xeli")
+}],
+"loop": true,
+"name": &"dead",
 "speed": 5.0
 }, {
 "frames": [{

@@ -1,5 +1,6 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Services;
 
 namespace Game.ECS.Logic;
 
@@ -159,4 +160,24 @@ public static partial class CombatLogic
 
         return true;
     }
+    
+    public static bool TryFindNearestTarget(World world, IMapService mapService, in MapId playerMap, in Position playerPos, in Facing playerFacing, out Entity nearestTarget)
+    {
+        var spatial = mapService.GetMapSpatial(playerMap.Value);
+
+        nearestTarget = Entity.Null;
+        var targetPosition = new Position(
+            playerPos.X + playerFacing.DirectionX,
+            playerPos.Y + playerFacing.DirectionY,
+            playerPos.Z);
+
+        if (!spatial.TryGetFirstAt(targetPosition, out nearestTarget))
+            return false;
+
+        if (world.Has<Dead>(nearestTarget) || !world.Has<Attackable>(nearestTarget))
+            return false;
+
+        return true;
+    }
+    
 }

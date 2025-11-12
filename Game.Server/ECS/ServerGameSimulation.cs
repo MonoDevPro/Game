@@ -16,10 +16,13 @@ namespace Game.Server.ECS;
 public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
+    private readonly ILoggerFactory _loggerFactory;
     
-    public ServerGameSimulation(INetworkManager network, IMapService? mapService = null) : base(mapService ??= new MapService())
+    public ServerGameSimulation(INetworkManager network, ILoggerFactory factory, IMapService? mapService = null)
     {
         _networkManager = network;
+        _loggerFactory = factory;
+        MapService = mapService ?? new MapService();
         
         // Configura os sistemas
         ConfigureSystems(World, Systems);
@@ -36,19 +39,23 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new InputSystem(world));
         
         // Sistemas de movimento
-        systems.Add(new MovementSystem(world, MapService));
+        systems.Add(new MovementSystem(world, MapService!));
         
         // Sistemas de saúde
         systems.Add(new HealthSystem(world));
         
+        // Sistemas de revive
+        systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
+        
         // Sistemas de combate
-        systems.Add(new CombatSystem(world, MapService));
+        systems.Add(new CombatSystem(world, MapService!, _loggerFactory.CreateLogger<CombatSystem>()));
         
         // Sistemas de IA
-        systems.Add(new AISystem(world, MapService));
+        systems.Add(new AISystem(world, MapService!));
         
         // Sistemas de atualização de entidades
         systems.Add(new ServerSyncSystem(world, _networkManager));
+        
     }
 
     public Entity CreatePlayer(in PlayerData data)

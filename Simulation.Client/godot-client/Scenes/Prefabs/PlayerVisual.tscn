@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://dv40cnjldwr8a"]
 
 [ext_resource type="Script" uid="uid://y7p0g5bhh5bk" path="res://Scripts/Simulation/PlayerVisual.cs" id="1_f3ihw"]
-[ext_resource type="SpriteFrames" uid="uid://divyovnuyskrc" path="res://Resources/SpriteSheets/archer_female_frames.tres" id="2_no1hx"]
+[ext_resource type="SpriteFrames" uid="uid://u1vc6x2nldgn" path="res://Resources/SpriteSheets/archer_male_frames.tres" id="2_f3ihw"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ctox"]
 bg_color = Color(0.28498816, 0.68719935, 0, 1)
@@ -21,9 +21,8 @@ position = Vector2(32, 32)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Pivot"]
 position = Vector2(0, -6)
-sprite_frames = ExtResource("2_no1hx")
+sprite_frames = ExtResource("2_f3ihw")
 animation = &"idle_south"
-frame_progress = 0.36836168
 
 [node name="NameLabel" type="Label" parent="Pivot"]
 anchors_preset = 7

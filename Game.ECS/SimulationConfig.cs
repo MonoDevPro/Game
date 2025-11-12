@@ -29,4 +29,12 @@ public static class SimulationConfig
 
     // Limiar de reconciliação (em células)
     public const float ReconciliationThreshold = 1f;
+    
+    // Configurações padrão de respawn
+    public const float DefaultRespawnTime = 5f;
+    public const int DefaultSpawnX = 10;
+    public const int DefaultSpawnY = 10;
+    public const int DefaultSpawnZ = 0;
+    public const float ReviveHealthPercent = 0.5f; // 50% HP
+    public const float ReviveManaPercent = 0.5f; // 50% MP
 }

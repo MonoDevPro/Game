@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" load_steps=32 format=3 uid="uid://bucmh3j1my6eb"]
+[gd_resource type="SpriteFrames" load_steps=33 format=3 uid="uid://bucmh3j1my6eb"]
 
 [ext_resource type="Texture2D" uid="uid://bu774sntpam5o" path="res://Assets/Sprites/Characters/Mage/mage_unisex.png" id="1_fpgf4"]
 
@@ -37,6 +37,10 @@ region = Rect2(768, 0, 64, 64)
 [sub_resource type="AtlasTexture" id="AtlasTexture_q5f5l"]
 atlas = ExtResource("1_fpgf4")
 region = Rect2(832, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yj14r"]
+atlas = ExtResource("1_fpgf4")
+region = Rect2(640, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wqg81"]
 atlas = ExtResource("1_fpgf4")
@@ -164,6 +168,14 @@ animations = [{
 }],
 "loop": true,
 "name": &"attack_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yj14r")
+}],
+"loop": true,
+"name": &"dead",
 "speed": 5.0
 }, {
 "frames": [{
