@@ -32,23 +32,22 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     /// Processa jogadores mortos que estão em processo de revive.
     /// </summary>
     [Query]
-    [All<Dead, Revive, PlayerControlled>]
+    [All<PlayerControlled>]
+    [All<Dead, Revive>]
     private void ProcessReviveTimer(
         in Entity entity,
         ref Revive revive,
-        ref DirtyFlags dirty,
+        ref Health health,
+        ref Mana mana,
+        ref CombatState combat,
+        ref Position position,
         [Data] float deltaTime)
     {
-        if (!revive.IsReviving)
-            return;
-            
         revive.TimeRemaining -= deltaTime;
         
+        // ✅ Tempo de revive expirou - reviver jogador
         if (revive.TimeRemaining <= 0f)
-        {
-            // ✅ Tempo de revive expirou - reviver jogador
             RevivePlayer(entity);
-        }
     }
     
     /// <summary>
@@ -66,7 +65,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         {
             TimeRemaining = DefaultReviveTime,
             TotalTime = DefaultReviveTime,
-            IsReviving = true,
             SpawnPosition = GetSpawnPosition(position) // Pode ser customizado
         };
         
@@ -87,24 +85,8 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     /// </summary>
     private void RevivePlayer(in Entity entity)
     {
-        if (!World.IsAlive(entity))
-            return;
-            
         // ✅ 1. Remove componente Dead
         World.Remove<Dead>(entity);
-        
-        // ✅ 2. Restaura Health e Mana
-        if (World.TryGet(entity, out Health health))
-        {
-            health.Current = (int)(health.Max * ReviveHealthPercent);
-            World.Set(entity, health);
-        }
-        
-        if (World.TryGet(entity, out Mana mana))
-        {
-            mana.Current = (int)(mana.Max * ReviveManaPercent);
-            World.Set(entity, mana);
-        }
         
         // ✅ 3. Reseta estado de combate
         if (World.TryGet(entity, out CombatState combat))
@@ -179,7 +161,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
             {
                 TimeRemaining = 0f,
                 TotalTime = 0f,
-                IsReviving = true,
                 SpawnPosition = spawnPosition.Value
             };
             

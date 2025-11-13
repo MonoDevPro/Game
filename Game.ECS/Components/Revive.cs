@@ -17,11 +17,6 @@ public struct Revive
     public float TotalTime;
     
     /// <summary>
-    /// Indica se o revive está em progresso.
-    /// </summary>
-    public bool IsReviving;
-    
-    /// <summary>
     /// Posição de spawn para revive.
     /// </summary>
     public Position SpawnPosition;
