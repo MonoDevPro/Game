@@ -8,7 +8,7 @@ namespace Game.Domain.Entities;
 /// Autor: MonoDevPro
 /// Data: 2025-10-05 21:10:27
 /// </summary>
-public class Character : BaseEntity
+public sealed class Character : BaseEntity
 {
     public string Name { get; init; } = null!;
     public Gender Gender { get; set; } = Gender.Unknown;
@@ -23,14 +23,14 @@ public class Character : BaseEntity
     
     // Relacionamentos
     public int AccountId { get; init; }
-    public virtual Account Account { get; set; } = null!;
+    public Account Account { get; set; } = null!;
     
     // Um personagem tem um inventário (1:1)
-    public virtual Inventory Inventory { get; set; } = null!;
+    public Inventory Inventory { get; set; } = null!;
     
     // Um personagem tem stats (1:1)
-    public virtual Stats Stats { get; set; } = null!;
+    public Stats Stats { get; set; } = null!;
     
     // Um personagem tem múltiplos slots de equipamento (1:N)
-    public virtual ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();
+    public ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();
 }

@@ -10,7 +10,6 @@ namespace Game.Server.ECS.Systems;
 
 public sealed partial class ServerSyncSystem(World world, INetworkManager sender) : GameSystem(world)
 {
-
     [Query]
     [All<NetworkId, DirtyFlags>]
     private void SyncDirtyEntities(
