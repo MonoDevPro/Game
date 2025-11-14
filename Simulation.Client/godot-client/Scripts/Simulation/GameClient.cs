@@ -74,7 +74,7 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerVitalsPacket>();
             _network.UnregisterPacketHandler<CombatStatePacket>();
-            _network.UnregisterPacketHandler<AttackResultPacket>();
+            _network.UnregisterPacketHandler<PlayerDamagedPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -181,7 +181,7 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
         _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
-        _network.RegisterPacketHandler<AttackResultPacket>(HandleAttackResult);
+        _network.RegisterPacketHandler<PlayerDamagedPacket>(HandlePlayerDamaged);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -277,48 +277,35 @@ public partial class GameClient : Node2D
             return;
 
         // Se quiser armazenar algo temporário no ECS local para animação:
-        var attackAnim = new AttackAction
+        var attackAnim = new Attack
         {
-            DefenderNetworkId = packet.DefenderNetworkId,
             Type = packet.Type,
             RemainingDuration = packet.AttackDuration,
-            WillHit = true, // ou false se quiser só visual; verdadeiro será sobrescrito pelo AttackResult
-            Damage = 0      // será atualizado quando AttackResult chegar
+            TotalDuration = packet.AttackDuration,
+            DamageApplied = false
         };
         _simulation.World.Add(attackerEntity, attackAnim);
 
-        GD.Print($"[GameClient] CombatStatePacket received: Attacker={packet.AttackerNetworkId}, Defender={packet.DefenderNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
+        GD.Print($"[GameClient] CombatStatePacket received: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
 
-    private void HandleAttackResult(INetPeerAdapter peer, ref AttackResultPacket packet)
+    private void HandlePlayerDamaged(INetPeerAdapter peer, ref PlayerDamagedPacket packet)
     {
         if (_simulation is null)
             return;
 
         // Atualiza efeitos no defensor (ex: pop de dano)
-        if (_simulation.TryGetPlayerEntity(packet.DefenderNetworkId, out var defenderEntity))
+        if (_simulation.TryGetPlayerEntity(packet.TargetNetworkId, out var defenderEntity))
         {
             // Aplicar efeitos visuais (ex: flash, números de dano)
-            if (_simulation.TryGetPlayerVisual(packet.DefenderNetworkId, out var defenderVisual))
+            if (_simulation.TryGetPlayerVisual(packet.TargetNetworkId, out var defenderVisual))
             {
                 // Exemplo simples: troca cor rápida
-                if (packet.WasHit)
-                    defenderVisual.ChangeTempColor(Colors.Red, 0.2f);
-                
-                defenderVisual.CreateFloatingDamageLabel(packet.Damage, packet.IsCritical);
+                defenderVisual.ChangeTempColor(Colors.Red, 0.2f);
+                defenderVisual.CreateFloatingDamageLabel(packet.DamageAmount, critical: false);
             }
         }
-
-        // Atualiza AttackAction do atacante (se quiser refletir dano final)
-        if (_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity) &&
-            _simulation.World.TryGet(attackerEntity, out AttackAction action))
-        {
-            action.Damage = packet.Damage;
-            action.WillHit = packet.WasHit;
-            _simulation.World.Set(attackerEntity, action);
-        }
-
-        GD.Print($"[GameClient] AttackResultPacket: Att={packet.AttackerNetworkId} Def={packet.DefenderNetworkId} Dmg={packet.Damage} Hit={packet.WasHit} Crit={packet.IsCritical}");
+        GD.Print($"[GameClient] AttackResultPacket received: Target={packet.TargetNetworkId}, Damage={packet.DamageAmount}");
     }
     
 

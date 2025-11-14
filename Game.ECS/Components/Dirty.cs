@@ -14,6 +14,7 @@ public enum DirtyComponentType : ushort
     Input         = 1 << 4,
     Velocity      = 1 << 5,
     CombatState   = 1 << 6,
+    Damaged       = 1 << 7,
 	
     All	     = Position | Health | Mana | Facing | Input | Velocity | CombatState
 }

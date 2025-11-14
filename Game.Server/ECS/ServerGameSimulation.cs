@@ -48,7 +48,10 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
         // Sistemas de combate
-        systems.Add(new CombatSystem(world, MapService!, _loggerFactory.CreateLogger<CombatSystem>()));
+        systems.Add(new AttackSystem(world, MapService!, _loggerFactory.CreateLogger<AttackSystem>()));
+        
+        // Sistema de dano diferido (aplica dano no momento correto da animação)
+        systems.Add(new DeferredDamageSystem(world, PlayerIndex, _loggerFactory.CreateLogger<DeferredDamageSystem>()));
         
         // Sistemas de IA
         systems.Add(new AISystem(world, MapService!));

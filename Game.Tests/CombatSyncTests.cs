@@ -25,7 +25,7 @@ public sealed class CombatSyncTests
         mapService.RegisterMap(0, width: 32, height: 32, layers: 1);
 
         var network = new DummyNetworkManager();
-        var combatSystem = new Game.Server.ECS.Systems.CombatSystem(world, mapService);
+        var combatSystem = new Game.Server.ECS.Systems.AttackSystem(world, mapService);
         var syncSystem = new ServerSyncSystem(world, network);
 
         // Create attacker and defender
@@ -85,7 +85,7 @@ public sealed class CombatSyncTests
         // Act: roda sistemas na mesma ordem do servidor
         combatSystem.Update(SimulationConfig.TickDelta);
 
-        world.Has<AttackAction>(attacker)
+        world.Has<Attack>(attacker)
             .Should().BeTrue("CombatSystem deve anexar AttackAction ao atacante");
         ref var attackerDirty = ref world.Get<DirtyFlags>(attacker);
         attackerDirty.Raw.Should().BeGreaterThan(0, "DirtyFlags precisa receber ao menos um bit");
@@ -96,11 +96,10 @@ public sealed class CombatSyncTests
 
         // Assert: ataque gerou pacote de combate e resultado
         network.CombatPackets.Should().ContainSingle("CombatStatePacket não foi enviado pelo servidor");
-        network.AttackResults.Should().ContainSingle("AttackResultPacket não foi enviado pelo servidor");
+        network.DamagedPackets.Should().ContainSingle("AttackResultPacket não foi enviado pelo servidor");
 
         var combatPacket = network.CombatPackets.Single();
         combatPacket.AttackerNetworkId.Should().Be(attackerData.NetworkId);
-        combatPacket.DefenderNetworkId.Should().Be(defenderData.NetworkId);
         combatPacket.Type.Should().Be(AttackType.Basic);
     }
 
@@ -123,7 +122,7 @@ public sealed class CombatSyncTests
         public IPeerRepository Peers { get; } = new DummyPeerRepository();
 
         public List<CombatStatePacket> CombatPackets { get; } = new();
-        public List<AttackResultPacket> AttackResults { get; } = new();
+        public List<PlayerDamagedPacket> DamagedPackets { get; } = new();
 
         public void Initialize() { }
     public void ConnectToServer() => throw new NotSupportedException();
@@ -142,8 +141,8 @@ public sealed class CombatSyncTests
         {
             if (packet is CombatStatePacket combat)
                 CombatPackets.Add(combat);
-            else if (packet is AttackResultPacket result)
-                AttackResults.Add(result);
+            else if (packet is PlayerDamagedPacket result)
+                DamagedPackets.Add(result);
         }
 
     public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();

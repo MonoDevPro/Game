@@ -41,40 +41,31 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             var vitalsPacket = new PlayerVitalsPacket(networkId.Value, health, mana);
             sender.SendToAll(vitalsPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
+        
+        if (dirtyFlags.IsDirty(DirtyComponentType.Damaged) &&
+            World.TryGet(entity, out Damaged damaged))
+        {
+            var damagedPacket = new PlayerDamagedPacket(
+                TargetNetworkId: networkId.Value,
+                DamageAmount: damaged.Amount,
+                TimeToLive: 1.0f
+            );
+            sender.SendToAll(damagedPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            World.Remove<Damaged>(entity);
+        }
 
         // Combate (estado + resultado)
         if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
             World.TryGet(entity, out CombatState combat) &&
-            World.TryGet(entity, out AttackAction attackAction))
+            World.TryGet(entity, out Attack attackAction))
         {
             var combatPacket = new CombatStatePacket(
                 AttackerNetworkId: networkId.Value,
-                DefenderNetworkId: attackAction.DefenderNetworkId,
                 Type: attackAction.Type,
                 AttackDuration: attackAction.RemainingDuration,
                 CooldownRemaining: combat.LastAttackTime
             );
-
             sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-
-            if (attackAction.WillHit)
-            {
-                bool isCritical = attackAction.Type == AttackType.Critical;
-
-                var resultPacket = new AttackResultPacket(
-                    AttackerNetworkId: networkId.Value,
-                    DefenderNetworkId: attackAction.DefenderNetworkId,
-                    Damage: attackAction.Damage,
-                    WasHit: true,
-                    IsCritical: isCritical,
-                    AnimationType: attackAction.Type,
-                    TimeToLive: 1.0f
-                );
-
-                sender.SendToAll(resultPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            }
-
-            World.Remove<AttackAction>(entity);
         }
     }
 }

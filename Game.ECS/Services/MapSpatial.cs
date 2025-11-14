@@ -1,4 +1,5 @@
 using Arch.Core;
+using Arch.LowLevel;
 using Game.ECS.Components;
 
 namespace Game.ECS.Services;
@@ -12,35 +13,43 @@ namespace Game.ECS.Services;
 /// </summary>
 public class MapSpatial : IMapSpatial
 {
-    // key: (x,y,z)
-    private readonly Dictionary<(int x, int y, int z), List<Entity>> _grid = new();
-    private readonly HashSet<Entity> _reserved = new();
-    private readonly Dictionary<Entity, uint> _reserveVersions = new();
-    private uint _globalVersion;
+    private readonly Dictionary<Position, UnsafeStack<Entity>> _grid = new();
+    
+    private const int InitialCapacityPerCell = 4;
 
     public void Insert(Position position, in Entity entity)
     {
-        var key = (position.X, position.Y, position.Z);
-        if (!_grid.TryGetValue(key, out var list))
+        if (!_grid.TryGetValue(position, out var list))
         {
-            list = new List<Entity>();
-            _grid[key] = list;
+            list = new UnsafeStack<Entity>(InitialCapacityPerCell);
+            _grid[position] = list;
         }
 
-        list.Add(entity);
+        list.Push(entity);
     }
 
     public bool Remove(Position position, in Entity entity)
     {
-        var key = (position.X, position.Y, position.Z);
-        if (!_grid.TryGetValue(key, out var list))
+        if (!_grid.TryGetValue(position, out var list))
             return false;
-
-        if (!list.Remove(entity))
-            return false;
-
+        
+        var stackCopy = new UnsafeStack<Entity>(list.Capacity);
+        bool found = false;
+        while (list.Count > 0)
+        {
+            var current = list.Pop();
+            if (current.Equals(entity) && !found)
+            {
+                found = true;
+                continue;
+            }
+            stackCopy.Push(current);
+        }
+        while (stackCopy.Count > 0)
+            list.Push(stackCopy.Pop());
+        
         if (list.Count == 0)
-            _grid.Remove(key);
+            _grid.Remove(position);
 
         return true;
     }
@@ -63,50 +72,39 @@ public class MapSpatial : IMapSpatial
         return Update(from, to, entity);
     }
 
-    public int QueryAt(Position position, Span<Entity> results)
+    public int QueryAt(Position position, ref UnsafeStack<Entity> results)
     {
-        var key = (position.X, position.Y, position.Z);
-        if (!_grid.TryGetValue(key, out var list))
+        if (!_grid.TryGetValue(position, out var list))
             return 0;
 
         int count = 0;
         foreach (var e in list)
         {
-            if (count >= results.Length)
-                break;
-            results[count++] = e;
+            results.Push(e);
+            count++;
         }
 
         return count;
     }
 
-    public int QueryArea(Position minInclusive, Position maxInclusive, Span<Entity> results)
+    public int QueryArea(AreaPosition area, ref UnsafeStack<Entity> results)
     {
         int count = 0;
-        int minX = Math.Min(minInclusive.X, maxInclusive.X);
-        int maxX = Math.Max(minInclusive.X, maxInclusive.X);
-        int minY = Math.Min(minInclusive.Y, maxInclusive.Y);
-        int maxY = Math.Max(minInclusive.Y, maxInclusive.Y);
-        int minZ = Math.Min(minInclusive.Z, maxInclusive.Z);
-        int maxZ = Math.Max(minInclusive.Z, maxInclusive.Z);
 
-        for (int z = minZ; z <= maxZ; z++)
+        for (int z = area.MinZ; z <= area.MaxZ; z++)
+        for (int x = area.MinX; x <= area.MaxX; x++)
+        for (int y = area.MinY; y <= area.MaxY; y++)
         {
-            for (int x = minX; x <= maxX; x++)
-            {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    var key = (x, y, z);
-                    if (!_grid.TryGetValue(key, out var list))
-                        continue;
+            var key = new Position(x, y, z);
+            if (!_grid.TryGetValue(key, out var list))
+                continue;
 
-                    foreach (var entity in list)
-                    {
-                        if (count >= results.Length)
-                            return count;
-                        results[count++] = entity;
-                    }
-                }
+            foreach (var entity in list)
+            {
+                if (count >= results.Count)
+                    return count;
+                results.Push(entity);
+                count++;
             }
         }
 
@@ -115,52 +113,35 @@ public class MapSpatial : IMapSpatial
 
     public void ForEachAt(Position position, Func<Entity, bool> visitor)
     {
-        var key = (position.X, position.Y, position.Z);
-        if (!_grid.TryGetValue(key, out var list))
+        if (!_grid.TryGetValue(position, out var list))
             return;
 
         foreach (var entity in list)
-        {
             if (!visitor(entity))
                 break;
-        }
     }
 
-    public void ForEachArea(Position minInclusive, Position maxInclusive, Func<Entity, bool> visitor)
+    public void ForEachArea(AreaPosition area, Func<Entity, bool> visitor)
     {
-        int minX = Math.Min(minInclusive.X, maxInclusive.X);
-        int maxX = Math.Max(minInclusive.X, maxInclusive.X);
-        int minY = Math.Min(minInclusive.Y, maxInclusive.Y);
-        int maxY = Math.Max(minInclusive.Y, maxInclusive.Y);
-        int minZ = Math.Min(minInclusive.Z, maxInclusive.Z);
-        int maxZ = Math.Max(minInclusive.Z, maxInclusive.Z);
-
-        for (int z = minZ; z <= maxZ; z++)
+        for (int z = area.MinZ; z <= area.MaxZ; z++)
+        for (int x = area.MinX; x <= area.MaxX; x++)
+        for (int y = area.MinY; y <= area.MaxY; y++)
         {
-            for (int x = minX; x <= maxX; x++)
-            {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    var key = (x, y, z);
-                    if (!_grid.TryGetValue(key, out var list))
-                        continue;
+            var key = new Position(x, y, z);
+            if (!_grid.TryGetValue(key, out var list))
+                continue;
 
-                    foreach (var entity in list)
-                    {
-                        if (!visitor(entity))
-                            return;
-                    }
-                }
-            }
+            foreach (var entity in list)
+                if (!visitor(entity))
+                    return;
         }
     }
 
     public bool TryGetFirstAt(Position position, out Entity entity)
     {
-        var key = (position.X, position.Y, position.Z);
-        if (_grid.TryGetValue(key, out var list) && list.Count > 0)
+        if (_grid.TryGetValue(position, out var list) && list.Count > 0)
         {
-            entity = list[0];
+            entity = list.Peek();
             return true;
         }
 
@@ -168,48 +149,13 @@ public class MapSpatial : IMapSpatial
         return false;
     }
 
-    public bool TryReserve(Position position, in Entity reserver, out ReservationToken token)
-    {
-        token = default;
-
-        // Se há ocupante, não pode reservar
-        if (HasOccupant(position))
-            return false;
-
-        _reserved.Add(reserver);
-        _globalVersion++;
-        _reserveVersions[reserver] = _globalVersion;
-
-        token = new ReservationToken(position, reserver, _globalVersion);
-        return true;
-    }
-
-    public bool ReleaseReservation(ReservationToken token)
-    {
-        // Verifica se o token ainda é válido (não foi double-freed)
-        if (!_reserveVersions.TryGetValue(token.Reserver, out var version))
-            return false;
-
-        if (version != token.Version)
-            return false; // Token expirou (versão diferente)
-
-        _reserved.Remove(token.Reserver);
-        _reserveVersions.Remove(token.Reserver);
-
-        return true;
-    }
-
     public void Clear()
     {
         _grid.Clear();
-        _reserved.Clear();
-        _reserveVersions.Clear();
-        _globalVersion = 0;
     }
 
     private bool HasOccupant(Position position)
     {
-        var key = (position.X, position.Y, position.Z);
-        return _grid.ContainsKey(key) && _grid[key].Count > 0;
+        return _grid.ContainsKey(position) && _grid[position].Count > 0;
     }
 }

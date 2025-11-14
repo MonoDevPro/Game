@@ -30,10 +30,10 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         _visuals.TryGetValue(networkId, out visual);
 
     [Query]
-    [All<NetworkId, PlayerControlled, AttackAction>]
+    [All<NetworkId, PlayerControlled, Attack>]
     private void SyncPlayerAttackAction(
         in Entity e,
-        ref AttackAction action,
+        ref Attack action,
         [Data] float deltaTime)
     {
         action.RemainingDuration -= deltaTime;
@@ -44,7 +44,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         // - Shake de câmera
         // - Sons
         if (action.RemainingDuration <= 0)
-            World.Remove<AttackAction>(e);
+            World.Remove<Attack>(e);
     }
     
     [Query]
@@ -58,7 +58,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         if (_visuals.TryGetValue(networkId.Value, out var visual)) 
         {
             var isDead = World.Has<Dead>(e);
-            var isAttacking = World.Has<AttackAction>(e) && !isDead;
+            var isAttacking = World.Has<Attack>(e) && !isDead;
             var isMoving = velocity.Speed > 0f && !isAttacking && !isDead;
             var facingDir = isDead 
                 ? Vector2I.Zero 

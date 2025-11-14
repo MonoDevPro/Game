@@ -16,6 +16,8 @@ public struct Position(int x, int y, int z) : IEquatable<Position>
     public bool Equals(Position other) => X == other.X && Y == other.Y && Z == other.Z;
     public override bool Equals(object? obj) => obj is Position other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+    public static Position operator +(Position a, Facing b) => new(a.X + b.DirectionX, a.Y + b.DirectionY, a.Z);
+    public static Position operator -(Position a, Position b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 }
 
 public struct Velocity
@@ -27,3 +29,5 @@ public struct Velocity
     public bool IsMoving() => Speed > 0f && (DirectionX != 0 || DirectionY != 0);
     public void Stop() { Speed = 0f; DirectionX = 0; DirectionY = 0; }
 }
+
+public readonly record struct AreaPosition(int MinX, int MinY, int MinZ, int MaxX, int MaxY, int MaxZ);

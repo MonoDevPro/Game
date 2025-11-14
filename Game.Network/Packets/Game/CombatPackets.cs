@@ -9,20 +9,12 @@ namespace Game.Network.Packets.Game;
 [MemoryPackable]
 public readonly partial record struct CombatStatePacket(
     int AttackerNetworkId,
-    int DefenderNetworkId,
     AttackType Type,
     float AttackDuration,
     float CooldownRemaining);
 
-/// <summary>
-/// Server -> Client: resultado do ataque (hit, dano, crítico).
-/// </summary>
 [MemoryPackable]
-public readonly partial record struct AttackResultPacket(
-    int AttackerNetworkId,
-    int DefenderNetworkId,
-    int Damage,
-    bool WasHit,
-    bool IsCritical,
-    AttackType AnimationType,
+public readonly partial record struct PlayerDamagedPacket(
+    int TargetNetworkId,
+    int DamageAmount,
     float TimeToLive);

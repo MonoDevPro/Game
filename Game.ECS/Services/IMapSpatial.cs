@@ -1,4 +1,5 @@
 using Arch.Core;
+using Arch.LowLevel;
 using Game.ECS.Components;
 
 namespace Game.ECS.Services;
@@ -19,19 +20,16 @@ public interface IMapSpatial
     bool TryMove(Position from, Position to, in Entity entity);
 
     // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
-    int QueryAt(Position position, Span<Entity> results);
-    int QueryArea(Position minInclusive, Position maxInclusive, Span<Entity> results);
+    int QueryAt(Position position, ref UnsafeStack<Entity> results);
+    int QueryArea(AreaPosition area, ref UnsafeStack<Entity> results);
 
     // Versões por callback (sem buffers, com early-exit retornando false)
     void ForEachAt(Position position, Func<Entity, bool> visitor);
-    void ForEachArea(Position minInclusive, Position maxInclusive, Func<Entity, bool> visitor);
+    void ForEachArea(AreaPosition area, Func<Entity, bool> visitor);
 
     // Fast-path: obtém o primeiro ocupante (comum em checagens simples)
     bool TryGetFirstAt(Position position, out Entity entity);
 
-    // Reservas (antes do movimento): uso de token evita liberações incorretas
-    bool TryReserve(Position position, in Entity reserver, out ReservationToken token);
-    bool ReleaseReservation(ReservationToken token);
     // Limpeza total
     void Clear();
 }

@@ -1,9 +1,10 @@
 using Arch.Core;
+using Arch.LowLevel;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Logic;
+using Game.ECS.Extensions;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
@@ -24,7 +25,6 @@ public sealed partial class AISystem(World world, IMapService mapService)
     private void ProcessAI(
         in Entity e,
         ref AIState aiState,
-        ref Position pos,
         ref Velocity vel,
         ref Facing facing,
         [Data] float deltaTime)
@@ -71,9 +71,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
         ref AIState aiState,
         in Position pos,
         in Health health,
-        in MapId mapId,
-        ref DirtyFlags dirty,
-        [Data] float deltaTime)
+        in MapId mapId)
     {
         if (health.Current <= 0)
             return;
@@ -93,7 +91,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
             return;
         }
 
-        if (CombatLogic.TryAttack(World, e, target, AttackType.Basic, out _))
+        if (World.TryAttack(e, target, AttackType.Basic, out _))
         {
             aiState.CurrentBehavior = AIBehavior.Attack;
             if (World.TryGet(target, out NetworkId netId))
@@ -105,7 +103,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
         aiState.CurrentBehavior = AIBehavior.Chase;
     }
 
-    private void ChooseRandomDirection(in Entity entity, ref Velocity velocity, ref Facing facing)
+    private void ChooseRandomDirection(in Entity _, ref Velocity velocity, ref Facing facing)
     {
         int previousX = facing.DirectionX;
         int previousY = facing.DirectionY;
@@ -147,7 +145,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
     /// </summary>
     public bool TryAIAttack(Entity attacker, Entity target)
     {
-        return CombatLogic.TryAttack(World, attacker, target, AttackType.Basic, out _);
+        return World.TryAttack(attacker, target, AttackType.Basic, out _);
     }
 
     /// <summary>
@@ -166,7 +164,7 @@ public sealed partial class AISystem(World world, IMapService mapService)
 
         if (World.Has<DirtyFlags>(entity))
         {
-            ref DirtyFlags dirty = ref World.Get<DirtyFlags>(entity);
+            World.Get<DirtyFlags>(entity).MarkDirty(DirtyComponentType.CombatState);
         }
 
         if (World.Has<AIState>(entity))
@@ -179,18 +177,24 @@ public sealed partial class AISystem(World world, IMapService mapService)
 
     private bool TryAcquireTarget(in Entity self, in Position position, in MapId mapId, out Entity target)
     {
+        const int radius = SimulationConfig.MaxMeleeAttackRange;
+        
         var spatial = mapService.GetMapSpatial(mapId.Value);
-        int radius = SimulationConfig.MaxMeleeAttackRange;
+        
+        var area = new AreaPosition(
+            position.X - radius,
+            position.Y - radius,
+            position.Z,
+            position.X + radius,
+            position.Y + radius,
+            position.Z);
 
-        var min = new Position { X = position.X - radius, Y = position.Y - radius, Z = position.Z };
-        var max = new Position { X = position.X + radius, Y = position.Y + radius, Z = position.Z };
+        var nearby = new UnsafeStack<Entity>(16);
+        spatial.QueryArea(area, ref nearby);
 
-        Span<Entity> nearby = stackalloc Entity[16];
-        int count = spatial.QueryArea(min, max, nearby);
-
-        for (int i = 0; i < count; i++)
+        while (nearby.Count > 0)
         {
-            var candidate = nearby[i];
+            var candidate = nearby.Pop();
             if (candidate == self)
                 continue;
 
