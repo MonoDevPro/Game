@@ -12,9 +12,3 @@ public readonly partial record struct CombatStatePacket(
     AttackType Type,
     float AttackDuration,
     float CooldownRemaining);
-
-[MemoryPackable]
-public readonly partial record struct PlayerDamagedPacket(
-    int VictimNetworkId,
-    int DamageAmount,
-    float TimeToLive);

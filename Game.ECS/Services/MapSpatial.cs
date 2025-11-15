@@ -13,41 +13,27 @@ namespace Game.ECS.Services;
 /// </summary>
 public class MapSpatial : IMapSpatial
 {
-    private readonly Dictionary<Position, UnsafeStack<Entity>> _grid = new();
-    
-    private const int InitialCapacityPerCell = 4;
+    private readonly Dictionary<Position, List<Entity>> _grid = new();
 
     public void Insert(Position position, in Entity entity)
     {
         if (!_grid.TryGetValue(position, out var list))
         {
-            list = new UnsafeStack<Entity>(InitialCapacityPerCell);
+            list = [];
             _grid[position] = list;
         }
 
-        list.Push(entity);
+        list.Add(entity);
     }
 
     public bool Remove(Position position, in Entity entity)
     {
         if (!_grid.TryGetValue(position, out var list))
             return false;
-        
-        var stackCopy = new UnsafeStack<Entity>(list.Capacity);
-        bool found = false;
-        while (list.Count > 0)
-        {
-            var current = list.Pop();
-            if (current.Equals(entity) && !found)
-            {
-                found = true;
-                continue;
-            }
-            stackCopy.Push(current);
-        }
-        while (stackCopy.Count > 0)
-            list.Push(stackCopy.Pop());
-        
+
+        if (!list.Remove(entity))
+            return false;
+
         if (list.Count == 0)
             _grid.Remove(position);
 
@@ -87,24 +73,27 @@ public class MapSpatial : IMapSpatial
         return count;
     }
 
-    public int QueryArea(AreaPosition area, ref UnsafeStack<Entity> results)
+    public int QueryArea(AreaPosition area, Span<Entity> results)
     {
         int count = 0;
 
         for (int z = area.MinZ; z <= area.MaxZ; z++)
-        for (int x = area.MinX; x <= area.MaxX; x++)
-        for (int y = area.MinY; y <= area.MaxY; y++)
         {
-            var key = new Position(x, y, z);
-            if (!_grid.TryGetValue(key, out var list))
-                continue;
-
-            foreach (var entity in list)
+            for (int x = area.MinX; x <= area.MaxX; x++)
             {
-                if (count >= results.Count)
-                    return count;
-                results.Push(entity);
-                count++;
+                for (int y = area.MinY; y <= area.MaxY; y++)
+                {
+                    var key = new Position(x, y, z);
+                    if (!_grid.TryGetValue(key, out var list))
+                        continue;
+
+                    foreach (var entity in list)
+                    {
+                        if (count >= results.Length)
+                            return count;
+                        results[count++] = entity;
+                    }
+                }
             }
         }
 
@@ -117,23 +106,31 @@ public class MapSpatial : IMapSpatial
             return;
 
         foreach (var entity in list)
+        {
             if (!visitor(entity))
                 break;
+        }
     }
 
     public void ForEachArea(AreaPosition area, Func<Entity, bool> visitor)
     {
         for (int z = area.MinZ; z <= area.MaxZ; z++)
-        for (int x = area.MinX; x <= area.MaxX; x++)
-        for (int y = area.MinY; y <= area.MaxY; y++)
         {
-            var key = new Position(x, y, z);
-            if (!_grid.TryGetValue(key, out var list))
-                continue;
+            for (int x = area.MinX; x <= area.MaxX; x++)
+            {
+                for (int y = area.MinY; y <= area.MaxY; y++)
+                {
+                    var key = new Position(x, y, z);
+                    if (!_grid.TryGetValue(key, out var list))
+                        continue;
 
-            foreach (var entity in list)
-                if (!visitor(entity))
-                    return;
+                    foreach (var entity in list)
+                    {
+                        if (!visitor(entity))
+                            return;
+                    }
+                }
+            }
         }
     }
 
@@ -141,7 +138,7 @@ public class MapSpatial : IMapSpatial
     {
         if (_grid.TryGetValue(position, out var list) && list.Count > 0)
         {
-            entity = list.Peek();
+            entity = list[0];
             return true;
         }
 

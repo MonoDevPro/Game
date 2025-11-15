@@ -94,55 +94,6 @@ public abstract class GameSimulation : GameSystem
     }
     public override void BeforeUpdate(in float t) => throw new NotImplementedException();
     public override void AfterUpdate(in float t) => throw new NotImplementedException();
-    
-    public void RegisterSpatial(Entity entity)
-    {
-        if (MapService == null)
-            return;
-        
-        if (!World.Has<Position>(entity))
-            return;
-
-        int mapId = 0;
-        if (World.Has<MapId>(entity))
-        {
-            ref MapId mapComponent = ref World.Get<MapId>(entity);
-            mapId = mapComponent.Value;
-        }
-
-        if (!MapService.HasMap(mapId))
-        {
-            // aqui escolha o número de layers correto para esse mapa; por ora usamos 1
-            MapService.RegisterMap(mapId, new MapGrid(100, 100, layers: 3), new MapSpatial());
-        }
-
-        var spatial = MapService.GetMapSpatial(mapId);
-        ref Position position = ref World.Get<Position>(entity);
-        spatial.Insert(position, entity);
-    }
-
-    public void UnregisterSpatial(Entity entity)
-    {
-        if (MapService == null)
-            return;
-        
-        if (!World.Has<Position>(entity))
-            return;
-
-        int mapId = 0;
-        if (World.Has<MapId>(entity))
-        {
-            ref MapId mapComponent = ref World.Get<MapId>(entity);
-            mapId = mapComponent.Value;
-        }
-
-        if (!MapService.HasMap(mapId))
-            return;
-
-        var spatial = MapService.GetMapSpatial(mapId);
-        ref Position position = ref World.Get<Position>(entity);
-        spatial.Remove(position, entity);
-    }
 
     public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
     {

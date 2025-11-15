@@ -75,7 +75,6 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerVitalsPacket>();
             _network.UnregisterPacketHandler<CombatStatePacket>();
-            _network.UnregisterPacketHandler<PlayerDamagedPacket>();
         }
 
         GD.Print("[GameClient] Unloaded");
@@ -182,7 +181,6 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
         _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
-        _network.RegisterPacketHandler<PlayerDamagedPacket>(HandlePlayerDamaged);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -224,7 +222,6 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
         
-        
         // Localiza entidade do atacante
         if (!_simulation.TryGetPlayerEntity(packet.NetworkId, out var playerEntity))
             return;
@@ -232,8 +229,22 @@ public partial class GameClient : Node2D
         if (!_simulation.TryGetPlayerVisual(packet.NetworkId, out var playerVisual))
             return;
         
+        var heathCurrent = _simulation.World.Get<Health>(playerEntity).Current;
+        if (packet.Health.Current < heathCurrent)
+        {
+            var damageAmount = heathCurrent - packet.Health.Current;
+            // Exemplo simples: troca cor rápida
+            playerVisual.ChangeTempColor(Colors.Red, 0.2f);
+            playerVisual.CreateFloatingDamageLabel(damageAmount, critical: false);
+        }
+        if (packet.Health.Current > heathCurrent)
+        {
+            var healAmount = packet.Health.Current - heathCurrent;
+            playerVisual.CreateFloatingHealLabel(healAmount);
+        }
+        
         if (packet.Health.Current <= 0 && !_simulation.World.Has<Dead>(playerEntity))
-            _simulation.World.Add(playerEntity, new Dead());
+            _simulation.World.Add<Dead>(playerEntity);
         else if (_simulation.World.Has<Dead>(playerEntity))
             _simulation.World.Remove<Dead>(playerEntity);
         
@@ -296,25 +307,6 @@ public partial class GameClient : Node2D
         _simulation.World.Add(attackerEntity, attackAnim);
 
         GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
-    }
-
-    private void HandlePlayerDamaged(INetPeerAdapter peer, ref PlayerDamagedPacket packet)
-    {
-        if (_simulation is null)
-            return;
-
-        // Atualiza efeitos no defensor (ex: pop de dano)
-        if (_simulation.TryGetPlayerEntity(packet.VictimNetworkId, out var defenderEntity))
-        {
-            // Aplicar efeitos visuais (ex: flash, números de dano)
-            if (_simulation.TryGetPlayerVisual(packet.VictimNetworkId, out var defenderVisual))
-            {
-                // Exemplo simples: troca cor rápida
-                defenderVisual.ChangeTempColor(Colors.Red, 0.2f);
-                defenderVisual.CreateFloatingDamageLabel(packet.DamageAmount, critical: false);
-            }
-        }
-        GD.Print($"[GameClient] AttackResultPacket received: Target={packet.VictimNetworkId}, Damage={packet.DamageAmount}");
     }
     
 

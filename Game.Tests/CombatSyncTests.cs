@@ -89,14 +89,13 @@ public sealed class CombatSyncTests
             .Should().BeTrue("AttackSystem deve anexar componente Attack ao atacante");
         ref var attackerDirty = ref world.Get<DirtyFlags>(attacker);
         attackerDirty.Raw.Should().BeGreaterThan(0, "DirtyFlags precisa receber ao menos um bit");
-        attackerDirty.IsDirty(DirtyComponentType.CombatState)
+        attackerDirty.IsDirty(DirtyComponentType.Combat)
             .Should().BeTrue("AttackSystem deve marcar CombatState como dirty");
 
         syncSystem.Update(SimulationConfig.TickDelta);
 
         // Assert: ataque gerou pacote de combate e resultado
         network.CombatPackets.Should().ContainSingle("CombatStatePacket não foi enviado pelo servidor");
-        network.DamagedPackets.Should().ContainSingle("PlayerDamagedPacket não foi enviado pelo servidor");
 
         var combatPacket = network.CombatPackets.Single();
         combatPacket.AttackerNetworkId.Should().Be(attackerData.NetworkId);
@@ -122,7 +121,6 @@ public sealed class CombatSyncTests
         public IPeerRepository Peers { get; } = new DummyPeerRepository();
 
         public List<CombatStatePacket> CombatPackets { get; } = new();
-        public List<PlayerDamagedPacket> DamagedPackets { get; } = new();
 
         public void Initialize() { }
     public void ConnectToServer() => throw new NotSupportedException();
@@ -141,8 +139,6 @@ public sealed class CombatSyncTests
         {
             if (packet is CombatStatePacket combat)
                 CombatPackets.Add(combat);
-            else if (packet is PlayerDamagedPacket result)
-                DamagedPackets.Add(result);
         }
 
     public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();

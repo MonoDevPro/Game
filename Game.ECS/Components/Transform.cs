@@ -20,6 +20,18 @@ public struct Position(int x, int y, int z) : IEquatable<Position>
     public static Position operator -(Position a, Position b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 }
 
+/// <summary>
+/// Componente temporário que marca que uma entidade mudou de posição
+/// e precisa ser sincronizada com o MapSpatial.
+/// Removido automaticamente após processamento.
+/// </summary>
+public struct PositionChanged
+{
+    public Position OldPosition;
+    public Position NewPosition;
+}
+
+
 public struct Velocity
 {
     public int DirectionX; 

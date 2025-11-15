@@ -45,6 +45,7 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         float cooldown = atk.CalculateAttackCooldownSeconds(attackType);
         combat.LastAttackTime = cooldown;
         combat.InCombat = true;
+        dirty.MarkDirty(DirtyComponentType.Combat);
         
         World.Add<Attack>(e, new Attack
         {
@@ -53,8 +54,6 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
             TotalDuration = BaseAttackAnimationDuration,
             DamageApplied = false,
         });
-        
-        dirty.MarkDirty(DirtyComponentType.CombatState);
     }
     
     [Query]
@@ -66,9 +65,11 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         in Position position,
         in Facing facing,
         ref Attack atkAction,
+        in DirtyFlags dirty,
         ref CombatState combat,
         [Data] float deltaTime)
     {
+        
         // Reduz o tempo restante da animação
         atkAction.RemainingDuration -= deltaTime;
         

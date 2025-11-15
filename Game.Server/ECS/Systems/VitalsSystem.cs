@@ -10,9 +10,42 @@ namespace Game.Server.ECS.Systems;
 /// Sistema responsável por regeneração de vida e mana.
 /// Processa entidades que têm Health e Mana, aplicando regeneração por tick.
 /// </summary>
-public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? logger = null)
+public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? logger = null)
     : GameSystem(world)
 {
+    [Query]
+    [All<Damaged, Health>]
+    [None<Dead, Invulnerable>]
+    private void ProcessDamage(
+        in Entity victim,
+        in Damaged damaged,
+        ref Health health,
+        ref DirtyFlags dirty)
+    {
+        var damage = damaged.Amount;
+        if (damaged.Amount <= 0)
+        {
+            World.Remove<Damaged>(victim);
+            return;
+        }
+        
+        int newHealth = Math.Max(0, health.Current - damage);
+        if (newHealth != health.Current)
+            dirty.MarkDirty(DirtyComponentType.Vitals);
+        
+        health.Current = newHealth;
+        if (health.Current <= 0)
+            World.Add<Dead>(victim);
+        
+        World.Remove<Damaged>(victim);
+        
+        logger?.LogDebug(
+            "Dano imediato aplicado: {Damage} para {Target} de {Attacker}",
+            damaged.Amount,
+            World.TryGet(victim, out NetworkId targetNetId) ? targetNetId.Value : -1,
+            World.TryGet(damaged.SourceEntity, out NetworkId attackerNetId) ? attackerNetId.Value : -1);
+    }
+    
     [Query]
     [All<Health, DirtyFlags>]
     [None<Dead>]
@@ -37,7 +70,7 @@ public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? log
         
         health.Current = newValue;
         health.AccumulatedRegeneration -= regenToApply;
-        dirty.MarkDirty(DirtyComponentType.Health);
+        dirty.MarkDirty(DirtyComponentType.Vitals);
     }
 
     [Query]
@@ -62,7 +95,7 @@ public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? log
             {
                 mana.Current = newValue;
                 mana.AccumulatedRegeneration -= regenToApply;
-                dirty.MarkDirty(DirtyComponentType.Mana);
+                dirty.MarkDirty(DirtyComponentType.Vitals);
             }
         }
     }
@@ -79,6 +112,6 @@ public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? log
             return;
 
         World.Add<Dead>(entity);
-        dirty.MarkDirty(DirtyComponentType.Health);
+        dirty.MarkDirty(DirtyComponentType.Vitals);
     }
 }

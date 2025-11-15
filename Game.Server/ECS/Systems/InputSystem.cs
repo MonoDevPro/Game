@@ -31,7 +31,7 @@ public sealed partial class InputSystem(World world)
                 velocity.DirectionX = 0;
                 velocity.DirectionY = 0;
                 velocity.Speed = 0f;
-                dirty.MarkDirty(DirtyComponentType.Velocity);
+                dirty.MarkDirty(DirtyComponentType.State);
             }
             return;
         }
@@ -40,6 +40,6 @@ public sealed partial class InputSystem(World world)
         velocity.DirectionX = newDirX;
         velocity.DirectionY = newDirY;
         velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, in input.Flags);
-        dirty.MarkDirty(DirtyComponentType.Velocity);
+        dirty.MarkDirty(DirtyComponentType.State);
     }
 }

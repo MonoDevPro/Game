@@ -217,6 +217,22 @@ public abstract partial class DefaultVisual : Node2D
         tween.TweenCallback(Callable.From(() => label.QueueFree()));
     }
     
+    public void CreateFloatingHealLabel(int healAmount)
+    {
+        if (healAmount <= 0) return;
+        var label = new Label
+        {
+            Text = $"+{healAmount}",
+            Position = new Vector2(32, -24),
+            Modulate = Colors.LightGreen
+        };
+        AddChild(label);
+        var tween = CreateTween();
+        tween.TweenProperty(label, "position:y", label.Position.Y - 16, 0.6f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        tween.TweenCallback(Callable.From(() => label.QueueFree()));
+    }
+    
+    
     public void ChangeTempColor(Color color, float duration = 0.3f)
     {
         if (Sprite is null) return;

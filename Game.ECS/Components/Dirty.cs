@@ -7,16 +7,12 @@ namespace Game.ECS.Components;
 public enum DirtyComponentType : ushort
 {
     None          = 0,
-    Position      = 1 << 0,
-    Health        = 1 << 1,
-    Mana          = 1 << 2,
-    Facing        = 1 << 3,
-    Input         = 1 << 4,
-    Velocity      = 1 << 5,
-    CombatState   = 1 << 6,
-    Damaged       = 1 << 7,
+    State         = 1 << 0,
+    Vitals        = 1 << 1,
+    Input         = 1 << 2,
+    Combat        = 1 << 3,
 	
-    All	     = Position | Health | Mana | Facing | Input | Velocity | CombatState
+    All	     = State | Vitals | Input | Combat
 }
 
 public struct DirtyFlags
@@ -33,6 +29,7 @@ public struct DirtyFlags
     public void ClearDirtyMask(DirtyComponentType mask) => _flags &= (ushort)~(ushort)mask;
 
     public bool IsDirty(DirtyComponentType type) => (_flags & (ushort)type) != 0;
+    public readonly bool IsDirtyMask(DirtyComponentType mask) => (_flags & (ushort)mask) != 0;
 
     public DirtyComponentType Snapshot() => (DirtyComponentType)_flags;
 

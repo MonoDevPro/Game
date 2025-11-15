@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Extensions;
 using Game.ECS.Logic;
 using Game.ECS.Services;
 using Game.ECS.Systems;
@@ -12,9 +13,6 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class MovementSystem(World world, IMapService mapService)
     : GameSystem(world)
 {
-    public MovementSystem(World world)
-        : this(world, new MapService()) { }
-
     [Query]
     [All<PlayerControlled, Facing, Velocity, DirtyFlags>]
     [None<Dead>]
@@ -28,40 +26,38 @@ public sealed partial class MovementSystem(World world, IMapService mapService)
         facing.DirectionY = velocity.DirectionY;
 
         if (previousX != facing.DirectionX || previousY != facing.DirectionY)
-            dirty.MarkDirty(DirtyComponentType.Facing);
+            dirty.MarkDirty(DirtyComponentType.State);
     }
     
     [Query]
     [All<Position, Movement, Velocity, Walkable, DirtyFlags, MapId>]
     [None<Dead>]
-    private void ProcessMovement(in Entity e, ref Position pos, ref Movement movement, ref Velocity velocity, ref DirtyFlags dirty, in MapId mapId, [Data] float deltaTime)
+    private void ProcessMovement(in Entity e, in Position pos, ref Movement movement, ref Velocity velocity, ref DirtyFlags dirty, in MapId mapId, [Data] float deltaTime)
     {
         if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
-        
+    
         movement.Timer += velocity.Speed * deltaTime;
         var grid = mapService.GetMapGrid(mapId.Value);
         var spatial = mapService.GetMapSpatial(mapId.Value);
 
-        var moveResult = MovementLogic.TryComputeStep(e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
-        
+        var moveResult = MovementLogic.TryComputeStep(
+            e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
+    
         if (moveResult != MovementLogic.MovementResult.Allowed && 
             moveResult != MovementLogic.MovementResult.None)
         {
             movement.Timer = 0f;
             return;
         }
-        
+    
         if (movement.Timer >= SimulationConfig.CellSize)
             movement.Timer -= SimulationConfig.CellSize;
 
-        // movimento permitido ->
-        if (!spatial.Update(pos, candidatePos, e))
-        {
-            spatial.Remove(pos, e);
-            spatial.Insert(candidatePos, e);
-        }
-        pos = candidatePos;
-        dirty.MarkDirty(DirtyComponentType.Position);
+        dirty.MarkDirty(DirtyComponentType.State);
+        
+        // ✅ Apenas atualiza a position - o SpatialSyncSystem cuida do resto
+        // ✅ Usa a extensão para marcar mudança
+        World.SetPosition(e, candidatePos);
     }
     
     [Query]

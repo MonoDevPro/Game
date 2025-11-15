@@ -110,4 +110,34 @@ public class Map : BaseEntity
                 yield return (x, y, Tiles[index]);
             }
     }
+    
+    public byte[] GetCollisionLayer(int z)
+    {
+        var layer = new byte[Width * Height];
+        var span = GetLayerReadOnlySpan(z);
+        for (int i = 0; i < span.Length; i++)
+        {
+            layer[i] = span[i].CollisionMask;
+        }
+        return layer;
+    }
+    
+    public bool[,,] GetCollisionGrid()
+    {
+        var grid = new bool[Width, Height, Layers];
+        for (int z = 0; z < Layers; z++)
+        {
+            var span = GetLayerReadOnlySpan(z);
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    int index = y * Width + x;
+                    grid[x, y, z] = span[index].CollisionMask != 0;
+                }
+            }
+        }
+        return grid;
+    }
+    
 }

@@ -21,7 +21,7 @@ public interface IMapSpatial
 
     // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
     int QueryAt(Position position, ref UnsafeStack<Entity> results);
-    int QueryArea(AreaPosition area, ref UnsafeStack<Entity> results);
+    int QueryArea(AreaPosition area, Span<Entity> results);
 
     // Versões por callback (sem buffers, com early-exit retornando false)
     void ForEachAt(Position position, Func<Entity, bool> visitor);

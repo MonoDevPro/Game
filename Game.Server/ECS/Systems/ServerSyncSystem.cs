@@ -25,8 +25,7 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         dirty.ClearAll();
 
         // Estado de movimento
-        if (dirtyFlags.IsDirty(
-                DirtyComponentType.Position | DirtyComponentType.Facing | DirtyComponentType.Velocity) &&
+        if (dirtyFlags.IsDirty(DirtyComponentType.State) &&
             World.TryGet(entity, out Position position) &&
             World.TryGet(entity, out Facing facing) &&
             World.TryGet(entity, out Velocity velocity))
@@ -36,31 +35,15 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         }
 
         // Vitals
-        if (dirtyFlags.IsDirty(DirtyComponentType.Health | DirtyComponentType.Mana) &&
+        if (dirtyFlags.IsDirty(DirtyComponentType.Vitals) &&
             World.TryGet(entity, out Health health) && World.TryGet(entity, out Mana mana))
         {
             var vitalsPacket = new PlayerVitalsPacket(networkId.Value, health, mana);
             sender.SendToAll(vitalsPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
         
-        if (dirtyFlags.IsDirty(DirtyComponentType.Damaged) &&
-            World.TryGet(entity, out Damaged damaged))
-        {
-            var damagedPacket = new PlayerDamagedPacket(
-                VictimNetworkId: networkId.Value,
-                DamageAmount: damaged.Amount,
-                TimeToLive: 1.0f
-            );
-            sender.SendToAll(damagedPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        }
-        
-        if (dirtyFlags.IsDirty(DirtyComponentType.CombatState))
-        {
-            logger?.LogDebug($"[ServerSyncSystem] Entity {networkId.Value} has CombatState dirty.");
-        }
-
         // Combate (estado + resultado)
-        if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
+        if (dirtyFlags.IsDirty(DirtyComponentType.Combat) &&
             World.TryGet(entity, out CombatState combat) &&
             World.TryGet(entity, out Attack attackAction))
         {
@@ -70,7 +53,6 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
                 AttackDuration: attackAction.TotalDuration,
                 CooldownRemaining: combat.LastAttackTime
             );
-            logger?.LogDebug($"[ServerSyncSystem] Sending CombatStatePacket: Attacker={networkId.Value}, Type={attackAction.Type}");
             sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
     }

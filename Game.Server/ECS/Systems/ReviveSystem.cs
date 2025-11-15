@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Extensions;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
@@ -28,7 +29,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         in Entity entity,
         ref Revive revive,
         ref CombatState combat,
-        ref Position position,
         ref Health health,
         ref Mana mana,
         ref DirtyFlags dirty,
@@ -39,16 +39,18 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         // ✅ Tempo de revive expirou - reviver jogador
         if (revive.TimeRemaining <= 0f)
         {
-            position = revive.SpawnPosition;
-            
+            // ✅ Usa a extensão para marcar mudança de posição
+            World.SetPosition(entity, revive.SpawnPosition);
+        
             combat.InCombat = false;
             combat.LastAttackTime = 0f;
-            
+        
             health.Current = (int)(health.Max * SimulationConfig.ReviveHealthPercent);
             mana.Current = (int)(mana.Max * SimulationConfig.ReviveManaPercent);
-            
+        
+            // ✅ Marca State como dirty para o SpatialSyncSystem detectar
             dirty.MarkDirty(DirtyComponentType.All);
-            
+        
             World.Remove<Dead, Revive>(entity);
         }
     }

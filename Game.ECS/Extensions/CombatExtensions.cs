@@ -38,7 +38,7 @@ public static class CombatExtensions
     
     public static DamageTimingPhase GetDamageTimingPhase(this AttackType type) => type switch
     {
-        AttackType.Basic    => DamageTimingPhase.Mid,   // Dano no meio do golpe
+        AttackType.Basic    => DamageTimingPhase.Late,   // Dano no meio do golpe
         AttackType.Heavy    => DamageTimingPhase.Late,  // Dano no impacto final
         AttackType.Critical => DamageTimingPhase.Mid,   // Dano no momento crítico
         AttackType.Magic    => DamageTimingPhase.Early, // Dano quando lança o feitiço
