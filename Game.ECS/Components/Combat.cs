@@ -1,3 +1,5 @@
+using Arch.Core;
+
 namespace Game.ECS.Components;
 
 // ============================================
@@ -12,6 +14,7 @@ public struct CombatState { public bool InCombat; public float LastAttackTime; }
 
 public struct Attack
 {
+    public Entity TargetEntity;       // network id do alvo
     public AttackType Type;           // tipo de animação/ataque
     public float RemainingDuration;   // tempo restante da animação (s)
     public float TotalDuration;       // duração total da animação (s)

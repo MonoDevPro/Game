@@ -90,9 +90,6 @@ public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<
                 character.Stats.MagicDefense
             );
         }
-        return snapshot with
-        {
-            Name = character.Name
-        };
+        return snapshot with { Name = character.Name, };
     }
 }

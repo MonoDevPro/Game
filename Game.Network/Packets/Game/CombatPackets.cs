@@ -15,6 +15,6 @@ public readonly partial record struct CombatStatePacket(
 
 [MemoryPackable]
 public readonly partial record struct PlayerDamagedPacket(
-    int TargetNetworkId,
+    int VictimNetworkId,
     int DamageAmount,
     float TimeToLive);

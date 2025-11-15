@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://co4pgh3hsr04t"]
 
-[ext_resource type="Script" uid="uid://bpbi47etrkoie" path="res://Scripts/Scenes/Menu/MenuScript.cs" id="1_1rerr"]
+[ext_resource type="Script" uid="uid://bpbi47etrkoie" path="res://Scripts/UI/Menu/MenuScript.cs" id="1_1rerr"]
 [ext_resource type="Texture2D" uid="uid://d4hjw2hg5d1lh" path="res://Assets/Sprites/Menu/BG.jpg" id="2_xhh6f"]
 
 [node name="Menu" type="Control"]
@@ -66,6 +66,7 @@ oversampling_override = 1.0
 title = "Login"
 initial_position = 1
 size = Vector2i(250, 178)
+visible = false
 wrap_controls = true
 unresizable = true
 exclude_from_capture = true
@@ -298,7 +299,6 @@ oversampling_override = 1.0
 title = "Character Creation"
 initial_position = 1
 size = Vector2i(250, 196)
-visible = false
 wrap_controls = true
 unresizable = true
 exclude_from_capture = true

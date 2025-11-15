@@ -53,9 +53,9 @@ public partial class AssetManager : Node
     /// </summary>
     public SpriteFrames GetSpriteFrames(VocationType vocation, Gender gender)
     {
-        var vocationName = vocation.ToString();
+        var vocationName = vocation.ToString().ToLower();
         var genderSuffix = gender == Gender.Female ? "_female" : "_male";
-        var path = $"res://Resources/SpriteSheets/{vocationName.ToLower()}{genderSuffix}_frames.tres";
+        var path = $"res://Resources/SpriteSheets/{vocationName}{genderSuffix}_frames.tres";
 
         return GetSpriteFrames(path);
     }
@@ -123,7 +123,13 @@ public partial class AssetManager : Node
         foreach (var vocation in Enum.GetValues<VocationType>())
             // Carrega ambos os gêneros
             foreach (var gender in Enum.GetValues<Gender>())
-                GetSpriteFrames(vocation, gender);
+                GetSpriteFrames(
+                    vocation is VocationType.Unknown 
+                        ? VocationType.Warrior 
+                        : vocation,
+                    gender is Gender.Unknown 
+                        ? Gender.Male 
+                        : gender);
     }
 
     private void PreloadUIAssets()

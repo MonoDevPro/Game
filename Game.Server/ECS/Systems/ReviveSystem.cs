@@ -37,10 +37,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     private void ProcessReviveTimer(
         in Entity entity,
         ref Revive revive,
-        ref Health health,
-        ref Mana mana,
-        ref CombatState combat,
-        ref Position position,
         [Data] float deltaTime)
     {
         revive.TimeRemaining -= deltaTime;

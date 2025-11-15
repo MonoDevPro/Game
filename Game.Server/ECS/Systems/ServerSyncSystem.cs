@@ -8,7 +8,7 @@ using Game.Network.Packets.Game;
 
 namespace Game.Server.ECS.Systems;
 
-public sealed partial class ServerSyncSystem(World world, INetworkManager sender) : GameSystem(world)
+public sealed partial class ServerSyncSystem(World world, INetworkManager sender, ILogger<ServerSyncSystem>? logger = null) : GameSystem(world)
 {
     [Query]
     [All<NetworkId, DirtyFlags>]
@@ -46,12 +46,11 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             World.TryGet(entity, out Damaged damaged))
         {
             var damagedPacket = new PlayerDamagedPacket(
-                TargetNetworkId: networkId.Value,
+                VictimNetworkId: networkId.Value,
                 DamageAmount: damaged.Amount,
                 TimeToLive: 1.0f
             );
             sender.SendToAll(damagedPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            World.Remove<Damaged>(entity);
         }
 
         // Combate (estado + resultado)
@@ -62,9 +61,10 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             var combatPacket = new CombatStatePacket(
                 AttackerNetworkId: networkId.Value,
                 Type: attackAction.Type,
-                AttackDuration: attackAction.RemainingDuration,
+                AttackDuration: attackAction.TotalDuration,
                 CooldownRemaining: combat.LastAttackTime
             );
+            logger?.LogDebug($"[ServerSyncSystem] Sending CombatStatePacket: Attacker={networkId.Value}, Defender={attackAction.TargetEntity}, Type={attackAction.Type}");
             sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
     }

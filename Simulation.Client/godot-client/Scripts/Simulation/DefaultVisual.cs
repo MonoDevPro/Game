@@ -119,7 +119,14 @@ public abstract partial class DefaultVisual : Node2D
     public void LoadSprite(VocationType vocation, Gender gender)
     {
         if (Sprite is null) return;
-
+        
+        vocation = vocation is VocationType.Unknown 
+            ? VocationType.Warrior 
+            : vocation;
+        gender = gender is Gender.Unknown
+            ? Gender.Male
+            : gender;
+        
         var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
         Sprite.SpriteFrames = spriteFrames;
     }

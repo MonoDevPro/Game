@@ -255,9 +255,9 @@ public sealed class GameServer : IDisposable
                 {
                     characterPersistData = characterPersistData with
                     {
-                        PositionX = snapshot.SpawnX,
-                        PositionY = snapshot.SpawnY,
-                        PositionZ = snapshot.SpawnZ,
+                        PositionX = snapshot.PosX,
+                        PositionY = snapshot.PosY,
+                        PositionZ = snapshot.PosZ,
                         FacingX = snapshot.FacingX,
                         FacingY = snapshot.FacingY,
                         CurrentHp = snapshot.Hp,

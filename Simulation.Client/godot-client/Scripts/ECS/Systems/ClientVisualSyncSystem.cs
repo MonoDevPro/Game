@@ -71,7 +71,6 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     [Query]
     [All<NetworkId>]
     private void InterpolatePosition(
-        in Entity e, 
         in Position pos, 
         in Velocity velocity,
         in NetworkId networkId,

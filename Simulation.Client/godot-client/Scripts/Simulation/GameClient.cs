@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Arch.Core;
 using Game.Core.Extensions;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
@@ -269,16 +270,25 @@ public partial class GameClient : Node2D
     
     private void HandleCombatState(INetPeerAdapter peer, ref CombatStatePacket packet)
     {
+        GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerNetworkId}");
+        
         if (_simulation is null)
+        {
+            GD.PushWarning("[GameClient] HandleCombatState: simulation is null!");
             return;
+        }
 
         // Localiza entidade do atacante
         if (!_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity))
+        {
+            GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
             return;
+        }
 
         // Se quiser armazenar algo temporário no ECS local para animação:
         var attackAnim = new Attack
         {
+            TargetEntity = Entity.Null, // Pode ser preenchido se necessário
             Type = packet.Type,
             RemainingDuration = packet.AttackDuration,
             TotalDuration = packet.AttackDuration,
@@ -286,7 +296,7 @@ public partial class GameClient : Node2D
         };
         _simulation.World.Add(attackerEntity, attackAnim);
 
-        GD.Print($"[GameClient] CombatStatePacket received: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
+        GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
 
     private void HandlePlayerDamaged(INetPeerAdapter peer, ref PlayerDamagedPacket packet)
@@ -295,17 +305,17 @@ public partial class GameClient : Node2D
             return;
 
         // Atualiza efeitos no defensor (ex: pop de dano)
-        if (_simulation.TryGetPlayerEntity(packet.TargetNetworkId, out var defenderEntity))
+        if (_simulation.TryGetPlayerEntity(packet.VictimNetworkId, out var defenderEntity))
         {
             // Aplicar efeitos visuais (ex: flash, números de dano)
-            if (_simulation.TryGetPlayerVisual(packet.TargetNetworkId, out var defenderVisual))
+            if (_simulation.TryGetPlayerVisual(packet.VictimNetworkId, out var defenderVisual))
             {
                 // Exemplo simples: troca cor rápida
                 defenderVisual.ChangeTempColor(Colors.Red, 0.2f);
                 defenderVisual.CreateFloatingDamageLabel(packet.DamageAmount, critical: false);
             }
         }
-        GD.Print($"[GameClient] AttackResultPacket received: Target={packet.TargetNetworkId}, Damage={packet.DamageAmount}");
+        GD.Print($"[GameClient] AttackResultPacket received: Target={packet.VictimNetworkId}, Damage={packet.DamageAmount}");
     }
     
 

@@ -35,9 +35,9 @@ public sealed class CombatSyncTests
             Name: "Attacker",
             Gender: 0,
             Vocation: 0,
-            SpawnX: 10,
-            SpawnY: 10,
-            SpawnZ: 0,
+            PosX: 10,
+            PosY: 10,
+            PosZ: 0,
             FacingX: 1,
             FacingY: 0,
             Hp: 100,
@@ -61,7 +61,7 @@ public sealed class CombatSyncTests
             PlayerId = 2,
             NetworkId = 202,
             Name = "Defender",
-            SpawnX = 11, // à frente do atacante (facingX = +1)
+            PosX = 11, // à frente do atacante (facingX = +1)
             PhysicalDefense = 1,
             MagicDefense = 1
         };
@@ -86,17 +86,17 @@ public sealed class CombatSyncTests
         combatSystem.Update(SimulationConfig.TickDelta);
 
         world.Has<Attack>(attacker)
-            .Should().BeTrue("CombatSystem deve anexar AttackAction ao atacante");
+            .Should().BeTrue("AttackSystem deve anexar componente Attack ao atacante");
         ref var attackerDirty = ref world.Get<DirtyFlags>(attacker);
         attackerDirty.Raw.Should().BeGreaterThan(0, "DirtyFlags precisa receber ao menos um bit");
         attackerDirty.IsDirty(DirtyComponentType.CombatState)
-            .Should().BeTrue("CombatSystem deve marcar CombatState como dirty");
+            .Should().BeTrue("AttackSystem deve marcar CombatState como dirty");
 
         syncSystem.Update(SimulationConfig.TickDelta);
 
         // Assert: ataque gerou pacote de combate e resultado
         network.CombatPackets.Should().ContainSingle("CombatStatePacket não foi enviado pelo servidor");
-        network.DamagedPackets.Should().ContainSingle("AttackResultPacket não foi enviado pelo servidor");
+        network.DamagedPackets.Should().ContainSingle("PlayerDamagedPacket não foi enviado pelo servidor");
 
         var combatPacket = network.CombatPackets.Single();
         combatPacket.AttackerNetworkId.Should().Be(attackerData.NetworkId);

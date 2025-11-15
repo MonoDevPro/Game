@@ -125,7 +125,6 @@ public partial class MenuScript : Control
     {
         base._Ready();
         
-        
         LoadConfigurations();
         
         CreateStatusLabel();
@@ -257,8 +256,8 @@ public partial class MenuScript : Control
         
         // Clear fields
         _characterNameLineEdit.Text = "";
-        _genderOptionButton.Selected = 0;
-        _vocationOptionButton.Selected = 0;
+        _genderOptionButton.Selected = -1;
+        _vocationOptionButton.Selected = -1;
     }
     
     private void OnEnterCharacterDeletion()
@@ -591,14 +590,14 @@ public partial class MenuScript : Control
         _genderOptionButton.Clear();
         foreach (var gender in Enum.GetValues<Gender>())
         {
-            _genderOptionButton.AddItem(gender.ToString());
+            _genderOptionButton.AddItem(gender.ToString(), (int)gender);
         }
         
         // Vocation
         _vocationOptionButton.Clear();
         foreach (var vocation in Enum.GetValues<VocationType>())
         {
-            _vocationOptionButton.AddItem(vocation.ToString());
+            _vocationOptionButton.AddItem(vocation.ToString(), (int)vocation);
         }
     }
     
@@ -847,6 +846,8 @@ public partial class MenuScript : Control
         var genderIndex = _genderOptionButton.Selected;
         var vocationIndex = _vocationOptionButton.Selected;
         
+        GD.Print($"[Menu] Creating character: Name='{name}', GenderIndex={genderIndex}, VocationIndex={vocationIndex}");
+        
         // Validation
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -854,13 +855,13 @@ public partial class MenuScript : Control
             return;
         }
         
-        if (genderIndex < 0 || genderIndex >= Enum.GetValues<Gender>().Length)
+        if (genderIndex <= 0 || genderIndex >= Enum.GetValues<Gender>().Length)
         {
             UpdateStatus("Character creation failed: invalid gender");
             return;
         }
         
-        if (vocationIndex < 0 || vocationIndex >= Enum.GetValues<VocationType>().Length)
+        if (vocationIndex <= 0 || vocationIndex >= Enum.GetValues<VocationType>().Length)
         {
             UpdateStatus("Character creation failed: invalid vocation");
             return;

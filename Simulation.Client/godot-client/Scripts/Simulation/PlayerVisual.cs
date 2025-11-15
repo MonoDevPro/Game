@@ -23,10 +23,10 @@ public sealed partial class PlayerVisual : DefaultVisual
 
     public void UpdateFromSnapshot(PlayerData data)
     {
-        LoadSprite(VocationType.Archer, Gender.Male);
+        LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
         UpdateName(data.Name);
         UpdateAnimationState(new Vector2I(data.FacingX, data.FacingY), false, false);
-        UpdatePosition(new Vector3I(data.SpawnX, data.SpawnY, data.SpawnZ));
+        UpdatePosition(new Vector3I(data.PosX, data.PosY, data.PosZ));
         UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
         UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
     }

@@ -12,7 +12,7 @@ public sealed class Character : BaseEntity
 {
     public string Name { get; init; } = null!;
     public Gender Gender { get; set; } = Gender.Unknown;
-    public VocationType Vocation { get; set; } = VocationType.Warrior;
+    public VocationType Vocation { get; set; } = VocationType.Unknown;
     
     // Posição no mundo
     public int FacingX { get; set; }
@@ -33,4 +33,7 @@ public sealed class Character : BaseEntity
     
     // Um personagem tem múltiplos slots de equipamento (1:N)
     public ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();
+    
+    public override string ToString() => $"Character(Id={Id}, Name={Name}, Vocation={Vocation}, Level={Stats.Level}, Pos=({PositionX},{PositionY},{PositionZ}))";
+    
 }

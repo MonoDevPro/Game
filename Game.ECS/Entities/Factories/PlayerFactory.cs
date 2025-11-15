@@ -11,7 +11,7 @@ namespace Game.ECS.Entities.Factories;
 public readonly record struct PlayerData(
     int PlayerId, int NetworkId,
     string Name, byte Gender, byte Vocation,
-    int SpawnX, int SpawnY, int SpawnZ,
+    int PosX, int PosY, int PosZ,
     int FacingX, int FacingY,
     int Hp, int MaxHp, float HpRegen,
     int Mp, int MaxMp, float MpRegen,
@@ -48,7 +48,8 @@ public static partial class EntityFactory
             new NetworkId { Value = data.NetworkId },
             new PlayerId { Value = data.PlayerId },
             new MapId { Value = data.MapId },
-            new Position { X = data.SpawnX, Y = data.SpawnY, Z = data.SpawnZ },
+            new PlayerInfo { GenderId = data.Gender, VocationId = data.Vocation},
+            new Position { X = data.PosX, Y = data.PosY, Z = data.PosZ },
             new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
             new Movement { Timer = 0f },
@@ -87,6 +88,7 @@ public static partial class EntityFactory
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var playerId = ref world.Get<PlayerId>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
+        ref var info = ref world.Get<PlayerInfo>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var health = ref world.Get<Health>(entity);
@@ -98,8 +100,9 @@ public static partial class EntityFactory
 
         data = new PlayerData
         {
+            Vocation = info.VocationId, Gender = info.GenderId,
             NetworkId = networkId.Value, PlayerId = playerId.Value, MapId = mapId.Value,
-            SpawnX = position.X, SpawnY = position.Y, SpawnZ = position.Z,
+            PosX = position.X, PosY = position.Y, PosZ = position.Z,
             FacingX = facing.DirectionX, FacingY = facing.DirectionY,
             Hp = health.Current, MaxHp = health.Max, HpRegen = health.RegenerationRate,
             Mp = mana.Current, MaxMp = mana.Max, MpRegen = mana.RegenerationRate,

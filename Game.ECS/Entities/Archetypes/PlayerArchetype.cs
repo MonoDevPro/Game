@@ -21,6 +21,7 @@ public static partial class GameArchetypes
         Component<NetworkId>.ComponentType,
         Component<PlayerId>.ComponentType,
         Component<MapId>.ComponentType,
+        Component<PlayerInfo>.ComponentType,
         Component<Position>.ComponentType,
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,

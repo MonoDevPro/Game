@@ -38,8 +38,14 @@ public sealed class ServerGameSimulation : GameSimulation
         // Mas o servidor valida e aplica
         systems.Add(new InputSystem(world));
         
+        // Sistema de dano diferido (aplica dano no momento correto da animação)
+        systems.Add(new DeferredDamageSystem(world, _loggerFactory.CreateLogger<DeferredDamageSystem>()));
+        
         // Sistemas de movimento
         systems.Add(new MovementSystem(world, MapService!));
+        
+        // Sistemas de combate
+        systems.Add(new AttackSystem(world, MapService!, _loggerFactory.CreateLogger<AttackSystem>()));
         
         // Sistemas de saúde
         systems.Add(new HealthSystem(world));
@@ -47,17 +53,11 @@ public sealed class ServerGameSimulation : GameSimulation
         // Sistemas de revive
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
-        // Sistemas de combate
-        systems.Add(new AttackSystem(world, MapService!, _loggerFactory.CreateLogger<AttackSystem>()));
-        
-        // Sistema de dano diferido (aplica dano no momento correto da animação)
-        systems.Add(new DeferredDamageSystem(world, PlayerIndex, _loggerFactory.CreateLogger<DeferredDamageSystem>()));
-        
         // Sistemas de IA
         systems.Add(new AISystem(world, MapService!));
         
         // Sistemas de atualização de entidades
-        systems.Add(new ServerSyncSystem(world, _networkManager));
+        systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
         
     }
 

@@ -1,9 +1,7 @@
 using Arch.Core;
-using Arch.LowLevel;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
-using Game.ECS.Entities.Repositories;
 using Game.ECS.Extensions;
 using Game.ECS.Logic;
 using Game.ECS.Services;
@@ -16,17 +14,17 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
 {
     private const float BaseAttackAnimationDuration = 1f;
     
-    private UnsafeStack<Entity> _targetBuffer = new(16);
-
     [Query]
     [All<PlayerControlled, PlayerInput>]
-    [None<Attack, Dead>]
-    private void ProcessPlayerAttack(
-        in Entity e,
+    [None<Dead>]
+    private void ProcessPlayerAttack(in Entity e,
         ref PlayerInput input,
         ref CombatState combat,
         ref DirtyFlags dirty,
         in Attackable atk,
+        in Facing facing,
+        in Position position,
+        in MapId mapId,
         [Data] float deltaTime)
     {
         // Reduz cooldown (helper mantém clamped)
@@ -35,67 +33,66 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         // Se o player não ativou a flag de ataque, sair
         if ((input.Flags & InputFlags.Attack) == 0) return;
         
+        logger?.LogDebug("[AttackSystem] Player triggered attack. Cooldown: {Cooldown}", combat.LastAttackTime);
+        
         // Se estiver em cooldown, sair
-        if (!CombatLogic.CheckAttackCooldown(in combat)) return;
+        if (!CombatLogic.CheckAttackCooldown(in combat))
+        {
+            logger?.LogDebug("[AttackSystem] Attack blocked by cooldown");
+            return;
+        }
+        
+        // Identifica o alvo à frente do jogador
+        var targetPosition = position with
+        {
+            X = position.X + facing.DirectionX, 
+            Y = position.Y + facing.DirectionY
+        };
+        logger?.LogDebug("[AttackSystem] Looking for target at ({X}, {Y})", targetPosition.X, targetPosition.Y);
+        
+        var spatial = mapService.GetMapSpatial(mapId.Value);
+        if (!spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
+            logger?.LogDebug("[AttackSystem] No target found at the position");
+        
+        combat.ApplyAttackState(in atk, AttackType.Basic);
         
         World.Add<Attack>(e, new Attack
         {
+            TargetEntity = foundEntity,
             Type = AttackType.Basic,
             RemainingDuration = BaseAttackAnimationDuration,
             TotalDuration = BaseAttackAnimationDuration,
             DamageApplied = false,
         });
-        
-        combat.ApplyAttackState(in atk, AttackType.Basic);
-        
         dirty.MarkDirty(DirtyComponentType.CombatState);
     }
     
     [Query]
-    [All<Attack>]
-    [None<Dead, Invulnerable>]
+    [All<PlayerControlled, Attack>]
+    [None<Dead>]
     private void ProcessAttackDamage(
         in Entity attacker,
-        ref Attack action,
-        in Facing facing,
-        in Position position,
-        in MapId mapId,
+        ref Attack atkAction,
         [Data] float deltaTime)
     {
         // Reduz o tempo restante da animação
-        action.RemainingDuration -= deltaTime;
-        
-        // Verifica se chegou o momento de aplicar o dano
-        if (!action.ShouldApplyDamage())
-            return;
-        
-        var range = action.Type switch
-        {
-            AttackType.Basic    => 1,
-            AttackType.Heavy    => 1,
-            AttackType.Critical => 1,
-            AttackType.Magic    => 3,
-            _ => 1
-        };
-        var targetPosition = position with
-        {
-            X = position.X + facing.DirectionX * range,
-            Y = position.Y + facing.DirectionY * range
-        };
-        
-        var spatial = mapService.GetMapSpatial(mapId.Value);
-        spatial.QueryAt(targetPosition, ref _targetBuffer);
-        
-        while (_targetBuffer.Count > 0)
-        {
-            var victim = _targetBuffer.Pop();
-            if (World.TryAttack(attacker, victim, action.Type, out int damage))
-                World.ApplyDeferredDamage(attacker, victim, damage, action.Type == AttackType.Critical);
-        }
-        action.DamageApplied = true;
+        atkAction.RemainingDuration -= deltaTime;
         
         // Se a animação terminou, remove o componente
-        if (action.RemainingDuration <= 0f)
+        if (atkAction.RemainingDuration <= 0f)
+        {
             World.Remove<Attack>(attacker);
+            return;
+        }
+        
+        // Verifica se chegou o momento de aplicar o dano
+        if (!atkAction.ShouldApplyDamage())
+            return;
+        
+        // Aplica o dano se encontrou o alvo
+        if (World.TryAttack(attacker, atkAction.TargetEntity, atkAction.Type, out int damage))
+            World.ApplyDeferredDamage(attacker, atkAction.TargetEntity, damage, atkAction.Type == AttackType.Critical);
+        
+        atkAction.DamageApplied = true;
     }
 }
