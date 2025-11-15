@@ -16,7 +16,7 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
     
     [Query]
     [All<PlayerControlled, PlayerInput>]
-    [None<Dead>]
+    [None<Dead, Attack>]
     private void ProcessPlayerAttack(in Entity e,
         ref PlayerInput input,
         ref CombatState combat,
