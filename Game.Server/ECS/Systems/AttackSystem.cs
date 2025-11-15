@@ -54,8 +54,6 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         if (!spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
             logger?.LogDebug("[AttackSystem] No target found at the position");
         
-        combat.ApplyAttackState(in atk, AttackType.Basic);
-        
         World.Add<Attack>(e, new Attack
         {
             TargetEntity = foundEntity,
@@ -64,6 +62,9 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
             TotalDuration = BaseAttackAnimationDuration,
             DamageApplied = false,
         });
+        
+        combat.ApplyAttackState(in atk, AttackType.Basic);
+        
         dirty.MarkDirty(DirtyComponentType.CombatState);
     }
     
@@ -91,7 +92,9 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         
         // Aplica o dano se encontrou o alvo
         if (World.TryAttack(attacker, atkAction.TargetEntity, atkAction.Type, out int damage))
+        {
             World.ApplyDeferredDamage(attacker, atkAction.TargetEntity, damage, atkAction.Type == AttackType.Critical);
+        }
         
         atkAction.DamageApplied = true;
     }

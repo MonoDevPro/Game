@@ -52,6 +52,11 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
             );
             sender.SendToAll(damagedPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
+        
+        if (dirtyFlags.IsDirty(DirtyComponentType.CombatState))
+        {
+            logger?.LogDebug($"[ServerSyncSystem] Entity {networkId.Value} has CombatState dirty.");
+        }
 
         // Combate (estado + resultado)
         if (dirtyFlags.IsDirty(DirtyComponentType.CombatState) &&
