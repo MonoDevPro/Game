@@ -17,14 +17,12 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
     [Query]
     [All<PlayerControlled, PlayerInput>]
     [None<Dead, Attack>]
-    private void ProcessPlayerAttack(in Entity e,
+    private void ProcessPlayerAttack(
+        in Entity e,
+        in Attackable atk,
         ref PlayerInput input,
         ref CombatState combat,
         ref DirtyFlags dirty,
-        in Attackable atk,
-        in Facing facing,
-        in Position position,
-        in MapId mapId,
         [Data] float deltaTime)
     {
         // Reduz cooldown (helper mantém clamped)
@@ -41,29 +39,20 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
             logger?.LogDebug("[AttackSystem] Attack blocked by cooldown");
             return;
         }
+
+        var attackType = AttackType.Basic;
         
-        // Identifica o alvo à frente do jogador
-        var targetPosition = position with
-        {
-            X = position.X + facing.DirectionX, 
-            Y = position.Y + facing.DirectionY
-        };
-        logger?.LogDebug("[AttackSystem] Looking for target at ({X}, {Y})", targetPosition.X, targetPosition.Y);
-        
-        var spatial = mapService.GetMapSpatial(mapId.Value);
-        if (!spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
-            logger?.LogDebug("[AttackSystem] No target found at the position");
+        float cooldown = atk.CalculateAttackCooldownSeconds(attackType);
+        combat.LastAttackTime = cooldown;
+        combat.InCombat = true;
         
         World.Add<Attack>(e, new Attack
         {
-            TargetEntity = foundEntity,
-            Type = AttackType.Basic,
+            Type = attackType,
             RemainingDuration = BaseAttackAnimationDuration,
             TotalDuration = BaseAttackAnimationDuration,
             DamageApplied = false,
         });
-        
-        combat.ApplyAttackState(in atk, AttackType.Basic);
         
         dirty.MarkDirty(DirtyComponentType.CombatState);
     }
@@ -72,8 +61,12 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
     [All<PlayerControlled, Attack>]
     [None<Dead>]
     private void ProcessAttackDamage(
-        in Entity attacker,
+        in Entity e,
+        in MapId mapId,
+        in Position position,
+        in Facing facing,
         ref Attack atkAction,
+        ref CombatState combat,
         [Data] float deltaTime)
     {
         // Reduz o tempo restante da animação
@@ -82,7 +75,8 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         // Se a animação terminou, remove o componente
         if (atkAction.RemainingDuration <= 0f)
         {
-            World.Remove<Attack>(attacker);
+            combat.InCombat = false;
+            World.Remove<Attack>(e);
             return;
         }
         
@@ -90,12 +84,12 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         if (!atkAction.ShouldApplyDamage())
             return;
         
-        // Aplica o dano se encontrou o alvo
-        if (World.TryAttack(attacker, atkAction.TargetEntity, atkAction.Type, out int damage))
-        {
-            World.ApplyDeferredDamage(attacker, atkAction.TargetEntity, damage, atkAction.Type == AttackType.Critical);
-        }
-        
         atkAction.DamageApplied = true;
+        
+        var targetPosition = position with { X = position.X + facing.DirectionX, Y = position.Y + facing.DirectionY };
+        var spatial = mapService.GetMapSpatial(mapId.Value);
+        if (spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
+            if (World.TryAttack(e, foundEntity, atkAction.Type, out int damage))
+                World.ApplyDeferredDamage(e, foundEntity, damage, atkAction.Type == AttackType.Critical);
     }
 }

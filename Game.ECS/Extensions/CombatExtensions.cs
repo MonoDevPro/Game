@@ -15,13 +15,6 @@ public static class CombatExtensions
         combat.LastAttackTime = MathF.Max(0f, combat.LastAttackTime - deltaTime);
     }
     
-    public static void ApplyAttackState(this ref CombatState combat, in Attackable attackable, AttackType attackType)
-    {
-        float cooldown = attackable.CalculateAttackCooldownSeconds(attackType);
-        combat.LastAttackTime = cooldown;
-        combat.InCombat = true;
-    }
-    
     /// <summary>
     /// Verifica se o dano deve ser aplicado baseado no progresso da animação.
     /// Retorna true apenas uma vez quando a fase apropriada é atingida.
@@ -52,7 +45,7 @@ public static class CombatExtensions
         _ => DamageTimingPhase.Mid
     };
     
-    private static float CalculateAttackCooldownSeconds(this in Attackable attackable, AttackType type = AttackType.Basic, float externalMultiplier = 1f)
+    public static float CalculateAttackCooldownSeconds(this in Attackable attackable, AttackType type = AttackType.Basic, float externalMultiplier = 1f)
     {
         float baseSpeed = MathF.Max(0.05f, attackable.BaseSpeed);
         float modifier  = MathF.Max(0.05f, attackable.CurrentModifier);

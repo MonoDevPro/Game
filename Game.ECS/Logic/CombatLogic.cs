@@ -1,7 +1,5 @@
 using Arch.Core;
 using Game.ECS.Components;
-using Game.ECS.Extensions;
-using Game.ECS.Services;
 
 namespace Game.ECS.Logic;
 

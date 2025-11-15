@@ -41,7 +41,7 @@ public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? log
     }
 
     [Query]
-    [All<Mana, DirtyFlags>]
+    [All<Mana>]
     [None<Dead>]
     private void ProcessManaRegeneration(in Entity e, ref Mana mana, ref DirtyFlags dirty, [Data] float deltaTime)
     {
@@ -68,32 +68,17 @@ public sealed partial class HealthSystem(World world, ILogger<HealthSystem>? log
     }
 
     [Query]
-    [All<Health, CombatState>]
+    [All<Health>]
     [None<Dead>]
     private void ProcessDeath(
         in Entity entity,
         ref Health health,
-        ref CombatState combat,
         ref DirtyFlags dirty)
     {
         if (health.Current > 0)
             return;
 
         World.Add<Dead>(entity);
-        combat.InCombat = false;
-        dirty.MarkDirty(DirtyComponentType.Health | DirtyComponentType.CombatState);
-
-        if (World.TryGet(entity, out NetworkId netId))
-        {
-            logger?.LogInformation("Entity {NetworkId} died", netId.Value);
-
-            if (World.Has<PlayerControlled>(entity))
-            {
-                logger?.LogInformation(
-                    "Player {NetworkId} will be revived in {Time}s",
-                    netId.Value,
-                    5f);
-            }
-        }
+        dirty.MarkDirty(DirtyComponentType.Health);
     }
 }

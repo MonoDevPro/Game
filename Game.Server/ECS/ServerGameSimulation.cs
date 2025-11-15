@@ -53,9 +53,6 @@ public sealed class ServerGameSimulation : GameSimulation
         // Sistemas de revive
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
-        // Sistemas de IA
-        systems.Add(new AISystem(world, MapService!));
-        
         // Sistemas de atualização de entidades
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
         

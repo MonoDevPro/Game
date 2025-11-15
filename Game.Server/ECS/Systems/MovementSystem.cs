@@ -18,7 +18,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService)
     [Query]
     [All<PlayerControlled, Facing, Velocity, DirtyFlags>]
     [None<Dead>]
-    private void ProcessEntityFacing(in Entity e, in Velocity velocity, ref Facing facing, ref DirtyFlags dirty, [Data] float _)
+    private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty, [Data] float _)
     {
         if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
         int previousX = facing.DirectionX;
@@ -66,7 +66,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService)
     
     [Query]
     [All<Velocity>]
-    private void DecayVelocity(in Entity e, ref Velocity velocity, [Data] float deltaTime)
+    private void DecayVelocity(ref Velocity velocity, [Data] float deltaTime)
     {
         // desacelera velocity gradualmente quando não há input
         if (velocity is { DirectionX: 0, DirectionY: 0 })

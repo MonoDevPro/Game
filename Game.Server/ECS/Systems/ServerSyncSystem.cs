@@ -20,7 +20,8 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
         if (dirty.IsEmpty) return;
 
         // Snapshot e limpa
-        var dirtyFlags = dirty;
+        DirtyFlags dirtyFlags = dirty;
+        
         dirty.ClearAll();
 
         // Estado de movimento
@@ -69,7 +70,7 @@ public sealed partial class ServerSyncSystem(World world, INetworkManager sender
                 AttackDuration: attackAction.TotalDuration,
                 CooldownRemaining: combat.LastAttackTime
             );
-            logger?.LogDebug($"[ServerSyncSystem] Sending CombatStatePacket: Attacker={networkId.Value}, Defender={attackAction.TargetEntity}, Type={attackAction.Type}");
+            logger?.LogDebug($"[ServerSyncSystem] Sending CombatStatePacket: Attacker={networkId.Value}, Type={attackAction.Type}");
             sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
         }
     }

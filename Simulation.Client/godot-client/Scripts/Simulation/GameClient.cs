@@ -288,7 +288,6 @@ public partial class GameClient : Node2D
         // Se quiser armazenar algo temporário no ECS local para animação:
         var attackAnim = new Attack
         {
-            TargetEntity = Entity.Null, // Pode ser preenchido se necessário
             Type = packet.Type,
             RemainingDuration = packet.AttackDuration,
             TotalDuration = packet.AttackDuration,

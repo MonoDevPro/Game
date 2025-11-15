@@ -52,12 +52,6 @@ public static class NpcFactory
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { },
             new AIControlled(),
-            new AIState
-            {
-                DecisionCooldown = 0f,
-                CurrentBehavior = AIBehavior.Wander,
-                TargetNetworkId = 0
-            },
             new DirtyFlags()
         };
         world.SetRange(entity, components);
