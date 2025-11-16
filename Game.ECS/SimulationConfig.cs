@@ -37,4 +37,10 @@ public static class SimulationConfig
     public const int DefaultSpawnZ = 0;
     public const float ReviveHealthPercent = 0.5f; // 50% HP
     public const float ReviveManaPercent = 0.5f; // 50% MP
+    
+    /// <summary>
+    /// Tempo que o jogador precisa ficar sem tomar dano
+    /// para que a regeneração de HP/MP volte a funcionar.
+    /// </summary>
+    public const float HealthRegenDelayAfterCombat = 5.0f; // por exemplo, 5s
 }

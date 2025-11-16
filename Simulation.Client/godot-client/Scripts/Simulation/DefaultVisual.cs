@@ -207,10 +207,12 @@ public abstract partial class DefaultVisual : Node2D
         if (damage <= 0) return;
         var label = new Label
         {
-            Text = critical ? $"{damage}!" : damage.ToString(),
+            Text = critical ? $"-{damage}!" : "-" + damage,
             Position = new Vector2(32, -24),
-            Modulate = critical ? Colors.Yellow : Colors.White
+            Modulate = critical ? Colors.Yellow : Colors.Red
         };
+        label.AddThemeFontSizeOverride("font_size", 24);
+        
         AddChild(label);
         var tween = CreateTween();
         tween.TweenProperty(label, "position:y", label.Position.Y - 16, 0.6f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
@@ -224,8 +226,10 @@ public abstract partial class DefaultVisual : Node2D
         {
             Text = $"+{healAmount}",
             Position = new Vector2(32, -24),
-            Modulate = Colors.LightGreen
+            Modulate = Colors.Green,
         };
+        label.AddThemeFontSizeOverride("font_size", 24);
+        
         AddChild(label);
         var tween = CreateTween();
         tween.TweenProperty(label, "position:y", label.Position.Y - 16, 0.6f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);

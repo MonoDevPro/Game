@@ -65,18 +65,15 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         in Position position,
         in Facing facing,
         ref Attack atkAction,
-        in DirtyFlags dirty,
         ref CombatState combat,
         [Data] float deltaTime)
     {
-        
         // Reduz o tempo restante da animação
         atkAction.RemainingDuration -= deltaTime;
         
         // Se a animação terminou, remove o componente
         if (atkAction.RemainingDuration <= 0f)
         {
-            combat.InCombat = false;
             World.Remove<Attack>(e);
             return;
         }
@@ -91,6 +88,11 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         var spatial = mapService.GetMapSpatial(mapId.Value);
         if (spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
             if (World.TryAttack(e, foundEntity, atkAction.Type, out int damage))
+            {
                 World.ApplyDeferredDamage(e, foundEntity, damage, atkAction.Type == AttackType.Critical);
+                
+                combat.InCombat = true;
+                combat.TimeSinceLastHit = 0f;
+            }
     }
 }

@@ -61,17 +61,20 @@ public sealed class ServerGameSimulation : GameSimulation
         // 3. Attack processa ataques
         systems.Add(new AttackSystem(world, MapService, _loggerFactory.CreateLogger<AttackSystem>()));
         
-        // 4. Vitals processa vida/mana/dano
+        // 4. Combat processa estado de combate
+        systems.Add(new CombatSystem(world));
+        
+        // 5. Vitals processa vida/mana/dano
         systems.Add(new VitalsSystem(world, _loggerFactory.CreateLogger<VitalsSystem>()));
         
-        // 5. Revive processa ressurreição
+        // 6. Revive processa ressurreição
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
-        // 6. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
+        // 7. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
         //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
         systems.Add(new SpatialSyncSystem(World, MapService, _loggerFactory.CreateLogger<SpatialSyncSystem>()));
         
-        // 7. ServerSync envia atualizações para clientes
+        // 8. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
     }
 

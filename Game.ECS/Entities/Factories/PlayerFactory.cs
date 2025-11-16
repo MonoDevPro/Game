@@ -59,7 +59,7 @@ public static partial class EntityFactory
             new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
-            new CombatState { },
+            new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new PlayerInput { },
             new PlayerControlled(),
             new DirtyFlags()
