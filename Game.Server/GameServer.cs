@@ -9,6 +9,7 @@ using Game.Network.Packets.Menu;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
+using Game.Server.Chat;
 using Game.Server.ECS;
 using Game.Server.Players;
 using Game.Server.Security;
@@ -41,6 +42,7 @@ public sealed class GameServer : IDisposable
     private readonly ServerGameSimulation _simulation;
     private readonly NetworkSecurity? _security;
     private readonly SessionTokenManager _tokenManager;
+    private readonly ChatService _chatService;
     private readonly int _connectionTimeoutSeconds;
     
     private readonly ConcurrentDictionary<int, PendingConnection> _pendingConnections = new();
@@ -56,6 +58,7 @@ public sealed class GameServer : IDisposable
         ServerGameSimulation simulation,
         ILogger<GameServer> logger,
         SessionTokenManager tokenManager, // ✅ Injetar
+        ChatService chatService,
         NetworkSecurity? security = null)
     {
         _networkManager = networkManager;
@@ -66,6 +69,7 @@ public sealed class GameServer : IDisposable
         _logger = logger;
         _security = security;
         _tokenManager = tokenManager;
+    _chatService = chatService;
 
         _connectionTimeoutSeconds = configuration.GetValue("GameServer:ConnectionTimeoutSeconds", 10);
         
@@ -82,6 +86,7 @@ public sealed class GameServer : IDisposable
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
         RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
+    RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
     }
 
     
@@ -306,6 +311,12 @@ public sealed class GameServer : IDisposable
                 packet, 
                 NetworkChannel.Simulation, 
                 NetworkDeliveryMethod.ReliableOrdered);
+
+            if (session?.SelectedCharacter is { } leftCharacter)
+            {
+                var leaveMessage = _chatService.CreateSystemMessage($"{leftCharacter.Name} deixou o mundo.");
+                BroadcastChatMessage(leaveMessage, false);
+            }
         
             _logger.LogInformation(
                 "Session removed for account {AccountName} (peer {PeerId})",
@@ -736,6 +747,13 @@ public sealed class GameServer : IDisposable
 
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
+            // ✅ Envia histórico de chat recente
+            SendChatHistoryToPeer(peer);
+
+            // ✅ Anuncia entrada do jogador no chat
+            var joinMessage = _chatService.CreateSystemMessage($"{character.Name} entrou no mundo.");
+            BroadcastChatMessage(joinMessage, false);
+
             _logger.LogInformation(
                 "Player '{CharacterName}' entered the game (Peer: {PeerId}, NetID: {NetworkId})",
                 character.Name, peer.Id, localSnapshot.NetworkId
@@ -770,6 +788,62 @@ public sealed class GameServer : IDisposable
                 input.InputY,
                 input.Flags
             );
+        }
+    }
+
+    private void HandleChatMessage(INetPeerAdapter peer, ref ChatMessagePacket packet)
+    {
+        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
+        {
+            _logger.LogWarning("Received ChatMessagePacket from unknown peer {PeerId}", peer.Id);
+            return;
+        }
+
+        if (!_chatService.TryCreatePlayerMessage(session, packet.Message, out var chatMessage, out var error))
+        {
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                var feedbackPacket = ChatMessagePacket.CreateSystem(error, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                _networkManager.SendToPeer(peer, feedbackPacket, NetworkChannel.Chat, NetworkDeliveryMethod.ReliableOrdered);
+            }
+            return;
+        }
+
+        BroadcastChatMessage(chatMessage, false);
+    }
+
+    private void BroadcastChatMessage(ChatMessage message, bool isHistory)
+    {
+        var packet = new ChatMessagePacket(
+            message.PlayerId,
+            message.NetworkId,
+            message.PlayerName,
+            message.Content,
+            message.TimestampUnixMs,
+            isHistory,
+            message.IsSystem);
+
+        _networkManager.SendToAll(packet, NetworkChannel.Chat, NetworkDeliveryMethod.ReliableOrdered);
+    }
+
+    private void SendChatHistoryToPeer(INetPeerAdapter peer)
+    {
+        var history = _chatService.GetHistory();
+        if (history.Count == 0)
+            return;
+
+        foreach (var entry in history)
+        {
+            var packet = new ChatMessagePacket(
+                entry.PlayerId,
+                entry.NetworkId,
+                entry.PlayerName,
+                entry.Content,
+                entry.TimestampUnixMs,
+                true,
+                entry.IsSystem);
+
+            _networkManager.SendToPeer(peer, packet, NetworkChannel.Chat, NetworkDeliveryMethod.ReliableOrdered);
         }
     }
 
@@ -810,5 +884,6 @@ public sealed class GameServer : IDisposable
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
         _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
+        _networkManager.UnregisterPacketHandler<ChatMessagePacket>();
     }
 }

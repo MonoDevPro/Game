@@ -6,6 +6,7 @@ using Game.Network.Abstractions;
 using Game.Persistence;
 using Game.Server;
 using Game.Server.Authentication;
+using Game.Server.Chat;
 using Game.Server.ECS;
 using Game.Server.Loop;
 using Game.Server.Players;
@@ -41,6 +42,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddScoped<AccountCharacterService>();
             services.AddSingleton<PlayerSpawnService>();
             services.AddSingleton<PlayerSessionManager>();
+            services.AddSingleton<ChatService>();
             services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
             

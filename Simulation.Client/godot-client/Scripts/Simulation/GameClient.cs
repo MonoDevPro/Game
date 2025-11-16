@@ -10,6 +10,7 @@ using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
+using GodotClient.UI.Chat;
 
 namespace GodotClient.Simulation;
 
@@ -29,7 +30,11 @@ public partial class GameClient : Node2D
     private ClientGameSimulation? _simulation;
 
     private int _localNetworkId = -1;
+    private int _localPlayerId = -1;
+    private string _localPlayerName = string.Empty;
     private Label? _statusLabel;
+    private ChatHud? _chatHud;
+    private CanvasLayer? _hudLayer;
     
     public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");
 
@@ -39,7 +44,7 @@ public partial class GameClient : Node2D
         
         Instance = this;
 
-        CreateStatusLabel();
+    CreateHudLayer();
 
         // 1) Network vinda do Autoload (menu já inicializou)
         _network = NetworkClient.Instance.NetworkManager;
@@ -75,7 +80,16 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerVitalsPacket>();
             _network.UnregisterPacketHandler<CombatStatePacket>();
+            _network.UnregisterPacketHandler<ChatMessagePacket>();
         }
+
+        if (_chatHud is not null)
+        {
+            _chatHud.MessageSubmitted -= OnChatMessageSubmitted;
+            _chatHud = null;
+        }
+
+        _hudLayer = null;
 
         GD.Print("[GameClient] Unloaded");
     }
@@ -95,6 +109,11 @@ public partial class GameClient : Node2D
         }
 
         _localNetworkId = gameState.LocalNetworkId;
+        if (gameState.CurrentGameData is { } joinPacket)
+        {
+            _localPlayerId = joinPacket.LocalPlayer.PlayerId;
+            _localPlayerName = joinPacket.LocalPlayer.Name;
+        }
 
         // Mapa (predição clientside e navegação opcional)
         var mapSnap = gameState.CurrentGameData?.MapDataPacket;
@@ -181,6 +200,7 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
         _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
+    _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -309,6 +329,37 @@ public partial class GameClient : Node2D
         GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
     
+    private void HandleChatMessage(INetPeerAdapter peer, ref ChatMessagePacket packet)
+    {
+        _chatHud?.AppendMessage(packet);
+    }
+    
+    private void OnChatMessageSubmitted(string message)
+    {
+        SendChatMessage(message);
+    }
+
+    private void SendChatMessage(string message)
+    {
+        if (_network is null || !_network.IsRunning)
+            return;
+
+        var trimmed = message.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+            return;
+
+        var packet = new ChatMessagePacket(
+            _localPlayerId,
+            _localNetworkId,
+            string.IsNullOrWhiteSpace(_localPlayerName) ? "Unknown" : _localPlayerName,
+            trimmed,
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            false,
+            false);
+
+        _network.SendToServer(packet, NetworkChannel.Chat, NetworkDeliveryMethod.ReliableOrdered);
+    }
+    
 
     // ==================== UI / Disconnect ====================
 
@@ -338,9 +389,9 @@ public partial class GameClient : Node2D
         DisconnectAndReturnToMenu();
     }
 
-    private void CreateStatusLabel()
+    private void CreateHudLayer()
     {
-        var hudLayer = new CanvasLayer { Name = "HudLayer", Layer = 100 };
+        _hudLayer = new CanvasLayer { Name = "HudLayer", Layer = 100 };
 
         _statusLabel = new Label
         {
@@ -350,8 +401,12 @@ public partial class GameClient : Node2D
         };
         _statusLabel.AddThemeColorOverride("font_color", Colors.White);
 
-        hudLayer.AddChild(_statusLabel);
-        AddChild(hudLayer);
+        _chatHud = new ChatHud { Name = "ChatHud" };
+        _chatHud.MessageSubmitted += OnChatMessageSubmitted;
+
+        _hudLayer.AddChild(_statusLabel);
+        _hudLayer.AddChild(_chatHud);
+        AddChild(_hudLayer);
     }
 
     private void UpdateStatus(string message)
