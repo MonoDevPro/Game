@@ -401,7 +401,7 @@ public partial class GameClient : Node2D
         };
         _statusLabel.AddThemeColorOverride("font_color", Colors.White);
 
-        _chatHud = new ChatHud { Name = "ChatHud" };
+        _chatHud = ChatHud.CreateInstance();
         _chatHud.MessageSubmitted += OnChatMessageSubmitted;
 
         _hudLayer.AddChild(_statusLabel);

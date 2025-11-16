@@ -1,5 +1,6 @@
 using Arch.Core;
 using Game.ECS.Entities.Factories;
+using Game.Network.Abstractions;
 using Game.Server.ECS;
 using Game.Server.Sessions;
 
@@ -8,7 +9,10 @@ namespace Game.Server.Players;
 /// <summary>
 /// Handles spawning and despawning of player entities within the simulation.
 /// </summary>
-public sealed class PlayerSpawnService(ServerGameSimulation simulation, ILogger<PlayerSpawnService> logger)
+public sealed class PlayerSpawnService(
+    ServerGameSimulation simulation, 
+    INetworkManager networkManager, 
+    ILogger<PlayerSpawnService> logger)
 {
     public Entity SpawnPlayer(PlayerSession session)
     {
