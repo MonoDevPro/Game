@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Arch.Core;
 using Game.Core.Extensions;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
@@ -10,7 +9,9 @@ using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
+using GodotClient.Scripts.Core.Environment;
 using GodotClient.UI.Chat;
+using GodotClient.UI.Joystick;
 
 namespace GodotClient.Simulation;
 
@@ -149,7 +150,7 @@ public partial class GameClient : Node2D
         
         // Carrega visuais dos jogadores
         LoadPlayerVisuals();
-        
+
         GD.Print("[GameClient] Game data loaded");
     }
     
