@@ -1,8 +1,7 @@
-[gd_scene load_steps=4 format=4 uid="uid://cqd358filrk2x"]
+[gd_scene load_steps=3 format=4 uid="uid://cqd358filrk2x"]
 
 [ext_resource type="Script" uid="uid://bqrtqtrs33jut" path="res://Scripts/Simulation/GameClient.cs" id="1_qxrlw"]
 [ext_resource type="TileSet" uid="uid://dmyh3aey18q5v" path="res://Assets/Maps/AutoTiles/backup-maintile-merge.tres" id="2_qxrlw"]
-[ext_resource type="PackedScene" uid="uid://dmr0fcamx7t56" path="res://Scenes/Prefabs/Joystick.tscn" id="3_wrm1d"]
 
 [node name="GameClient" type="Node2D"]
 y_sort_enabled = true
@@ -33,17 +32,3 @@ navigation_enabled = false
 
 [node name="Entities" type="Node2D" parent="Map"]
 y_sort_enabled = true
-
-[node name="VirtualJoystick" parent="." instance=ExtResource("3_wrm1d")]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -300.0
-offset_top = -300.0
-offset_right = 0.0
-offset_bottom = 0.0
-grow_horizontal = 0
-grow_vertical = 0
-JoystickMode = 2

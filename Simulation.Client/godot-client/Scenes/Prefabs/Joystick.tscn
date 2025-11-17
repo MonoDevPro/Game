@@ -5,17 +5,17 @@
 [ext_resource type="Texture2D" uid="uid://ed3sb3dpwx8k" path="res://Assets/Joystick/joystick_tip_arrows.png" id="3_3etdg"]
 
 [node name="VirtualJoystick" type="Control"]
-top_level = true
 layout_mode = 3
-anchors_preset = 0
-offset_right = 300.0
-offset_bottom = 300.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -300.0
+grow_horizontal = 0
+grow_vertical = 0
 script = ExtResource("1_n6dgy")
-ActionLeft = "move_left"
-ActionRight = "move_right"
-ActionUp = "move_up"
-ActionDown = "move_down"
-ActionRunning = "ui_running"
 
 [node name="Base" type="TextureRect" parent="."]
 layout_mode = 1

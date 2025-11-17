@@ -9,7 +9,7 @@ using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.ECS;
-using GodotClient.Scripts.Core.Environment;
+using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
 
@@ -35,6 +35,8 @@ public partial class GameClient : Node2D
     private string _localPlayerName = string.Empty;
     private Label? _statusLabel;
     private ChatHud? _chatHud;
+    private VirtualJoystick? _virtualJoystick;
+    private ActionHud? _actionHud;
     private CanvasLayer? _hudLayer;
     
     public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");
@@ -45,7 +47,7 @@ public partial class GameClient : Node2D
         
         Instance = this;
 
-    CreateHudLayer();
+        CreateHudLayer();
 
         // 1) Network vinda do Autoload (menu já inicializou)
         _network = NetworkClient.Instance.NetworkManager;
@@ -404,9 +406,15 @@ public partial class GameClient : Node2D
 
         _chatHud = ChatHud.CreateInstance();
         _chatHud.MessageSubmitted += OnChatMessageSubmitted;
+        
+        _virtualJoystick = VirtualJoystick.CreateInstance();
+        
+        _actionHud = ActionHud.CreateInstance();
 
         _hudLayer.AddChild(_statusLabel);
         _hudLayer.AddChild(_chatHud);
+        _hudLayer.AddChild(_virtualJoystick);
+        _hudLayer.AddChild(_actionHud);
         AddChild(_hudLayer);
     }
 

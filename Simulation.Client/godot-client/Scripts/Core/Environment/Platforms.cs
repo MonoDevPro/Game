@@ -1,8 +1,7 @@
 using System;
 using Godot;
 
-namespace GodotClient.Scripts.Core.Environment;
-
+namespace GodotClient.Core.Environment;
 
 public static class EnvironmentSettings
 {

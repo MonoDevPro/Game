@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Godot;
-using GodotClient.Scripts.Core.Environment;
+using GodotClient.Core.Environment;
 
 namespace GodotClient.UI.Joystick;
 
@@ -16,6 +16,17 @@ public enum VisibilityMode
     Always, // Always visible
     TouchscreenOnly, // Visible on touch screens only
     WhenTouched // Visible only when touched
+}
+
+public partial class VirtualJoystick
+{
+    public static VirtualJoystick CreateInstance()
+    {
+        var joystick = GD.Load<PackedScene>("res://Scenes/Prefabs/Joystick.tscn")
+            .Instantiate<VirtualJoystick>();
+        return joystick;
+    }
+    
 }
 
 
@@ -67,14 +78,10 @@ public partial class VirtualJoystick : Control
         _defaultColor = _tip.Modulate;
 
         if (ProjectSettings.GetSetting("input_devices/pointing/emulate_mouse_from_touch").AsBool())
-        {
             GD.PrintErr("The Project Setting 'emulate_mouse_from_touch' should be set to False");
-        }
 
         if (!ProjectSettings.GetSetting("input_devices/pointing/emulate_touch_from_mouse").AsBool())
-        {
             GD.PrintErr("The Project Setting 'emulate_touch_from_mouse' should be set to True");
-        }
 
         /*if (!DisplayServer.IsTouchscreenAvailable() && VisibilityMode == VisibilityMode.TouchscreenOnly)
         {
@@ -82,9 +89,7 @@ public partial class VirtualJoystick : Control
         }*/
 
         if (VisibilityMode == VisibilityMode.WhenTouched)
-        {
             Hide();
-        }
     }
 
     public override void _Input(InputEvent @event)
