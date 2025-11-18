@@ -64,14 +64,24 @@ public partial class ChatHud : Control
         if (_input is null)
             return;
 
-        if (keyEvent.Keycode == Key.Enter)
+        if (_input.HasFocus())
         {
-            if (!_input.HasFocus())
-                _input.GrabFocus();
+            if (keyEvent.Keycode is Key.Escape)
+            {
+                _input.ReleaseFocus();
+                return;
+            }
+
+            if (Input.IsActionPressed("click_left") || Input.IsActionPressed("click_right"))
+            {
+                _input.ReleaseFocus();
+                this.GrabFocus();
+            }
         }
-        else if (keyEvent.Keycode == Key.Escape && _input.HasFocus())
+        else
         {
-            _input.ReleaseFocus();
+            if (keyEvent.Keycode == Key.Enter)
+                _input.GrabFocus();
         }
     }
 

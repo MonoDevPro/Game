@@ -99,7 +99,7 @@ public partial class ActionHud : Control
             ActionHudMode.WhenActioned => _activeActionsCount > 0,
             _ => true
         };
-
+        
         Visible = shouldBeVisible;
     }
 

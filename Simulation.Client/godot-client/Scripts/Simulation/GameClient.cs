@@ -38,8 +38,6 @@ public partial class GameClient : Node2D
         "sprint",
         "click_left",
         "click_right",
-        "action_1",
-        "action_2"
     };
 
     private INetworkManager? _network;
