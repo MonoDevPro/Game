@@ -26,7 +26,22 @@ public partial class GameClient : Node2D
 {
     public static GameClient Instance { get; private set; } = null!;
     public ClientGameSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
-    
+    public bool IsChatFocused { get; private set; }
+
+    private static readonly string[] GameplayActionsToRelease =
+    {
+        "walk_west",
+        "walk_east",
+        "walk_north",
+        "walk_south",
+        "attack",
+        "sprint",
+        "click_left",
+        "click_right",
+        "action_1",
+        "action_2"
+    };
+
     private INetworkManager? _network;
     private ClientGameSimulation? _simulation;
 
@@ -89,6 +104,7 @@ public partial class GameClient : Node2D
         if (_chatHud is not null)
         {
             _chatHud.MessageSubmitted -= OnChatMessageSubmitted;
+            _chatHud.InputFocusChanged -= OnChatInputFocusChanged;
             _chatHud = null;
         }
 
@@ -203,7 +219,7 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
         _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
-    _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
+        _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
@@ -342,6 +358,20 @@ public partial class GameClient : Node2D
         SendChatMessage(message);
     }
 
+    private void OnChatInputFocusChanged(bool hasFocus)
+    {
+        IsChatFocused = hasFocus;
+        if (!hasFocus)
+            return;
+
+        foreach (var action in GameplayActionsToRelease)
+        {
+            if (string.IsNullOrEmpty(action))
+                continue;
+            Input.ActionRelease(action);
+        }
+    }
+
     private void SendChatMessage(string message)
     {
         if (_network is null || !_network.IsRunning)
@@ -406,6 +436,7 @@ public partial class GameClient : Node2D
 
         _chatHud = ChatHud.CreateInstance();
         _chatHud.MessageSubmitted += OnChatMessageSubmitted;
+        _chatHud.InputFocusChanged += OnChatInputFocusChanged;
         
         _virtualJoystick = VirtualJoystick.CreateInstance();
         

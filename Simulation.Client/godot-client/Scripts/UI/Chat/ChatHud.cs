@@ -22,6 +22,7 @@ public partial class ChatHud : Control
     public int MaxMessages { get; set; } = 80;
 
     public event Action<string>? MessageSubmitted;
+    public event Action<bool>? InputFocusChanged;
 
     private PanelContainer? _chatPanel;
     private ScrollContainer? _scrollContainer;
@@ -29,6 +30,8 @@ public partial class ChatHud : Control
     private LineEdit? _input;
     private Button? _hideButton;
     private Button? _showButton;
+
+    private bool _isInputFocused;
 
     private readonly Queue<Control> _messageControls = new();
 
@@ -49,6 +52,8 @@ public partial class ChatHud : Control
         _showButton!.Pressed += OnShowButtonPressed;
 
         _input.TextSubmitted += OnTextSubmitted;
+
+        InitializeInputFocusTracking();
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -155,4 +160,22 @@ public partial class ChatHud : Control
         _input!.GrabFocus();
     }
     
+    private void InitializeInputFocusTracking()
+    {
+        if (_input is null)
+            return;
+
+        _input.FocusEntered += () => HandleInputFocusChanged(true);
+        _input.FocusExited += () => HandleInputFocusChanged(false);
+        HandleInputFocusChanged(_input.HasFocus());
+    }
+
+    private void HandleInputFocusChanged(bool hasFocus)
+    {
+        if (_isInputFocused == hasFocus)
+            return;
+
+        _isInputFocused = hasFocus;
+        InputFocusChanged?.Invoke(hasFocus);
+    }
 }

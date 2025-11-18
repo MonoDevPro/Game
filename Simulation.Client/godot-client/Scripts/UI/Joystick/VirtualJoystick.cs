@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using GodotClient.Core.Environment;
+using GodotClient.Simulation;
 
 namespace GodotClient.UI.Joystick;
 
@@ -94,6 +95,9 @@ public partial class VirtualJoystick : Control
 
     public override void _Input(InputEvent @event)
     {
+        if (GameClient.Instance.IsChatFocused)
+            return;
+
         switch (@event)
         {
             case InputEventScreenTouch { Pressed: true } screenTouchEvent:
@@ -215,6 +219,15 @@ public partial class VirtualJoystick : Control
 
     private void ProcessInputActions()
     {
+        if (GameClient.Instance.IsChatFocused)
+        {
+            foreach (var action in new[] { ActionLeft, ActionRight, ActionDown, ActionUp, ActionRunning })
+            {
+                if (!string.IsNullOrEmpty(action))
+                    Input.ActionRelease(action);
+            }
+            return;
+        }
         
         // IsRunning set by strength of the joystick
         if (_output.Length() > 0.8)

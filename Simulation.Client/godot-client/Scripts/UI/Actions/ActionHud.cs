@@ -1,5 +1,6 @@
 using Godot;
 using GodotClient.Core.Environment;
+using GodotClient.Simulation;
 
 namespace GodotClient.UI.Actions;
 
@@ -131,7 +132,7 @@ public partial class ActionHud : Control
 
     private void OnAction1ButtonPressed()
     {
-        if (string.IsNullOrEmpty(Action1)) 
+        if (string.IsNullOrEmpty(Action1) || GameClient.Instance.IsChatFocused) 
             return;
 
         Input.ActionPress(Action1, 1.0f);
@@ -149,7 +150,7 @@ public partial class ActionHud : Control
 
     private void OnAction2ButtonPressed()
     {
-        if (string.IsNullOrEmpty(Action2)) 
+        if (string.IsNullOrEmpty(Action2) || GameClient.Instance.IsChatFocused) 
             return;
         
         Input.ActionPress(Action2, 1.0f);

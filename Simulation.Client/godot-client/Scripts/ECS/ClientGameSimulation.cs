@@ -93,7 +93,6 @@ public sealed class ClientGameSimulation : GameSimulation
         _visualSyncSystem?.UnregisterVisual(networkId);
         return World.TryDestroyPlayer(PlayerIndex, networkId);;
     }
-    
     public void RegisterSpatial(Entity entity)
     {
         if (MapService == null)

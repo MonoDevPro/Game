@@ -4,6 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
+using GodotClient.Simulation;
 
 namespace GodotClient.ECS.Systems;
 
@@ -15,6 +16,18 @@ public sealed partial class GodotInputSystem(World world)
     [None<Dead>]
     private void ApplyInput(in Entity e, ref PlayerInput input, ref DirtyFlags dirty, [Data] float deltaTime)
     {
+        if (GameClient.Instance is { IsChatFocused: true })
+        {
+            if (input.InputX != 0 || input.InputY != 0 || input.Flags != InputFlags.None)
+            {
+                input.InputX = 0;
+                input.InputY = 0;
+                input.Flags = InputFlags.None;
+                dirty.MarkDirty(DirtyComponentType.Input);
+            }
+            return;
+        }
+
         sbyte moveX = 0, moveY = 0;
         if (Input.IsActionPressed("walk_west"))       moveX = -1;
         else if (Input.IsActionPressed("walk_east"))  moveX = 1;
