@@ -15,19 +15,56 @@ namespace GodotClient.ECS.Systems;
 public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesRoot) 
     : GameSystem(world)
 {
-    private readonly Dictionary<int, PlayerVisual> _visuals = new();
-    public void RegisterVisual(int networkId, PlayerVisual visual)
+    private readonly Dictionary<int, PlayerVisual> _playerVisuals = new();
+    private readonly Dictionary<int, NpcVisual> _npcVisuals = new();
+
+    public void RegisterPlayerVisual(int networkId, PlayerVisual visual)
     {
-        _visuals[networkId] = visual;
+        _playerVisuals[networkId] = visual;
         entitiesRoot.AddChild(visual);
     }
-    public void UnregisterVisual(int networkId)
+
+    public void RegisterNpcVisual(int networkId, NpcVisual visual)
     {
-        if (_visuals.Remove(networkId, out var visual))
+        _npcVisuals[networkId] = visual;
+        entitiesRoot.AddChild(visual);
+    }
+
+    public void UnregisterPlayerVisual(int networkId)
+    {
+        if (_playerVisuals.Remove(networkId, out var visual))
             visual.QueueFree();
     }
-    public bool TryGetVisual(int networkId, out PlayerVisual? visual) =>
-        _visuals.TryGetValue(networkId, out visual);
+
+    public void UnregisterNpcVisual(int networkId)
+    {
+        if (_npcVisuals.Remove(networkId, out var visual))
+            visual.QueueFree();
+    }
+
+    public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual) =>
+        _playerVisuals.TryGetValue(networkId, out visual!);
+
+    public bool TryGetNpcVisual(int networkId, out NpcVisual visual) =>
+        _npcVisuals.TryGetValue(networkId, out visual!);
+
+    private bool TryGetAnyVisual(int networkId, out DefaultVisual visual)
+    {
+        if (_playerVisuals.TryGetValue(networkId, out var playerVisual))
+        {
+            visual = playerVisual;
+            return true;
+        }
+
+        if (_npcVisuals.TryGetValue(networkId, out var npcVisual))
+        {
+            visual = npcVisual;
+            return true;
+        }
+
+        visual = null!;
+        return false;
+    }
 
     [Query]
     [All<NetworkId, PlayerControlled, Attack>]
@@ -55,17 +92,17 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         in Velocity velocity, 
         in Facing facing)
     {
-        if (_visuals.TryGetValue(networkId.Value, out var visual)) 
-        {
-            var isDead = World.Has<Dead>(e);
-            var isAttacking = World.Has<Attack>(e) && !isDead;
-            var isMoving = velocity.Speed > 0f && !isAttacking && !isDead;
-            var facingDir = isDead 
-                ? Vector2I.Zero 
-                : new Vector2I(facing.DirectionX, facing.DirectionY);
-            
-            visual.UpdateAnimationState(facingDir, isMoving, isAttacking);
-        }
+        if (!TryGetAnyVisual(networkId.Value, out var visual))
+            return;
+
+        var isDead = World.Has<Dead>(e);
+        var isAttacking = World.Has<Attack>(e) && !isDead;
+        var isMoving = velocity.Speed > 0f && !isAttacking && !isDead;
+        var facingDir = isDead 
+            ? Vector2I.Zero 
+            : new Vector2I(facing.DirectionX, facing.DirectionY);
+        
+        visual.UpdateAnimationState(facingDir, isMoving, isAttacking);
     }
     
     [Query]
@@ -79,7 +116,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         const float pixelsPerCell = 32f;
         const float lerpSpeed = 0.15f;
         
-        if (!_visuals.TryGetValue(networkId.Value, out var visual))
+        if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
         Vector2 current = visual.GlobalPosition;

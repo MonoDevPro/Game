@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -12,6 +14,7 @@ using Game.Server.Authentication;
 using Game.Server.Chat;
 using Game.Server.ECS;
 using Game.Server.Players;
+using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 
@@ -37,6 +40,7 @@ public sealed class GameServer : IDisposable
     private readonly INetworkManager _networkManager;
     private readonly PlayerSessionManager _sessionManager;
     private readonly PlayerSpawnService _spawnService;
+    private readonly NpcSpawnService _npcSpawnService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameServer> _logger;
     private readonly ServerGameSimulation _simulation;
@@ -54,6 +58,7 @@ public sealed class GameServer : IDisposable
         INetworkManager networkManager,
         PlayerSessionManager sessionManager,
         PlayerSpawnService spawnService,
+        NpcSpawnService npcSpawnService,
         IServiceScopeFactory scopeFactory,
         ServerGameSimulation simulation,
         ILogger<GameServer> logger,
@@ -64,14 +69,17 @@ public sealed class GameServer : IDisposable
         _networkManager = networkManager;
         _sessionManager = sessionManager;
         _spawnService = spawnService;
+        _npcSpawnService = npcSpawnService;
         _scopeFactory = scopeFactory;
         _simulation = simulation;
         _logger = logger;
         _security = security;
         _tokenManager = tokenManager;
-    _chatService = chatService;
+        _chatService = chatService;
 
         _connectionTimeoutSeconds = configuration.GetValue("GameServer:ConnectionTimeoutSeconds", 10);
+
+        _npcSpawnService.SpawnInitialNpcs();
         
         _networkManager.OnPeerConnected += OnPeerConnected;
         _networkManager.OnPeerDisconnected += OnPeerDisconnected;
@@ -86,7 +94,7 @@ public sealed class GameServer : IDisposable
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
         RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
-    RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
+        RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
     }
 
     
@@ -256,47 +264,41 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                if (_simulation.World.TryBuildPlayerSnapshot(session.Entity, out var snapshot))
+                PlayerData snapshot = _simulation.World.BuildPlayerDataSnapshot(session.Entity);
+                
+                characterPersistData = characterPersistData with
                 {
-                    characterPersistData = characterPersistData with
+                    PositionX = snapshot.PosX,
+                    PositionY = snapshot.PosY,
+                    PositionZ = snapshot.PosZ,
+                    FacingX = snapshot.FacingX,
+                    FacingY = snapshot.FacingY,
+                    CurrentHp = snapshot.Hp,
+                    CurrentMp = snapshot.Mp
+                };
+                
+                    
+                // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
+                using var scope = _scopeFactory.CreateScope();
+                var persistence = scope.ServiceProvider.GetRequiredService<IPlayerPersistenceService>();
+                    
+                _ = persistence.PersistDisconnectAsync(characterPersistData, CancellationToken.None)
+                    .ContinueWith(task =>
                     {
-                        PositionX = snapshot.PosX,
-                        PositionY = snapshot.PosY,
-                        PositionZ = snapshot.PosZ,
-                        FacingX = snapshot.FacingX,
-                        FacingY = snapshot.FacingY,
-                        CurrentHp = snapshot.Hp,
-                        CurrentMp = snapshot.Mp
-                    };
-                    
-                    // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
-                    using var scope = _scopeFactory.CreateScope();
-                    var persistence = scope.ServiceProvider.GetRequiredService<IPlayerPersistenceService>();
-                    
-                    _ = persistence.PersistDisconnectAsync(characterPersistData, CancellationToken.None)
-                        .ContinueWith(task =>
+                        if (task.IsFaulted)
                         {
-                            if (task.IsFaulted)
-                            {
-                                _logger.LogError(
-                                    task.Exception,
-                                    "Failed to persist disconnect data for character {CharacterId}",
-                                    session.SelectedCharacter.Id);
-                            }
-                            else
-                            {
-                                _logger.LogDebug(
-                                    "Disconnect data persisted successfully for character {CharacterId}",
-                                    session.SelectedCharacter.Id);
-                            }
-                        });
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "Could not get player state for character {CharacterId} on disconnect",
-                        session.SelectedCharacter.Id);
-                }
+                            _logger.LogError(
+                                task.Exception,
+                                "Failed to persist disconnect data for character {CharacterId}",
+                                session.SelectedCharacter.Id);
+                        }
+                        else
+                        {
+                            _logger.LogDebug(
+                                "Disconnect data persisted successfully for character {CharacterId}",
+                                session.SelectedCharacter.Id);
+                        }
+                    });
 
                 // ✅ Despawn do player
                 _spawnService.DespawnPlayer(session);
@@ -724,14 +726,14 @@ public sealed class GameServer : IDisposable
             _spawnService.SpawnPlayer(session);
 
             // ✅ 5. Monta dados do jogo
-            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerDataPacket();
+            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerSpawnSnapshot();
             var othersSnapshots = _sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerDataPacket())  // ✅ Usar 's' ao invés de 'session'
+                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerSpawnSnapshot())
                 .ToArray();
             
             // ✅ 6. Broadcasta spawn para outros jogadores
-            _networkManager.SendToAllExcept<PlayerDataPacket>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
@@ -745,6 +747,17 @@ public sealed class GameServer : IDisposable
             };
 
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+
+            var npcSnapshotArray = _npcSpawnService
+                .BuildSnapshots()
+                .Select(snapshot => snapshot.ToNpcSpawnData())
+                .ToArray();
+
+            if (npcSnapshotArray.Length > 0)
+            {
+                var npcSpawnPacket = new NpcSpawnPacket(npcSnapshotArray);
+                _networkManager.SendToPeer(peer, npcSpawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            }
 
             // ✅ Envia histórico de chat recente
             SendChatHistoryToPeer(peer);

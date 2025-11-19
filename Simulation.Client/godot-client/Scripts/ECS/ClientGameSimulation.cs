@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Updates;
 using Game.ECS.Services;
@@ -57,12 +58,24 @@ public sealed class ClientGameSimulation : GameSimulation
         => CreateLocalPlayer(data, visual);
     public Entity SpawnRemotePlayer(PlayerData data, PlayerVisual visual) 
         => CreateRemotePlayer(data, visual);
+    public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
+    public Entity SpawnNpc(NPCData data, NpcVisual visual) => CreateNpc(data, visual);
+    public bool DespawnNpc(int networkId) => DestroyNpc(networkId);
+    public void ApplyNpcState(NpcStateData state) => UpdateNpcState(state);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
     {
         if (_visualSyncSystem != null) 
-            return _visualSyncSystem.TryGetVisual(networkId, out visual!);
+            return _visualSyncSystem.TryGetPlayerVisual(networkId, out visual!);
+        visual = null!;
+        return false;
+    }
+
+    public bool TryGetNpcVisual(int networkId, out NpcVisual visual)
+    {
+        if (_visualSyncSystem != null)
+            return _visualSyncSystem.TryGetNpcVisual(networkId, out visual!);
         visual = null!;
         return false;
     }
@@ -72,7 +85,7 @@ public sealed class ClientGameSimulation : GameSimulation
         var entity = World.CreatePlayer(PlayerIndex, data);
         World.Add<LocalPlayerTag>(entity, new LocalPlayerTag());
         RegisterSpatial(entity);
-        _visualSyncSystem?.RegisterVisual(data.NetworkId, visual);
+        _visualSyncSystem?.RegisterPlayerVisual(data.NetworkId, visual);
         visual.UpdateFromSnapshot(data);
         return entity;
     }
@@ -81,7 +94,7 @@ public sealed class ClientGameSimulation : GameSimulation
         var entity = World.CreatePlayer(PlayerIndex, data);
         World.Add<RemotePlayerTag>(entity, new RemotePlayerTag());
         RegisterSpatial(entity);
-        _visualSyncSystem?.RegisterVisual(data.NetworkId, visual);
+        _visualSyncSystem?.RegisterPlayerVisual(data.NetworkId, visual);
         visual.UpdateFromSnapshot(data);
         return entity;
     }
@@ -90,8 +103,59 @@ public sealed class ClientGameSimulation : GameSimulation
         if (!PlayerIndex.TryGetEntity(networkId, out var entity))
             return false;
         UnregisterSpatial(entity);
-        _visualSyncSystem?.UnregisterVisual(networkId);
+        _visualSyncSystem?.UnregisterPlayerVisual(networkId);
         return World.TryDestroyPlayer(PlayerIndex, networkId);;
+    }
+
+    private Entity CreateNpc(in NPCData data, NpcVisual visual)
+    {
+        var entity = World.CreateNPC(data, markDirty: false);
+        NpcIndex.AddMapping(data.NetworkId, entity);
+        RegisterSpatial(entity);
+        _visualSyncSystem?.RegisterNpcVisual(data.NetworkId, visual);
+        visual.UpdateFromSnapshot(data);
+        return entity;
+    }
+
+    private bool DestroyNpc(int networkId)
+    {
+        if (!NpcIndex.TryGetEntity(networkId, out var entity))
+            return false;
+
+        UnregisterSpatial(entity);
+        _visualSyncSystem?.UnregisterNpcVisual(networkId);
+        NpcIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
+    }
+
+    private void UpdateNpcState(in NpcStateData state)
+    {
+        if (!NpcIndex.TryGetEntity(state.NetworkId, out var entity))
+            return;
+
+        var newPosition = new Position(state.PositionX, state.PositionY, state.PositionZ);
+        World.Set(entity, newPosition);
+
+        ref var facing = ref World.Get<Facing>(entity);
+        facing.DirectionX = state.FacingX;
+        facing.DirectionY = state.FacingY;
+
+        ref var velocity = ref World.Get<Velocity>(entity);
+        velocity.DirectionX = state.FacingX;
+        velocity.DirectionY = state.FacingY;
+        velocity.Speed = state.Speed;
+
+        ref var health = ref World.Get<Health>(entity);
+        health.Current = state.CurrentHp;
+        health.Max = state.MaxHp;
+        World.Set(entity, health);
+
+        if (_visualSyncSystem is not null &&
+            _visualSyncSystem.TryGetNpcVisual(state.NetworkId, out var visual))
+        {
+            visual.UpdateFromState(state);
+        }
     }
     public void RegisterSpatial(Entity entity)
     {

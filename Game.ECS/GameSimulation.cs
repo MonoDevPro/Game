@@ -53,7 +53,8 @@ public abstract class GameSimulation : GameSystem
     public uint CurrentTick { get; private set; }
     
     protected IMapService? MapService;
-    protected readonly PlayerIndex PlayerIndex = new();
+    protected PlayerIndex PlayerIndex { get; } = new();
+    protected NpcIndex NpcIndex { get; } = new();
     
     protected GameSimulation(IMapService? mapService = null) : this(
         World.Create(chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
@@ -114,6 +115,7 @@ public abstract class GameSimulation : GameSystem
     {
         Systems.Dispose();
         PlayerIndex.Clear();
+        NpcIndex.Clear();
         base.Dispose();
     }
 }

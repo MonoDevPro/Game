@@ -55,7 +55,6 @@ public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? log
     [All<Health, DirtyFlags, CombatState>] // ✅ inclui CombatState
     [None<Dead>]
     private void ProcessHealthRegeneration(
-        in Entity e,
         ref Health health,
         ref DirtyFlags dirty,
         ref CombatState combat,        // ✅ novo
@@ -91,7 +90,6 @@ public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? log
     [All<Mana, DirtyFlags, CombatState>] // ✅ inclui CombatState
     [None<Dead>]
     private void ProcessManaRegeneration(
-        in Entity e,
         ref Mana mana,
         ref DirtyFlags dirty,
         ref CombatState combat,        // ✅ novo
@@ -133,7 +131,7 @@ public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? log
         if (health.Current > 0)
             return;
 
-        World.Add<Dead>(entity);
         dirty.MarkDirty(DirtyComponentType.Vitals);
+        World.Add<Dead>(entity);
     }
 }

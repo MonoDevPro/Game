@@ -1,11 +1,11 @@
 using Arch.Core;
 using Game.ECS.Components;
-using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Repositories;
 
 namespace Game.ECS.Entities.Updates;
 
-public static class PlayerSetters
+public static partial class EntityUpdates
 {
     public static bool ApplyPlayerState(this World world, PlayerIndex index, PlayerStateData data)
     {

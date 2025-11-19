@@ -18,7 +18,7 @@ public readonly partial record struct MapDataPacket(
     byte Version,
     byte[]? Metadata)
 {
-    public const byte CURRENT_VERSION = 1;
+    public const byte CurrentVersion = 1;
 
     public int TotalTiles => Width * Height * Layers;
     public DateTime CreatedAt => new(CreatedAtTicks, DateTimeKind.Utc);
@@ -55,7 +55,7 @@ public readonly partial record struct MapDataPacket(
         CompressionType: 0,
         DataChecksum: 0,
         CreatedAtTicks: DateTime.UtcNow.Ticks,
-        Version: CURRENT_VERSION,
+        Version: CurrentVersion,
         Metadata: null
     );
 

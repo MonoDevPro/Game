@@ -1,59 +1,137 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Core.Extensions;
 using Game.ECS.Components;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 
 namespace Game.Server.ECS.Systems;
 
-public sealed partial class ServerSyncSystem(World world, INetworkManager sender, ILogger<ServerSyncSystem>? logger = null) : GameSystem(world)
+public sealed partial class ServerSyncSystem(
+    World world,
+    INetworkManager sender,
+    ILogger<ServerSyncSystem>? logger = null)
+    : GameSystem(world)
 {
+    private readonly List<NpcSpawnSnapshot> _npcSpawnBuffer = [];
+    private readonly List<NpcStateSnapshot> _npcStateBuffer = [];
+    
+    private readonly List<PlayerSnapshot> _playerSpawnBuffer = [];
+    private readonly List<PlayerStateSnapshot> _playerStateBuffer = [];
+    private readonly List<PlayerVitalsSnapshot> _playerVitalsBuffer = [];
+    private readonly List<CombatStateSnapshot> _playerCombatBuffer = [];
+
     [Query]
-    [All<NetworkId, DirtyFlags>]
-    private void SyncDirtyEntities(
+    [All<PlayerControlled, NetworkId, DirtyFlags>]
+    private void SyncPlayers(
+        in Entity entity,
+        in NetworkId networkId,
+        ref DirtyFlags dirty)
+    {
+        if (dirty.IsEmpty) return;
+        
+        DirtyFlags snapshot = dirty;
+        dirty.ClearAll();
+        
+        // Estado completo para spawns
+        if (snapshot.IsDirty(DirtyComponentType.All))
+            _playerSpawnBuffer.Add(World.BuildPlayerDataSnapshot(entity).ToPlayerSpawnSnapshot());
+
+        // Estado de movimento
+        if (snapshot.IsDirty(DirtyComponentType.State))
+            _playerStateBuffer.Add(World.BuildPlayerStateSnapshot(entity).ToPlayerStateSnapshot());
+
+        // Vitals
+        if (snapshot.IsDirty(DirtyComponentType.Vitals))
+            _playerVitalsBuffer.Add(World.BuildPlayerVitalsSnapshot(entity).ToPlayerVitalsSnapshot());
+        
+        // Combate (estado + resultado)
+        if (snapshot.IsDirty(DirtyComponentType.Combat) &&
+            World.TryGet(entity, out CombatState combat) &&
+            World.TryGet(entity, out Attack attackAction))
+        {
+            _playerCombatBuffer.Add(new CombatStateSnapshot(
+                AttackerNetworkId: networkId.Value,
+                Type: attackAction.Type,
+                AttackDuration: attackAction.TotalDuration,
+                CooldownRemaining: combat.LastAttackTime
+            ));
+        }
+    }
+    
+    [Query]
+    [All<AIControlled, NetworkId, DirtyFlags>]
+    private void SyncNpcs(
         in Entity entity,
         in NetworkId networkId,
         ref DirtyFlags dirty)
     {
         if (dirty.IsEmpty) return;
 
-        // Snapshot e limpa
-        DirtyFlags dirtyFlags = dirty;
-        
+        DirtyFlags snapshot = dirty;
         dirty.ClearAll();
-
-        // Estado de movimento
-        if (dirtyFlags.IsDirty(DirtyComponentType.State) &&
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Facing facing) &&
-            World.TryGet(entity, out Velocity velocity))
+        
+        // Estado completo para spawns
+        if (snapshot.IsDirty(DirtyComponentType.All))
         {
-            var statePacket = new PlayerStatePacket(networkId.Value, position, velocity, facing);
-            sender.SendToAll(statePacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var npcData = World.BuildNPCSnapshot(entity).ToNpcSpawnData();
+            _npcSpawnBuffer.Add(npcData);
+            logger?.LogDebug("[ServerSync] Queued NPC spawn NetID={NetworkId}", networkId.Value);
         }
 
-        // Vitals
-        if (dirtyFlags.IsDirty(DirtyComponentType.Vitals) &&
-            World.TryGet(entity, out Health health) && World.TryGet(entity, out Mana mana))
+        if (snapshot.IsDirty(DirtyComponentType.State) || snapshot.IsDirty(DirtyComponentType.Vitals))
         {
-            var vitalsPacket = new PlayerVitalsPacket(networkId.Value, health, mana);
-            sender.SendToAll(vitalsPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var stateData = World.BuildNpcStateSnapshot(entity).ToNpcStateSnapshot();
+            _npcStateBuffer.Add(stateData);
+        }
+    }
+
+    public override void AfterUpdate(in float deltaTime)
+    {
+        if (_npcSpawnBuffer.Count > 0)
+        {
+            var packet = new NpcSpawnPacket(_npcSpawnBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _npcSpawnBuffer.Clear();
+        }
+
+        if (_npcStateBuffer.Count > 0)
+        {
+            var packet = new NpcStatePacket(_npcStateBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _npcStateBuffer.Clear();
         }
         
-        // Combate (estado + resultado)
-        if (dirtyFlags.IsDirty(DirtyComponentType.Combat) &&
-            World.TryGet(entity, out CombatState combat) &&
-            World.TryGet(entity, out Attack attackAction))
+        if (_playerSpawnBuffer.Count > 0)
         {
-            var combatPacket = new CombatStatePacket(
-                AttackerNetworkId: networkId.Value,
-                Type: attackAction.Type,
-                AttackDuration: attackAction.TotalDuration,
-                CooldownRemaining: combat.LastAttackTime
-            );
-            sender.SendToAll(combatPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            var packet = new PlayerSpawnPacket(_playerSpawnBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerSpawnBuffer.Clear();
         }
+        
+        if (_playerStateBuffer.Count > 0)
+        {
+            var packet = new PlayerStatePacket(_playerStateBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerStateBuffer.Clear();
+        }
+        
+        if (_playerVitalsBuffer.Count > 0)
+        {
+            var packet = new PlayerVitalsPacket(_playerVitalsBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerVitalsBuffer.Clear();
+        }
+        
+        if (_playerCombatBuffer.Count > 0)
+        {
+            var packet = new CombatStatePacket(_playerCombatBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerCombatBuffer.Clear();
+        }
+        
     }
 }

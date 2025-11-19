@@ -1,43 +1,22 @@
 using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.Entities.Archetypes;
+using Game.ECS.Entities.Data;
 
 namespace Game.ECS.Entities.Factories;
 
-/// <summary>
-/// Dados de um NPC (controlado por IA).
-/// </summary>
-public readonly record struct NPCData(
-    int NetworkId,
-    int PositionX, int PositionY, int PositionZ,
-    int Hp, int MaxHp, float HpRegen,
-    int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense,
-    int MapId = 0);
-
-// ============================================
-// NPC Snapshots
-// ============================================
-
-public readonly record struct NpcStateData(
-    int NetworkId,
-    int PositionX,
-    int PositionY,
-    int PositionZ,
-    int FacingX,
-    int FacingY,
-    float Speed,
-    int CurrentHp,
-    int MaxHp);
-
-public static class NpcFactory
+public static partial class EntityFactory
 {
     /// <summary>
     /// Cria um NPC com IA controlada.
     /// </summary>
-    public static Entity CreateNPC(this World world, in NPCData data)
+    public static Entity CreateNPC(this World world, in NPCData data, bool markDirty = true)
     {
         var entity = world.Create(GameArchetypes.NPCCharacter);
+        var dirtyFlags = new DirtyFlags();
+        if (markDirty)
+            dirtyFlags.MarkDirtyMask(DirtyComponentType.All);
+
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
@@ -48,54 +27,14 @@ public static class NpcFactory
             new Movement { Timer = 0f },
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
             new Walkable { BaseSpeed = 3f, CurrentModifier = 1f },
+            new Attackable { BaseSpeed = 1f, CurrentModifier = 1f },
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
-            new CombatState { },
+            new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new AIControlled(),
-            new DirtyFlags()
+            dirtyFlags
         };
         world.SetRange(entity, components);
         return entity;
-    }
-    
-    public static NPCData BuildNPCSnapshot(this World world, Entity entity)
-    {
-        ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var mapId = ref world.Get<MapId>(entity);
-        ref var position = ref world.Get<Position>(entity);
-        ref var health = ref world.Get<Health>(entity);
-        ref var attackPower = ref world.Get<AttackPower>(entity);
-        ref var defense = ref world.Get<Defense>(entity);
-
-        return new NPCData
-        {
-            NetworkId = networkId.Value, MapId = mapId.Value,
-            PositionX = position.X, PositionY = position.Y, PositionZ = position.Z,
-            Hp = health.Current, MaxHp = health.Max, HpRegen = health.RegenerationRate,
-            PhysicalAttack = attackPower.Physical, MagicAttack = attackPower.Magical,
-            PhysicalDefense = defense.Physical, MagicDefense = defense.Magical
-        };
-    }
-    
-    public static NpcStateData BuildNpcStateSnapshot(this World world, Entity entity)
-    {
-        ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var position = ref world.Get<Position>(entity);
-        ref var facing = ref world.Get<Facing>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
-        ref var health = ref world.Get<Health>(entity);
-
-        return new NpcStateData
-        {
-            NetworkId = networkId.Value,
-            PositionX = position.X,
-            PositionY = position.Y,
-            PositionZ = position.Z,
-            FacingX = facing.DirectionX,
-            FacingY = facing.DirectionY,
-            Speed = walkable.BaseSpeed * walkable.CurrentModifier,
-            CurrentHp = health.Current,
-            MaxHp = health.Max
-        };
     }
 }

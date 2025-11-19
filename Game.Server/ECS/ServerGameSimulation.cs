@@ -3,6 +3,7 @@ using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Extensions;
 using Game.ECS.Services;
@@ -70,11 +71,14 @@ public sealed class ServerGameSimulation : GameSimulation
         // 6. Revive processa ressurreição
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
-        // 7. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
+    // 7. NPC AI
+        systems.Add(new NpcAISystem(world, MapService, _loggerFactory.CreateLogger<NpcAISystem>()));
+        
+    // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
         //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
         systems.Add(new SpatialSyncSystem(World, MapService, _loggerFactory.CreateLogger<SpatialSyncSystem>()));
         
-        // 8. ServerSync envia atualizações para clientes
+    // 9. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
     }
 
@@ -90,6 +94,20 @@ public sealed class ServerGameSimulation : GameSimulation
         
         return entity;
     }
+
+    public Entity CreateNpc(in NPCData data)
+    {
+        var entity = World.CreateNPC(data);
+        NpcIndex.AddMapping(data.NetworkId, entity);
+        if (World.TryGet(entity, out MapId mapId) &&
+            World.TryGet(entity, out Position position))
+        {
+            Systems.Get<SpatialSyncSystem>()
+                .OnEntityCreated(entity, position, mapId.Value);
+        }
+
+        return entity;
+    }
     
     public bool DestroyPlayer(Entity entity)
     {
@@ -103,6 +121,26 @@ public sealed class ServerGameSimulation : GameSimulation
         World.Destroy(entity);
         return true;
     }
+
+    public bool DestroyNpc(int networkId)
+    {
+        if (!NpcIndex.TryGetEntity(networkId, out var entity))
+            return false;
+
+        if (World.TryGet(entity, out MapId mapId) &&
+            World.TryGet(entity, out Position position))
+        {
+            Systems.Get<SpatialSyncSystem>()
+                .OnEntityDestroyed(entity, position, mapId.Value);
+        }
+
+        NpcIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
+    }
+
+    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
+        NpcIndex.TryGetEntity(networkId, out entity);
 
     public bool ApplyPlayerInput(Entity e, PlayerInput data)
     {

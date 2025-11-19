@@ -5,6 +5,7 @@ using Arch.Core;
 using FluentAssertions;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
@@ -98,8 +99,15 @@ public sealed class CombatSyncTests
         network.CombatPackets.Should().ContainSingle("CombatStatePacket não foi enviado pelo servidor");
 
         var combatPacket = network.CombatPackets.Single();
-        combatPacket.AttackerNetworkId.Should().Be(attackerData.NetworkId);
-        combatPacket.Type.Should().Be(AttackType.Basic);
+        
+        foreach (var hit in combatPacket.CombatStates)
+        {
+            hit.AttackerNetworkId.Should().Be(attackerData.NetworkId, "NetworkId do atacante no pacote está incorreto");
+            hit.Type.Should().Be(AttackType.Basic, "Tipo de ataque no pacote está incorreto");
+            hit.AttackDuration.Should().BeApproximately(1f, 0.01f, "Duração do ataque no pacote está incorreta");
+            hit.CooldownRemaining.Should().BeGreaterThan(0f, "CooldownRemaining no pacote deve ser maior que zero");
+        }
+        
     }
 
     private sealed class DummyNetworkManager : INetworkManager

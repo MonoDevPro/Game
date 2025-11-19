@@ -3,7 +3,7 @@ using MemoryPack;
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct PlayerDataPacket(
+public readonly partial record struct PlayerSnapshot(
     int PlayerId,
     int NetworkId,
     string Name,
@@ -27,3 +27,23 @@ public readonly partial record struct PlayerDataPacket(
     int PhysicalDefense,
     int MagicDefense,
     int MapId);
+    
+[MemoryPackable]
+public readonly partial record struct PlayerStateSnapshot(
+    int NetworkId,
+    int PositionX,
+    int PositionY,
+    int PositionZ,
+    int VelocityX,
+    int VelocityY,
+    float Speed,
+    int FacingX,
+    int FacingY);
+    
+[MemoryPackable]
+public readonly partial record struct PlayerVitalsSnapshot(
+    int NetworkId,
+    int CurrentHp,
+    int MaxHp,
+    int CurrentMp,
+    int MaxMp);

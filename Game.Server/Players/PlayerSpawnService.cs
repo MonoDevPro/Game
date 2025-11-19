@@ -1,4 +1,6 @@
 using Arch.Core;
+using Game.Core.Extensions;
+using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.Network.Abstractions;
 using Game.Server.ECS;
@@ -17,7 +19,7 @@ public sealed class PlayerSpawnService(
     public Entity SpawnPlayer(PlayerSession session)
     {
         var character = session.SelectedCharacter 
-            ?? throw new InvalidOperationException("No character selected for session.");
+                        ?? throw new InvalidOperationException("No character selected for session.");
         var playerData = new PlayerData(
             session.Account.Id,
             session.Peer.Id,
@@ -55,7 +57,7 @@ public sealed class PlayerSpawnService(
             return;
         
         var character = session.SelectedCharacter 
-            ?? throw new InvalidOperationException("No character selected for session.");
+                        ?? throw new InvalidOperationException("No character selected for session.");
         
         simulation.DestroyPlayer(session.Entity);
         logger.LogInformation("Despawned player {Name}", character.Name);
@@ -65,35 +67,36 @@ public sealed class PlayerSpawnService(
     public PlayerData BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
-            ?? throw new InvalidOperationException("No character selected for session.");
+                        ?? throw new InvalidOperationException("No character selected for session.");
         
-        if (!simulation.World.TryBuildPlayerSnapshot(session.Entity, out PlayerData snapshot))
+        if (simulation.World.IsAlive(session.Entity))
         {
-            return new PlayerData(
-                session.Account.Id,
-                session.Peer.Id,
-                character.Name,
-                (byte)character.Gender,
-                (byte)character.Vocation,
-                character.PositionX,
-                character.PositionY,
-                character.PositionZ,
-                character.FacingX,
-                character.FacingY,
-                character.Stats.CurrentHp,
-                character.Stats.MaxHp,
-                character.Stats.HpRegenPerTick(),
-                character.Stats.CurrentMp,
-                character.Stats.MaxMp,
-                character.Stats.MpRegenPerTick(),
-                (float)character.Stats.MovementSpeed,
-                (float)character.Stats.AttackSpeed,
-                character.Stats.PhysicalAttack,
-                character.Stats.MagicAttack,
-                character.Stats.PhysicalDefense,
-                character.Stats.MagicDefense
-            );
+            return simulation.World
+                .BuildPlayerDataSnapshot(session.Entity) with { Name = character.Name, };
         }
-        return snapshot with { Name = character.Name, };
+        return new PlayerData(
+            session.Account.Id,
+            session.Peer.Id,
+            character.Name,
+            (byte)character.Gender,
+            (byte)character.Vocation,
+            character.PositionX,
+            character.PositionY,
+            character.PositionZ,
+            character.FacingX,
+            character.FacingY,
+            character.Stats.CurrentHp,
+            character.Stats.MaxHp,
+            character.Stats.HpRegenPerTick(),
+            character.Stats.CurrentMp,
+            character.Stats.MaxMp,
+            character.Stats.MpRegenPerTick(),
+            (float)character.Stats.MovementSpeed,
+            (float)character.Stats.AttackSpeed,
+            character.Stats.PhysicalAttack,
+            character.Stats.MagicAttack,
+            character.Stats.PhysicalDefense,
+            character.Stats.MagicDefense
+        );
     }
 }

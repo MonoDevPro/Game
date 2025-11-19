@@ -40,7 +40,7 @@ public static class MapDtoExtensions
             CompressionType: (byte)compression,
             DataChecksum: checksum,
             CreatedAtTicks: DateTime.UtcNow.Ticks,
-            Version: MapDataPacket.CURRENT_VERSION,
+            Version: MapDataPacket.CurrentVersion,
             Metadata: metadata
         );
     }
@@ -69,7 +69,7 @@ public static class MapDtoExtensions
             CompressionType: (byte)compression,
             DataChecksum: checksum,
             CreatedAtTicks: DateTime.UtcNow.Ticks,
-            Version: MapDataPacket.CURRENT_VERSION,
+            Version: MapDataPacket.CurrentVersion,
             Metadata: null
         );
     }
