@@ -5,7 +5,6 @@ using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Extensions;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
@@ -53,11 +52,11 @@ public sealed class ServerGameSimulation : GameSimulation
             throw new InvalidOperationException("MapService não pode ser nulo na simulação do servidor.");
         
         // ⭐ Ordem importante:
-    // 0. NPC AI processa percepção, estado e decisões antes dos inputs
-    systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
-    systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
-    systems.Add(new NpcMovementSystem(world));
-    systems.Add(new NpcCombatSystem(world));
+        // 0. NPC AI processa percepção, estado e decisões antes dos inputs
+        systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
+        systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
+        systems.Add(new NpcMovementSystem(world));
+        systems.Add(new NpcCombatSystem(world));
 
     // 1. Input processa entrada do jogador
     systems.Add(new InputSystem(world));
