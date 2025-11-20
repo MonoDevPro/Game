@@ -170,6 +170,7 @@ public partial class GameClient : Node2D
         
         // Carrega visuais dos jogadores
         LoadPlayerVisuals();
+        LoadNpcVisuals();
 
         GD.Print("[GameClient] Game data loaded");
     }
@@ -185,6 +186,20 @@ public partial class GameClient : Node2D
         
         foreach (var data in remotePlayers)
             SpawnPlayerVisual(data.ToPlayerData(), false);
+    }
+
+    private void LoadNpcVisuals()
+    {
+        var bufferedNpcs = GameStateManager.Instance.ConsumeNpcSnapshots();
+        if (bufferedNpcs.Length == 0)
+        {
+            GD.Print("[GameClient] No buffered NPC snapshots to spawn during load");
+            return;
+        }
+
+        GD.Print($"[GameClient] Spawning {bufferedNpcs.Length} buffered NPCs");
+        foreach (var snapshot in bufferedNpcs)
+            SpawnNpcVisual(snapshot);
     }
     
     private void SpawnPlayerVisual(in PlayerData data, bool isLocal)

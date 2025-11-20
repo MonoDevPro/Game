@@ -10,8 +10,7 @@ using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
-public sealed partial class MovementSystem(World world, IMapService mapService)
-    : GameSystem(world)
+public sealed partial class MovementSystem(World world, IMapService mapService) : GameSystem(world)
 {
     [Query]
     [All<PlayerControlled, Facing, Velocity, DirtyFlags>]

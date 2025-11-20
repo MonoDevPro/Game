@@ -84,8 +84,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
     private int GenerateNetworkId() => _nextNetworkId++;
 
     private static List<NpcSpawnDefinition> BuildDefaultDefinitions() =>
-        new()
-        {
+        [
             new NpcSpawnDefinition
             {
                 MapId = 0,
@@ -114,7 +113,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
                 PhysicalDefense = 8,
                 MagicDefense = 6
             }
-        };
+        ];
 
     private sealed class NpcSpawnDefinition
     {

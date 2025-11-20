@@ -35,7 +35,7 @@ public sealed partial class NpcAISystem(World world, IMapService mapService, ILo
         in Walkable walkable,
         in Attackable attackable,
         ref CombatState combat,
-    ref DirtyFlags dirty,
+        ref DirtyFlags dirty,
         [Data] float deltaTime)
     {
         combat.ReduceCooldown(deltaTime);

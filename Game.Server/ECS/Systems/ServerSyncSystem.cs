@@ -80,6 +80,7 @@ public sealed partial class ServerSyncSystem(
             var npcData = World.BuildNPCSnapshot(entity).ToNpcSpawnData();
             _npcSpawnBuffer.Add(npcData);
             logger?.LogDebug("[ServerSync] Queued NPC spawn NetID={NetworkId}", networkId.Value);
+            return;
         }
 
         if (snapshot.IsDirty(DirtyComponentType.State) || snapshot.IsDirty(DirtyComponentType.Vitals))
