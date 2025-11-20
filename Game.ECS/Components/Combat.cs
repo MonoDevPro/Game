@@ -30,6 +30,11 @@ public struct Attack
     public bool DamageApplied;        // flag para marcar se o dano já foi aplicado
 }
 
+public struct AttackTarget
+{
+    public Entity TargetEntity;       // entidade alvo do ataque
+}
+
 /// <summary>
 /// Tipos de animação de ataque disponíveis.
 /// </summary>

@@ -24,7 +24,7 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     /// Processa jogadores mortos que estão em processo de revive.
     /// </summary>
     [Query]
-    [All<PlayerControlled, Dead, Revive>]
+    [All<Dead, Revive>]
     private void ProcessReviveTimer(
         in Entity entity,
         ref Revive revive,
@@ -59,7 +59,7 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     /// Detecta jogadores que acabaram de morrer e inicia o processo de revive.
     /// </summary>
     [Query]
-    [All<PlayerControlled, Dead>]
+    [All<Dead>]
     [None<Revive>]
     private void InitializeRevive(
         in Entity entity)

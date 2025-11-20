@@ -35,21 +35,29 @@ public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? log
             dirty.MarkDirty(DirtyComponentType.Vitals);
 
         health.Current = newHealth;
-        if (health.Current <= 0)
-            World.Add<Dead>(victim);
 
         // ✅ Marca como em combate e zera o timer desde o último hit
         combat.InCombat = true;
         combat.TimeSinceLastHit = 0f;
 
         World.Remove<Damaged>(victim);
-
-        logger?.LogDebug(
-            "Dano imediato aplicado: {Damage} para {Target} de {Attacker}",
-            damaged.Amount,
-            World.TryGet(victim, out NetworkId targetNetId) ? targetNetId.Value : -1,
-            World.TryGet(damaged.SourceEntity, out NetworkId attackerNetId) ? attackerNetId.Value : -1);
     }
+    
+    [Query]
+    [All<Health>]
+    [None<Dead>]
+    private void ProcessDeath(
+        in Entity entity,
+        ref Health health,
+        ref DirtyFlags dirty)
+    {
+        if (health.Current > 0)
+            return;
+
+        dirty.MarkDirty(DirtyComponentType.Vitals);
+        World.Add<Dead>(entity);
+    }
+    
     
     [Query]
     [All<Health, DirtyFlags, CombatState>] // ✅ inclui CombatState
@@ -118,20 +126,5 @@ public sealed partial class VitalsSystem(World world, ILogger<VitalsSystem>? log
             mana.AccumulatedRegeneration -= regenToApply;
             dirty.MarkDirty(DirtyComponentType.Vitals);
         }
-    }
-
-    [Query]
-    [All<Health>]
-    [None<Dead>]
-    private void ProcessDeath(
-        in Entity entity,
-        ref Health health,
-        ref DirtyFlags dirty)
-    {
-        if (health.Current > 0)
-            return;
-
-        dirty.MarkDirty(DirtyComponentType.Vitals);
-        World.Add<Dead>(entity);
     }
 }

@@ -109,7 +109,7 @@ public sealed class ClientGameSimulation : GameSimulation
 
     private Entity CreateNpc(in NPCData data, NpcVisual visual)
     {
-        var entity = World.CreateNPC(data, markDirty: false);
+        var entity = World.CreateNPC(data);
         NpcIndex.AddMapping(data.NetworkId, entity);
         RegisterSpatial(entity);
         _visualSyncSystem?.RegisterNpcVisual(data.NetworkId, visual);

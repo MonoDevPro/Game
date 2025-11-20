@@ -35,7 +35,10 @@ public sealed partial class ServerSyncSystem(
         
         // Estado completo para spawns
         if (dirty.IsDirtyMask(DirtyComponentType.All))
+        {
             _playerSpawnBuffer.Add(World.BuildPlayerDataSnapshot(entity).ToPlayerSpawnSnapshot());
+            dirty.ClearDirtyMask(DirtyComponentType.All);
+        }
 
         // Estado de movimento
         if (dirty.IsDirty(DirtyComponentType.State))

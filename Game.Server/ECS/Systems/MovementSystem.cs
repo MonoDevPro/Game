@@ -13,7 +13,7 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class MovementSystem(World world, IMapService mapService) : GameSystem(world)
 {
     [Query]
-    [All<PlayerControlled, Facing, Velocity, DirtyFlags>]
+    [All<Facing, Velocity, DirtyFlags>]
     [None<Dead>]
     private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty, [Data] float _)
     {

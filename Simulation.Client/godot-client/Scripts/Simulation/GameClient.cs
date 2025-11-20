@@ -13,6 +13,7 @@ using GodotClient.ECS;
 using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
+using Input = Godot.Input;
 
 namespace GodotClient.Simulation;
 

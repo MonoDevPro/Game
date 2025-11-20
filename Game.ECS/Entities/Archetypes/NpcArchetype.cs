@@ -27,6 +27,7 @@ public static partial class GameArchetypes
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
+        Component<Input>.ComponentType,
         Component<AIControlled>.ComponentType,
         Component<DirtyFlags>.ComponentType
     ];

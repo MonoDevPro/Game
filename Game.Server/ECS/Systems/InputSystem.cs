@@ -15,10 +15,9 @@ public sealed partial class InputSystem(World world)
     : GameSystem(world)
 {
     [Query]
-    [All<PlayerControlled, Velocity>]
+    [All<Input, Walkable>]
     [None<Dead>]
-    private void ProcessPlayerInput(in Entity e,
-        ref Velocity velocity, in Walkable speed, ref PlayerInput input, ref DirtyFlags dirty, ref CombatState combat, [Data] in float deltaTime)
+    private void ProcessInput(ref Velocity velocity, in Walkable speed, ref Input input, ref DirtyFlags dirty)
     {
         sbyte newDirX = input.InputX;
         sbyte newDirY = input.InputY;

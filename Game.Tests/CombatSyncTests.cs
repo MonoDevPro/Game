@@ -77,7 +77,7 @@ public sealed class CombatSyncTests
         spatial.Insert(defenderPos, defender);
 
         // Simular input de ataque básico (Ctrl)
-        ref var attackerInput = ref world.Get<PlayerInput>(attacker);
+        ref var attackerInput = ref world.Get<Input>(attacker);
         attackerInput.Flags = InputFlags.Attack;
         attackerInput.InputX = 0;
         attackerInput.InputY = 0;

@@ -5,7 +5,7 @@ namespace Game.Core.Extensions;
 
 public static class PlayerInputExtensions
 {
-    public static PlayerInputPacket ToPlayerInputPacket(this PlayerInput inputData)
+    public static PlayerInputPacket ToPlayerInputPacket(this Input inputData)
     {
         return new PlayerInputPacket(
             inputData.InputX,
@@ -13,9 +13,9 @@ public static class PlayerInputExtensions
             inputData.Flags);
     }
     
-    public static PlayerInput ToPlayerInput(this PlayerInputPacket inputPacket)
+    public static Input ToPlayerInput(this PlayerInputPacket inputPacket)
     {
-        return new PlayerInput
+        return new Input
         {
             InputX = inputPacket.InputX,
             InputY = inputPacket.InputY,

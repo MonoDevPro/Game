@@ -28,7 +28,7 @@ public static partial class EntityFactory
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
-            new PlayerInput { },
+            new Input { },
             new PlayerControlled(),
             new DirtyFlags()
         };

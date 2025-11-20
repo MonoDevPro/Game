@@ -5,6 +5,7 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
 using GodotClient.Simulation;
+using Input = Game.ECS.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 
@@ -12,9 +13,9 @@ public sealed partial class GodotInputSystem(World world)
     : GameSystem(world)
 {
     [Query]
-    [All<PlayerControlled, LocalPlayerTag, PlayerInput>]
+    [All<PlayerControlled, LocalPlayerTag, Input>]
     [None<Dead>]
-    private void ApplyInput(in Entity e, ref PlayerInput input, ref DirtyFlags dirty, [Data] float deltaTime)
+    private void ApplyInput(in Entity e, ref Input input, ref DirtyFlags dirty, [Data] float deltaTime)
     {
         if (GameClient.Instance is { IsChatFocused: true })
         {
@@ -29,17 +30,17 @@ public sealed partial class GodotInputSystem(World world)
         }
 
         sbyte moveX = 0, moveY = 0;
-        if (Input.IsActionPressed("walk_west"))       moveX = -1;
-        else if (Input.IsActionPressed("walk_east"))  moveX = 1;
+        if (Godot.Input.IsActionPressed("walk_west"))       moveX = -1;
+        else if (Godot.Input.IsActionPressed("walk_east"))  moveX = 1;
 
-        if (Input.IsActionPressed("walk_north"))      moveY = -1;
-        else if (Input.IsActionPressed("walk_south")) moveY = 1;
+        if (Godot.Input.IsActionPressed("walk_north"))      moveY = -1;
+        else if (Godot.Input.IsActionPressed("walk_south")) moveY = 1;
 
         var buttons = InputFlags.None;
-        if (Input.IsActionPressed("click_left"))      buttons |= InputFlags.ClickLeft;
-        if (Input.IsActionPressed("click_right"))     buttons |= InputFlags.ClickRight;
-        if (Input.IsActionPressed("attack"))          buttons |= InputFlags.Attack;
-        if (Input.IsActionPressed("sprint"))          buttons |= InputFlags.Sprint;
+        if (Godot.Input.IsActionPressed("click_left"))      buttons |= InputFlags.ClickLeft;
+        if (Godot.Input.IsActionPressed("click_right"))     buttons |= InputFlags.ClickRight;
+        if (Godot.Input.IsActionPressed("attack"))          buttons |= InputFlags.Attack;
+        if (Godot.Input.IsActionPressed("sprint"))          buttons |= InputFlags.Sprint;
         
         if (input.InputX == moveX && input.InputY == moveY && input.Flags == buttons)
             return; // No change

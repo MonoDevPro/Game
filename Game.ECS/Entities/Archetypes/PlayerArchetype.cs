@@ -33,7 +33,7 @@ public static partial class GameArchetypes
         Component<AttackPower>.ComponentType,
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<PlayerInput>.ComponentType,
+        Component<Input>.ComponentType,
         Component<PlayerControlled>.ComponentType,
         Component<DirtyFlags>.ComponentType
     ];

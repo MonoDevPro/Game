@@ -99,13 +99,14 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         var entity = World.CreateNPC(data);
         NpcIndex.AddMapping(data.NetworkId, entity);
-        if (World.TryGet(entity, out MapId mapId) &&
-            World.TryGet(entity, out Position position))
-        {
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityCreated(entity, position, mapId.Value);
-        }
-
+        Systems.Get<SpatialSyncSystem>()
+            .OnEntityCreated(entity, 
+                new Position
+                {
+                    X = data.PositionX, 
+                    Y = data.PositionY, 
+                    Z = data.PositionZ
+                }, data.MapId);
         return entity;
     }
     
@@ -115,7 +116,9 @@ public sealed class ServerGameSimulation : GameSimulation
         if (World.TryGet(entity, out MapId mapId) && 
             World.TryGet(entity, out Position position))
             Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, position, mapId.Value);
+                .OnEntityDestroyed(entity, 
+                    position, 
+                    mapId.Value);
     
         PlayerIndex.RemoveByEntity(entity);
         World.Destroy(entity);
@@ -142,9 +145,9 @@ public sealed class ServerGameSimulation : GameSimulation
     public bool TryGetNpcEntity(int networkId, out Entity entity) =>
         NpcIndex.TryGetEntity(networkId, out entity);
 
-    public bool ApplyPlayerInput(Entity e, PlayerInput data)
+    public bool ApplyPlayerInput(Entity e, Input data)
     {
-        ref var input = ref World.Get<PlayerInput>(e);
+        ref var input = ref World.Get<Input>(e);
         input.InputX = data.InputX;
         input.InputY = data.InputY;
         input.Flags = data.Flags;

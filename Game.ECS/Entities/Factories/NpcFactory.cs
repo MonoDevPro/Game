@@ -10,13 +10,9 @@ public static partial class EntityFactory
     /// <summary>
     /// Cria um NPC com IA controlada.
     /// </summary>
-    public static Entity CreateNPC(this World world, in NPCData data, bool markDirty = true)
+    public static Entity CreateNPC(this World world, in NPCData data)
     {
         var entity = world.Create(GameArchetypes.NPCCharacter);
-        var dirtyFlags = new DirtyFlags();
-        if (markDirty)
-            dirtyFlags.MarkDirtyMask(DirtyComponentType.All);
-
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
@@ -31,6 +27,7 @@ public static partial class EntityFactory
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
+            new Input { },
             new AIControlled(),
             new DirtyFlags()
         };

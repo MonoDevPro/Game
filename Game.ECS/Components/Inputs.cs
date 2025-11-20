@@ -13,7 +13,7 @@ public enum InputFlags : ushort
     Sprint = 1 << 3,      // Correr
 }
 
-public struct PlayerInput
+public struct Input
 {
     public sbyte InputX; 
     public sbyte InputY; 

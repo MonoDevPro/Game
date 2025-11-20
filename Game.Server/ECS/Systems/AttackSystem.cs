@@ -15,12 +15,12 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
     private const float BaseAttackAnimationDuration = 1f;
     
     [Query]
-    [All<PlayerControlled, PlayerInput>]
+    [All<Input>]
     [None<Dead, Attack>]
-    private void ProcessPlayerAttack(
+    private void ProcessAttack(
         in Entity e,
         in Attackable atk,
-        ref PlayerInput input,
+        ref Input input,
         ref CombatState combat,
         ref DirtyFlags dirty,
         [Data] float deltaTime)
@@ -57,7 +57,7 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
     }
     
     [Query]
-    [All<PlayerControlled, Attack>]
+    [All<Attack>]
     [None<Dead>]
     private void ProcessAttackDamage(
         in Entity e,

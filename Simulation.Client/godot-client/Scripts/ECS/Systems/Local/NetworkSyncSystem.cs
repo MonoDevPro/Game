@@ -8,6 +8,7 @@ using Game.Network.Abstractions;
 using Game.Network.Adapters;
 using Godot;
 using LiteNetLib;
+using Input = Game.ECS.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 
@@ -27,7 +28,7 @@ public sealed partial class NetworkSyncSystem(World world, INetworkManager sende
         var dirtyFlags = dirty.ConsumeSnapshot();
 
         // Capture snapshot of dirty flags
-        if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out PlayerInput input))
+        if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out Input input))
         {
             var inputPacket = input.ToPlayerInputPacket();
             sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
