@@ -33,23 +33,20 @@ public sealed partial class ServerSyncSystem(
     {
         if (dirty.IsEmpty) return;
         
-        DirtyFlags snapshot = dirty;
-        dirty.ClearAll();
-        
         // Estado completo para spawns
-        if (snapshot.IsDirty(DirtyComponentType.All))
+        if (dirty.IsDirtyMask(DirtyComponentType.All))
             _playerSpawnBuffer.Add(World.BuildPlayerDataSnapshot(entity).ToPlayerSpawnSnapshot());
 
         // Estado de movimento
-        if (snapshot.IsDirty(DirtyComponentType.State))
+        if (dirty.IsDirty(DirtyComponentType.State))
             _playerStateBuffer.Add(World.BuildPlayerStateSnapshot(entity).ToPlayerStateSnapshot());
 
         // Vitals
-        if (snapshot.IsDirty(DirtyComponentType.Vitals))
+        if (dirty.IsDirty(DirtyComponentType.Vitals))
             _playerVitalsBuffer.Add(World.BuildPlayerVitalsSnapshot(entity).ToPlayerVitalsSnapshot());
         
         // Combate (estado + resultado)
-        if (snapshot.IsDirty(DirtyComponentType.Combat) &&
+        if (dirty.IsDirty(DirtyComponentType.Combat) &&
             World.TryGet(entity, out CombatState combat) &&
             World.TryGet(entity, out Attack attackAction))
         {
@@ -60,34 +57,32 @@ public sealed partial class ServerSyncSystem(
                 CooldownRemaining: combat.LastAttackTime
             ));
         }
+        
+        dirty.ClearAll();
     }
     
     [Query]
     [All<AIControlled, NetworkId, DirtyFlags>]
     private void SyncNpcs(
         in Entity entity,
-        in NetworkId networkId,
         ref DirtyFlags dirty)
     {
         if (dirty.IsEmpty) return;
-
-        DirtyFlags snapshot = dirty;
-        dirty.ClearAll();
         
         // Estado completo para spawns
-        if (snapshot.IsDirty(DirtyComponentType.All))
+        if (dirty.IsDirtyMask(DirtyComponentType.All))
         {
             var npcData = World.BuildNPCSnapshot(entity).ToNpcSpawnData();
             _npcSpawnBuffer.Add(npcData);
-            logger?.LogDebug("[ServerSync] Queued NPC spawn NetID={NetworkId}", networkId.Value);
-            return;
         }
 
-        if (snapshot.IsDirty(DirtyComponentType.State) || snapshot.IsDirty(DirtyComponentType.Vitals))
+        if (dirty.IsDirtyMask(DirtyComponentType.State | DirtyComponentType.Vitals))
         {
             var stateData = World.BuildNpcStateSnapshot(entity).ToNpcStateSnapshot();
             _npcStateBuffer.Add(stateData);
         }
+        
+        dirty.ClearAll();
     }
 
     public override void AfterUpdate(in float deltaTime)

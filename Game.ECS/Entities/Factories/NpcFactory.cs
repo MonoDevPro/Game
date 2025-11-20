@@ -32,7 +32,7 @@ public static partial class EntityFactory
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new AIControlled(),
-            dirtyFlags
+            new DirtyFlags()
         };
         world.SetRange(entity, components);
         return entity;

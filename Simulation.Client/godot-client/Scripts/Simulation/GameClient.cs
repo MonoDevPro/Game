@@ -414,13 +414,20 @@ public partial class GameClient : Node2D
 
     private void HandleNpcDespawn(INetPeerAdapter peer, ref NpcDespawnPacket packet)
     {
-        _simulation?.DespawnNpc(packet.NetworkId);
+        if (_simulation is null)
+            return;
+        
+        GD.Print($"[GameClient] Handling NpcDespawnPacket for NetworkId {packet.NetworkId}");
+        
+        _simulation.DespawnNpc(packet.NetworkId);
     }
 
     private void HandleNpcState(INetPeerAdapter peer, ref NpcStatePacket packet)
     {
         if (_simulation is null || packet.States.Length == 0)
             return;
+        
+        GD.Print($"[GameClient] Handling NpcStatePacket with {packet.States.Length} NPC states");
 
         foreach (var state in packet.States)
             _simulation.ApplyNpcState(state.ToNpcStateData());

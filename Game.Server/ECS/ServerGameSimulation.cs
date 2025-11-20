@@ -71,14 +71,14 @@ public sealed class ServerGameSimulation : GameSimulation
         // 6. Revive processa ressurreição
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
         
-    // 7. NPC AI
+        // 7. NPC AI
         systems.Add(new NpcAISystem(world, MapService, _loggerFactory.CreateLogger<NpcAISystem>()));
         
-    // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
+        // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
         //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
         systems.Add(new SpatialSyncSystem(World, MapService, _loggerFactory.CreateLogger<SpatialSyncSystem>()));
         
-    // 9. ServerSync envia atualizações para clientes
+        // 9. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
     }
 

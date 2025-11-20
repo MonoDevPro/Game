@@ -1,4 +1,3 @@
-using System;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -196,9 +195,9 @@ public sealed partial class NpcAISystem(World world, IMapService mapService, ILo
             DamageApplied = false
         };
         if (World.Has<Attack>(attacker))
-            World.Set(attacker, attackAction);
+            World.Set<Attack>(attacker, attackAction);
         else
-            World.Add(attacker, attackAction);
+            World.Add<Attack>(attacker, attackAction);
 
         World.ApplyDeferredDamage(attacker, target, damage);
     }
