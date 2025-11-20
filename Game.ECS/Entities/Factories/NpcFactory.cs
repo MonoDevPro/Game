@@ -29,6 +29,46 @@ public static partial class EntityFactory
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new Input { },
             new AIControlled(),
+            new NpcAIState { Current = NpcAIStateId.Idle, StateTime = 0f },
+            new NpcTarget
+            {
+                Target = Entity.Null,
+                TargetNetworkId = 0,
+                LastKnownPosition = new Position
+                {
+                    X = data.PositionX,
+                    Y = data.PositionY,
+                    Z = data.PositionZ
+                },
+                DistanceSquared = 0f
+            },
+            new NpcBehavior
+            {
+                Type = NpcBehaviorType.Aggressive,
+                VisionRange = 6f,
+                AttackRange = 1.25f,
+                LeashRange = 12f,
+                PatrolRadius = 0f,
+                IdleDurationMin = 1.5f,
+                IdleDurationMax = 3.5f
+            },
+            new NpcPatrol
+            {
+                HomePosition = new Position
+                {
+                    X = data.PositionX,
+                    Y = data.PositionY,
+                    Z = data.PositionZ
+                },
+                Destination = new Position
+                {
+                    X = data.PositionX,
+                    Y = data.PositionY,
+                    Z = data.PositionZ
+                },
+                Radius = 0f,
+                HasDestination = false
+            },
             new DirtyFlags()
         };
         world.SetRange(entity, components);

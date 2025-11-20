@@ -53,8 +53,14 @@ public sealed class ServerGameSimulation : GameSimulation
             throw new InvalidOperationException("MapService não pode ser nulo na simulação do servidor.");
         
         // ⭐ Ordem importante:
-        // 1. Input processa entrada do jogador
-        systems.Add(new InputSystem(world));
+    // 0. NPC AI processa percepção, estado e decisões antes dos inputs
+    systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
+    systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
+    systems.Add(new NpcMovementSystem(world));
+    systems.Add(new NpcCombatSystem(world));
+
+    // 1. Input processa entrada do jogador
+    systems.Add(new InputSystem(world));
         
         // 2. Movement calcula novas posições
         systems.Add(new MovementSystem(world, MapService));

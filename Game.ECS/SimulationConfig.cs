@@ -16,6 +16,12 @@ public static class SimulationConfig
 
     // Tamanho de uma célula do mundo em unidades lógicas (não pixels)
     public const float CellSize = 1f;
+    
+    /// <summary>
+    /// Duração base, em segundos, da animação de ataque corpo-a-corpo.
+    /// Mantido em um único lugar para sincronizar servidor e cliente.
+    /// </summary>
+    public const float DefaultAttackAnimationDuration = 1f;
 
     /// <summary>
     /// Alcance máximo, em células, para ataques corpo-a-corpo.

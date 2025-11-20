@@ -29,6 +29,10 @@ public static partial class GameArchetypes
         Component<CombatState>.ComponentType,
         Component<Input>.ComponentType,
         Component<AIControlled>.ComponentType,
+        Component<NpcAIState>.ComponentType,
+        Component<NpcTarget>.ComponentType,
+        Component<NpcBehavior>.ComponentType,
+        Component<NpcPatrol>.ComponentType,
         Component<DirtyFlags>.ComponentType
     ];
 }

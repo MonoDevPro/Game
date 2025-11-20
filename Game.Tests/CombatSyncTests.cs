@@ -93,7 +93,8 @@ public sealed class CombatSyncTests
         attackerDirty.IsDirty(DirtyComponentType.Combat)
             .Should().BeTrue("AttackSystem deve marcar CombatState como dirty");
 
-        syncSystem.Update(SimulationConfig.TickDelta);
+    syncSystem.Update(SimulationConfig.TickDelta);
+    syncSystem.AfterUpdate(SimulationConfig.TickDelta);
 
         // Assert: ataque gerou pacote de combate e resultado
         network.CombatPackets.Should().ContainSingle("CombatStatePacket não foi enviado pelo servidor");

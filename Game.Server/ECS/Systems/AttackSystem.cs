@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Extensions;
 using Game.ECS.Logic;
@@ -12,8 +13,6 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class AttackSystem(World world, IMapService mapService, ILogger<AttackSystem>? logger = null) 
     : GameSystem(world)
 {
-    private const float BaseAttackAnimationDuration = 1f;
-    
     [Query]
     [All<Input>]
     [None<Dead, Attack>]
@@ -50,8 +49,8 @@ public sealed partial class AttackSystem(World world, IMapService mapService, IL
         World.Add<Attack>(e, new Attack
         {
             Type = attackType,
-            RemainingDuration = BaseAttackAnimationDuration,
-            TotalDuration = BaseAttackAnimationDuration,
+            RemainingDuration = SimulationConfig.DefaultAttackAnimationDuration,
+            TotalDuration = SimulationConfig.DefaultAttackAnimationDuration,
             DamageApplied = false,
         });
     }

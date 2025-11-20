@@ -32,7 +32,7 @@ public static partial class EntityBuilder
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
+        ref var velocity = ref world.Get<Velocity>(entity);
         ref var health = ref world.Get<Health>(entity);
 
         return new NpcStateData
@@ -43,7 +43,7 @@ public static partial class EntityBuilder
             PositionZ = position.Z,
             FacingX = facing.DirectionX,
             FacingY = facing.DirectionY,
-            Speed = walkable.BaseSpeed * walkable.CurrentModifier,
+            Speed = velocity.Speed,
             CurrentHp = health.Current,
             MaxHp = health.Max
         };
