@@ -19,6 +19,7 @@ public sealed partial class ServerSyncSystem(
 {
     private readonly List<NpcSpawnSnapshot> _npcSpawnBuffer = [];
     private readonly List<NpcStateSnapshot> _npcStateBuffer = [];
+    private readonly List<NpcHealthSnapshot> _npcHealthBuffer = [];
     
     private readonly List<PlayerSnapshot> _playerSpawnBuffer = [];
     private readonly List<PlayerStateSnapshot> _playerStateBuffer = [];
@@ -93,16 +94,22 @@ public sealed partial class ServerSyncSystem(
 
         if (spawnRequested)
         {
-            var npcData = World.BuildNPCSnapshot(entity).ToNpcSpawnData();
+            var npcData = World.BuildNpcData(entity).ToNpcSpawnData();
             _npcSpawnBuffer.Add(npcData);
             dirty.ClearDirtyMask(DirtyComponentType.All);
             dirtySnapshot = DirtyComponentType.None;
         }
 
-        if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.State | DirtyComponentType.Vitals))
+        if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.State))
         {
-            var stateData = World.BuildNpcStateSnapshot(entity).ToNpcStateSnapshot();
+            var stateData = World.BuildNpcStateData(entity).ToNpcStateSnapshot();
             _npcStateBuffer.Add(stateData);
+        }
+        
+        if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.Vitals))
+        {
+            var healthData = World.BuildNpcHealthData(entity).ToNpcHealthSnapshot();
+            _npcHealthBuffer.Add(healthData);
         }
         
         dirty.ClearAll();
@@ -114,20 +121,33 @@ public sealed partial class ServerSyncSystem(
 
         private void FlushBuffers()
         {
+            // ===========================
+            // ========== NPCs ===========
+            // ===========================
+            
             if (_npcSpawnBuffer.Count > 0)
             {
                 var packet = new NpcSpawnPacket(_npcSpawnBuffer.ToArray());
                 sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 _npcSpawnBuffer.Clear();
             }
-
             if (_npcStateBuffer.Count > 0)
             {
                 var packet = new NpcStatePacket(_npcStateBuffer.ToArray());
                 sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
                 _npcStateBuffer.Clear();
             }
-        
+            if (_npcHealthBuffer.Count > 0)
+            {
+                var packet = new NpcHealthPacket(_npcHealthBuffer.ToArray());
+                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                _npcHealthBuffer.Clear();
+            }
+            
+            // ===========================
+            // ======== PLAYERS ==========
+            // ===========================
+            
             if (_playerSpawnBuffer.Count > 0)
             {
                 var packet = new PlayerSpawnPacket(_playerSpawnBuffer.ToArray());

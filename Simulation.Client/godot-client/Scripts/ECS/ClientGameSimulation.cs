@@ -62,6 +62,7 @@ public sealed class ClientGameSimulation : GameSimulation
     public Entity SpawnNpc(NPCData data, NpcVisual visual) => CreateNpc(data, visual);
     public bool DespawnNpc(int networkId) => DestroyNpc(networkId);
     public void ApplyNpcState(NpcStateData state) => UpdateNpcState(state);
+    public void ApplyNpcVitals(NpcHealthData data) => UpdateNpcVitals(data);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
@@ -133,30 +134,16 @@ public sealed class ClientGameSimulation : GameSimulation
     {
         if (!NpcIndex.TryGetEntity(state.NetworkId, out var entity))
             return;
-
-        var newPosition = new Position(state.PositionX, state.PositionY, state.PositionZ);
-        World.Set(entity, newPosition);
-
-        ref var facing = ref World.Get<Facing>(entity);
-        facing.DirectionX = state.FacingX;
-        facing.DirectionY = state.FacingY;
-
-        ref var velocity = ref World.Get<Velocity>(entity);
-        velocity.DirectionX = state.FacingX;
-        velocity.DirectionY = state.FacingY;
-        velocity.Speed = state.Speed;
-
-        ref var health = ref World.Get<Health>(entity);
-        health.Current = state.CurrentHp;
-        health.Max = state.MaxHp;
-        World.Set(entity, health);
-
-        if (_visualSyncSystem is not null &&
-            _visualSyncSystem.TryGetNpcVisual(state.NetworkId, out var visual))
-        {
-            visual.UpdateFromState(state);
-        }
+        World.ApplyNpcState(entity, state);
     }
+    
+    private void UpdateNpcVitals(in NpcHealthData data)
+    {
+        if (!NpcIndex.TryGetEntity(data.NetworkId, out var entity))
+            return;
+        World.ApplyNpcVitals(entity, data);
+    }
+    
     public void RegisterSpatial(Entity entity)
     {
         if (MapService == null)

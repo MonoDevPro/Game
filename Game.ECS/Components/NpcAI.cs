@@ -63,6 +63,17 @@ public struct NpcBehavior
     public float PatrolRadius;
     public float IdleDurationMin;
     public float IdleDurationMax;
+    
+    public static readonly NpcBehavior Default = new()
+    {
+        Type = NpcBehaviorType.Passive,
+        VisionRange = 5f,
+        AttackRange = 1.5f,
+        LeashRange = 10f,
+        PatrolRadius = 8f,
+        IdleDurationMin = 1f,
+        IdleDurationMax = 3f
+    };
 }
 
 public struct NpcPatrol

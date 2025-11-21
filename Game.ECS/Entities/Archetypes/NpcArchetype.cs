@@ -33,6 +33,7 @@ public static partial class GameArchetypes
         Component<NpcTarget>.ComponentType,
         Component<NpcBehavior>.ComponentType,
         Component<NpcPatrol>.ComponentType,
-        Component<DirtyFlags>.ComponentType
+        Component<DirtyFlags>.ComponentType,
+        Component<Info>.ComponentType
     ];
 }

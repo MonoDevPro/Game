@@ -18,20 +18,11 @@ public sealed partial class NpcVisual : DefaultVisual
     
     public void UpdateFromSnapshot(NPCData data)
     {
-        LoadSprite(VocationType.Archer, Gender.Male);
+        LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
         UpdateName("NPC " + data.NetworkId);
-        UpdateAnimationState(new Vector2I(0, 1), false, false);
+        UpdateAnimationState(new Vector2I(data.FacingX, data.FacingY), false, false);
         UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.PositionZ));
         UpdateVitals(data.Hp, data.MaxHp, 0, 0);
         if (Sprite is not null) UpdateAnimationSpeed(1f, 1f);
-    }
-
-    public void UpdateFromState(NpcStateData state)
-    {
-        var facing = new Vector2I(state.FacingX, state.FacingY);
-        bool isMoving = state.Speed > 0.05f;
-        UpdateAnimationState(facing, isMoving, false);
-        UpdatePosition(new Vector3I(state.PositionX, state.PositionY, state.PositionZ));
-        UpdateVitals(state.CurrentHp, state.MaxHp, 0, 0);
     }
 }

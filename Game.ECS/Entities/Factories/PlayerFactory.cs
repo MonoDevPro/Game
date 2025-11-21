@@ -16,7 +16,7 @@ public static partial class EntityFactory
             new NetworkId { Value = data.NetworkId },
             new PlayerId { Value = data.PlayerId },
             new MapId { Value = data.MapId },
-            new PlayerInfo { GenderId = data.Gender, VocationId = data.Vocation},
+            new Info { GenderId = data.Gender, VocationId = data.Vocation},
             new Position { X = data.PosX, Y = data.PosY, Z = data.PosZ },
             new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },

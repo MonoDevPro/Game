@@ -11,7 +11,7 @@ public static partial class EntityBuilder
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var playerId = ref world.Get<PlayerId>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
-        ref var info = ref world.Get<PlayerInfo>(entity);
+        ref var info = ref world.Get<Info>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var health = ref world.Get<Health>(entity);

@@ -67,7 +67,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     }
 
     [Query]
-    [All<NetworkId, PlayerControlled, Attack>]
+    [All<NetworkId, Attack>]
     private void SyncPlayerAttackAction(
         in Entity e,
         ref Attack action,

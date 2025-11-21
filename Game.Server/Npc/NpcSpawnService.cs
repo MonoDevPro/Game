@@ -1,8 +1,8 @@
-using System.Collections.Generic;
+using Game.Domain.Enums;
+using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.Server.ECS;
-using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Npc;
 
@@ -11,12 +11,14 @@ namespace Game.Server.Npc;
 /// </summary>
 public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<NpcSpawnService> logger)
 {
+    public readonly record struct NpcInfo(string Name);
+    
     private readonly List<NpcSpawnDefinition> _definitions = BuildDefaultDefinitions();
-    private readonly List<int> _activeNetworkIds = new();
+    private readonly Dictionary<int, NpcInfo> _activeNetworkIds = [];
     private int _nextNetworkId = 100_000;
     private bool _initialized;
 
-    public IReadOnlyList<int> ActiveNetworkIds => _activeNetworkIds;
+    public IReadOnlyDictionary<int, NpcInfo> ActiveNetworkIds => _activeNetworkIds;
 
     public void SpawnInitialNpcs()
     {
@@ -26,11 +28,12 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
         foreach (var definition in _definitions)
         {
             var npcData = BuildNpcData(definition);
-            simulation.CreateNpc(npcData);
-            _activeNetworkIds.Add(npcData.NetworkId);
+            simulation.CreateNpc(npcData, definition.Behavior);
+            _activeNetworkIds.Add(npcData.NetworkId, new NpcInfo(definition.Name));
             logger.LogInformation(
-                "[NPC] Spawned NPC NetID={NetworkId} at ({X}, {Y}, {Z}) on map {MapId}",
+                "[NPC] Spawned NPC NetID={NetworkId} Name={Name} at ({X}, {Y}, {Z}) on map {MapId}",
                 npcData.NetworkId,
+                npcData.Name,
                 npcData.PositionX,
                 npcData.PositionY,
                 npcData.PositionZ,
@@ -44,14 +47,17 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
     {
         foreach (var networkId in _activeNetworkIds)
         {
-            if (simulation.TryGetNpcEntity(networkId, out var entity))
-                yield return simulation.World.BuildNPCSnapshot(entity);
+            if (simulation.TryGetNpcEntity(networkId.Key, out var entity))
+                yield return simulation.World.BuildNpcData(entity) with
+                {
+                    Name = networkId.Value.Name
+                };
         }
     }
 
     public bool TryDespawnNpc(int networkId)
     {
-        if (!_activeNetworkIds.Contains(networkId))
+        if (!_activeNetworkIds.ContainsKey(networkId))
             return false;
 
         if (!simulation.DestroyNpc(networkId))
@@ -67,6 +73,9 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
         return new NPCData
         {
             NetworkId = GenerateNetworkId(),
+            Name = definition.Name,
+            Gender = definition.Gender,
+            Vocation = definition.Vocation,
             MapId = definition.MapId,
             PositionX = definition.PositionX,
             PositionY = definition.PositionY,
@@ -84,40 +93,65 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
     private int GenerateNetworkId() => _nextNetworkId++;
 
     private static List<NpcSpawnDefinition> BuildDefaultDefinitions() =>
-        [
-            new NpcSpawnDefinition
-            {
-                MapId = 0,
-                PositionX = 10,
-                PositionY = 10,
-                PositionZ = 0,
-                Hp = 150,
-                MaxHp = 150,
-                HpRegen = 0.5f,
-                PhysicalAttack = 25,
-                MagicAttack = 5,
-                PhysicalDefense = 10,
-                MagicDefense = 5
-            },
-            new NpcSpawnDefinition
-            {
-                MapId = 0,
-                PositionX = 20,
-                PositionY = 20,
-                PositionZ = 0,
-                Hp = 120,
-                MaxHp = 120,
-                HpRegen = 0.3f,
-                PhysicalAttack = 18,
-                MagicAttack = 8,
-                PhysicalDefense = 8,
-                MagicDefense = 6
-            }
-        ];
+    [
+        new()
+        {
+            MapId = 0,
+            Name = "Orc Warrior",
+            Gender = (byte)Gender.Male,
+            Vocation = (byte)VocationType.Warrior,
+            PositionX = 10,
+            PositionY = 10,
+            PositionZ = 0,
+            Hp = 150,
+            MaxHp = 150,
+            HpRegen = 0.5f,
+            PhysicalAttack = 25,
+            MagicAttack = 5,
+            PhysicalDefense = 10,
+            MagicDefense = 5,
+            Behavior = new NpcBehaviorData(
+                BehaviorType: (byte)NpcBehaviorType.Aggressive,
+                VisionRange: 8f,
+                AttackRange: 1.5f,
+                LeashRange: 10f,
+                PatrolRadius: 0f,
+                IdleDurationMin: 0f,
+                IdleDurationMax: 0f)
+        },
+        new()
+        {
+            MapId = 0,
+            Name = "Goblin",
+            Gender = (byte)Gender.Male,
+            Vocation = (byte)VocationType.Archer,
+            PositionX = 20,
+            PositionY = 20,
+            PositionZ = 0,
+            Hp = 120,
+            MaxHp = 120,
+            HpRegen = 0.3f,
+            PhysicalAttack = 18,
+            MagicAttack = 8,
+            PhysicalDefense = 8,
+            MagicDefense = 6,
+            Behavior = new NpcBehaviorData(
+                BehaviorType: (byte)NpcBehaviorType.Defensive,
+                VisionRange: 6f,
+                AttackRange: 5f,
+                LeashRange: 12f,
+                PatrolRadius: 0f,
+                IdleDurationMin: 0f,
+                IdleDurationMax: 0f)
+        }
+    ];
 
     private sealed class NpcSpawnDefinition
     {
         public int MapId { get; init; }
+        public string Name { get; init; } = "NPC";
+        public byte Gender { get; init; }
+        public byte Vocation { get; init; }
         public int PositionX { get; init; }
         public int PositionY { get; init; }
         public int PositionZ { get; init; }
@@ -128,5 +162,6 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
         public int MagicAttack { get; init; }
         public int PhysicalDefense { get; init; }
         public int MagicDefense { get; init; }
+        public NpcBehaviorData Behavior { get; init; }
     }
 }

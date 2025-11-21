@@ -3,7 +3,7 @@ namespace Game.ECS.Components;
 // ============================================
 // Info - Informações básicas da entidade
 // ============================================
-public struct PlayerInfo
+public struct Info
 {
     /// <summary>
     /// Vocação da entidade.

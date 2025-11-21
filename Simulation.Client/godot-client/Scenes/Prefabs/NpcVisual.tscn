@@ -12,9 +12,11 @@ corner_radius_bottom_left = 6
 corner_detail = 6
 
 [node name="NpcVisual" type="Node2D"]
+y_sort_enabled = true
 script = ExtResource("1_i4iwk")
 
 [node name="Pivot" type="Node2D" parent="."]
+z_as_relative = false
 position = Vector2(32, 32)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Pivot"]

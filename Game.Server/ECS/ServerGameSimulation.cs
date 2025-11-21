@@ -97,9 +97,11 @@ public sealed class ServerGameSimulation : GameSimulation
         return entity;
     }
 
-    public Entity CreateNpc(in NPCData data)
+    public Entity CreateNpc(in NPCData data, NpcBehaviorData behaviorData)
     {
         var entity = World.CreateNPC(data);
+        World.SetupNpcBehaviourEntity(entity, behaviorData);
+        
         NpcIndex.AddMapping(data.NetworkId, entity);
         Systems.Get<SpatialSyncSystem>()
             .OnEntityCreated(entity, 

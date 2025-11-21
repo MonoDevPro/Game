@@ -18,7 +18,7 @@ public static partial class EntityFactory
             new NetworkId { Value = data.NetworkId },
             new MapId { Value = data.MapId },
             new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
-            new Facing { DirectionX = 0, DirectionY = 0 },
+            new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
             new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
             new Movement { Timer = 0f },
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
@@ -28,7 +28,7 @@ public static partial class EntityFactory
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new Input { },
-            new AIControlled(),
+            new AIControlled { },
             new NpcAIState { Current = NpcAIStateId.Idle, StateTime = 0f },
             new NpcTarget
             {
@@ -48,7 +48,7 @@ public static partial class EntityFactory
                 VisionRange = 6f,
                 AttackRange = 1.25f,
                 LeashRange = 12f,
-                PatrolRadius = 0f,
+                PatrolRadius = 5f,
                 IdleDurationMin = 1.5f,
                 IdleDurationMax = 3.5f
             },
@@ -66,10 +66,15 @@ public static partial class EntityFactory
                     Y = data.PositionY,
                     Z = data.PositionZ
                 },
-                Radius = 0f,
+                Radius = 5f,
                 HasDestination = false
             },
-            new DirtyFlags()
+            new DirtyFlags(),
+            new Info
+            {
+                GenderId = data.Gender, 
+                VocationId = data.Vocation
+            }
         };
         world.SetRange(entity, components);
         return entity;

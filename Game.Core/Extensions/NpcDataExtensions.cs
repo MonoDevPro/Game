@@ -10,9 +10,14 @@ public static class NpcDataExtensions
         return new NpcSpawnSnapshot(
             data.NetworkId,
             data.MapId,
+            data.Name,
+            data.Gender,
+            data.Vocation,
             data.PositionX,
             data.PositionY,
             data.PositionZ,
+            data.FacingX,
+            data.FacingY,
             data.Hp,
             data.MaxHp,
             data.HpRegen,
@@ -28,9 +33,14 @@ public static class NpcDataExtensions
         {
             NetworkId = snapshot.NetworkId,
             MapId = snapshot.MapId,
+            Name = snapshot.Name,
+            Gender = snapshot.Gender,
+            Vocation = snapshot.Vocation,
             PositionX = snapshot.PositionX,
             PositionY = snapshot.PositionY,
             PositionZ = snapshot.PositionZ,
+            FacingX = snapshot.FacingX,
+            FacingY = snapshot.FacingY,
             Hp = snapshot.Hp,
             MaxHp = snapshot.MaxHp,
             HpRegen = snapshot.HpRegen,
@@ -48,11 +58,11 @@ public static class NpcDataExtensions
             data.PositionX,
             data.PositionY,
             data.PositionZ,
-            data.FacingX,
-            data.FacingY,
+            data.VelocityX,
+            data.VelocityY,
             data.Speed,
-            data.CurrentHp,
-            data.MaxHp);
+            data.FacingX,
+            data.FacingY);
     }
 
     public static NpcStateData ToNpcStateData(this NpcStateSnapshot snapshot)
@@ -63,11 +73,30 @@ public static class NpcDataExtensions
             PositionX = snapshot.PositionX,
             PositionY = snapshot.PositionY,
             PositionZ = snapshot.PositionZ,
+            VelocityX = snapshot.VelocityX,
+            VelocityY = snapshot.VelocityY,
             FacingX = snapshot.FacingX,
             FacingY = snapshot.FacingY,
             Speed = snapshot.Speed,
+        };
+    }
+    
+    public static NpcHealthSnapshot ToNpcHealthSnapshot(this NpcHealthData data)
+    {
+        return new NpcHealthSnapshot(
+            data.NetworkId,
+            data.CurrentHp,
+            data.MaxHp);
+    }
+    
+    public static NpcHealthData ToNpcHealthData(this NpcHealthSnapshot snapshot)
+    {
+        return new NpcHealthData
+        {
+            NetworkId = snapshot.NetworkId,
             CurrentHp = snapshot.CurrentHp,
             MaxHp = snapshot.MaxHp
         };
     }
+    
 }

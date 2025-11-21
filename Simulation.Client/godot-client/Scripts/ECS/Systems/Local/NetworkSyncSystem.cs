@@ -18,7 +18,7 @@ namespace GodotClient.ECS.Systems;
 public sealed partial class NetworkSyncSystem(World world, INetworkManager sender) : GameSystem(world)
 {
     [Query]
-    [All<LocalPlayerTag, NetworkId, DirtyFlags>]
+    [All<PlayerControlled, LocalPlayerTag, NetworkId, DirtyFlags>]
     private void SyncToServer(
         in Entity entity,
         ref DirtyFlags dirty)

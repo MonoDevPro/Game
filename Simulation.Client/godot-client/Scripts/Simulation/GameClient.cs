@@ -3,7 +3,6 @@ using System.Linq;
 using Game.Core.Extensions;
 using Game.ECS.Components;
 using Game.ECS.Entities.Data;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -101,6 +100,7 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<NpcSpawnPacket>();
             _network.UnregisterPacketHandler<NpcDespawnPacket>();
             _network.UnregisterPacketHandler<NpcStatePacket>();
+            _network.UnregisterPacketHandler<NpcHealthPacket>();
             _network.UnregisterPacketHandler<ChatMessagePacket>();
         }
 
@@ -240,6 +240,7 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawn);
         _network.RegisterPacketHandler<NpcDespawnPacket>(HandleNpcDespawn);
         _network.RegisterPacketHandler<NpcStatePacket>(HandleNpcState);
+        _network.RegisterPacketHandler<NpcHealthPacket>(HandleNpcVitals);
         _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
@@ -432,6 +433,17 @@ public partial class GameClient : Node2D
 
         foreach (var state in packet.States)
             _simulation.ApplyNpcState(state.ToNpcStateData());
+    }
+    
+    private void HandleNpcVitals(INetPeerAdapter peer, ref NpcHealthPacket packet)
+    {
+        if (_simulation is null || packet.Healths.Length == 0)
+            return;
+        
+        GD.Print($"[GameClient] Handling NpcHealthPacket with {packet.Healths.Length} NPC vitals");
+
+        foreach (var vitals in packet.Healths)
+            _simulation.ApplyNpcVitals(vitals.ToNpcHealthData());
     }
 
     private void SpawnNpcVisual(NpcSpawnSnapshot spawnSnapshot)
