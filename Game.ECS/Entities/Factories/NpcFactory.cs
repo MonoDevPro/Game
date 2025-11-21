@@ -30,18 +30,7 @@ public static partial class EntityFactory
             new Input { },
             new AIControlled { },
             new NpcAIState { Current = NpcAIStateId.Idle, StateTime = 0f },
-            new NpcTarget
-            {
-                Target = Entity.Null,
-                TargetNetworkId = 0,
-                LastKnownPosition = new Position
-                {
-                    X = data.PositionX,
-                    Y = data.PositionY,
-                    Z = data.PositionZ
-                },
-                DistanceSquared = 0f
-            },
+            NpcTarget.CreateEmpty(),
             new NpcBehavior
             {
                 Type = NpcBehaviorType.Aggressive,

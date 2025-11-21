@@ -42,15 +42,39 @@ public struct NpcTarget
     public int TargetNetworkId;
     public Position LastKnownPosition;
     public float DistanceSquared;
+    private bool _hasTarget;
 
-    public readonly bool HasTarget => Target != Entity.Null && TargetNetworkId != 0;
+    public readonly bool HasTarget => _hasTarget;
+
+    public static NpcTarget CreateEmpty()
+    {
+        var target = new NpcTarget
+        {
+            Target = Entity.Null,
+            TargetNetworkId = -1,
+            LastKnownPosition = default,
+            DistanceSquared = 0f,
+            _hasTarget = false
+        };
+        return target;
+    }
+
+    public void SetTarget(Entity target, int networkId, Position position, float distanceSq)
+    {
+        Target = target;
+        TargetNetworkId = networkId;
+        LastKnownPosition = position;
+        DistanceSquared = distanceSq;
+        _hasTarget = true;
+    }
 
     public void Clear()
     {
         Target = Entity.Null;
-        TargetNetworkId = 0;
+        TargetNetworkId = -1;  // -1 means no target (allows NetworkId 0 for valid targets)
         DistanceSquared = 0f;
         LastKnownPosition = default;
+        _hasTarget = false;
     }
 }
 

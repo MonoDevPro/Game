@@ -78,11 +78,10 @@ public sealed partial class NpcPerceptionSystem(
         if (best == Entity.Null)
             return;
 
-        target.Target = best;
-        target.LastKnownPosition = bestPosition;
-        target.DistanceSquared = bestDistance;
-        target.TargetNetworkId = TryResolveNetworkId(best);
-        logger?.LogDebug("[NpcPerception] NPC found target {TargetId} at distance {Distance}", target.TargetNetworkId, MathF.Sqrt(bestDistance));
+        int networkId = TryResolveNetworkId(best);
+        target.SetTarget(best, networkId, bestPosition, bestDistance);
+        logger?.LogDebug("[NpcPerception] NPC found target NetworkId={TargetId} at distance {Distance}", 
+            networkId, MathF.Sqrt(bestDistance));
     }
 
     private void ValidateCurrentTarget(ref NpcTarget target, in Position origin, in NpcBehavior behavior, int mapId)
@@ -101,9 +100,10 @@ public sealed partial class NpcPerceptionSystem(
             return;
         }
 
+        // Update target info (without clearing _hasTarget flag)
         target.LastKnownPosition = targetPosition;
         target.DistanceSquared = DistanceSquared(origin, targetPosition);
-        if (target.TargetNetworkId == 0)
+        if (target.TargetNetworkId == -1)  // -1 means NetworkId wasn't resolved yet
             target.TargetNetworkId = TryResolveNetworkId(target.Target);
 
         float leashRangeSq = behavior.LeashRange * behavior.LeashRange;
@@ -113,7 +113,7 @@ public sealed partial class NpcPerceptionSystem(
 
     private int TryResolveNetworkId(in Entity entity)
     {
-        return World.TryGet(entity, out NetworkId networkId) ? networkId.Value : 0;
+        return World.TryGet(entity, out NetworkId networkId) ? networkId.Value : -1;
     }
 
     private static float DistanceSquared(in Position a, in Position b)
