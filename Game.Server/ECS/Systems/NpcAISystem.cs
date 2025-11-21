@@ -13,6 +13,7 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
     [Query]
     [All<AIControlled, Position, NpcAIState, NpcBehavior, NpcTarget, NpcPatrol, DirtyFlags>]
     private void UpdateAiState(
+        in Entity entity,
         ref NpcAIState aiState,
         in Position position,
         in NpcBehavior behavior,
@@ -29,7 +30,16 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
             case NpcAIStateId.Patrolling:
             {
                 if (target.HasTarget && behavior.Type != NpcBehaviorType.Passive)
+                {
+                    logger?.LogInformation("[NpcAI] Entity {EntityId} transitioning to Chasing - Target={TargetId}, TargetNetId={TargetNetId}", 
+                        entity.Id, target.Target.Id, target.TargetNetworkId);
                     Transition(ref aiState, NpcAIStateId.Chasing, ref dirty);
+                }
+                else if (!target.HasTarget)
+                {
+                    logger?.LogTrace("[NpcAI] Entity {EntityId} in Idle/Patrol - No target (Target={Target}, NetId={NetId})", 
+                        entity.Id, target.Target, target.TargetNetworkId);
+                }
                 break;
             }
             case NpcAIStateId.Chasing:
