@@ -31,14 +31,9 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
             {
                 if (target.HasTarget && behavior.Type != NpcBehaviorType.Passive)
                 {
-                    logger?.LogInformation("[NpcAI] Entity {EntityId} transitioning to Chasing - Target={TargetId}, TargetNetId={TargetNetId}", 
-                        entity.Id, target.Target.Id, target.TargetNetworkId);
+                    logger?.LogDebug("[NpcAI] Entity {EntityId} transitioning to Chasing - TargetNetId={TargetNetId}", 
+                        entity.Id, target.TargetNetworkId);
                     Transition(ref aiState, NpcAIStateId.Chasing, ref dirty);
-                }
-                else if (!target.HasTarget)
-                {
-                    logger?.LogTrace("[NpcAI] Entity {EntityId} in Idle/Patrol - No target (Target={Target}, NetId={NetId})", 
-                        entity.Id, target.Target, target.TargetNetworkId);
                 }
                 break;
             }

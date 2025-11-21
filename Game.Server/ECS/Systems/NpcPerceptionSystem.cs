@@ -48,14 +48,10 @@ public sealed partial class NpcPerceptionSystem(
 
         Span<Entity> results = stackalloc Entity[MaxSpatialResults];
         int found = spatial.QueryArea(area, results);
-        
-        logger?.LogTrace("[NpcPerception] NPC at ({X}, {Y}) querying spatial, found {Count} entities", 
-            position.X, position.Y, found);
 
         Entity best = Entity.Null;
         float bestDistance = float.MaxValue;
         Position bestPosition = default;
-        int playersInRange = 0;
 
         for (int i = 0; i < found; i++)
         {
@@ -63,9 +59,6 @@ public sealed partial class NpcPerceptionSystem(
             if (candidate == entity) continue;
             if (!World.IsAlive(candidate)) continue;
             if (!World.Has<PlayerControlled>(candidate)) continue;
-            
-            playersInRange++;
-            
             if (World.Has<Dead>(candidate)) continue;
             if (!World.TryGet(candidate, out MapId candidateMap) || candidateMap.Value != mapId.Value) continue;
             if (!World.TryGet(candidate, out Position candidatePosition)) continue;
@@ -81,15 +74,13 @@ public sealed partial class NpcPerceptionSystem(
             bestDistance = distanceSq;
             bestPosition = candidatePosition;
         }
-        
-        logger?.LogTrace("[NpcPerception] Found {PlayerCount} players in spatial query", playersInRange);
 
         if (best == Entity.Null)
             return;
 
         int networkId = TryResolveNetworkId(best);
         target.SetTarget(best, networkId, bestPosition, bestDistance);
-        logger?.LogInformation("[NpcPerception] NPC found target NetworkId={TargetId} at distance {Distance}", 
+        logger?.LogDebug("[NpcPerception] NPC found target NetworkId={TargetId} at distance {Distance}", 
             networkId, MathF.Sqrt(bestDistance));
     }
 
