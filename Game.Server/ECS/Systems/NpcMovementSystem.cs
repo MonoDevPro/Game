@@ -28,9 +28,7 @@ public sealed partial class NpcMovementSystem(World world) : GameSystem(world)
             {
                 float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
                 if (target.DistanceSquared > attackRangeSq)
-                {
                     (desiredX, desiredY) = ComputeDirection(position, target.LastKnownPosition);
-                }
                 break;
             }
             case NpcAIStateId.Returning:

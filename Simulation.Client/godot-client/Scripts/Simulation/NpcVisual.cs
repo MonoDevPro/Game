@@ -1,6 +1,5 @@
 using Game.Domain.Enums;
 using Game.ECS.Entities.Data;
-using Game.ECS.Entities.Factories;
 using Godot;
 
 namespace GodotClient.Simulation;

@@ -58,8 +58,8 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new NpcMovementSystem(world));
         systems.Add(new NpcCombatSystem(world));
 
-    // 1. Input processa entrada do jogador
-    systems.Add(new InputSystem(world));
+        // 1. Input processa entrada do jogador
+        systems.Add(new InputSystem(world));
         
         // 2. Movement calcula novas posições
         systems.Add(new MovementSystem(world, MapService));
@@ -114,14 +114,12 @@ public sealed class ServerGameSimulation : GameSimulation
     
     public bool DestroyPlayer(Entity entity)
     {
-        // Remove do spatial
         if (World.TryGet(entity, out MapId mapId) && 
             World.TryGet(entity, out Position position))
             Systems.Get<SpatialSyncSystem>()
                 .OnEntityDestroyed(entity, 
                     position, 
                     mapId.Value);
-    
         PlayerIndex.RemoveByEntity(entity);
         World.Destroy(entity);
         return true;
@@ -131,14 +129,12 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         if (!NpcIndex.TryGetEntity(networkId, out var entity))
             return false;
-
         if (World.TryGet(entity, out MapId mapId) &&
             World.TryGet(entity, out Position position))
-        {
             Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, position, mapId.Value);
-        }
-
+                .OnEntityDestroyed(entity, 
+                    position, 
+                    mapId.Value);
         NpcIndex.RemoveByKey(networkId);
         World.Destroy(entity);
         return true;
