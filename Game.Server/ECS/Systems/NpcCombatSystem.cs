@@ -32,9 +32,7 @@ public sealed partial class NpcCombatSystem(World world) : GameSystem(world)
             input.Flags |= InputFlags.Attack;
         }
         else
-        {
             input.Flags &= ~InputFlags.Attack;
-        }
 
         dirty.MarkDirty(DirtyComponentType.Input);
     }
