@@ -12,6 +12,7 @@ public static partial class EntityBuilder
         ref var mapId = ref world.Get<MapId>(entity);
         ref var info = ref world.Get<Info>(entity);
         ref var position = ref world.Get<Position>(entity);
+        ref var facing = ref world.Get<Facing>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var attackPower = ref world.Get<AttackPower>(entity);
         ref var defense = ref world.Get<Defense>(entity);
@@ -21,6 +22,7 @@ public static partial class EntityBuilder
             NetworkId = networkId.Value, MapId = mapId.Value,
             Gender = info.GenderId, Vocation = info.VocationId,
             PositionX = position.X, PositionY = position.Y, PositionZ = position.Z,
+            FacingX = facing.DirectionX, FacingY = facing.DirectionY,
             Hp = health.Current, MaxHp = health.Max, HpRegen = health.RegenerationRate,
             PhysicalAttack = attackPower.Physical, MagicAttack = attackPower.Magical,
             PhysicalDefense = defense.Physical, MagicDefense = defense.Magical
@@ -33,7 +35,6 @@ public static partial class EntityBuilder
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var velocity = ref world.Get<Velocity>(entity);
-        ref var health = ref world.Get<Health>(entity);
 
         return new NpcStateData
         {
@@ -41,9 +42,11 @@ public static partial class EntityBuilder
             PositionX = position.X,
             PositionY = position.Y,
             PositionZ = position.Z,
+            VelocityX = velocity.DirectionX,
+            VelocityY = velocity.DirectionY,
+            Speed = velocity.Speed,
             FacingX = facing.DirectionX,
             FacingY = facing.DirectionY,
-            Speed = velocity.Speed,
         };
     }
     

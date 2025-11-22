@@ -1,4 +1,3 @@
-using System;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -11,7 +10,7 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
     : GameSystem(world)
 {
     [Query]
-    [All<AIControlled, Position, NpcAIState, NpcBehavior, NpcTarget, NpcPatrol, DirtyFlags>]
+    [All<AIControlled, Position, NpcAIState, NpcBehavior, NpcTarget, NpcPatrol>]
     private void UpdateAiState(
         in Entity entity,
         ref NpcAIState aiState,
@@ -19,7 +18,6 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
         in NpcBehavior behavior,
         in NpcTarget target,
         in NpcPatrol patrol,
-        ref DirtyFlags dirty,
         [Data] float deltaTime)
     {
         aiState.Advance(deltaTime);
@@ -33,7 +31,7 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
                 {
                     logger?.LogDebug("[NpcAI] Entity {EntityId} transitioning to Chasing - TargetNetId={TargetNetId}", 
                         entity.Id, target.TargetNetworkId);
-                    Transition(ref aiState, NpcAIStateId.Chasing, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Chasing);
                 }
                 break;
             }
@@ -41,56 +39,55 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
             {
                 if (!target.HasTarget)
                 {
-                    Transition(ref aiState, NpcAIStateId.Returning, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Returning);
                     break;
                 }
 
                 float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
                 if (target.DistanceSquared <= attackRangeSq)
-                    Transition(ref aiState, NpcAIStateId.Attacking, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Attacking);
                 break;
             }
             case NpcAIStateId.Attacking:
             {
                 if (!target.HasTarget)
                 {
-                    Transition(ref aiState, NpcAIStateId.Returning, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Returning);
                     break;
                 }
 
                 float leashRangeSq = behavior.LeashRange * behavior.LeashRange;
                 if (target.DistanceSquared > leashRangeSq)
                 {
-                    Transition(ref aiState, NpcAIStateId.Returning, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Returning);
                     break;
                 }
 
                 float attackRangeSq = behavior.AttackRange * behavior.AttackRange * 1.2f;
                 if (target.DistanceSquared > attackRangeSq)
-                    Transition(ref aiState, NpcAIStateId.Chasing, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Chasing);
                 break;
             }
             case NpcAIStateId.Returning:
             {
                 if (target.HasTarget)
                 {
-                    Transition(ref aiState, NpcAIStateId.Chasing, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Chasing);
                     break;
                 }
 
                 if (position.ManhattanDistance(patrol.HomePosition) <= 0)
-                    Transition(ref aiState, NpcAIStateId.Idle, ref dirty);
+                    Transition(ref aiState, NpcAIStateId.Idle);
                 break;
             }
         }
     }
 
-    private void Transition(ref NpcAIState state, NpcAIStateId targetState, ref DirtyFlags dirty)
+    private void Transition(ref NpcAIState state, NpcAIStateId targetState)
     {
         if (!state.TrySetState(targetState))
             return;
 
-        dirty.MarkDirty(DirtyComponentType.State);
         logger?.LogTrace("[NpcAI] State transitioned to {State}", targetState);
     }
 }

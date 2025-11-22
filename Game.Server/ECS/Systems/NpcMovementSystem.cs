@@ -27,8 +27,7 @@ public sealed partial class NpcMovementSystem(World world) : GameSystem(world)
             case NpcAIStateId.Chasing when target.HasTarget:
             {
                 float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
-                if (target.DistanceSquared > attackRangeSq)
-                    (desiredX, desiredY) = ComputeDirection(position, target.LastKnownPosition);
+                (desiredX, desiredY) = ComputeDirection(position, target.LastKnownPosition);
                 break;
             }
             case NpcAIStateId.Returning:
@@ -42,12 +41,15 @@ public sealed partial class NpcMovementSystem(World world) : GameSystem(world)
                 break;
             }
         }
+        
 
         bool inputChanged = desiredX != input.InputX || desiredY != input.InputY;
+        
+        input.InputX = desiredX;
+        input.InputY = desiredY;
+        
         if (inputChanged)
         {
-            input.InputX = desiredX;
-            input.InputY = desiredY;
             dirty.MarkDirty(DirtyComponentType.Input);
         }
     }

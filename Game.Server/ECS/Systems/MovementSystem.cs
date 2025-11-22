@@ -3,7 +3,6 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Extensions;
 using Game.ECS.Logic;
 using Game.ECS.Services;
 using Game.ECS.Systems;
@@ -15,7 +14,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     [Query]
     [All<Facing, Velocity, DirtyFlags>]
     [None<Dead>]
-    private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty, [Data] float _)
+    private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty)
     {
         if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
         int previousX = facing.DirectionX;

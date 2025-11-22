@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Logic;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
@@ -12,7 +13,7 @@ namespace Game.Server.ECS.Systems;
 /// Mantém um timer desde o último hit e limpa o flag de combate
 /// após um período configurado, permitindo voltar a regenerar HP/MP.
 /// </summary>
-public sealed partial class CombatSystem(World world) : GameSystem(world)
+public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? logger = null) : GameSystem(world)
 {
     [Query]
     [All<CombatState>]
@@ -30,4 +31,45 @@ public sealed partial class CombatSystem(World world) : GameSystem(world)
             combat.TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat;
         }
     }
+    
+    [Query]
+    [All<Input>]
+    [None<Dead, Attack>]
+    private void ProcessAttack(
+        in Entity e,
+        in Attackable atk,
+        ref Input input,
+        ref CombatState combat,
+        ref DirtyFlags dirty,
+        [Data] float deltaTime)
+    {
+        // Reduz cooldown (helper mantém clamped)
+        CombatLogic.ReduceCooldown(ref combat, deltaTime);
+        
+        // Se o player não ativou a flag de ataque, sair
+        if ((input.Flags & InputFlags.Attack) == 0) return;
+        
+        logger?.LogDebug("[AttackSystem] Player triggered attack. Cooldown: {Cooldown}", combat.LastAttackTime);
+        
+        // Se estiver em cooldown, sair
+        if (!CombatLogic.CheckAttackCooldown(in combat))
+        {
+            logger?.LogDebug("[AttackSystem] Attack blocked by cooldown");
+            return;
+        }
+
+        var attackType = AttackType.Basic;
+        
+        combat.LastAttackTime = CombatLogic.CalculateAttackCooldownSeconds(atk, attackType, externalMultiplier: 1f);
+        dirty.MarkDirty(DirtyComponentType.Combat);
+        
+        World.Add<Attack>(e, new Attack
+        {
+            Type = attackType,
+            RemainingDuration = SimulationConfig.DefaultAttackAnimationDuration,
+            TotalDuration = SimulationConfig.DefaultAttackAnimationDuration,
+            DamageApplied = false,
+        });
+    }
+    
 }

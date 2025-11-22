@@ -64,14 +64,17 @@ public sealed class ServerGameSimulation : GameSimulation
         // 2. Movement calcula novas posições
         systems.Add(new MovementSystem(world, MapService));
         
-        // 3. Attack processa ataques
-        systems.Add(new AttackSystem(world, MapService, _loggerFactory.CreateLogger<AttackSystem>()));
-        
         // 4. Combat processa estado de combate
-        systems.Add(new CombatSystem(world));
+        systems.Add(new CombatSystem(world, _loggerFactory.CreateLogger<CombatSystem>()));
         
-        // 5. Vitals processa vida/mana/dano
-        systems.Add(new VitalsSystem(world, _loggerFactory.CreateLogger<VitalsSystem>()));
+        // 4.1 Damage processa dano periódico (DoT) e dano adiado
+        systems.Add(new DamageSystem(world, MapService));
+        
+        // 4.2 Death processa morte de entidades
+        systems.Add(new DeathSystem(world, _loggerFactory.CreateLogger<DeathSystem>()));
+        
+        // 5. Regeneration processa vida/mana/dano
+        systems.Add(new RegenerationSystem(world, _loggerFactory.CreateLogger<RegenerationSystem>()));
         
         // 6. Revive processa ressurreição
         systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));

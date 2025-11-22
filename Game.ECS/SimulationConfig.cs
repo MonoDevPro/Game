@@ -23,19 +23,6 @@ public static class SimulationConfig
     /// </summary>
     public const float DefaultAttackAnimationDuration = 1f;
 
-    /// <summary>
-    /// Alcance máximo, em células, para ataques corpo-a-corpo.
-    /// </summary>
-    public const int MaxMeleeAttackRange = 1;
-
-    /// <summary>
-    /// Alcance máximo, em células, para ataques à distância.
-    /// </summary>
-    public const int MaxRangedAttackRange = 10;
-
-    // Limiar de reconciliação (em células)
-    public const float ReconciliationThreshold = 1f;
-    
     // Configurações padrão de respawn
     public const float DefaultRespawnTime = 5f;
     public const int DefaultSpawnX = 10;

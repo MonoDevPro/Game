@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Extensions;
+namespace Game.ECS.Logic;
 
 public static class DirtyExtensions
 {

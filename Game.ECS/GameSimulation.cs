@@ -93,8 +93,6 @@ public abstract class GameSimulation : GameSystem
             _fixedTimeStep.Step();
         }
     }
-    public override void BeforeUpdate(in float t) => throw new NotImplementedException();
-    public override void AfterUpdate(in float t) => throw new NotImplementedException();
 
     public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
     {

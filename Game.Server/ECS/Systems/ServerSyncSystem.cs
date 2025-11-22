@@ -84,31 +84,34 @@ public sealed partial class ServerSyncSystem(
     [All<AIControlled, NetworkId, DirtyFlags>]
     private void SyncNpcs(
         in Entity entity,
+        in NetworkId networkId,
         ref DirtyFlags dirty)
     {
         if (dirty.IsEmpty) return;
         
         // Estado completo para spawns
-        var dirtySnapshot = dirty.Snapshot();
-        bool spawnRequested = dirtySnapshot == DirtyComponentType.All;
+        bool spawnRequested = dirty.Snapshot() == DirtyComponentType.All;
 
         if (spawnRequested)
         {
             var npcData = World.BuildNpcData(entity).ToNpcSpawnData();
             _npcSpawnBuffer.Add(npcData);
             dirty.ClearDirtyMask(DirtyComponentType.All);
-            dirtySnapshot = DirtyComponentType.None;
         }
 
         if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.State))
         {
-            var stateData = World.BuildNpcStateData(entity).ToNpcStateSnapshot();
+            var stateData = World
+                .BuildNpcStateData(entity)
+                .ToNpcStateSnapshot();
             _npcStateBuffer.Add(stateData);
         }
         
         if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.Vitals))
         {
-            var healthData = World.BuildNpcHealthData(entity).ToNpcHealthSnapshot();
+            var healthData = World
+                .BuildNpcHealthData(entity)
+                .ToNpcHealthSnapshot();
             _npcHealthBuffer.Add(healthData);
         }
         

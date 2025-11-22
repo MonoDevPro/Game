@@ -1,4 +1,3 @@
-using System;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -118,8 +117,8 @@ public sealed partial class NpcPerceptionSystem(
 
     private static float DistanceSquared(in Position a, in Position b)
     {
-        int dx = a.X - b.X;
-        int dy = a.Y - b.Y;
+        float dx = a.X - b.X;
+        float dy = a.Y - b.Y;
         return dx * dx + dy * dy;
     }
 }

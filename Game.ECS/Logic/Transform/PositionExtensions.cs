@@ -1,12 +1,14 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Extensions;
+namespace Game.ECS.Logic;
 
-public static class PositionExtensions
+public static partial class PositionLogic
 {
     /// <summary>
     /// Atualiza a posição de uma entidade e marca para sincronização spatial.
+    /// NOTE: OldPosition == default indica primeira vez que SetPosition foi chamado
+    /// para uma entidade que ainda não tinha Position. Não é spawn inicial.
     /// </summary>
     public static void SetPosition(this World world, Entity entity, Position newPosition)
     {

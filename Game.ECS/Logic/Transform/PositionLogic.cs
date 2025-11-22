@@ -2,9 +2,8 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Logic;
 
-public static class PositionLogic
+public static partial class PositionLogic
 {
-
     public static (sbyte x, sbyte y) GetDirectionTowards(in Position from, in Position to)
     {
         int deltaX = to.X - from.X;
