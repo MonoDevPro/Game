@@ -1,4 +1,5 @@
 using Game.Domain.Enums;
+using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Godot;
 
@@ -20,9 +21,9 @@ public sealed partial class NpcVisual : DefaultVisual
     {
         LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
         UpdateName("NPC " + data.NetworkId);
-        UpdateAnimationState(new Vector2I(data.FacingX, data.FacingY), false, false);
-        UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.PositionZ));
-        UpdateVitals(data.Hp, data.MaxHp, 0, 0);
-        if (Sprite is not null) UpdateAnimationSpeed(1f, 1f);
+        UpdateAnimationState(new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY }, false, false, false);
+        UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.Floor));
+        UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
+        if (Sprite is not null) UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
     }
 }

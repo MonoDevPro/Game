@@ -11,12 +11,17 @@ public readonly partial record struct NpcSpawnSnapshot(
     byte Vocation,
     int PositionX,
     int PositionY,
-    int PositionZ,
-    int FacingX,
-    int FacingY,
+    sbyte Floor,
+    sbyte FacingX,
+    sbyte FacingY,
     int Hp,
     int MaxHp,
     float HpRegen,
+    int Mp,
+    int MaxMp,
+    float MpRegen,
+    float MovementSpeed,
+    float AttackSpeed,
     int PhysicalAttack,
     int MagicAttack,
     int PhysicalDefense,
@@ -27,15 +32,17 @@ public readonly partial record struct NpcStateSnapshot(
     int NetworkId,
     int PositionX,
     int PositionY,
-    int PositionZ,
-    int VelocityX,
-    int VelocityY,
+    sbyte Floor,
+    sbyte VelocityX,
+    sbyte VelocityY,
     float Speed,
-    int FacingX,
-    int FacingY);
+    sbyte FacingX,
+    sbyte FacingY);
 
 [MemoryPackable]
 public readonly partial record struct NpcHealthSnapshot(
     int NetworkId,
     int CurrentHp,
-    int MaxHp);
+    int MaxHp,
+    int CurrentMp,
+    int MaxMp);

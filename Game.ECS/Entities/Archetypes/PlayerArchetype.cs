@@ -19,10 +19,9 @@ public static partial class GameArchetypes
     public static readonly ComponentType[] PlayerCharacter =
     [
         Component<NetworkId>.ComponentType,
-        Component<PlayerId>.ComponentType,
         Component<MapId>.ComponentType,
-        Component<Info>.ComponentType,
         Component<Position>.ComponentType,
+        Component<Floor>.ComponentType,
         Component<Facing>.ComponentType,
         Component<Velocity>.ComponentType,
         Component<Movement>.ComponentType,
@@ -34,7 +33,9 @@ public static partial class GameArchetypes
         Component<Defense>.ComponentType,
         Component<CombatState>.ComponentType,
         Component<Input>.ComponentType,
+        Component<DirtyFlags>.ComponentType,
         Component<PlayerControlled>.ComponentType,
-        Component<DirtyFlags>.ComponentType
+        Component<PlayerInfo>.ComponentType,
+        Component<PlayerId>.ComponentType,
     ];
 }

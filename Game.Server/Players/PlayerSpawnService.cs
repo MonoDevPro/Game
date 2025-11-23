@@ -1,8 +1,6 @@
 using Arch.Core;
-using Game.Core.Extensions;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
-using Game.Network.Abstractions;
 using Game.Server.ECS;
 using Game.Server.Sessions;
 
@@ -13,7 +11,6 @@ namespace Game.Server.Players;
 /// </summary>
 public sealed class PlayerSpawnService(
     ServerGameSimulation simulation, 
-    INetworkManager networkManager, 
     ILogger<PlayerSpawnService> logger)
 {
     public Entity SpawnPlayer(PlayerSession session)
@@ -28,7 +25,7 @@ public sealed class PlayerSpawnService(
             (byte)character.Vocation,
             character.PositionX,
             character.PositionY,
-            character.PositionZ,
+            character.Floor,
             character.FacingX,
             character.FacingY,
             character.Stats.CurrentHp,
@@ -82,7 +79,7 @@ public sealed class PlayerSpawnService(
             (byte)character.Vocation,
             character.PositionX,
             character.PositionY,
-            character.PositionZ,
+            character.Floor,
             character.FacingX,
             character.FacingY,
             character.Stats.CurrentHp,

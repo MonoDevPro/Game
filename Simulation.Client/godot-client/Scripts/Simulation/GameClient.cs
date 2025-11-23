@@ -284,8 +284,8 @@ public partial class GameClient : Node2D
             // Pequena divergência → confia no cliente, só atualiza velocity/facing
             _simulation.World.Get<Velocity>(entity) = new Velocity
             {
-                DirectionX = packet.VelocityX,
-                DirectionY = packet.VelocityY,
+                X = packet.VelocityX,
+                Y = packet.VelocityY,
                 Speed = packet.Speed
             };
             _simulation.World.Get<Facing>(entity) = new Facing
@@ -384,7 +384,8 @@ public partial class GameClient : Node2D
         }
 
         // Localiza entidade do atacante
-        if (!_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity))
+        if (!_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity) &&
+            !_simulation.TryGetNpcEntity(packet.AttackerNetworkId, out attackerEntity))
         {
             GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
             return;

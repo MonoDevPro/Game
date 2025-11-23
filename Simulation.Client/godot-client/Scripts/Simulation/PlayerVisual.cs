@@ -26,8 +26,8 @@ public sealed partial class PlayerVisual : DefaultVisual
     {
         LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
         UpdateName(data.Name);
-        UpdateAnimationState(new Vector2I(data.FacingX, data.FacingY), false, false);
-        UpdatePosition(new Vector3I(data.PosX, data.PosY, data.PosZ));
+        UpdateAnimationState(new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY }, false, false, false);
+        UpdatePosition(new Vector3I(data.PosX, data.PosY, data.Floor));
         UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
         UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
     }

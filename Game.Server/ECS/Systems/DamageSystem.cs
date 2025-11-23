@@ -21,6 +21,7 @@ public sealed partial class DamageSystem(World world, IMapService mapService) : 
         in Entity attacker,
         in MapId mapId,
         in Position position,
+        in Floor floor,
         in Facing facing,
         ref Attack atkAction,
         [Data] float deltaTime)
@@ -41,11 +42,15 @@ public sealed partial class DamageSystem(World world, IMapService mapService) : 
         
         atkAction.DamageApplied = true;
         
-        var targetPosition = position with { X = position.X + facing.DirectionX, Y = position.Y + facing.DirectionY };
+        SpatialPosition targetSpatialPosition = new(
+            position.X + facing.DirectionX, 
+            position.Y + facing.DirectionY, 
+            floor.Level);
+        
         var spatial = mapService.GetMapSpatial(mapId.Value);
-        if (spatial.TryGetFirstAt(targetPosition, out Entity foundEntity))
+        if (spatial.TryGetFirstAt(targetSpatialPosition, out Entity foundEntity))
         {
-            if (!CombatLogic.CheckAttackDistance(in position, in targetPosition, atkAction.Type))
+            if (!CombatLogic.CheckAttackDistance(in position, new Position(targetSpatialPosition.X, targetSpatialPosition.Y), atkAction.Type))
                 return;
             
             var damage = CombatLogic.CalculateDamage(World, in attacker, in foundEntity, atkAction.Type, isCritical: false);

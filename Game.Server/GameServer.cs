@@ -256,7 +256,7 @@ public sealed class GameServer : IDisposable
                     CharacterId = session.SelectedCharacter.Id,
                     PositionX = session.SelectedCharacter.PositionX,
                     PositionY = session.SelectedCharacter.PositionY,
-                    PositionZ = session.SelectedCharacter.PositionZ,
+                    Floor = session.SelectedCharacter.Floor,
                     FacingX = session.SelectedCharacter.FacingX,
                     FacingY = session.SelectedCharacter.FacingY,
                     CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
@@ -270,7 +270,7 @@ public sealed class GameServer : IDisposable
                 {
                     PositionX = snapshot.PosX,
                     PositionY = snapshot.PosY,
-                    PositionZ = snapshot.PosZ,
+                    Floor = snapshot.Floor,
                     FacingX = snapshot.FacingX,
                     FacingY = snapshot.FacingY,
                     CurrentHp = snapshot.Hp,

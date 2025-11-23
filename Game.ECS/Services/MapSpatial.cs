@@ -13,9 +13,9 @@ namespace Game.ECS.Services;
 /// </summary>
 public class MapSpatial : IMapSpatial
 {
-    private readonly Dictionary<Position, List<Entity>> _grid = new();
+    private readonly Dictionary<SpatialPosition, List<Entity>> _grid = new();
 
-    public void Insert(Position position, in Entity entity)
+    public void Insert(SpatialPosition position, in Entity entity)
     {
         if (!_grid.TryGetValue(position, out var list))
         {
@@ -26,7 +26,7 @@ public class MapSpatial : IMapSpatial
         list.Add(entity);
     }
 
-    public bool Remove(Position position, in Entity entity)
+    public bool Remove(SpatialPosition position, in Entity entity)
     {
         if (!_grid.TryGetValue(position, out var list))
             return false;
@@ -40,7 +40,7 @@ public class MapSpatial : IMapSpatial
         return true;
     }
 
-    public bool Update(Position oldPosition, Position newPosition, in Entity entity)
+    public bool Update(SpatialPosition oldPosition, SpatialPosition newPosition, in Entity entity)
     {
         if (!Remove(oldPosition, entity))
             return false;
@@ -49,7 +49,7 @@ public class MapSpatial : IMapSpatial
         return true;
     }
 
-    public bool TryMove(Position from, Position to, in Entity entity)
+    public bool TryMove(SpatialPosition from, SpatialPosition to, in Entity entity)
     {
         // Verifica se a célula destino está vazia ou reservável
         if (HasOccupant(to))
@@ -58,7 +58,7 @@ public class MapSpatial : IMapSpatial
         return Update(from, to, entity);
     }
 
-    public int QueryAt(Position position, ref UnsafeStack<Entity> results)
+    public int QueryAt(SpatialPosition position, ref UnsafeStack<Entity> results)
     {
         if (!_grid.TryGetValue(position, out var list))
             return 0;
@@ -73,17 +73,17 @@ public class MapSpatial : IMapSpatial
         return count;
     }
 
-    public int QueryArea(AreaPosition area, Span<Entity> results)
+    public int QueryArea(SpatialPosition min, SpatialPosition max, Span<Entity> results)
     {
         int count = 0;
 
-        for (int z = area.MinZ; z <= area.MaxZ; z++)
+        for (sbyte z = min.Floor; z <= max.Floor; z++)
         {
-            for (int x = area.MinX; x <= area.MaxX; x++)
+            for (int x = min.X; x <= max.X; x++)
             {
-                for (int y = area.MinY; y <= area.MaxY; y++)
+                for (int y = min.Y; y <= max.Y; y++)
                 {
-                    var key = new Position(x, y, z);
+                    var key = new SpatialPosition(x, y, z);
                     if (!_grid.TryGetValue(key, out var list))
                         continue;
 
@@ -100,7 +100,7 @@ public class MapSpatial : IMapSpatial
         return count;
     }
 
-    public void ForEachAt(Position position, Func<Entity, bool> visitor)
+    public void ForEachAt(SpatialPosition position, Func<Entity, bool> visitor)
     {
         if (!_grid.TryGetValue(position, out var list))
             return;
@@ -112,15 +112,15 @@ public class MapSpatial : IMapSpatial
         }
     }
 
-    public void ForEachArea(AreaPosition area, Func<Entity, bool> visitor)
+    public void ForEachArea(SpatialPosition min, SpatialPosition max, Func<Entity, bool> visitor)
     {
-        for (int z = area.MinZ; z <= area.MaxZ; z++)
+        for (sbyte z = min.Floor; z <= max.Floor; z++)
         {
-            for (int x = area.MinX; x <= area.MaxX; x++)
+            for (int x = min.X; x <= max.X; x++)
             {
-                for (int y = area.MinY; y <= area.MaxY; y++)
+                for (int y = min.Y; y <= max.Y; y++)
                 {
-                    var key = new Position(x, y, z);
+                    var key = new SpatialPosition(x, y, z);
                     if (!_grid.TryGetValue(key, out var list))
                         continue;
 
@@ -134,7 +134,7 @@ public class MapSpatial : IMapSpatial
         }
     }
 
-    public bool TryGetFirstAt(Position position, out Entity entity)
+    public bool TryGetFirstAt(SpatialPosition position, out Entity entity)
     {
         if (_grid.TryGetValue(position, out var list) && list.Count > 0)
         {
@@ -151,7 +151,7 @@ public class MapSpatial : IMapSpatial
         _grid.Clear();
     }
 
-    private bool HasOccupant(Position position)
+    private bool HasOccupant(SpatialPosition position)
     {
         return _grid.ContainsKey(position) && _grid[position].Count > 0;
     }

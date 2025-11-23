@@ -11,8 +11,9 @@ public static partial class EntityBuilder
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var playerId = ref world.Get<PlayerId>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
-        ref var info = ref world.Get<Info>(entity);
+        ref var info = ref world.Get<PlayerInfo>(entity);
         ref var position = ref world.Get<Position>(entity);
+        ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
@@ -25,7 +26,7 @@ public static partial class EntityBuilder
         {
             Vocation = info.VocationId, Gender = info.GenderId,
             NetworkId = networkId.Value, PlayerId = playerId.Value, MapId = mapId.Value,
-            PosX = position.X, PosY = position.Y, PosZ = position.Z,
+            PosX = position.X, PosY = position.Y, Floor = floor.Level,
             FacingX = facing.DirectionX, FacingY = facing.DirectionY,
             Hp = health.Current, MaxHp = health.Max, HpRegen = health.RegenerationRate,
             Mp = mana.Current, MaxMp = mana.Max, MpRegen = mana.RegenerationRate,
@@ -39,6 +40,7 @@ public static partial class EntityBuilder
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
+        ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var velocity = ref world.Get<Velocity>(entity);
         
@@ -47,9 +49,9 @@ public static partial class EntityBuilder
             NetworkId = networkId.Value,
             PositionX = position.X,
             PositionY = position.Y,
-            PositionZ = position.Z,
-            VelocityX = velocity.DirectionX,
-            VelocityY = velocity.DirectionY,
+            Floor = floor.Level,
+            VelocityX = velocity.X,
+            VelocityY = velocity.Y,
             Speed = velocity.Speed,
             FacingX = facing.DirectionX,
             FacingY = facing.DirectionY,

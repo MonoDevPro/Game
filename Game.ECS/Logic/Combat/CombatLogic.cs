@@ -41,7 +41,7 @@ public static partial class CombatLogic
         _ => 1
     };
     
-    private static float GetAttackTypeSpeedMultiplier(AttackType type) => type switch
+    public static float GetAttackTypeSpeedMultiplier(AttackType type) => type switch
     {
         AttackType.Basic    => 1.00f,
         AttackType.Heavy    => 0.60f,

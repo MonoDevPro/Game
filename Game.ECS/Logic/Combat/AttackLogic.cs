@@ -13,7 +13,7 @@ public static partial class CombatLogic
     
     public static bool CheckAttackDistance(in Position attackerPos, in Position targetPos, AttackType attackType)
     {
-        int distance = attackerPos.ManhattanDistance(targetPos);
+        int distance = attackerPos.EuclideanDistanceSquared(targetPos);
         return distance <= GetAttackRange(attackType);
     }
     

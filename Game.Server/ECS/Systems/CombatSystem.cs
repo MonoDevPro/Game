@@ -66,8 +66,8 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
         World.Add<Attack>(e, new Attack
         {
             Type = attackType,
-            RemainingDuration = SimulationConfig.DefaultAttackAnimationDuration,
-            TotalDuration = SimulationConfig.DefaultAttackAnimationDuration,
+            RemainingDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType),
+            TotalDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType),
             DamageApplied = false,
         });
     }

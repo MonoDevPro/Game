@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Logic;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
@@ -13,58 +14,54 @@ public sealed partial class NpcMovementSystem(World world) : GameSystem(world)
     private void DriveMovement(
         ref Input input,
         in Position position,
+        ref Facing facing,
+        ref DirtyFlags dirty,
         in NpcAIState aiState,
         in NpcTarget target,
         in NpcPatrol patrol,
-        in NpcBehavior behavior,
-        ref DirtyFlags dirty)
+        in NpcBehavior _)
     {
-        sbyte desiredX = 0;
-        sbyte desiredY = 0;
+        Facing desiredDirection = default;
+        
+        input.Flags = InputFlags.None;
 
         switch (aiState.Current)
         {
             case NpcAIStateId.Chasing when target.HasTarget:
-            {
-                float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
-                (desiredX, desiredY) = ComputeDirection(position, target.LastKnownPosition);
+                desiredDirection = PositionLogic.GetDirectionTowards(position, target.LastKnownPosition);
+                input.Flags |= InputFlags.Sprint;
                 break;
-            }
             case NpcAIStateId.Returning:
-            {
-                (desiredX, desiredY) = ComputeDirection(position, patrol.HomePosition);
+                desiredDirection = PositionLogic.GetDirectionTowards(position, patrol.HomePosition);
+                input.Flags |= InputFlags.Sprint;
                 break;
-            }
             case NpcAIStateId.Patrolling when patrol.HasDestination:
-            {
-                (desiredX, desiredY) = ComputeDirection(position, patrol.Destination);
+                desiredDirection = PositionLogic.GetDirectionTowards(position, patrol.Destination);
                 break;
+            case NpcAIStateId.Attacking:
+                desiredDirection = PositionLogic.GetDirectionTowards(position, target.LastKnownPosition);
+                input.Flags |= InputFlags.Attack;
+                break;
+            case NpcAIStateId.Idle:
+                
+                break;
+        }
+
+        if (desiredDirection.DirectionX != 0 || desiredDirection.DirectionY != 0)
+        {
+            if ((input.Flags & InputFlags.Attack) != 0)
+            {
+                input.InputX = 0;
+                input.InputY = 0;
+                facing.DirectionX = desiredDirection.DirectionX;
+                facing.DirectionY = desiredDirection.DirectionY;
+                dirty.MarkDirty(DirtyComponentType.State);
+            }
+            else
+            {
+                input.InputX = desiredDirection.DirectionX;
+                input.InputY = desiredDirection.DirectionY;
             }
         }
-        
-
-        bool inputChanged = desiredX != input.InputX || desiredY != input.InputY;
-        
-        input.InputX = desiredX;
-        input.InputY = desiredY;
-        
-        if (inputChanged)
-        {
-            dirty.MarkDirty(DirtyComponentType.Input);
-        }
-    }
-
-    private static (sbyte X, sbyte Y) ComputeDirection(in Position from, in Position to)
-    {
-        sbyte x = 0;
-        sbyte y = 0;
-
-        if (to.X > from.X) x = 1;
-        else if (to.X < from.X) x = -1;
-
-        if (to.Y > from.Y) y = 1;
-        else if (to.Y < from.Y) y = -1;
-
-        return (x, y);
     }
 }

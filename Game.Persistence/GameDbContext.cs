@@ -120,7 +120,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             entity.HasIndex(e => e.IsActive)
                 .HasDatabaseName("IX_Characters_IsActive");
 
-            entity.HasIndex(e => new { e.PositionX, e.PositionY })
+            entity.HasIndex(e => new { e.Floor, e.PositionX, e.PositionY })
                 .HasDatabaseName("IX_Characters_Position");
 
             // Propriedades

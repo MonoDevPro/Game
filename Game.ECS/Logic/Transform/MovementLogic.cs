@@ -22,32 +22,36 @@ public static class MovementLogic
     public static MovementResult TryComputeStep(
         in Entity entity,
         in Position current,
+        in Floor floor,
         in Velocity vel,
         in Movement movement,
         float deltaTime,
         IMapGrid? grid,
         IMapSpatial? spatial,
-        out Position newPosition)
+        out SpatialPosition newSpatialPosition)
     {
-        newPosition = current;
+        // compute candidate
+        newSpatialPosition = new SpatialPosition(
+            current.X, 
+            current.Y, 
+            floor.Level);
 
-        if (vel is { DirectionX: 0, DirectionY: 0 }) return MovementResult.None;
+        if (vel is { X: 0, Y: 0 }) return MovementResult.None;
         if (vel.Speed <= 0f) return MovementResult.None;
 
         if (movement.Timer < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
-
+        
         // compute candidate
-        newPosition = new Position
-        {
-            X = current.X + vel.DirectionX,
-            Y = current.Y + vel.DirectionY,
-            Z = current.Z
-        };
+        newSpatialPosition = new SpatialPosition(
+            current.X + vel.X, 
+            current.Y + vel.Y, 
+            floor.Level);
+        
+        if (grid != null && !grid.InBounds(newSpatialPosition)) return MovementResult.OutOfBounds;
+        if (grid != null && grid.IsBlocked(newSpatialPosition)) return MovementResult.BlockedByMap;
 
-        if (grid != null && !grid.InBounds(newPosition)) return MovementResult.OutOfBounds;
-        if (grid != null && grid.IsBlocked(newPosition)) return MovementResult.BlockedByMap;
-
-        if (spatial != null && spatial.TryGetFirstAt(newPosition, out var occupant) && occupant != default && occupant != Entity.Null && occupant != entity)
+        if (spatial != null && spatial.TryGetFirstAt(newSpatialPosition, out var occupant) 
+                            && occupant != default && occupant != Entity.Null && occupant != entity)
         {
             // aqui, MovementLogic não conhece a entidade que está movendo — caller decide se occupant == mover
             // We'll return BlockedByEntity and let caller handle occupant comparison if needed.

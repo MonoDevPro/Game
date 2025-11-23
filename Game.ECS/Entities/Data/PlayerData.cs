@@ -6,8 +6,8 @@ namespace Game.ECS.Entities.Data;
 public readonly record struct PlayerData(
     int PlayerId, int NetworkId,
     string Name, byte Gender, byte Vocation,
-    int PosX, int PosY, int PosZ,
-    int FacingX, int FacingY,
+    int PosX, int PosY, sbyte Floor,
+    sbyte FacingX, sbyte FacingY,
     int Hp, int MaxHp, float HpRegen,
     int Mp, int MaxMp, float MpRegen,
     float MovementSpeed, float AttackSpeed,
@@ -19,12 +19,12 @@ public readonly record struct PlayerStateData(
     int NetworkId,
     int PositionX,
     int PositionY,
-    int PositionZ,
-    int VelocityX,
-    int VelocityY,
+    sbyte Floor,
+    sbyte VelocityX,
+    sbyte VelocityY,
     float Speed,
-    int FacingX,
-    int FacingY);
+    sbyte FacingX,
+    sbyte FacingY);
 
 public readonly record struct PlayerVitalsData(
     int NetworkId, 

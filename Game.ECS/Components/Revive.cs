@@ -20,4 +20,9 @@ public struct Revive
     /// Posição de spawn para revive.
     /// </summary>
     public Position SpawnPosition;
+    
+    /// <summary>
+    /// Andar (floor) de spawn para revive.
+    /// </summary>
+    public Floor SpawnFloor;
 }

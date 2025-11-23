@@ -10,25 +10,25 @@ public readonly record struct ReservationToken(Position Position, Entity Reserve
 public interface IMapSpatial
 {
     // Ocupação de células
-    void Insert(Position position, in Entity entity);
-    bool Remove(Position position, in Entity entity);
+    void Insert(SpatialPosition position, in Entity entity);
+    bool Remove(SpatialPosition position, in Entity entity);
 
     // Atualiza a posição do item (equivalente a Remove+Insert, porém atômico/otimizado)
-    bool Update(Position oldPosition, Position newPosition, in Entity entity);
+    bool Update(SpatialPosition oldPosition, SpatialPosition newPosition, in Entity entity);
 
     // Movimento atômico: verifica/aplica numa única chamada (sem expor Remove/Insert separadamente)
-    bool TryMove(Position from, Position to, in Entity entity);
+    bool TryMove(SpatialPosition from, SpatialPosition to, in Entity entity);
 
     // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
-    int QueryAt(Position position, ref UnsafeStack<Entity> results);
-    int QueryArea(AreaPosition area, Span<Entity> results);
+    int QueryAt(SpatialPosition position, ref UnsafeStack<Entity> results);
+    int QueryArea(SpatialPosition min, SpatialPosition max, Span<Entity> results);
 
     // Versões por callback (sem buffers, com early-exit retornando false)
-    void ForEachAt(Position position, Func<Entity, bool> visitor);
-    void ForEachArea(AreaPosition area, Func<Entity, bool> visitor);
+    void ForEachAt(SpatialPosition position, Func<Entity, bool> visitor);
+    void ForEachArea(SpatialPosition min, SpatialPosition max, Func<Entity, bool> visitor);
 
     // Fast-path: obtém o primeiro ocupante (comum em checagens simples)
-    bool TryGetFirstAt(Position position, out Entity entity);
+    bool TryGetFirstAt(SpatialPosition position, out Entity entity);
 
     // Limpeza total
     void Clear();

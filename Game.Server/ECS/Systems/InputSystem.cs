@@ -25,10 +25,10 @@ public sealed partial class InputSystem(World world)
         // ✅ Se não há input de movimento ou se está atacando, zera a velocidade
         if (newDirX == 0 && newDirY == 0 || (input.Flags & InputFlags.Attack) != 0)
         {
-            if (velocity.DirectionX != 0 || velocity.DirectionY != 0 || velocity.Speed != 0f)
+            if (velocity.X != 0 || velocity.Y != 0 || velocity.Speed != 0f)
             {
-                velocity.DirectionX = 0;
-                velocity.DirectionY = 0;
+                velocity.X = 0;
+                velocity.Y = 0;
                 velocity.Speed = 0f;
                 dirty.MarkDirty(DirtyComponentType.State);
             }
@@ -36,8 +36,8 @@ public sealed partial class InputSystem(World world)
         }
         
         // Atualiza velocity baseado em input
-        velocity.DirectionX = newDirX;
-        velocity.DirectionY = newDirY;
+        velocity.X = newDirX;
+        velocity.Y = newDirY;
         velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, in input.Flags);
         dirty.MarkDirty(DirtyComponentType.State);
     }

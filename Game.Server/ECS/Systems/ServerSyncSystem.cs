@@ -5,6 +5,7 @@ using Game.Core.Extensions;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Factories;
+using Game.ECS.Logic;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -17,6 +18,8 @@ public sealed partial class ServerSyncSystem(
     ILogger<ServerSyncSystem>? logger = null)
     : GameSystem(world)
 {
+    private readonly List<CombatStateSnapshot> _combatBuffer = [];
+    
     private readonly List<NpcSpawnSnapshot> _npcSpawnBuffer = [];
     private readonly List<NpcStateSnapshot> _npcStateBuffer = [];
     private readonly List<NpcHealthSnapshot> _npcHealthBuffer = [];
@@ -24,7 +27,7 @@ public sealed partial class ServerSyncSystem(
     private readonly List<PlayerSnapshot> _playerSpawnBuffer = [];
     private readonly List<PlayerStateSnapshot> _playerStateBuffer = [];
     private readonly List<PlayerVitalsSnapshot> _playerVitalsBuffer = [];
-    private readonly List<CombatStateSnapshot> _playerCombatBuffer = [];
+    
 
     [Query]
     [All<PlayerControlled, NetworkId, DirtyFlags>]
@@ -36,7 +39,7 @@ public sealed partial class ServerSyncSystem(
         if (dirty.IsEmpty) return;
         
         // Estado completo para spawns
-    var dirtySnapshot = dirty.Snapshot();
+        var dirtySnapshot = dirty.Snapshot();
         bool spawnRequested = dirtySnapshot == DirtyComponentType.All;
 
         if (spawnRequested)
@@ -60,7 +63,7 @@ public sealed partial class ServerSyncSystem(
                 World.TryGet(entity, out CombatState combat))
             {
                 var attackType = AttackType.Basic;
-                var attackDuration = SimulationConfig.DefaultAttackAnimationDuration;
+                var attackDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType);
 
                 if (World.TryGet(entity, out Attack attackAction))
                 {
@@ -68,7 +71,7 @@ public sealed partial class ServerSyncSystem(
                     attackDuration = attackAction.TotalDuration;
                 }
 
-                _playerCombatBuffer.Add(new CombatStateSnapshot(
+                _combatBuffer.Add(new CombatStateSnapshot(
                     AttackerNetworkId: networkId.Value,
                     Type: attackType,
                     AttackDuration: attackDuration,
@@ -115,68 +118,90 @@ public sealed partial class ServerSyncSystem(
             _npcHealthBuffer.Add(healthData);
         }
         
+        // Combate (estado + resultado)
+        if (dirty.IsDirty(DirtyComponentType.Combat) &&
+            World.TryGet(entity, out CombatState combat))
+        {
+            var attackType = AttackType.Basic;
+            var attackDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType);
+
+            if (World.TryGet(entity, out Attack attackAction))
+            {
+                attackType = attackAction.Type;
+                attackDuration = attackAction.TotalDuration;
+            }
+
+            _combatBuffer.Add(new CombatStateSnapshot(
+                AttackerNetworkId: networkId.Value,
+                Type: attackType,
+                AttackDuration: attackDuration,
+                CooldownRemaining: combat.LastAttackTime
+            ));
+        }
+        
         dirty.ClearAll();
     }
-        public override void AfterUpdate(in float deltaTime)
-        {
-            FlushBuffers();
-        }
+    
+    public override void AfterUpdate(in float deltaTime)
+    {
+        FlushBuffers();
+    }
 
-        private void FlushBuffers()
+    private void FlushBuffers()
+    {
+        // ===========================
+        // ========== NPCs ===========
+        // ===========================
+            
+        if (_npcSpawnBuffer.Count > 0)
         {
-            // ===========================
-            // ========== NPCs ===========
-            // ===========================
-            
-            if (_npcSpawnBuffer.Count > 0)
-            {
-                var packet = new NpcSpawnPacket(_npcSpawnBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _npcSpawnBuffer.Clear();
-            }
-            if (_npcStateBuffer.Count > 0)
-            {
-                var packet = new NpcStatePacket(_npcStateBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _npcStateBuffer.Clear();
-            }
-            if (_npcHealthBuffer.Count > 0)
-            {
-                var packet = new NpcHealthPacket(_npcHealthBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _npcHealthBuffer.Clear();
-            }
-            
-            // ===========================
-            // ======== PLAYERS ==========
-            // ===========================
-            
-            if (_playerSpawnBuffer.Count > 0)
-            {
-                var packet = new PlayerSpawnPacket(_playerSpawnBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _playerSpawnBuffer.Clear();
-            }
-        
-            if (_playerStateBuffer.Count > 0)
-            {
-                var packet = new PlayerStatePacket(_playerStateBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _playerStateBuffer.Clear();
-            }
-        
-            if (_playerVitalsBuffer.Count > 0)
-            {
-                var packet = new PlayerVitalsPacket(_playerVitalsBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _playerVitalsBuffer.Clear();
-            }
-        
-            if (_playerCombatBuffer.Count > 0)
-            {
-                var packet = new CombatStatePacket(_playerCombatBuffer.ToArray());
-                sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-                _playerCombatBuffer.Clear();
-            }
+            var packet = new NpcSpawnPacket(_npcSpawnBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _npcSpawnBuffer.Clear();
         }
+        if (_npcStateBuffer.Count > 0)
+        {
+            var packet = new NpcStatePacket(_npcStateBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _npcStateBuffer.Clear();
+        }
+        if (_npcHealthBuffer.Count > 0)
+        {
+            var packet = new NpcHealthPacket(_npcHealthBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _npcHealthBuffer.Clear();
+        }
+            
+        // ===========================
+        // ======== PLAYERS ==========
+        // ===========================
+            
+        if (_playerSpawnBuffer.Count > 0)
+        {
+            var packet = new PlayerSpawnPacket(_playerSpawnBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerSpawnBuffer.Clear();
+        }
+        
+        if (_playerStateBuffer.Count > 0)
+        {
+            var packet = new PlayerStatePacket(_playerStateBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerStateBuffer.Clear();
+        }
+        
+        if (_playerVitalsBuffer.Count > 0)
+        {
+            var packet = new PlayerVitalsPacket(_playerVitalsBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _playerVitalsBuffer.Clear();
+        }
+        
+        if (_combatBuffer.Count > 0)
+        {
+            var packet = new CombatStatePacket(_combatBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _combatBuffer.Clear();
+        }
+    }
 }

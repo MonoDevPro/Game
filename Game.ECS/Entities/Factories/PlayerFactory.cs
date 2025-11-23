@@ -14,23 +14,24 @@ public static partial class EntityFactory
         var components = new object[]
         {
             new NetworkId { Value = data.NetworkId },
-            new PlayerId { Value = data.PlayerId },
             new MapId { Value = data.MapId },
-            new Info { GenderId = data.Gender, VocationId = data.Vocation},
-            new Position { X = data.PosX, Y = data.PosY, Z = data.PosZ },
+            new PlayerInfo { GenderId = data.Gender, VocationId = data.Vocation},
+            new Position { X = data.PosX, Y = data.PosY },
+            new Floor { Level = data.Floor },
             new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
-            new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
+            new Velocity { X = 0, Y = 0, Speed = 0f },
             new Movement { Timer = 0f },
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
             new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
-            new Walkable { BaseSpeed = 5f, CurrentModifier = data.MovementSpeed },
+            new Walkable { BaseSpeed = 3f, CurrentModifier = data.MovementSpeed },
             new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new Input { },
+            new DirtyFlags(),
             new PlayerControlled(),
-            new DirtyFlags()
+            new PlayerId { Value = data.PlayerId },
         };
         world.SetRange(entity, components);
         index?.AddMapping(data.NetworkId, entity);

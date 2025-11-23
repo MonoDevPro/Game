@@ -16,12 +16,12 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     [None<Dead>]
     private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty)
     {
-        if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
+        if (velocity is { X: 0, Y: 0 }) return;
         int previousX = facing.DirectionX;
         int previousY = facing.DirectionY;
 
-        facing.DirectionX = velocity.DirectionX;
-        facing.DirectionY = velocity.DirectionY;
+        facing.DirectionX = velocity.X;
+        facing.DirectionY = velocity.Y;
 
         if (previousX != facing.DirectionX || previousY != facing.DirectionY)
             dirty.MarkDirty(DirtyComponentType.State);
@@ -30,16 +30,24 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     [Query]
     [All<Position, Movement, Velocity, Walkable, DirtyFlags, MapId>]
     [None<Dead>]
-    private void ProcessMovement(in Entity e, in Position pos, ref Movement movement, ref Velocity velocity, ref DirtyFlags dirty, in MapId mapId, [Data] float deltaTime)
+    private void ProcessMovement(in Entity e, 
+        in MapId mapId, 
+        in Position pos, 
+        in Floor floor,
+        in Velocity velocity,
+        ref Movement movement, 
+        ref DirtyFlags dirty, 
+        [Data] float deltaTime)
     {
-        if (velocity is { DirectionX: 0, DirectionY: 0 }) return;
+        if (velocity is { X: 0, Y: 0 }) return;
     
         movement.Timer += velocity.Speed * deltaTime;
+        
         var grid = mapService.GetMapGrid(mapId.Value);
         var spatial = mapService.GetMapSpatial(mapId.Value);
 
         var moveResult = MovementLogic.TryComputeStep(
-            e, pos, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
+            e, pos, floor, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
     
         if (moveResult != MovementLogic.MovementResult.Allowed && 
             moveResult != MovementLogic.MovementResult.None)
@@ -55,7 +63,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
         
         // ✅ Apenas atualiza a position - o SpatialSyncSystem cuida do resto
         // ✅ Usa a extensão para marcar mudança
-        World.SetPosition(e, candidatePos);
+        World.SetPosition(e, candidatePos.ToPosition());
     }
     
     [Query]
@@ -63,7 +71,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     private void DecayVelocity(ref Velocity velocity, [Data] float deltaTime)
     {
         // desacelera velocity gradualmente quando não há input
-        if (velocity is { DirectionX: 0, DirectionY: 0 })
+        if (velocity is { X: 0, Y: 0 })
         {
             float decayRate = 10f; // unidades por segundo ao quadrado
             velocity.Speed -= decayRate * deltaTime;

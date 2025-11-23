@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
+using Game.ECS.Logic;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
@@ -10,14 +11,14 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
     : GameSystem(world)
 {
     [Query]
-    [All<AIControlled, Position, NpcAIState, NpcBehavior, NpcTarget, NpcPatrol>]
+    [All<AIControlled, Position, NpcBehavior, NpcTarget, NpcPatrol, NpcAIState>]
     private void UpdateAiState(
         in Entity entity,
-        ref NpcAIState aiState,
         in Position position,
         in NpcBehavior behavior,
         in NpcTarget target,
         in NpcPatrol patrol,
+        ref NpcAIState aiState,
         [Data] float deltaTime)
     {
         aiState.Advance(deltaTime);

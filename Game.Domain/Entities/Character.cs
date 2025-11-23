@@ -15,11 +15,11 @@ public sealed class Character : BaseEntity
     public VocationType Vocation { get; set; } = VocationType.Unknown;
     
     // Posição no mundo
-    public int FacingX { get; set; }
-    public int FacingY { get; set; }
+    public sbyte FacingX { get; set; }
+    public sbyte FacingY { get; set; }
     public int PositionX { get; set; }
     public int PositionY { get; set; }
-    public int PositionZ { get; set; }
+    public sbyte Floor { get; set; }
     
     // Relacionamentos
     public int AccountId { get; init; }
@@ -34,6 +34,6 @@ public sealed class Character : BaseEntity
     // Um personagem tem múltiplos slots de equipamento (1:N)
     public ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();
     
-    public override string ToString() => $"Character(Id={Id}, Name={Name}, Vocation={Vocation}, Level={Stats.Level}, Pos=({PositionX},{PositionY},{PositionZ}))";
+    public override string ToString() => $"Character(Id={Id}, Name={Name}, Vocation={Vocation}, Level={Stats.Level}, Pos=({PositionX},{PositionY},{Floor}))";
     
 }

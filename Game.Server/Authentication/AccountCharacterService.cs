@@ -123,7 +123,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
                 Vocation = characterInfo.Vocation,
                 PositionX = DefaultSpawnX,
                 PositionY = DefaultSpawnY,
-                PositionZ = DefaultSpawnZ,
+                Floor = DefaultSpawnZ,
                 FacingX = DefaultFacingX,
                 FacingY = DefaultFacingY
             };
@@ -244,13 +244,13 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         // Stats base variam por vocação
         var (strength, dexterity, intelligence, constitution, spirit) = vocation switch
         {
-            VocationType.Warrior => (15, 10, 5, 15, 5),
-            VocationType.Mage => (5, 8, 18, 8, 11),
-            VocationType.Archer => (8, 16, 6, 10, 10),
-            _ => (10, 10, 10, 10, 10) // Novice/Default
+            VocationType.Warrior => (15, 10, 5, 12, 8),
+            VocationType.Archer => (10, 15, 7, 10, 10),
+            VocationType.Mage => (5, 8, 15, 8, 12),
+            _ => (10, 10, 10, 10, 10)
         };
         
-        var maxHp = CalculateMaxHp(constitution, 1);
+        var maxHp = CalculateMaxHp(constitution, character.Stats.Level);
         var maxMp = CalculateMaxMp(spirit, intelligence, 1);
         
         return new Stats

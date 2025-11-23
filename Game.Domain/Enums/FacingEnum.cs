@@ -1,6 +1,6 @@
 namespace Game.Domain.Enums;
 
-public enum FacingEnum : byte
+public enum FacingEnum : sbyte
 {
     None,
     North,

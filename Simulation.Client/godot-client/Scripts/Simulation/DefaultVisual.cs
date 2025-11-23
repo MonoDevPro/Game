@@ -1,5 +1,6 @@
 using System;
 using Game.Domain.Enums;
+using Game.ECS.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
 
@@ -131,24 +132,20 @@ public abstract partial class DefaultVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateAnimationState(Vector2I facing, bool isMoving = false, bool isAttacking = false)
+    public void UpdateAnimationState(Facing facing, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
-        _currentFacing = ConvertToFacingEnum(facing.X, facing.Y);
+        _currentFacing = ConvertToFacingEnum(facing.DirectionX, facing.DirectionY);
         if (Sprite is null) return;
-        UpdateAnimationState(Sprite, isMoving, isAttacking);
+        UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
     }
     
-    private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving = false, bool isAttacking = false)
+    private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
         // Determina animação
         string animation = isMoving ? "walk" : "idle";
         string attackAnimation = isAttacking ? "attack" : string.Empty;
         if (!string.IsNullOrEmpty(attackAnimation))
             animation = attackAnimation;
-        
-        //Dead animation has priority
-        if (!isMoving && !isAttacking && _currentFacing == FacingEnum.None)
-            animation = "dead";
         
         // Atualiza direção (flip horizontal se necessário)
         sprite.FlipH = _currentFacing == FacingEnum.West;
@@ -160,6 +157,9 @@ public abstract partial class DefaultVisual : Node2D
             FacingEnum.East or FacingEnum.West => $"{animation}_side",
             _ => $"{animation}",
         };
+        
+        //Dead animation has priority
+        if (isDead) animName = "dead";
 
         if (sprite.Animation == animName) 
             return;
@@ -170,7 +170,7 @@ public abstract partial class DefaultVisual : Node2D
         RefreshAnimationSpeeds();
     }
     
-    private FacingEnum ConvertToFacingEnum(int facingX, int facingY)
+    private FacingEnum ConvertToFacingEnum(sbyte facingX, sbyte facingY)
     {
         return (facingX, facingY) switch
         {

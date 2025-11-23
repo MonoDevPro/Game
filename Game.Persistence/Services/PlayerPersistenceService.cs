@@ -41,7 +41,7 @@ internal sealed class PlayerPersistenceService(
             // ✅ Atualizar posição e direção
             character.PositionX = dto.PositionX;
             character.PositionY = dto.PositionY;
-            character.PositionZ = dto.PositionZ;
+            character.Floor = dto.Floor;
             character.FacingX = dto.FacingX;
             character.FacingY = dto.FacingY;
             character.LastUpdatedAt = DateTime.UtcNow;
@@ -90,7 +90,7 @@ internal sealed class PlayerPersistenceService(
 
             character.PositionX = dto.PositionX;
             character.PositionY = dto.PositionY;
-            character.PositionZ = dto.PositionZ;
+            character.Floor = dto.Floor;
             character.FacingX = dto.FacingX;
             character.FacingY = dto.FacingY;
 
@@ -102,7 +102,7 @@ internal sealed class PlayerPersistenceService(
                 dto.CharacterId,
                 dto.PositionX,
                 dto.PositionY,
-                dto.PositionZ,
+                dto.Floor,
                 dto.FacingX,
                 dto.FacingY);
         }

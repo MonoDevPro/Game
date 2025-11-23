@@ -7,25 +7,25 @@ namespace Game.ECS.Entities.Updates;
 
 public static partial class EntityUpdates
 {
-    public static bool ApplyPlayerState(this World world, PlayerIndex index, PlayerStateData data)
+    public static bool ApplyEntityState(this World world, PlayerIndex index, PlayerStateData data)
     {
         if (!index.TryGetEntity(data.NetworkId, out var entity))
             return false;
         ref var position = ref world.Get<Position>(entity);
+        ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Facing>(entity);
         ref var velocity = ref world.Get<Velocity>(entity);
-        position.X = data.PositionX;
-        position.Y = data.PositionY;
-        position.Z = data.PositionZ;
-        velocity.DirectionX = data.VelocityX;
-        velocity.DirectionY = data.VelocityY;
+        position = new Position(X: data.PositionX, Y: data.PositionY);
+        floor.Level = data.Floor;
+        velocity.X = data.VelocityX;
+        velocity.Y = data.VelocityY;
         velocity.Speed = data.Speed;
         facing.DirectionX = data.FacingX;
         facing.DirectionY = data.FacingY;
         return true;
     }
     
-    public static bool ApplyPlayerVitals(this World world, PlayerIndex index, PlayerVitalsData data)
+    public static bool ApplyEntityVitals(this World world, PlayerIndex index, PlayerVitalsData data)
     {
         if (!index.TryGetEntity(data.NetworkId, out var entity))
             return false;

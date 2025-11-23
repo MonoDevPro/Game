@@ -68,7 +68,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
 
     [Query]
     [All<NetworkId, Attack>]
-    private void SyncPlayerAttackAction(
+    private void SyncAttack(
         in Entity e,
         ref Attack action,
         [Data] float deltaTime)
@@ -86,7 +86,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     
     [Query]
     [All<NetworkId>] // ✅ Sem tag específica - aplica a TODOS
-    private void SyncPlayerAnimations(
+    private void SyncAnimations(
         in Entity e, 
         in NetworkId networkId,
         in Velocity velocity, 
@@ -96,13 +96,9 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
             return;
 
         var isDead = World.Has<Dead>(e);
-        var isAttacking = World.Has<Attack>(e) && !isDead;
-        var isMoving = velocity.Speed > 0f && !isAttacking && !isDead;
-        var facingDir = isDead 
-            ? Vector2I.Zero 
-            : new Vector2I(facing.DirectionX, facing.DirectionY);
-        
-        visual.UpdateAnimationState(facingDir, isMoving, isAttacking);
+        var isAttacking = World.Has<Attack>(e);
+        var isMoving = velocity.Speed > 0f;
+        visual.UpdateAnimationState(facing, isMoving, isAttacking, isDead);
     }
     
     [Query]
@@ -110,8 +106,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     private void InterpolatePosition(
         in Position pos, 
         in Velocity velocity,
-        in NetworkId networkId,
-        [Data] float dt)
+        in NetworkId networkId)
     {
         const float pixelsPerCell = 32f;
         const float lerpSpeed = 0.15f;
@@ -123,10 +118,10 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
 
         // Extrapolação para compensar latência
-        if (velocity is not { DirectionX: 0, DirectionY: 0, Speed: > 0f })
+        if (velocity is not { X: 0, Y: 0, Speed: > 0f })
         {
             float extrapolation = 0.5f;
-            Vector2 direction = new(velocity.DirectionX, velocity.DirectionY);
+            Vector2 direction = new(velocity.X, velocity.Y);
             target += direction * (pixelsPerCell * extrapolation);
         }
 

@@ -36,7 +36,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
                 npcData.Name,
                 npcData.PositionX,
                 npcData.PositionY,
-                npcData.PositionZ,
+                npcData.Floor,
                 npcData.MapId);
         }
 
@@ -79,10 +79,17 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
             MapId = definition.MapId,
             PositionX = definition.PositionX,
             PositionY = definition.PositionY,
-            PositionZ = definition.PositionZ,
+            Floor = definition.Floor,
+            FacingX = definition.FacingX,
+            FacingY = definition.FacingY,
             Hp = definition.Hp,
             MaxHp = definition.MaxHp,
             HpRegen = definition.HpRegen,
+            Mp = definition.Mp,
+            MaxMp = definition.MaxMp,
+            MpRegen = definition.MpRegen,
+            MovementSpeed = definition.MovementSpeed,
+            AttackSpeed = definition.AttackSpeed,
             PhysicalAttack = definition.PhysicalAttack,
             MagicAttack = definition.MagicAttack,
             PhysicalDefense = definition.PhysicalDefense,
@@ -102,10 +109,17 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
             Vocation = (byte)VocationType.Warrior,
             PositionX = 10,
             PositionY = 10,
-            PositionZ = 0,
+            Floor = 0,
+            FacingX = 0,
+            FacingY = 1,
             Hp = 150,
             MaxHp = 150,
             HpRegen = 0.5f,
+            Mp = 50,
+            MaxMp = 50,
+            MpRegen = 0.2f,
+            MovementSpeed = 1.0f,
+            AttackSpeed = 1.0f,
             PhysicalAttack = 25,
             MagicAttack = 5,
             PhysicalDefense = 10,
@@ -127,10 +141,17 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
             Vocation = (byte)VocationType.Archer,
             PositionX = 20,
             PositionY = 20,
-            PositionZ = 0,
+            Floor = 0,
+            FacingX = -1,
+            FacingY = 0,
             Hp = 120,
             MaxHp = 120,
             HpRegen = 0.3f,
+            Mp = 80,
+            MaxMp = 80,
+            MpRegen = 0.4f,
+            MovementSpeed = 1.2f,
+            AttackSpeed = 1.1f,
             PhysicalAttack = 18,
             MagicAttack = 8,
             PhysicalDefense = 8,
@@ -154,10 +175,17 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, ILogger<Npc
         public byte Vocation { get; init; }
         public int PositionX { get; init; }
         public int PositionY { get; init; }
-        public int PositionZ { get; init; }
+        public sbyte Floor { get; init; }
+        public sbyte FacingX { get; init; }
+        public sbyte FacingY { get; init; }
         public int Hp { get; init; }
         public int MaxHp { get; init; }
         public float HpRegen { get; init; }
+        public int Mp { get; init; }
+        public int MaxMp { get; init; }
+        public float MpRegen { get; init; }
+        public float MovementSpeed { get; init; }
+        public float AttackSpeed { get; init; }
         public int PhysicalAttack { get; init; }
         public int MagicAttack { get; init; }
         public int PhysicalDefense { get; init; }

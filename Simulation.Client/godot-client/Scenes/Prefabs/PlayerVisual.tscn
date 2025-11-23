@@ -22,7 +22,7 @@ position = Vector2(32, 32)
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Pivot"]
 position = Vector2(0, -6)
 sprite_frames = ExtResource("2_f3ihw")
-animation = &"idle_south"
+animation = &"dead"
 
 [node name="NameLabel" type="Label" parent="Pivot"]
 anchors_preset = 7

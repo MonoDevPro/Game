@@ -12,9 +12,9 @@ public sealed record DisconnectPersistenceDto
     public required int CharacterId { get; init; }
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
-    public required int PositionZ { get; init; }
-    public required int FacingX { get; set; }
-    public required int FacingY { get; set; }
+    public required sbyte Floor { get; init; }
+    public required sbyte FacingX { get; init; }
+    public required sbyte FacingY { get; init; }
     public int CurrentHp { get; init; }
     public int CurrentMp { get; init; }
     
@@ -32,9 +32,9 @@ public sealed record PositionPersistenceDto
     public required int CharacterId { get; init; }
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
-    public required int PositionZ { get; init; }
-    public required int FacingX { get; init; }
-    public required int FacingY { get; init; }
+    public required sbyte Floor { get; init; }
+    public required sbyte FacingX { get; init; }
+    public required sbyte FacingY { get; init; }
 }
 
 /// <summary>

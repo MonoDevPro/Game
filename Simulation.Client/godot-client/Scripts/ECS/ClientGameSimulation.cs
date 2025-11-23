@@ -5,8 +5,10 @@ using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Updates;
+using Game.ECS.Logic;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
+using Godot;
 using GodotClient.ECS.Systems;
 using GodotClient.Simulation;
 
@@ -51,8 +53,8 @@ public sealed class ClientGameSimulation : GameSimulation
     }
     
     public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
-    public bool ApplyPlayerState(PlayerStateData data) => World.ApplyPlayerState(PlayerIndex, data);
-    public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyPlayerVitals(PlayerIndex, data);
+    public bool ApplyPlayerState(PlayerStateData data) => World.ApplyEntityState(PlayerIndex, data);
+    public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyEntityVitals(PlayerIndex, data);
     public bool DespawnPlayer(int networkId) => DestroyPlayer(networkId);
     public Entity SpawnLocalPlayer(PlayerData data, PlayerVisual visual) 
         => CreateLocalPlayer(data, visual);
@@ -62,7 +64,7 @@ public sealed class ClientGameSimulation : GameSimulation
     public Entity SpawnNpc(NPCData data, NpcVisual visual) => CreateNpc(data, visual);
     public bool DespawnNpc(int networkId) => DestroyNpc(networkId);
     public void ApplyNpcState(NpcStateData state) => UpdateNpcState(state);
-    public void ApplyNpcVitals(NpcHealthData data) => UpdateNpcVitals(data);
+    public void ApplyNpcVitals(NpcVitalsData data) => UpdateNpcVitals(data);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
@@ -137,7 +139,7 @@ public sealed class ClientGameSimulation : GameSimulation
         World.ApplyNpcState(entity, state);
     }
     
-    private void UpdateNpcVitals(in NpcHealthData data)
+    private void UpdateNpcVitals(in NpcVitalsData data)
     {
         if (!NpcIndex.TryGetEntity(data.NetworkId, out var entity))
             return;
@@ -148,26 +150,22 @@ public sealed class ClientGameSimulation : GameSimulation
     {
         if (MapService == null)
             return;
-        
-        if (!World.Has<Position>(entity))
+
+        if (!World.Has<Position, MapId, Floor>(entity))
+        {
+            GD.PrintErr("Entity missing Position, MapId or Floor component for spatial registration.");
             return;
-
-        int mapId = 0;
-        if (World.Has<MapId>(entity))
-        {
-            ref MapId mapComponent = ref World.Get<MapId>(entity);
-            mapId = mapComponent.Value;
         }
 
-        if (!MapService.HasMap(mapId))
+        ref MapId mapId = ref World.Get<MapId>(entity);
+        if (!MapService.HasMap(mapId.Value))
         {
-            // aqui escolha o número de layers correto para esse mapa; por ora usamos 1
-            MapService.RegisterMap(mapId, new MapGrid(100, 100, layers: 3), new MapSpatial());
+            GD.PrintErr($"MapService does not have map with ID {mapId.Value} for spatial registration.");
+            return;
         }
-
-        var spatial = MapService.GetMapSpatial(mapId);
-        ref Position position = ref World.Get<Position>(entity);
-        spatial.Insert(position, entity);
+        
+        var spatial = MapService.GetMapSpatial(mapId.Value);
+        spatial.Insert(World.Get<Position>(entity).ToSpatialPosition(World.Get<Floor>(entity).Level), entity);
     }
 
     public void UnregisterSpatial(Entity entity)
@@ -175,21 +173,20 @@ public sealed class ClientGameSimulation : GameSimulation
         if (MapService == null)
             return;
         
-        if (!World.Has<Position>(entity))
-            return;
-
-        int mapId = 0;
-        if (World.Has<MapId>(entity))
+        if (!World.Has<Position, MapId, Floor>(entity))
         {
-            ref MapId mapComponent = ref World.Get<MapId>(entity);
-            mapId = mapComponent.Value;
+            GD.PrintErr("Entity missing Position, MapId or Floor component for spatial destruction.");
+            return;
         }
 
-        if (!MapService.HasMap(mapId))
+        ref MapId mapId = ref World.Get<MapId>(entity);
+        if (!MapService.HasMap(mapId.Value))
+        {
+            GD.PrintErr($"MapService does not have map with ID {mapId.Value} for spatial registration.");
             return;
-
-        var spatial = MapService.GetMapSpatial(mapId);
-        ref Position position = ref World.Get<Position>(entity);
-        spatial.Remove(position, entity);
+        }
+        
+        var spatial = MapService.GetMapSpatial(mapId.Value);
+        spatial.Remove(World.Get<Position>(entity).ToSpatialPosition(World.Get<Floor>(entity).Level), entity);
     }
 }

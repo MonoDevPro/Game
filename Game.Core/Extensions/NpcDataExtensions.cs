@@ -15,12 +15,17 @@ public static class NpcDataExtensions
             data.Vocation,
             data.PositionX,
             data.PositionY,
-            data.PositionZ,
+            data.Floor,
             data.FacingX,
             data.FacingY,
             data.Hp,
             data.MaxHp,
             data.HpRegen,
+            data.Mp,
+            data.MaxMp,
+            data.MpRegen,
+            data.MovementSpeed,
+            data.AttackSpeed,
             data.PhysicalAttack,
             data.MagicAttack,
             data.PhysicalDefense,
@@ -38,12 +43,17 @@ public static class NpcDataExtensions
             Vocation = snapshot.Vocation,
             PositionX = snapshot.PositionX,
             PositionY = snapshot.PositionY,
-            PositionZ = snapshot.PositionZ,
+            Floor = snapshot.Floor,
             FacingX = snapshot.FacingX,
             FacingY = snapshot.FacingY,
             Hp = snapshot.Hp,
             MaxHp = snapshot.MaxHp,
             HpRegen = snapshot.HpRegen,
+            Mp = snapshot.Mp,
+            MaxMp = snapshot.MaxMp,
+            MpRegen = snapshot.MpRegen,
+            MovementSpeed = snapshot.MovementSpeed,
+            AttackSpeed = snapshot.AttackSpeed,
             PhysicalAttack = snapshot.PhysicalAttack,
             MagicAttack = snapshot.MagicAttack,
             PhysicalDefense = snapshot.PhysicalDefense,
@@ -57,7 +67,7 @@ public static class NpcDataExtensions
             data.NetworkId,
             data.PositionX,
             data.PositionY,
-            data.PositionZ,
+            data.Floor,
             data.VelocityX,
             data.VelocityY,
             data.Speed,
@@ -72,30 +82,34 @@ public static class NpcDataExtensions
             NetworkId = snapshot.NetworkId,
             PositionX = snapshot.PositionX,
             PositionY = snapshot.PositionY,
-            PositionZ = snapshot.PositionZ,
+            Floor = snapshot.Floor,
             VelocityX = snapshot.VelocityX,
             VelocityY = snapshot.VelocityY,
+            Speed = snapshot.Speed,
             FacingX = snapshot.FacingX,
             FacingY = snapshot.FacingY,
-            Speed = snapshot.Speed,
         };
     }
     
-    public static NpcHealthSnapshot ToNpcHealthSnapshot(this NpcHealthData data)
+    public static NpcHealthSnapshot ToNpcHealthSnapshot(this NpcVitalsData data)
     {
         return new NpcHealthSnapshot(
             data.NetworkId,
             data.CurrentHp,
-            data.MaxHp);
+            data.MaxHp, 
+            data.CurrentMp,
+            data.MaxMp);
     }
     
-    public static NpcHealthData ToNpcHealthData(this NpcHealthSnapshot snapshot)
+    public static NpcVitalsData ToNpcHealthData(this NpcHealthSnapshot snapshot)
     {
-        return new NpcHealthData
+        return new NpcVitalsData
         {
             NetworkId = snapshot.NetworkId,
             CurrentHp = snapshot.CurrentHp,
-            MaxHp = snapshot.MaxHp
+            MaxHp = snapshot.MaxHp,
+            CurrentMp = snapshot.CurrentMp,
+            MaxMp = snapshot.MaxMp
         };
     }
     

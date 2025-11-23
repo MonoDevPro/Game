@@ -11,9 +11,9 @@ public readonly partial record struct PlayerSnapshot(
     byte Vocation,
     int PositionX,
     int PositionY,
-    int PositionZ,
-    int FacingX,
-    int FacingY,
+    sbyte Floor,
+    sbyte FacingX,
+    sbyte FacingY,
     int Hp,
     int MaxHp,
     float HpRegen,
@@ -33,12 +33,12 @@ public readonly partial record struct PlayerStateSnapshot(
     int NetworkId,
     int PositionX,
     int PositionY,
-    int PositionZ,
-    int VelocityX,
-    int VelocityY,
+    sbyte Floor,
+    sbyte VelocityX,
+    sbyte VelocityY,
     float Speed,
-    int FacingX,
-    int FacingY);
+    sbyte FacingX,
+    sbyte FacingY);
     
 [MemoryPackable]
 public readonly partial record struct PlayerVitalsSnapshot(

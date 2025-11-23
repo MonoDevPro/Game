@@ -17,20 +17,24 @@ public static partial class EntityFactory
         {
             new NetworkId { Value = data.NetworkId },
             new MapId { Value = data.MapId },
-            new Position { X = data.PositionX, Y = data.PositionY, Z = data.PositionZ },
+            new Position { X = data.PositionX, Y = data.PositionY },
+            new Floor { Level = data.Floor },
             new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY },
-            new Velocity { DirectionX = 0, DirectionY = 0, Speed = 0f },
+            new Velocity { X = 0, Y = 0, Speed = 0f },
             new Movement { Timer = 0f },
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
-            new Walkable { BaseSpeed = 3f, CurrentModifier = 1f },
-            new Attackable { BaseSpeed = 1f, CurrentModifier = 1f },
+            new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
+            new Walkable { BaseSpeed = 2f, CurrentModifier = data.MovementSpeed },
+            new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
             new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new Input { },
+            new DirtyFlags { },
             new AIControlled { },
+            new NpcInfo { GenderId = data.Gender, VocationId = data.Vocation },
             new NpcAIState { Current = NpcAIStateId.Idle, StateTime = 0f },
-            NpcTarget.CreateEmpty(),
+            new NpcTarget { Target = Entity.Null, TargetNetworkId = -1, LastKnownPosition = default, DistanceSquared = 0f },
             new NpcBehavior
             {
                 Type = NpcBehaviorType.Aggressive,
@@ -43,27 +47,11 @@ public static partial class EntityFactory
             },
             new NpcPatrol
             {
-                HomePosition = new Position
-                {
-                    X = data.PositionX,
-                    Y = data.PositionY,
-                    Z = data.PositionZ
-                },
-                Destination = new Position
-                {
-                    X = data.PositionX,
-                    Y = data.PositionY,
-                    Z = data.PositionZ
-                },
-                Radius = 5f,
+                HomePosition = new Position { X = data.PositionX, Y = data.PositionY, },
+                Destination = new Position { X = data.PositionX, Y = data.PositionY, }, 
+                Radius = 5f, 
                 HasDestination = false
             },
-            new DirtyFlags(),
-            new Info
-            {
-                GenderId = data.Gender, 
-                VocationId = data.Vocation
-            }
         };
         world.SetRange(entity, components);
         return entity;
