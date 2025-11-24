@@ -93,6 +93,11 @@ public abstract class GameSimulation : GameSystem
             _fixedTimeStep.Step();
         }
     }
+    
+    public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
+    public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
+    public virtual bool TryGetAnyEntity(int networkId, out Entity entity) => PlayerIndex.TryGetEntity(networkId, out entity) 
+                                                                             || NpcIndex.TryGetEntity(networkId, out entity);
 
     public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
     {

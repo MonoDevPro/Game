@@ -10,7 +10,7 @@ public static partial class EntityFactory
     /// <summary>
     /// Cria um NPC com IA controlada.
     /// </summary>
-    public static Entity CreateNPC(this World world, in NPCData data)
+    public static Entity CreateNPC(this World world, in NPCData data, in NpcBehaviorData behaviorData)
     {
         var entity = world.Create(GameArchetypes.NPCCharacter);
         var components = new object[]
@@ -37,13 +37,13 @@ public static partial class EntityFactory
             new NpcTarget { Target = Entity.Null, TargetNetworkId = -1, LastKnownPosition = default, DistanceSquared = 0f },
             new NpcBehavior
             {
-                Type = NpcBehaviorType.Aggressive,
-                VisionRange = 6f,
-                AttackRange = 1.25f,
-                LeashRange = 12f,
-                PatrolRadius = 5f,
-                IdleDurationMin = 1.5f,
-                IdleDurationMax = 3.5f
+                Type = (NpcBehaviorType)behaviorData.BehaviorType,
+                VisionRange = behaviorData.VisionRange,
+                AttackRange = behaviorData.AttackRange,
+                LeashRange = behaviorData.LeashRange,
+                PatrolRadius = behaviorData.PatrolRadius,
+                IdleDurationMin = behaviorData.IdleDurationMin,
+                IdleDurationMax = behaviorData.IdleDurationMax
             },
             new NpcPatrol
             {

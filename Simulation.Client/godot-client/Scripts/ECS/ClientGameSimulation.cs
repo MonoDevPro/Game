@@ -6,7 +6,6 @@ using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Updates;
 using Game.ECS.Logic;
-using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.ECS.Systems;
@@ -52,7 +51,6 @@ public sealed class ClientGameSimulation : GameSimulation
         systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
-    public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
     public bool ApplyPlayerState(PlayerStateData data) => World.ApplyEntityState(PlayerIndex, data);
     public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyEntityVitals(PlayerIndex, data);
     public bool DespawnPlayer(int networkId) => DestroyPlayer(networkId);
@@ -60,7 +58,6 @@ public sealed class ClientGameSimulation : GameSimulation
         => CreateLocalPlayer(data, visual);
     public Entity SpawnRemotePlayer(PlayerData data, PlayerVisual visual) 
         => CreateRemotePlayer(data, visual);
-    public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
     public Entity SpawnNpc(NPCData data, NpcVisual visual) => CreateNpc(data, visual);
     public bool DespawnNpc(int networkId) => DestroyNpc(networkId);
     public void ApplyNpcState(NpcStateData state) => UpdateNpcState(state);
@@ -112,7 +109,7 @@ public sealed class ClientGameSimulation : GameSimulation
 
     private Entity CreateNpc(in NPCData data, NpcVisual visual)
     {
-        var entity = World.CreateNPC(data);
+        var entity = World.CreateNPC(data, default(NpcBehaviorData));
         NpcIndex.AddMapping(data.NetworkId, entity);
         RegisterSpatial(entity);
         _visualSyncSystem?.RegisterNpcVisual(data.NetworkId, visual);

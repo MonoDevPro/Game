@@ -23,7 +23,7 @@ public sealed partial class InputSystem(World world)
         sbyte newDirY = input.InputY;
 
         // ✅ Se não há input de movimento ou se está atacando, zera a velocidade
-        if (newDirX == 0 && newDirY == 0 || (input.Flags & InputFlags.Attack) != 0)
+        if (newDirX == 0 && newDirY == 0 || (input.Flags & InputFlags.BasicAttack) != 0)
         {
             if (velocity.X != 0 || velocity.Y != 0 || velocity.Speed != 0f)
             {

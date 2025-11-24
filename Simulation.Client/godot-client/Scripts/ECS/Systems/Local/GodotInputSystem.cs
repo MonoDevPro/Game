@@ -39,7 +39,7 @@ public sealed partial class GodotInputSystem(World world)
         var buttons = InputFlags.None;
         if (Godot.Input.IsActionPressed("click_left"))      buttons |= InputFlags.ClickLeft;
         if (Godot.Input.IsActionPressed("click_right"))     buttons |= InputFlags.ClickRight;
-        if (Godot.Input.IsActionPressed("attack"))          buttons |= InputFlags.Attack;
+        if (Godot.Input.IsActionPressed("attack"))          buttons |= InputFlags.BasicAttack;
         if (Godot.Input.IsActionPressed("sprint"))          buttons |= InputFlags.Sprint;
         
         if (input.InputX == moveX && input.InputY == moveY && input.Flags == buttons)

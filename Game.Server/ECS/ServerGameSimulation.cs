@@ -55,7 +55,8 @@ public sealed class ServerGameSimulation : GameSimulation
         // 0. NPC AI processa percepção, estado e decisões antes dos inputs
         systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
         systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
-        systems.Add(new NpcMovementSystem(world));
+        systems.Add(new NpcMovementSystem(world, _loggerFactory.CreateLogger<NpcMovementSystem>()));
+        systems.Add(new NpcCombatSystem(world, _loggerFactory.CreateLogger<NpcCombatSystem>()));
 
         // 1. Input processa entrada do jogador
         systems.Add(new InputSystem(world));
@@ -89,8 +90,6 @@ public sealed class ServerGameSimulation : GameSimulation
     public Entity CreatePlayer(in PlayerData data)
     {
         var entity = World.CreatePlayer(PlayerIndex, data);
-        
-        // Adiciona ao spatial
         if (World.TryGet(entity, out MapId mapId) && 
             World.TryGet(entity, out Position position) &&
             World.TryGet(entity, out Floor floor))
@@ -106,9 +105,7 @@ public sealed class ServerGameSimulation : GameSimulation
 
     public Entity CreateNpc(in NPCData data, NpcBehaviorData behaviorData)
     {
-        var entity = World.CreateNPC(data);
-        World.SetupNpcBehaviourEntity(entity, behaviorData);
-        
+        var entity = World.CreateNPC(data, behaviorData);
         NpcIndex.AddMapping(data.NetworkId, entity);
         Systems.Get<SpatialSyncSystem>()
             .OnEntityCreated(entity, 
@@ -155,9 +152,6 @@ public sealed class ServerGameSimulation : GameSimulation
         World.Destroy(entity);
         return true;
     }
-
-    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
-        NpcIndex.TryGetEntity(networkId, out entity);
 
     public bool ApplyPlayerInput(Entity e, Input data)
     {

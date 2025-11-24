@@ -47,9 +47,11 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
         CombatLogic.ReduceCooldown(ref combat, deltaTime);
         
         // Se o player não ativou a flag de ataque, sair
-        if ((input.Flags & InputFlags.Attack) == 0) return;
+        if ((input.Flags & InputFlags.BasicAttack) == 0) return;
         
-        logger?.LogDebug("[AttackSystem] Player triggered attack. Cooldown: {Cooldown}", combat.LastAttackTime);
+        const AttackType attackType = AttackType.Basic;
+        
+        logger?.LogDebug("[AttackSystem] Entity triggered {Attack}. Cooldown: {Cooldown}", attackType, combat.LastAttackTime);
         
         // Se estiver em cooldown, sair
         if (!CombatLogic.CheckAttackCooldown(in combat))
@@ -57,10 +59,13 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
             logger?.LogDebug("[AttackSystem] Attack blocked by cooldown");
             return;
         }
-
-        var attackType = AttackType.Basic;
         
-        combat.LastAttackTime = CombatLogic.CalculateAttackCooldownSeconds(atk, attackType, externalMultiplier: 1f);
+        combat.LastAttackTime = CombatLogic
+            .CalculateAttackCooldownSeconds(
+                atk, 
+                attackType, 
+                externalMultiplier: 1f);
+        
         dirty.MarkDirty(DirtyComponentType.Combat);
         
         World.Add<Attack>(e, new Attack
