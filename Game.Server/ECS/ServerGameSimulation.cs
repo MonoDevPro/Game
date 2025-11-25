@@ -54,6 +54,11 @@ public sealed class ServerGameSimulation : GameSimulation
         // 0. NPC AI processa percepção, estado e decisões antes dos inputs
         systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
         systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
+        
+        // 0.5 NPC Pathfinding calcula caminhos A* (ANTES do NpcMovementSystem)
+        systems.Add(new NpcPathfindingSystem(world, MapService, _loggerFactory.CreateLogger<NpcPathfindingSystem>()));
+        
+        // 0.6 NPC Movement usa waypoints do pathfinding para gerar inputs
         systems.Add(new NpcMovementSystem(world, _loggerFactory.CreateLogger<NpcMovementSystem>()));
         systems.Add(new NpcCombatSystem(world, _loggerFactory.CreateLogger<NpcCombatSystem>()));
 

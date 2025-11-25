@@ -8,7 +8,10 @@ using Game.ECS.Systems;
 namespace Game.Server.ECS.Systems;
 
 /// <summary>
-/// Sistema de movimento de NPCs. Gera inputs de movimento baseados no estado de IA.
+/// Sistema de movimento de NPCs. Gera inputs de movimento baseados em:
+/// 1. Waypoints do pathfinding A* (NpcPath)
+/// 2. Fallback para movimento direto se não houver path
+/// 
 /// NPCs ranged (Archer, Mage) tentam manter distância ideal do alvo.
 /// </summary>
 public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSystem>? logger = null) : GameSystem(world)
@@ -19,7 +22,7 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
     private const float MinDistanceFactor = 0.5f;
     
     [Query]
-    [All<AIControlled, Input, Position, NpcAIState, NpcTarget, NpcPatrol, NpcBehavior, NpcInfo, DirtyFlags>]
+    [All<AIControlled, Input, Position, NpcAIState, NpcTarget, NpcPatrol, NpcBehavior, NpcInfo, NpcPath, DirtyFlags>]
     private void DriveMovement(
         ref Input input,
         in Position position,
@@ -28,6 +31,7 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
         in NpcPatrol patrol,
         in NpcBehavior behavior,
         in NpcInfo npcInfo,
+        ref NpcPath path,
         ref DirtyFlags dirty)
     {
         sbyte desiredX = 0;
@@ -45,7 +49,16 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
                 float attackRangeSq = effectiveRange * effectiveRange;
                 if (target.DistanceSquared > attackRangeSq)
                 {
-                    (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, target.LastKnownPosition);
+                    // Tenta usar waypoints do pathfinding
+                    if (path.HasPath && !path.IsPathComplete)
+                    {
+                        (desiredX, desiredY) = GetDirectionToWaypoint(in position, ref path);
+                    }
+                    else
+                    {
+                        // Fallback: movimento direto
+                        (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, target.LastKnownPosition);
+                    }
                 }
                 break;
             }
@@ -60,6 +73,10 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
                     desiredX = (sbyte)(-toTargetX);
                     desiredY = (sbyte)(-toTargetY);
                     
+                    // Limpa path quando kiting
+                    path.ClearPath();
+                    path.RequestRecalculation();
+                    
                     logger?.LogDebug("[NpcMovement] Ranged NPC kiting! Moving away from target.");
                 }
                 // Se está em range ideal, fica parado enquanto ataca
@@ -67,12 +84,30 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
             }
             case NpcAIStateId.Returning:
             {
-                (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, patrol.HomePosition);
+                // Tenta usar waypoints do pathfinding
+                if (path.HasPath && !path.IsPathComplete)
+                {
+                    (desiredX, desiredY) = GetDirectionToWaypoint(in position, ref path);
+                }
+                else
+                {
+                    // Fallback: movimento direto
+                    (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, patrol.HomePosition);
+                }
                 break;
             }
             case NpcAIStateId.Patrolling when patrol.HasDestination:
             {
-                (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, patrol.Destination);
+                // Tenta usar waypoints do pathfinding
+                if (path.HasPath && !path.IsPathComplete)
+                {
+                    (desiredX, desiredY) = GetDirectionToWaypoint(in position, ref path);
+                }
+                else
+                {
+                    // Fallback: movimento direto
+                    (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, patrol.Destination);
+                }
                 break;
             }
         }
@@ -84,5 +119,29 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
             input.InputY = desiredY;
             dirty.MarkDirty(DirtyComponentType.Input);
         }
+    }
+    
+    /// <summary>
+    /// Calcula direção para o waypoint atual e avança para o próximo se necessário.
+    /// </summary>
+    private static (sbyte X, sbyte Y) GetDirectionToWaypoint(in Position position, ref NpcPath path)
+    {
+        var currentWaypoint = path.GetCurrentWaypoint();
+        
+        // Verifica se chegou no waypoint atual
+        if (position.X == currentWaypoint.X && position.Y == currentWaypoint.Y)
+        {
+            // Avança para o próximo waypoint
+            if (!path.AdvanceToNextWaypoint())
+            {
+                // Caminho completo
+                return (0, 0);
+            }
+            
+            currentWaypoint = path.GetCurrentWaypoint();
+        }
+        
+        // Calcula direção para o waypoint
+        return PositionLogic.GetDirectionTowards(in position, currentWaypoint);
     }
 }

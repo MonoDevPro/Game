@@ -98,4 +98,56 @@ public class MapGrid : IMapGrid
     /// Obtém as dimensões do mapa.
     /// </summary>
     public (int Width, int Height, int Layers) GetDimensions() => (_width, _height, _layers);
+    
+    // Direções cardinais (4 direções)
+    private static readonly (int dx, int dy)[] CardinalDirections =
+    [
+        (0, -1),  // Norte
+        (1, 0),   // Leste
+        (0, 1),   // Sul
+        (-1, 0)   // Oeste
+    ];
+    
+    // Direções 8-way (inclui diagonais)
+    private static readonly (int dx, int dy)[] AllDirections =
+    [
+        (0, -1),   // Norte
+        (1, -1),   // Nordeste
+        (1, 0),    // Leste
+        (1, 1),    // Sudeste
+        (0, 1),    // Sul
+        (-1, 1),   // Sudoeste
+        (-1, 0),   // Oeste
+        (-1, -1)   // Noroeste
+    ];
+    
+    /// <summary>
+    /// Obtém as posições vizinhas válidas (walkable) de uma posição central.
+    /// </summary>
+    public int GetWalkableNeighbors(SpatialPosition center, Span<SpatialPosition> neighbors, bool allowDiagonal = false)
+    {
+        var directions = allowDiagonal ? AllDirections : CardinalDirections;
+        int count = 0;
+        
+        for (int i = 0; i < directions.Length && count < neighbors.Length; i++)
+        {
+            var (dx, dy) = directions[i];
+            var neighbor = new SpatialPosition(center.X + dx, center.Y + dy, center.Floor);
+            
+            if (InBounds(neighbor) && !IsBlocked(neighbor))
+            {
+                // Se diagonal, verifica se os tiles adjacentes estão livres (evita cortar cantos)
+                if (allowDiagonal && dx != 0 && dy != 0)
+                {
+                    if (IsBlocked(new SpatialPosition(center.X + dx, center.Y, center.Floor)) ||
+                        IsBlocked(new SpatialPosition(center.X, center.Y + dy, center.Floor)))
+                        continue;
+                }
+                
+                neighbors[count++] = neighbor;
+            }
+        }
+        
+        return count;
+    }
 }

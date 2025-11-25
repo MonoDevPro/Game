@@ -11,7 +11,7 @@ public static partial class GameArchetypes
     
     /// <summary>
     /// Arquétipo de NPC com IA.
-    /// Suporta movimento, combate, mas não tem input de jogador.
+    /// Suporta movimento, combate, pathfinding A*, mas não tem input de jogador.
     /// </summary>
     public static readonly ComponentType[] NPCCharacter =
     [
@@ -37,5 +37,6 @@ public static partial class GameArchetypes
         Component<NpcTarget>.ComponentType,
         Component<NpcBehavior>.ComponentType,
         Component<NpcPatrol>.ComponentType,
+        Component<NpcPath>.ComponentType,
     ];
 }

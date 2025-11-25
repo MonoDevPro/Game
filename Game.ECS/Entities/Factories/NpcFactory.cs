@@ -8,7 +8,7 @@ namespace Game.ECS.Entities.Factories;
 public static partial class EntityFactory
 {
     /// <summary>
-    /// Cria um NPC com IA controlada.
+    /// Cria um NPC com IA controlada e suporte a pathfinding A*.
     /// </summary>
     public static Entity CreateNPC(this World world, in NPCData data, in NpcBehaviorData behaviorData)
     {
@@ -52,6 +52,7 @@ public static partial class EntityFactory
                 Radius = 5f, 
                 HasDestination = false
             },
+            NpcPath.CreateDefault(),
         };
         world.SetRange(entity, components);
         return entity;
