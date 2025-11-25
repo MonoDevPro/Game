@@ -20,13 +20,19 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
 
     public void RegisterPlayerVisual(int networkId, PlayerVisual visual)
     {
+        UnregisterPlayerVisual(networkId);
+        
         _playerVisuals[networkId] = visual;
+        
         entitiesRoot.AddChild(visual);
     }
 
     public void RegisterNpcVisual(int networkId, NpcVisual visual)
     {
+        UnregisterNpcVisual(networkId);
+        
         _npcVisuals[networkId] = visual;
+        
         entitiesRoot.AddChild(visual);
     }
 
@@ -41,6 +47,12 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         if (_npcVisuals.Remove(networkId, out var visual))
             visual.QueueFree();
     }
+    
+    public void UnregisterAnyVisual(int networkId)
+    {
+        UnregisterNpcVisual(networkId);
+        UnregisterPlayerVisual(networkId);
+    }
 
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual) =>
         _playerVisuals.TryGetValue(networkId, out visual!);
@@ -50,13 +62,13 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
 
     private bool TryGetAnyVisual(int networkId, out DefaultVisual visual)
     {
-        if (_playerVisuals.TryGetValue(networkId, out var playerVisual))
+        if (TryGetPlayerVisual(networkId, out var playerVisual))
         {
             visual = playerVisual;
             return true;
         }
 
-        if (_npcVisuals.TryGetValue(networkId, out var npcVisual))
+        if (TryGetNpcVisual(networkId, out var npcVisual))
         {
             visual = npcVisual;
             return true;

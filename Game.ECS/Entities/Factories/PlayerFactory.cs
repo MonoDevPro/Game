@@ -29,21 +29,12 @@ public static partial class EntityFactory
             new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
             new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
             new Input { },
-            new DirtyFlags(),
-            new PlayerControlled(),
+            new DirtyFlags { },
+            new PlayerControlled { },
             new PlayerId { Value = data.PlayerId },
         };
         world.SetRange(entity, components);
         index?.AddMapping(data.NetworkId, entity);
         return entity;
-    }
-    
-    public static bool TryDestroyPlayer(this World world, PlayerIndex index, int networkId)
-    {
-        if (!index.TryGetEntity(networkId, out var entity))
-            return false;
-        index.RemoveByEntity(entity);
-        world.Destroy(entity);
-        return true;
     }
 }

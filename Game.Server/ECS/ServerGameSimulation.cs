@@ -3,9 +3,8 @@ using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
+using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
 
@@ -85,72 +84,6 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // 9. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
-    }
-
-    public Entity CreatePlayer(in PlayerData data)
-    {
-        var entity = World.CreatePlayer(PlayerIndex, data);
-        if (World.TryGet(entity, out MapId mapId) && 
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityCreated(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level), 
-                    mapId.Value);
-        return entity;
-    }
-
-    public Entity CreateNpc(in NPCData data, NpcBehaviorData behaviorData)
-    {
-        var entity = World.CreateNPC(data, behaviorData);
-        NpcIndex.AddMapping(data.NetworkId, entity);
-        Systems.Get<SpatialSyncSystem>()
-            .OnEntityCreated(entity, 
-                new SpatialPosition(
-                    data.PositionX, 
-                    data.PositionY, 
-                    data.Floor), 
-                data.MapId);
-        return entity;
-    }
-    
-    public bool DestroyPlayer(Entity entity)
-    {
-        if (World.TryGet(entity, out MapId mapId) && 
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level),
-                    mapId.Value);
-        PlayerIndex.RemoveByEntity(entity);
-        World.Destroy(entity);
-        return true;
-    }
-
-    public bool DestroyNpc(int networkId)
-    {
-        if (!NpcIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        if (World.TryGet(entity, out MapId mapId) &&
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level),
-                    mapId.Value);
-        NpcIndex.RemoveByKey(networkId);
-        World.Destroy(entity);
-        return true;
     }
 
     public bool ApplyPlayerInput(Entity e, Input data)

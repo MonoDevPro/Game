@@ -19,7 +19,6 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logger) 
     : GameSystem(world)
 {
-    
     /// <summary>
     /// Processa jogadores mortos que estão em processo de revive.
     /// </summary>
@@ -39,17 +38,18 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         // ✅ Tempo de revive expirou - reviver jogador
         if (revive.TimeRemaining <= 0f)
         {
-            // ✅ Usa a extensão para marcar mudança de posição
-            World.SetPosition(entity, revive.SpawnPosition);
-        
             combat.InCombat = false;
             combat.LastAttackTime = 0f;
+            combat.TimeSinceLastHit = 0f;
+            
+            // ✅ Usa a extensão para marcar mudança de posição
+            World.SetPosition(entity, revive.SpawnPosition);
         
             health.Current = (int)(health.Max * SimulationConfig.ReviveHealthPercent);
             mana.Current = (int)(mana.Max * SimulationConfig.ReviveManaPercent);
         
             // ✅ Marca State como dirty para o SpatialSyncSystem detectar
-            dirty.MarkDirty(DirtyComponentType.All);
+            dirty.MarkDirtyMask(DirtyComponentType.State | DirtyComponentType.Vitals);
         
             World.Remove<Dead, Revive>(entity);
         }

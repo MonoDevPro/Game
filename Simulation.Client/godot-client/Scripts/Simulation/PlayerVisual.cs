@@ -22,7 +22,7 @@ public sealed partial class PlayerVisual : DefaultVisual
         return playerVisual;
     }
 
-    public void UpdateFromSnapshot(PlayerData data)
+    public void UpdateFromSnapshot(in PlayerData data)
     {
         LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
         UpdateName(data.Name);

@@ -4,9 +4,9 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Logic;
 using Game.ECS.Services;
-using Game.ECS.Systems;
+using Microsoft.Extensions.Logging;
 
-namespace Game.Server.ECS.Systems;
+namespace Game.ECS.Systems;
 
 /// <summary>
 /// Sistema responsável por sincronizar mudanças de Position com o MapSpatial.
@@ -22,8 +22,8 @@ namespace Game.Server.ECS.Systems;
 /// Data: 2025-01-15
 /// </summary>
 public sealed partial class SpatialSyncSystem(
-    World world, 
-    IMapService mapService, 
+    World world,
+    IMapService? mapService,
     ILogger<SpatialSyncSystem>? logger = null)
     : GameSystem(world)
 {
@@ -39,6 +39,9 @@ public sealed partial class SpatialSyncSystem(
         in Floor floor,
         in MapId mapId)
     {
+        if (mapService == null)
+            return;
+        
         var spatial = mapService.GetMapSpatial(mapId.Value);
 
         // Se é primeira inserção (oldPosition == default)
@@ -84,6 +87,9 @@ public sealed partial class SpatialSyncSystem(
     
     public void OnEntityCreated(Entity entity, SpatialPosition spatialPosition, int mapId)
     {
+        if (mapService == null)
+            return;
+        
         var spatial = mapService.GetMapSpatial(mapId);
         spatial.Insert(spatialPosition, entity);
         
@@ -91,13 +97,15 @@ public sealed partial class SpatialSyncSystem(
             "[SpatialSync] Entity {Entity} inserted into spatial at ({X}, {Y}, {Z})",
             entity.Id, spatialPosition.X, spatialPosition.Y, spatialPosition.Floor);
     }
-    
 
     /// <summary>
     /// Remove entidade do spatial quando destruída.
     /// </summary>
     public void OnEntityDestroyed(Entity entity, SpatialPosition spatialPosition, int mapId)
     {
+        if (mapService == null)
+            return;
+        
         var spatial = mapService.GetMapSpatial(mapId);
         spatial.Remove(spatialPosition, entity);
         

@@ -7,7 +7,7 @@ namespace Game.ECS.Entities.Updates;
 
 public static partial class EntityUpdates
 {
-    public static bool ApplyEntityState(this World world, PlayerIndex index, PlayerStateData data)
+    public static bool ApplyPlayerState(this World world, PlayerIndex index, PlayerStateData data)
     {
         if (!index.TryGetEntity(data.NetworkId, out var entity))
             return false;
@@ -25,7 +25,7 @@ public static partial class EntityUpdates
         return true;
     }
     
-    public static bool ApplyEntityVitals(this World world, PlayerIndex index, PlayerVitalsData data)
+    public static bool ApplyPlayerVitals(this World world, PlayerIndex index, PlayerVitalsData data)
     {
         if (!index.TryGetEntity(data.NetworkId, out var entity))
             return false;

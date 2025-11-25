@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Game.ECS.Components;
+using Game.ECS.Entities.Data;
+using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Repositories;
 using Game.ECS.Services;
 using Game.ECS.Systems;
@@ -95,23 +97,101 @@ public abstract class GameSimulation : GameSystem
     }
     
     public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
+    
     public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
-    public virtual bool TryGetAnyEntity(int networkId, out Entity entity) => PlayerIndex.TryGetEntity(networkId, out entity) 
-                                                                             || NpcIndex.TryGetEntity(networkId, out entity);
+    
+    public bool TryGetAnyEntity(int networkId, out Entity entity) => 
+        PlayerIndex.TryGetEntity(networkId, out entity) || NpcIndex.TryGetEntity(networkId, out entity);
 
     public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
     {
         MapService ??= new MapService();
-
         MapService.RegisterMap(mapId, grid, spatial);
     }
 
     public void UnregisterMap(int mapId)
     {
-        if (MapService == null)
-            return;
+        MapService?.UnregisterMap(mapId);
+    }
+    
+    public Entity CreatePlayer(in PlayerData data)
+    {
+        if (PlayerIndex.TryGetEntity(data.NetworkId, out _))
+            if (!DestroyPlayer(data.NetworkId))
+                return Entity.Null;
         
-        MapService.UnregisterMap(mapId);
+        var entity = World.CreatePlayer(PlayerIndex, data);
+        if (World.TryGet(entity, out MapId mapId) && 
+            World.TryGet(entity, out Position position) &&
+            World.TryGet(entity, out Floor floor))
+            Systems.Get<SpatialSyncSystem>()
+                .OnEntityCreated(entity, 
+                    new SpatialPosition(
+                        position.X, 
+                        position.Y, 
+                        floor.Level), 
+                    mapId.Value);
+        return entity;
+    }
+
+    public Entity CreateNpc(in NPCData data, NpcBehaviorData behaviorData)
+    {
+        if (NpcIndex.TryGetEntity(data.NetworkId, out var existingEntity))
+        {
+            if (!DestroyNpc(data.NetworkId))
+                return Entity.Null; // Falha ao destruir a entidade existente
+        }
+        
+        var entity = World.CreateNPC(data, behaviorData);
+        NpcIndex.AddMapping(data.NetworkId, entity);
+        Systems.Get<SpatialSyncSystem>()
+            .OnEntityCreated(entity,
+                new SpatialPosition(
+                    data.PositionX,
+                    data.PositionY,
+                    data.Floor),
+                data.MapId);
+        return entity;
+    }
+    
+    public virtual bool DestroyPlayer(int networkId)
+    {
+        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        
+        if (World.TryGet(entity, out MapId mapId) && 
+            World.TryGet(entity, out Position position) &&
+            World.TryGet(entity, out Floor floor))
+            Systems.Get<SpatialSyncSystem>()
+                .OnEntityDestroyed(entity, 
+                    new SpatialPosition(
+                        position.X, 
+                        position.Y, 
+                        floor.Level),
+                    mapId.Value);
+        PlayerIndex.RemoveByEntity(entity);
+        World.Destroy(entity);
+        return true;
+    }
+
+    public virtual bool DestroyNpc(int networkId)
+    {
+        if (!NpcIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        
+        if (World.TryGet(entity, out MapId mapId) &&
+            World.TryGet(entity, out Position position) &&
+            World.TryGet(entity, out Floor floor))
+            Systems.Get<SpatialSyncSystem>()
+                .OnEntityDestroyed(entity, 
+                    new SpatialPosition(
+                        position.X, 
+                        position.Y, 
+                        floor.Level),
+                    mapId.Value);
+        NpcIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
     }
     
     public override void Dispose()

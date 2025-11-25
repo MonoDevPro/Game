@@ -150,6 +150,17 @@ public sealed partial class ServerSyncSystem(
     private void FlushBuffers()
     {
         // ===========================
+        // ======= COMBAT ============
+        // ===========================
+        
+        if (_combatBuffer.Count > 0)
+        {
+            var packet = new CombatStatePacket(_combatBuffer.ToArray());
+            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _combatBuffer.Clear();
+        }
+        
+        // ===========================
         // ========== NPCs ===========
         // ===========================
             
@@ -195,13 +206,6 @@ public sealed partial class ServerSyncSystem(
             var packet = new PlayerVitalsPacket(_playerVitalsBuffer.ToArray());
             sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             _playerVitalsBuffer.Clear();
-        }
-        
-        if (_combatBuffer.Count > 0)
-        {
-            var packet = new CombatStatePacket(_combatBuffer.ToArray());
-            sender.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            _combatBuffer.Clear();
         }
     }
 }

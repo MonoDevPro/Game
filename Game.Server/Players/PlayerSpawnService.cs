@@ -1,4 +1,5 @@
 using Arch.Core;
+using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.Server.ECS;
@@ -50,13 +51,16 @@ public sealed class PlayerSpawnService(
 
     public void DespawnPlayer(PlayerSession session)
     {
-        if (session.Entity == Entity.Null)
+        if (session.Entity == Entity.Null || !simulation.World.IsAlive(session.Entity))
             return;
         
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        simulation.DestroyPlayer(session.Entity);
+        if (!simulation.World.TryGet<NetworkId>(session.Entity, out var networkId))
+            return;
+        
+        simulation.DestroyPlayer(networkId.Value);
         logger.LogInformation("Despawned player {Name}", character.Name);
         session.Entity = Entity.Null;
     }

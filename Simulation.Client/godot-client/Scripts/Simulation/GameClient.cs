@@ -183,41 +183,38 @@ public partial class GameClient : Node2D
         
         var localPlayer = gameState.CurrentGameData.Value.LocalPlayer;
         var remotePlayers = gameState.CurrentGameData.Value.OtherPlayers;
-        SpawnPlayerVisual(localPlayer.ToPlayerData(), true);
+
+        _simulation?.CreateLocalPlayer(
+            localPlayer.ToPlayerData(), 
+            SpawnPlayerVisual(localPlayer.ToPlayerData()));
         
         foreach (var data in remotePlayers)
-            SpawnPlayerVisual(data.ToPlayerData(), false);
+        {
+            var playerData = data.ToPlayerData();
+            _simulation?.CreateRemotePlayer(playerData, SpawnPlayerVisual(playerData));
+        }
     }
 
     private void LoadNpcVisuals()
     {
         var bufferedNpcs = GameStateManager.Instance.ConsumeNpcSnapshots();
-        if (bufferedNpcs.Length == 0)
-        {
-            GD.Print("[GameClient] No buffered NPC snapshots to spawn during load");
-            return;
-        }
-
+        
         GD.Print($"[GameClient] Spawning {bufferedNpcs.Length} buffered NPCs");
+        
         foreach (var snapshot in bufferedNpcs)
-            SpawnNpcVisual(snapshot);
+        {
+            var npcData = snapshot.ToNpcData();
+            _simulation?.CreateNpc(npcData, SpawnNpcVisual(npcData));
+        }
     }
     
-    private void SpawnPlayerVisual(in PlayerData data, bool isLocal)
+    private PlayerVisual SpawnPlayerVisual(in PlayerData data)
     {
-        if (_simulation is null) return;
-        GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {isLocal})");
-        
         var playerVisual = PlayerVisual.Create();
+        
         playerVisual.Name = $"Player_{data.NetworkId}";
-
-        if (isLocal)
-        {
-            _simulation.SpawnLocalPlayer(data, playerVisual);
-            playerVisual.MakeCamera();
-            return;
-        }
-        _simulation.SpawnRemotePlayer(data, playerVisual);
+        
+        return playerVisual;
     }
 
     // ==================== Network Handlers ====================
@@ -307,7 +304,6 @@ public partial class GameClient : Node2D
     
     private void HandleSinglePlayerVitals(in PlayerVitalsSnapshot packet)
     {
-        
         if (_simulation is null)
             return;
         
@@ -346,18 +342,23 @@ public partial class GameClient : Node2D
 
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSnapshot snapshot)
     {
-        if (_simulation is null) return;
         var isLocal = snapshot.NetworkId == _localNetworkId;
         var playerData = snapshot.ToPlayerData();
-        SpawnPlayerVisual(playerData, isLocal);
-        UpdateStatus($"{snapshot.Name} joined");
+
+        if (isLocal)
+            _simulation?.CreateLocalPlayer(playerData, SpawnPlayerVisual(playerData));
+        else
+            _simulation?.CreateRemotePlayer(playerData, SpawnPlayerVisual(playerData));
+        
+        if (!isLocal) 
+            UpdateStatus($"{playerData.Name} joined");
         
         GD.Print($"[GameClient] Spawned player '{snapshot.Name}' (NetID: {snapshot.NetworkId})");
     }
     
     private void HandlePlayerDespawn(INetPeerAdapter peer, ref LeftPacket packet)
     {
-        _simulation?.DespawnPlayer(packet.NetworkId);
+        _simulation?.DestroyPlayer(packet.NetworkId);
         if (packet.NetworkId == _localNetworkId)
         {
             GD.PushWarning("[GameClient] You have been disconnected from the server!");
@@ -384,8 +385,7 @@ public partial class GameClient : Node2D
         }
 
         // Localiza entidade do atacante
-        if (!_simulation.TryGetPlayerEntity(packet.AttackerNetworkId, out var attackerEntity) &&
-            !_simulation.TryGetNpcEntity(packet.AttackerNetworkId, out attackerEntity))
+        if (!_simulation.TryGetAnyEntity(packet.AttackerNetworkId, out var attackerEntity))
         {
             GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
             return;
@@ -406,60 +406,43 @@ public partial class GameClient : Node2D
 
     private void HandleNpcSpawn(INetPeerAdapter peer, ref NpcSpawnPacket packet)
     {
-        if (_simulation is null || packet.Npcs.Length == 0)
+        if (_simulation is null)
             return;
         
         GD.Print($"[GameClient] Handling NpcSpawnPacket with {packet.Npcs.Length} NPCs");
 
         foreach (var npc in packet.Npcs)
-            SpawnNpcVisual(npc);
+        {
+            var npcData = npc.ToNpcData();
+            _simulation.CreateNpc(npcData, SpawnNpcVisual(npcData));
+        }
     }
 
     private void HandleNpcDespawn(INetPeerAdapter peer, ref NpcDespawnPacket packet)
     {
-        if (_simulation is null)
-            return;
-        
         GD.Print($"[GameClient] Handling NpcDespawnPacket for NetworkId {packet.NetworkId}");
-        
-        _simulation.DespawnNpc(packet.NetworkId);
+        _simulation?.DestroyNpc(packet.NetworkId);
     }
 
     private void HandleNpcState(INetPeerAdapter peer, ref NpcStatePacket packet)
     {
-        if (_simulation is null || packet.States.Length == 0)
-            return;
-        
         GD.Print($"[GameClient] Handling NpcStatePacket with {packet.States.Length} NPC states");
-
         foreach (var state in packet.States)
-            _simulation.ApplyNpcState(state.ToNpcStateData());
+            _simulation?.UpdateNpcState(state.ToNpcStateData());
     }
     
     private void HandleNpcVitals(INetPeerAdapter peer, ref NpcHealthPacket packet)
     {
-        if (_simulation is null || packet.Healths.Length == 0)
-            return;
-        
         GD.Print($"[GameClient] Handling NpcHealthPacket with {packet.Healths.Length} NPC vitals");
-
         foreach (var vitals in packet.Healths)
-            _simulation.ApplyNpcVitals(vitals.ToNpcHealthData());
+            _simulation?.UpdateNpcVitals(vitals.ToNpcHealthData());
     }
 
-    private void SpawnNpcVisual(NpcSpawnSnapshot spawnSnapshot)
+    private NpcVisual SpawnNpcVisual(NPCData npcData)
     {
-        if (_simulation is null)
-            return;
-
-        var npcData = spawnSnapshot.ToNpcData();
-
-        if (_simulation.TryGetNpcEntity(npcData.NetworkId, out _))
-            _simulation.DespawnNpc(npcData.NetworkId);
-
         var npcVisual = NpcVisual.Create();
         npcVisual.Name = $"Npc_{npcData.NetworkId}";
-        _simulation.SpawnNpc(npcData, npcVisual);
+        return npcVisual;
     }
     
     private void HandleChatMessage(INetPeerAdapter peer, ref ChatMessagePacket packet)
