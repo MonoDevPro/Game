@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
+using Game.Domain.Templates;
 using Game.ECS.Components;
 using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
@@ -151,6 +152,26 @@ public abstract class GameSimulation : GameSystem
                     data.PositionY,
                     data.Floor),
                 data.MapId);
+        return entity;
+    }
+
+    public Entity CreateNpcFromTemplate(NpcTemplate template, Position position, int floor, int mapId, int networkId)
+    {
+        if (NpcIndex.TryGetEntity(networkId, out var existingEntity))
+        {
+            if (!DestroyNpc(networkId))
+                return Entity.Null; // Falha ao destruir a entidade existente
+        }
+        
+        var entity = World.CreateNPC(template, position, floor, mapId, networkId);
+        NpcIndex.AddMapping(networkId, entity);
+        Systems.Get<SpatialSyncSystem>()
+            .OnEntityCreated(entity,
+                new SpatialPosition(
+                    position.X,
+                    position.Y,
+                    (sbyte)floor),
+                mapId);
         return entity;
     }
     

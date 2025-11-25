@@ -42,6 +42,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddScoped<AccountRegistrationService>();
             services.AddScoped<AccountCharacterService>();
             services.AddSingleton<PlayerSpawnService>();
+            services.AddSingleton<INpcRepository, NpcRepository>();
             services.AddSingleton<NpcSpawnService>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<ChatService>();
