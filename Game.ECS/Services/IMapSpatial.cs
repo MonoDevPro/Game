@@ -20,7 +20,7 @@ public interface IMapSpatial
     bool TryMove(SpatialPosition from, SpatialPosition to, in Entity entity);
 
     // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
-    int QueryAt(SpatialPosition position, ref UnsafeStack<Entity> results);
+    int QueryAt(SpatialPosition position, Span<Entity> results);
     int QueryArea(SpatialPosition min, SpatialPosition max, Span<Entity> results);
 
     // Versões por callback (sem buffers, com early-exit retornando false)

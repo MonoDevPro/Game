@@ -58,16 +58,19 @@ public class MapSpatial : IMapSpatial
         return Update(from, to, entity);
     }
 
-    public int QueryAt(SpatialPosition position, ref UnsafeStack<Entity> results)
+    public int QueryAt(SpatialPosition position, Span<Entity> results)
     {
         if (!_grid.TryGetValue(position, out var list))
             return 0;
 
         int count = 0;
-        foreach (var e in list)
+        
+        foreach (var entity in list)
         {
-            results.Push(e);
-            count++;
+            if (count >= results.Length)
+                return count;
+
+            results[count++] = entity;
         }
 
         return count;
