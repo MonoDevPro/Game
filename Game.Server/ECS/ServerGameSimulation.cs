@@ -66,10 +66,13 @@ public sealed class ServerGameSimulation : GameSimulation
         // 4. Combat processa estado de combate
         systems.Add(new CombatSystem(world, _loggerFactory.CreateLogger<CombatSystem>()));
         
-        // 4.1 Damage processa dano periódico (DoT) e dano adiado
-        systems.Add(new DamageSystem(world, MapService));
+        // 4.1 Damage processa dano periódico (DoT), dano adiado e cria projéteis
+        systems.Add(new DamageSystem(world, MapService, _loggerFactory.CreateLogger<DamageSystem>()));
         
-        // 4.2 Death processa morte de entidades
+        // 4.2 Projectile processa movimento e colisão de projéteis
+        systems.Add(new ProjectileSystem(world, MapService, _loggerFactory.CreateLogger<ProjectileSystem>()));
+        
+        // 4.3 Death processa morte de entidades
         systems.Add(new DeathSystem(world, _loggerFactory.CreateLogger<DeathSystem>()));
         
         // 5. Regeneration processa vida/mana/dano

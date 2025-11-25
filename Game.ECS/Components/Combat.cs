@@ -9,6 +9,47 @@ public struct Attackable { public float BaseSpeed; public float CurrentModifier;
 public struct AttackPower { public int Physical; public int Magical; }
 public struct Defense { public int Physical; public int Magical; }
 
+/// <summary>
+/// Define o estilo de ataque baseado na vocação.
+/// </summary>
+public enum AttackStyle : byte
+{
+    Melee = 0,   // Ataque corpo a corpo (Warriors)
+    Ranged = 1,  // Ataque à distância com projétil físico (Archers)
+    Magic = 2    // Ataque à distância com projétil mágico (Mages)
+}
+
+/// <summary>
+/// Componente que representa um projétil em movimento.
+/// </summary>
+public struct Projectile
+{
+    /// <summary>Entidade que disparou o projétil</summary>
+    public Entity Source;
+    
+    /// <summary>Posição alvo do projétil</summary>
+    public Position TargetPosition;
+    
+    /// <summary>Posição atual do projétil (float para interpolação suave)</summary>
+    public float CurrentX;
+    public float CurrentY;
+    
+    /// <summary>Velocidade do projétil em tiles por segundo</summary>
+    public float Speed;
+    
+    /// <summary>Dano a ser aplicado no impacto</summary>
+    public int Damage;
+    
+    /// <summary>Se true, usa ataque/defesa mágica; senão, física</summary>
+    public bool IsMagical;
+    
+    /// <summary>Tempo de vida restante do projétil em segundos (para evitar projéteis eternos)</summary>
+    public float RemainingLifetime;
+    
+    /// <summary>Se o projétil já atingiu algo</summary>
+    public bool HasHit;
+}
+
 /// Estado de combate básico (mantém cooldown)
 public struct CombatState
 {

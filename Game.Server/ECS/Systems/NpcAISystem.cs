@@ -7,21 +7,41 @@ using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
+/// <summary>
+/// Sistema de IA de NPCs. Gerencia transições de estado baseadas em:
+/// - Proximidade do alvo
+/// - Comportamento configurado (Passive, Defensive, Aggressive)
+/// - Vocação do NPC (melee vs ranged)
+/// 
+/// NPCs ranged (Archer, Mage) tentam manter distância ideal do alvo.
+/// </summary>
 public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logger = null)
     : GameSystem(world)
 {
+    /// <summary>
+    /// Fator de distância mínima para NPCs ranged (porcentagem do range de ataque).
+    /// NPCs ranged tentam ficar entre MinDistanceFactor e 1.0 do seu range.
+    /// </summary>
+    private const float MinDistanceFactor = 0.5f;
+    
     [Query]
-    [All<AIControlled, Position, NpcBehavior, NpcTarget, NpcPatrol, NpcAIState>]
+    [All<AIControlled, Position, NpcBehavior, NpcTarget, NpcPatrol, NpcAIState, NpcInfo>]
     private void UpdateAiState(
         in Entity entity,
         in Position position,
         in NpcBehavior behavior,
         in NpcTarget target,
         in NpcPatrol patrol,
+        in NpcInfo npcInfo,
         ref NpcAIState aiState,
         [Data] float deltaTime)
     {
         aiState.Advance(deltaTime);
+        
+        // Obtém range efetivo baseado na vocação
+        int vocationRange = CombatLogic.GetAttackRangeForVocation(npcInfo.VocationId);
+        float effectiveRange = MathF.Max(behavior.AttackRange, vocationRange);
+        bool isRanged = CombatLogic.IsRangedVocation(npcInfo.VocationId);
 
         switch (aiState.Current)
         {
@@ -44,7 +64,10 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
                     break;
                 }
 
-                float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
+                float attackRangeSq = effectiveRange * effectiveRange;
+                
+                // NPCs ranged: transita para atacar quando estiver em range
+                // NPCs melee: precisa estar bem próximo
                 if (target.DistanceSquared <= attackRangeSq)
                     Transition(ref aiState, NpcAIStateId.Attacking);
                 break;
@@ -64,9 +87,25 @@ public sealed partial class NpcAISystem(World world, ILogger<NpcAISystem>? logge
                     break;
                 }
 
-                float attackRangeSq = behavior.AttackRange * behavior.AttackRange * 1.2f;
+                float attackRangeSq = effectiveRange * effectiveRange * 1.2f;
                 if (target.DistanceSquared > attackRangeSq)
+                {
                     Transition(ref aiState, NpcAIStateId.Chasing);
+                    break;
+                }
+                
+                // NPCs ranged: se o alvo chegou muito perto, recuar
+                if (isRanged)
+                {
+                    float minDistanceSq = (effectiveRange * MinDistanceFactor) * (effectiveRange * MinDistanceFactor);
+                    if (target.DistanceSquared < minDistanceSq)
+                    {
+                        // Transita para um estado de "kiting" - implementado como Chasing reverso
+                        // O NpcMovementSystem trata isso movendo para longe quando muito perto
+                        logger?.LogDebug("[NpcAI] Ranged NPC {EntityId} enemy too close! Distance²: {DistSq}, MinDist²: {MinDistSq}", 
+                            entity.Id, target.DistanceSquared, minDistanceSq);
+                    }
+                }
                 break;
             }
             case NpcAIStateId.Returning:

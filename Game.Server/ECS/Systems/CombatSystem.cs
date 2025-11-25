@@ -32,31 +32,72 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
         }
     }
     
+    /// <summary>
+    /// Processa ataques de jogadores (PlayerControlled).
+    /// O tipo de ataque é determinado pela vocação do jogador.
+    /// </summary>
     [Query]
-    [All<Input>]
+    [All<PlayerControlled, Input, PlayerInfo>]
     [None<Dead, Attack>]
-    private void ProcessAttack(
+    private void ProcessPlayerAttack(
         in Entity e,
         in Attackable atk,
+        in PlayerInfo playerInfo,
         ref Input input,
         ref CombatState combat,
         ref DirtyFlags dirty,
         [Data] float deltaTime)
     {
+        ProcessEntityAttack(e, atk, playerInfo.VocationId, ref input, ref combat, ref dirty, deltaTime);
+    }
+    
+    /// <summary>
+    /// Processa ataques de NPCs (AIControlled).
+    /// O tipo de ataque é determinado pela vocação do NPC.
+    /// </summary>
+    [Query]
+    [All<AIControlled, Input, NpcInfo>]
+    [None<Dead, Attack>]
+    private void ProcessNpcAttack(
+        in Entity e,
+        in Attackable atk,
+        in NpcInfo npcInfo,
+        ref Input input,
+        ref CombatState combat,
+        ref DirtyFlags dirty,
+        [Data] float deltaTime)
+    {
+        ProcessEntityAttack(e, atk, npcInfo.VocationId, ref input, ref combat, ref dirty, deltaTime);
+    }
+    
+    /// <summary>
+    /// Lógica compartilhada para processar ataque de qualquer entidade.
+    /// </summary>
+    private void ProcessEntityAttack(
+        in Entity e,
+        in Attackable atk,
+        byte vocationId,
+        ref Input input,
+        ref CombatState combat,
+        ref DirtyFlags dirty,
+        float deltaTime)
+    {
         // Reduz cooldown (helper mantém clamped)
         CombatLogic.ReduceCooldown(ref combat, deltaTime);
         
-        // Se o player não ativou a flag de ataque, sair
+        // Se a entidade não ativou a flag de ataque, sair
         if ((input.Flags & InputFlags.BasicAttack) == 0) return;
         
-        const AttackType attackType = AttackType.Basic;
+        // Determina o tipo de ataque baseado na vocação
+        AttackType attackType = CombatLogic.GetBasicAttackTypeForVocation(vocationId);
         
-        logger?.LogDebug("[AttackSystem] Entity triggered {Attack}. Cooldown: {Cooldown}", attackType, combat.LastAttackTime);
+        logger?.LogDebug("[CombatSystem] Entity triggered {Attack} (Vocation: {Vocation}). Cooldown: {Cooldown}", 
+            attackType, vocationId, combat.LastAttackTime);
         
         // Se estiver em cooldown, sair
         if (!CombatLogic.CheckAttackCooldown(in combat))
         {
-            logger?.LogDebug("[AttackSystem] Attack blocked by cooldown");
+            logger?.LogDebug("[CombatSystem] Attack blocked by cooldown");
             return;
         }
         

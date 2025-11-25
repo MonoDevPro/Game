@@ -7,10 +7,19 @@ using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
+/// <summary>
+/// Sistema de movimento de NPCs. Gera inputs de movimento baseados no estado de IA.
+/// NPCs ranged (Archer, Mage) tentam manter distância ideal do alvo.
+/// </summary>
 public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSystem>? logger = null) : GameSystem(world)
 {
+    /// <summary>
+    /// Fator de distância mínima para NPCs ranged (porcentagem do range de ataque).
+    /// </summary>
+    private const float MinDistanceFactor = 0.5f;
+    
     [Query]
-    [All<AIControlled, Input, Position, NpcAIState, NpcTarget, NpcPatrol, NpcBehavior, DirtyFlags>]
+    [All<AIControlled, Input, Position, NpcAIState, NpcTarget, NpcPatrol, NpcBehavior, NpcInfo, DirtyFlags>]
     private void DriveMovement(
         ref Input input,
         in Position position,
@@ -18,20 +27,42 @@ public sealed partial class NpcMovementSystem(World world, ILogger<NpcMovementSy
         in NpcTarget target,
         in NpcPatrol patrol,
         in NpcBehavior behavior,
+        in NpcInfo npcInfo,
         ref DirtyFlags dirty)
     {
         sbyte desiredX = 0;
         sbyte desiredY = 0;
+        
+        // Obtém range efetivo baseado na vocação
+        int vocationRange = CombatLogic.GetAttackRangeForVocation(npcInfo.VocationId);
+        float effectiveRange = MathF.Max(behavior.AttackRange, vocationRange);
+        bool isRanged = CombatLogic.IsRangedVocation(npcInfo.VocationId);
 
         switch (aiState.Current)
         {
             case NpcAIStateId.Chasing when target.HasTarget:
             {
-                float attackRangeSq = behavior.AttackRange * behavior.AttackRange;
+                float attackRangeSq = effectiveRange * effectiveRange;
                 if (target.DistanceSquared > attackRangeSq)
                 {
                     (desiredX, desiredY) = PositionLogic.GetDirectionTowards(in position, target.LastKnownPosition);
                 }
+                break;
+            }
+            case NpcAIStateId.Attacking when target.HasTarget && isRanged:
+            {
+                // NPCs ranged: se o alvo chegou muito perto, recuar (kiting)
+                float minDistanceSq = (effectiveRange * MinDistanceFactor) * (effectiveRange * MinDistanceFactor);
+                if (target.DistanceSquared < minDistanceSq)
+                {
+                    // Move na direção oposta ao alvo
+                    var (toTargetX, toTargetY) = PositionLogic.GetDirectionTowards(in position, target.LastKnownPosition);
+                    desiredX = (sbyte)(-toTargetX);
+                    desiredY = (sbyte)(-toTargetY);
+                    
+                    logger?.LogDebug("[NpcMovement] Ranged NPC kiting! Moving away from target.");
+                }
+                // Se está em range ideal, fica parado enquanto ataca
                 break;
             }
             case NpcAIStateId.Returning:
