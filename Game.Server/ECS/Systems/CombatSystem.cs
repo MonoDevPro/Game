@@ -88,18 +88,12 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
         // Se a entidade não ativou a flag de ataque, sair
         if ((input.Flags & InputFlags.BasicAttack) == 0) return;
         
+        // Se estiver em cooldown, sair silenciosamente
+        if (!CombatLogic.CheckAttackCooldown(in combat))
+            return;
+        
         // Determina o tipo de ataque baseado na vocação
         AttackType attackType = CombatLogic.GetBasicAttackTypeForVocation(vocationId);
-        
-        logger?.LogDebug("[CombatSystem] Entity triggered {Attack} (Vocation: {Vocation}). Cooldown: {Cooldown}", 
-            attackType, vocationId, combat.LastAttackTime);
-        
-        // Se estiver em cooldown, sair
-        if (!CombatLogic.CheckAttackCooldown(in combat))
-        {
-            logger?.LogDebug("[CombatSystem] Attack blocked by cooldown");
-            return;
-        }
         
         combat.LastAttackTime = CombatLogic
             .CalculateAttackCooldownSeconds(
@@ -108,6 +102,9 @@ public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? log
                 externalMultiplier: 1f);
         
         dirty.MarkDirty(DirtyComponentType.Combat);
+        
+        logger?.LogDebug("[CombatSystem] Entity attacking with {Attack} (Vocation: {Vocation}). Next cooldown: {Cooldown:F2}s", 
+            attackType, vocationId, combat.LastAttackTime);
         
         World.Add<Attack>(e, new Attack
         {

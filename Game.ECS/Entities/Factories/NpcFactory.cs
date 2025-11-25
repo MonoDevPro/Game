@@ -49,7 +49,7 @@ public static partial class EntityFactory
             {
                 HomePosition = new Position { X = data.PositionX, Y = data.PositionY, },
                 Destination = new Position { X = data.PositionX, Y = data.PositionY, }, 
-                Radius = 5f, 
+                Radius = behaviorData.PatrolRadius,
                 HasDestination = false
             },
             NpcPath.CreateDefault(),

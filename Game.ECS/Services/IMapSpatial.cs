@@ -1,5 +1,4 @@
 using Arch.Core;
-using Arch.LowLevel;
 using Game.ECS.Components;
 
 namespace Game.ECS.Services;
@@ -22,6 +21,11 @@ public interface IMapSpatial
     // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
     int QueryAt(SpatialPosition position, Span<Entity> results);
     int QueryArea(SpatialPosition min, SpatialPosition max, Span<Entity> results);
+    
+    /// <summary>
+    /// Query otimizada para área circular (ideal para percepção de NPCs).
+    /// </summary>
+    int QueryCircle(SpatialPosition center, int radius, Span<Entity> results);
 
     // Versões por callback (sem buffers, com early-exit retornando false)
     void ForEachAt(SpatialPosition position, Func<Entity, bool> visitor);

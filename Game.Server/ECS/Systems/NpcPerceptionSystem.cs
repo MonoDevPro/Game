@@ -13,7 +13,7 @@ public sealed partial class NpcPerceptionSystem(
     ILogger<NpcPerceptionSystem>? logger = null)
     : GameSystem(world)
 {
-    private const int MaxSpatialResults = 64;
+    private const int MaxSpatialResults = 32;
 
     [Query]
     [All<AIControlled, Position, MapId, NpcBehavior, NpcTarget>]
@@ -57,11 +57,10 @@ public sealed partial class NpcPerceptionSystem(
 
         var spatial = mapService.GetMapSpatial(mapId.Value);
         int radius2D = Math.Max(1, (int)MathF.Ceiling(behavior.VisionRange));
-        var min = new SpatialPosition(position.X - radius2D, position.Y - radius2D, floor.Level);
-        var max = new SpatialPosition(position.X + radius2D, position.Y + radius2D, floor.Level);
+        var center = new SpatialPosition(position.X, position.Y, floor.Level);
 
         Span<Entity> results = stackalloc Entity[MaxSpatialResults];
-        int found = spatial.QueryArea(min, max, results);
+        int found = spatial.QueryCircle(center, radius2D, results);
 
         Entity best = Entity.Null;
         float bestDistance = float.MaxValue;

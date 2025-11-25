@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using Arch.Core;
 using Game.ECS.Components;
 using Game.ECS.Services;
 
@@ -256,5 +257,211 @@ public sealed class AStarPathfinder
         }
         
         return result;
+    }
+    
+    /// <summary>
+    /// Versão que considera entidades como obstáculos.
+    /// </summary>
+    /// <param name="grid">Grid do mapa para verificar bloqueios de terreno</param>
+    /// <param name="spatial">Spatial para verificar entidades ocupando tiles</param>
+    /// <param name="sourceEntity">Entidade que está buscando o path (será ignorada como obstáculo)</param>
+    /// <param name="targetEntity">Entidade alvo (será ignorada como obstáculo, para poder chegar até ela)</param>
+    /// <param name="start">Posição inicial</param>
+    /// <param name="goal">Posição destino</param>
+    /// <param name="floor">Nível/andar do mapa</param>
+    /// <param name="npcPath">Buffer para armazenar o caminho</param>
+    /// <param name="allowDiagonal">Se permite movimento diagonal</param>
+    /// <returns>Resultado do pathfinding</returns>
+    public static PathfindingResult FindPath(
+        IMapGrid grid,
+        IMapSpatial spatial,
+        Entity sourceEntity,
+        Entity targetEntity,
+        Position start,
+        Position goal,
+        sbyte floor,
+        ref NpcPath npcPath,
+        bool allowDiagonal = false)
+    {
+        // Buffer temporário para o caminho
+        Span<Position> tempPath = stackalloc Position[NpcPath.MaxWaypoints];
+        
+        var result = FindPathWithEntities(grid, spatial, sourceEntity, targetEntity, start, goal, floor, tempPath, out int pathLength, allowDiagonal);
+        
+        if (result == PathfindingResult.Success)
+        {
+            // Copia para o NpcPath
+            npcPath.ClearPath();
+            for (int i = 0; i < pathLength && i < NpcPath.MaxWaypoints; i++)
+            {
+                npcPath.SetWaypoint(i, tempPath[i]);
+            }
+            npcPath.WaypointCount = (byte)Math.Min(pathLength, NpcPath.MaxWaypoints);
+            npcPath.CurrentIndex = 0;
+            npcPath.NeedsRecalculation = false;
+            npcPath.LastTargetPosition = goal;
+        }
+        
+        return result;
+    }
+    
+    /// <summary>
+    /// Calcula o caminho mais curto considerando entidades como obstáculos.
+    /// </summary>
+    private static PathfindingResult FindPathWithEntities(
+        IMapGrid grid,
+        IMapSpatial spatial,
+        Entity sourceEntity,
+        Entity targetEntity,
+        Position start,
+        Position goal,
+        sbyte floor,
+        Span<Position> path,
+        out int pathLength,
+        bool allowDiagonal = false)
+    {
+        pathLength = 0;
+        
+        // Early exit: mesma posição
+        if (start == goal)
+            return PathfindingResult.AlreadyAtDestination;
+        
+        // Early exit: muito próximo (1 tile)
+        int distSq = (goal.X - start.X) * (goal.X - start.X) + (goal.Y - start.Y) * (goal.Y - start.Y);
+        if (distSq <= 2)
+        {
+            var goalSpatial = new SpatialPosition(goal.X, goal.Y, floor);
+            // Verifica se o tile está livre (terreno e entidades)
+            if (!grid.IsBlocked(goalSpatial) && !HasBlockingEntity(spatial, goalSpatial, sourceEntity, targetEntity))
+            {
+                path[0] = goal;
+                pathLength = 1;
+                return PathfindingResult.Success;
+            }
+        }
+        
+        // Early exit: destino bloqueado por terreno
+        if (grid.IsBlocked(new SpatialPosition(goal.X, goal.Y, floor)))
+            return PathfindingResult.DestinationBlocked;
+        
+        // Early exit: origem fora dos limites
+        if (!grid.InBounds(new SpatialPosition(start.X, start.Y, floor)))
+            return PathfindingResult.OutOfBounds;
+        
+        var directions = allowDiagonal ? AllDirections : CardinalDirections;
+        
+        // Estruturas para o A*
+        var nodes = new Dictionary<Position, PathNode>(MaxExpandedNodes);
+        var openList = new PriorityQueue<Position, int>(MaxExpandedNodes);
+        
+        // Inicializa nó inicial
+        int startH = PathNode.ManhattanDistance(start, goal) * CardinalCost;
+        var startNode = new PathNode(start, 0, startH, start);
+        nodes[start] = startNode;
+        openList.Enqueue(start, startNode.FCost);
+        
+        int expandedCount = 0;
+        
+        while (openList.Count > 0 && expandedCount < MaxExpandedNodes)
+        {
+            var currentPos = openList.Dequeue();
+            
+            if (!nodes.TryGetValue(currentPos, out var currentNode) || currentNode.IsClosed)
+                continue;
+            
+            currentNode.IsClosed = true;
+            nodes[currentPos] = currentNode;
+            expandedCount++;
+            
+            // Chegou ao destino!
+            if (currentPos == goal)
+            {
+                return ReconstructPath(nodes, goal, path, out pathLength);
+            }
+            
+            // Expande vizinhos
+            for (int i = 0; i < directions.Length; i++)
+            {
+                var (dx, dy) = directions[i];
+                var neighborPos = new Position(currentPos.X + dx, currentPos.Y + dy);
+                var neighborSpatial = new SpatialPosition(neighborPos.X, neighborPos.Y, floor);
+                
+                // Verifica se está nos limites
+                if (!grid.InBounds(neighborSpatial))
+                    continue;
+                
+                // Verifica bloqueio por terreno
+                if (grid.IsBlocked(neighborSpatial))
+                    continue;
+                
+                // Verifica bloqueio por entidades (exceto se for a posição do goal - alvo)
+                if (neighborPos != goal && HasBlockingEntity(spatial, neighborSpatial, sourceEntity, targetEntity))
+                    continue;
+                
+                // Se diagonal, verifica se os tiles adjacentes estão livres (evita cortar cantos)
+                if (allowDiagonal && dx != 0 && dy != 0)
+                {
+                    var adj1 = new SpatialPosition(currentPos.X + dx, currentPos.Y, floor);
+                    var adj2 = new SpatialPosition(currentPos.X, currentPos.Y + dy, floor);
+                    
+                    if (grid.IsBlocked(adj1) || grid.IsBlocked(adj2))
+                        continue;
+                    
+                    // Também verifica entidades nas diagonais
+                    if (HasBlockingEntity(spatial, adj1, sourceEntity, targetEntity) ||
+                        HasBlockingEntity(spatial, adj2, sourceEntity, targetEntity))
+                        continue;
+                }
+                
+                // Calcula custo
+                int moveCost = (dx != 0 && dy != 0) ? DiagonalCost : CardinalCost;
+                int tentativeG = currentNode.GCost + moveCost;
+                
+                // Verifica se já temos um caminho melhor para este nó
+                if (nodes.TryGetValue(neighborPos, out var existingNode))
+                {
+                    if (existingNode.IsClosed || tentativeG >= existingNode.GCost)
+                        continue;
+                }
+                
+                // Atualiza ou cria nó
+                int h = PathNode.ManhattanDistance(neighborPos, goal) * CardinalCost;
+                var newNode = new PathNode(neighborPos, tentativeG, h, currentPos);
+                nodes[neighborPos] = newNode;
+                
+                // Adiciona à open list
+                openList.Enqueue(neighborPos, newNode.FCost);
+            }
+        }
+        
+        // Não encontrou caminho
+        return expandedCount >= MaxExpandedNodes 
+            ? PathfindingResult.MaxNodesReached 
+            : PathfindingResult.NoPath;
+    }
+    
+    /// <summary>
+    /// Verifica se há uma entidade bloqueadora em uma posição.
+    /// Ignora a entidade fonte e o alvo.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasBlockingEntity(
+        IMapSpatial spatial,
+        SpatialPosition position,
+        Entity sourceEntity,
+        Entity targetEntity)
+    {
+        Span<Entity> entities = stackalloc Entity[4];
+        int count = spatial.QueryAt(position, entities);
+        
+        for (int i = 0; i < count; i++)
+        {
+            var entity = entities[i];
+            // Ignora a própria entidade e o alvo
+            if (entity != sourceEntity && entity != targetEntity)
+                return true;
+        }
+        
+        return false;
     }
 }

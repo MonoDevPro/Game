@@ -25,7 +25,7 @@ public sealed partial class NpcPathfindingSystem(
     ILogger<NpcPathfindingSystem>? logger = null) : GameSystem(world)
 {
     /// <summary>Máximo de recálculos de path por tick (rate limiting)</summary>
-    private const int MaxRecalculationsPerTick = 5;
+    private const int MaxRecalculationsPerTick = 1;
     
     /// <summary>Contador de recálculos no tick atual</summary>
     private int _recalculationsThisTick;
@@ -52,8 +52,12 @@ public sealed partial class NpcPathfindingSystem(
         ref NpcPath path,
         [Data] float deltaTime)
     {
-        // Atualiza timer
+        // Atualiza timers
         path.RecalculateTimer -= deltaTime;
+        
+        // Incrementa stuck timer se tem path ativo
+        if (path.HasPath && !path.IsPathComplete)
+            path.StuckTimer += deltaTime;
         
         // Verifica se precisa calcular um novo path
         bool needsPath = ShouldCalculatePath(in aiState, in target, in patrol, in path, in position);
@@ -72,6 +76,12 @@ public sealed partial class NpcPathfindingSystem(
         // Determina o destino baseado no estado da IA
         Position destination = GetDestinationForState(in aiState, in target, in patrol);
         
+        logger?.LogDebug(
+            "[NpcPathfinding] Entity {EntityId}: State={State}, HasTarget={HasTarget}, TargetPos=({TX},{TY}), Destination=({DX},{DY})",
+            entity.Id, aiState.Current, target.HasTarget, 
+            target.LastKnownPosition.X, target.LastKnownPosition.Y,
+            destination.X, destination.Y);
+        
         // Se destino é inválido ou muito próximo, limpa o path
         int distSq = (destination.X - position.X) * (destination.X - position.X) + 
                      (destination.Y - position.Y) * (destination.Y - position.Y);
@@ -84,18 +94,16 @@ public sealed partial class NpcPathfindingSystem(
             return;
         }
         
-        // Obtém o grid do mapa
+        // Obtém o grid e spatial do mapa
         var grid = mapService.GetMapGrid(mapId.Value);
-        if (grid == null)
-        {
-            logger?.LogWarning("[NpcPathfinding] Grid não encontrado para MapId={MapId}", mapId.Value);
-            path.ClearPath();
-            return;
-        }
+        var spatial = mapService.GetMapSpatial(mapId.Value);
         
-        // Calcula o path usando A*
+        // Calcula o path usando A* (considerando outras entidades como obstáculos)
         var result = AStarPathfinder.FindPath(
             grid,
+            spatial,
+            entity,           // Entidade fonte (será ignorada como obstáculo)
+            target.Target,    // Entidade alvo (será ignorada como obstáculo)
             position,
             destination,
             floor.Level,
@@ -104,6 +112,7 @@ public sealed partial class NpcPathfindingSystem(
         
         _recalculationsThisTick++;
         path.RecalculateTimer = NpcPath.RecalculateInterval;
+        path.NeedsRecalculation = false;
         
         switch (result)
         {
@@ -146,63 +155,58 @@ public sealed partial class NpcPathfindingSystem(
         in NpcPath path,
         in Position position)
     {
-        // Se marcado explicitamente para recálculo
+        // PRIMEIRO: Verifica estado - estados que não precisam de path
+        // Isso DEVE vir antes de qualquer outra verificação para evitar
+        // calcular paths para destinos inválidos (0,0)
+        if (aiState.Current is NpcAIStateId.Idle)
+            return false;
+        
+        // Se marcado explicitamente para recálculo (primeira vez ou forçado)
         if (path.NeedsRecalculation)
             return true;
         
-        // Se timer expirou
-        if (path.RecalculateTimer <= 0f)
+        // Se está stuck (não progride no path), força recálculo
+        if (path.IsStuck)
             return true;
         
-        // Verifica por estado
-        switch (aiState.Current)
+        // Para Chasing/Attacking, precisa ter alvo
+        if (aiState.Current is NpcAIStateId.Chasing or NpcAIStateId.Attacking)
         {
-            case NpcAIStateId.Chasing:
-            case NpcAIStateId.Attacking:
-                if (!target.HasTarget)
-                    return false;
-                
-                // Se alvo se moveu significativamente
-                int targetDistSq = (target.LastKnownPosition.X - path.LastTargetPosition.X) * 
-                                   (target.LastKnownPosition.X - path.LastTargetPosition.X) +
-                                   (target.LastKnownPosition.Y - path.LastTargetPosition.Y) * 
-                                   (target.LastKnownPosition.Y - path.LastTargetPosition.Y);
-                
-                if (targetDistSq >= NpcPath.TargetMovedThresholdSq)
-                    return true;
-                break;
-                
-            case NpcAIStateId.Returning:
-                // Recalcula se não tem path válido
-                if (!path.HasPath)
-                    return true;
-                break;
-                
-            case NpcAIStateId.Patrolling:
-                if (!patrol.HasDestination)
-                    return false;
-                
-                // Recalcula se não tem path válido
-                if (!path.HasPath)
-                    return true;
-                break;
-                
-            case NpcAIStateId.Idle:
-            default:
-                // Não precisa de path
+            if (!target.HasTarget)
                 return false;
+            
+            // Se não tem path válido, precisa calcular
+            if (!path.HasPath)
+                return true;
+            
+            // Se path completou, precisa recalcular
+            if (path.IsPathComplete)
+                return true;
+            
+            // Se timer não expirou e tem path válido, não recalcula
+            if (path.RecalculateTimer > 0f)
+                return false;
+            
+            // Timer expirou - verifica se alvo se moveu significativamente
+            // Compara destino ATUAL do path com posição ATUAL do alvo
+            var currentDestination = path.GetWaypoint(path.WaypointCount - 1);
+            int targetDistSq = (target.LastKnownPosition.X - currentDestination.X) * 
+                               (target.LastKnownPosition.X - currentDestination.X) +
+                               (target.LastKnownPosition.Y - currentDestination.Y) * 
+                               (target.LastKnownPosition.Y - currentDestination.Y);
+            
+            return targetDistSq >= NpcPath.TargetMovedThresholdSq;
         }
         
-        // Verifica se o path atual ainda é válido (não completou)
-        if (path.HasPath && !path.IsPathComplete)
+        // Para Returning/Patrolling
+        if (aiState.Current is NpcAIStateId.Returning or NpcAIStateId.Patrolling)
         {
-            // Verifica se chegou no waypoint atual
-            var currentWaypoint = path.GetCurrentWaypoint();
-            if (position.X == currentWaypoint.X && position.Y == currentWaypoint.Y)
-            {
-                // Não precisa recalcular, apenas avançar (feito no NpcMovementSystem)
-                return false;
-            }
+            // Se não tem path válido, precisa calcular
+            if (!path.HasPath)
+                return true;
+            
+            // Se path completou, pode precisar recalcular
+            return path.IsPathComplete;
         }
         
         return false;

@@ -13,7 +13,7 @@ public static partial class CombatLogic
     // ============================================
     // Constantes de Range por Vocação
     // ============================================
-    private const int WarriorAttackRange = 2;   // Melee: 1-2 tiles
+    private const int WarriorAttackRange = 1;   // Melee: 1-2 tiles
     private const int ArcherAttackRange = 7;    // Ranged físico: 5-8 tiles
     private const int MageAttackRange = 8;      // Ranged mágico: 6-10 tiles
     private const float ProjectileSpeed = 8f;   // Velocidade padrão de projéteis (tiles/s)
