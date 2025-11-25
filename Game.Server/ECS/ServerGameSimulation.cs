@@ -7,6 +7,7 @@ using Game.ECS.Services;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
+using Game.Server.Npc;
 
 namespace Game.Server.ECS;
 
@@ -18,14 +19,17 @@ public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly INpcRepository _npcRepository;
     
     public ServerGameSimulation(
         INetworkManager network, 
         ILoggerFactory factory, 
-        IEnumerable<Map> maps) : base(mapService: new MapService())
+        IEnumerable<Map> maps,
+        INpcRepository npcRepository) : base(mapService: new MapService())
     {
         _networkManager = network;
         _loggerFactory = factory;
+        _npcRepository = npcRepository;
         
         // Registra os mapas fornecidoss
         foreach (var map in maps)
@@ -52,14 +56,20 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // ⭐ Ordem importante:
         // 0. NPC AI processa percepção, estado e decisões antes dos inputs
-        systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
-        systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
+        // systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
+        // systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
+        
+        // New Pipeline
+        systems.Add(new NpcDecisionSystem(world, _npcRepository, MapService, _loggerFactory.CreateLogger<NpcDecisionSystem>()));
         
         // 0.5 NPC Pathfinding calcula caminhos A* (ANTES do NpcMovementSystem)
-        systems.Add(new NpcPathfindingSystem(world, MapService, _loggerFactory.CreateLogger<NpcPathfindingSystem>()));
+        // systems.Add(new NpcPathfindingSystem(world, MapService, _loggerFactory.CreateLogger<NpcPathfindingSystem>()));
+        systems.Add(new NpcNavigationSystem(world, MapService, _loggerFactory.CreateLogger<NpcNavigationSystem>()));
         
         // 0.6 NPC Movement usa waypoints do pathfinding para gerar inputs
-        systems.Add(new NpcMovementSystem(world, _loggerFactory.CreateLogger<NpcMovementSystem>()));
+        // systems.Add(new NpcMovementSystem(world, _loggerFactory.CreateLogger<NpcMovementSystem>()));
+        systems.Add(new NpcMotorSystem(world, _loggerFactory.CreateLogger<NpcMotorSystem>()));
+        
         systems.Add(new NpcCombatSystem(world, _loggerFactory.CreateLogger<NpcCombatSystem>()));
 
         // 1. Input processa entrada do jogador

@@ -38,5 +38,8 @@ public static partial class GameArchetypes
         Component<NpcBehavior>.ComponentType,
         Component<NpcPatrol>.ComponentType,
         Component<NpcPath>.ComponentType,
+        Component<NpcType>.ComponentType,
+        Component<NpcBrain>.ComponentType,
+        Component<NavigationAgent>.ComponentType,
     ];
 }

@@ -34,6 +34,9 @@ public static partial class EntityFactory
             new DirtyFlags { },
             new AIControlled { },
             new NpcInfo { GenderId = (byte)template.Gender, VocationId = (byte)template.Vocation },
+            new NpcType { TemplateId = template.Id },
+            new NpcBrain { CurrentState = NpcState.Idle, StateTimer = 0f, CurrentTarget = Entity.Null },
+            new NavigationAgent { Destination = null, StoppingDistance = 0f, IsPathPending = false },
             new NpcAIState { Current = NpcAIStateId.Idle, StateTime = 0f },
             new NpcTarget { Target = Entity.Null, TargetNetworkId = -1, LastKnownPosition = default, DistanceSquared = 0f },
             new NpcBehavior
