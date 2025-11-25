@@ -76,12 +76,6 @@ public sealed partial class NpcPathfindingSystem(
         // Determina o destino baseado no estado da IA
         Position destination = GetDestinationForState(in aiState, in target, in patrol);
         
-        logger?.LogDebug(
-            "[NpcPathfinding] Entity {EntityId}: State={State}, HasTarget={HasTarget}, TargetPos=({TX},{TY}), Destination=({DX},{DY})",
-            entity.Id, aiState.Current, target.HasTarget, 
-            target.LastKnownPosition.X, target.LastKnownPosition.Y,
-            destination.X, destination.Y);
-        
         // Se destino é inválido ou muito próximo, limpa o path
         int distSq = (destination.X - position.X) * (destination.X - position.X) + 
                      (destination.Y - position.Y) * (destination.Y - position.Y);
@@ -93,6 +87,12 @@ public sealed partial class NpcPathfindingSystem(
             path.RecalculateTimer = NpcPath.RecalculateInterval;
             return;
         }
+        
+        logger?.LogDebug(
+            "[NpcPathfinding] Entity {EntityId}: State={State}, HasTarget={HasTarget}, TargetPos=({TX},{TY}), Destination=({DX},{DY})",
+            entity.Id, aiState.Current, target.HasTarget, 
+            target.LastKnownPosition.X, target.LastKnownPosition.Y,
+            destination.X, destination.Y);
         
         // Obtém o grid e spatial do mapa
         var grid = mapService.GetMapGrid(mapId.Value);
