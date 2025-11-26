@@ -24,7 +24,6 @@ public static partial class EntityFactory
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
             new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
             new Walkable { BaseSpeed = 3f, CurrentModifier = data.MovementSpeed },
-            // new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
             new CombatStats 
             { 
                 AttackPower = data.PhysicalAttack,
@@ -36,8 +35,6 @@ public static partial class EntityFactory
             },
             new CombatState 
             { 
-                InCombat = false, 
-                TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat,
                 AttackCooldownTimer = 0f,
                 IsCasting = false,
                 CastTimer = 0f

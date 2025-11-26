@@ -18,7 +18,6 @@ public static partial class EntityBuilder
         ref var mana = ref world.Get<Mana>(entity);
         ref var combatStats = ref world.Get<CombatStats>(entity);
         ref var walkable = ref world.Get<Walkable>(entity);
-        ref var attackable = ref world.Get<Attackable>(entity);
 
         return new NPCData
         {

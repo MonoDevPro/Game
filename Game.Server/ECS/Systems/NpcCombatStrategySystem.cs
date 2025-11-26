@@ -22,7 +22,7 @@ public sealed partial class NpcCombatStrategySystem(World world) : GameSystem(wo
         [Data] float deltaTime)
     {
         // Reduz cooldowns
-        if (state.AttackCooldownTimer > 0) state.AttackCooldownTimer -= deltaTime;
+        state.AttackCooldownTimer = MathF.Max(0f, state.AttackCooldownTimer - deltaTime);
 
         // Se não temos alvo, não há estratégia de combate
         if (brain.CurrentState != NpcState.Combat || !World.IsAlive(brain.CurrentTarget)) 

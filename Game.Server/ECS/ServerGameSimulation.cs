@@ -69,7 +69,7 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new MovementSystem(world, MapService));
         
         // 4. Combat processa estado de combate
-        // systems.Add(new CombatSystem(world, _loggerFactory.CreateLogger<CombatSystem>()));
+        systems.Add(new CombatSystem(world, MapService, _loggerFactory.CreateLogger<CombatSystem>()));
         systems.Add(new CombatResolutionSystem(world));
         
         // 4.1 Damage processa dano periódico (DoT), dano adiado e cria projéteis

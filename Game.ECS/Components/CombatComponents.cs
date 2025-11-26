@@ -20,14 +20,11 @@ public struct CombatStats
 // Gerencia o estado temporal do combate (Cooldowns)
 public struct CombatState
 {
-    // Legacy/Regen support
-    public bool InCombat;
-    public float TimeSinceLastHit;
-
     // New fields
-    public float AttackCooldownTimer; // Tempo até poder atacar de novo
-    public bool IsCasting;
-    public float CastTimer;
+    public float AttackCooldownTimer;   // Tempo até poder atacar de novo
+    public bool InCooldown;             // Se está em cooldown de ataque
+    public float CastTimer;             // Tempo restante de cast (se aplicável)
+    public bool IsCasting;              // Se está em cast
 }
 
 // O "Evento" ou "Intenção". 
@@ -35,6 +32,7 @@ public struct CombatState
 public struct AttackCommand
 {
     public Entity Target;
+    public Position TargetPosition; // Posição alvo (para ataques à distância)
+    public AttackStyle Style; // Estilo de ataque (Melee, Ranged, Magic)
     public bool IsReady; // Flag processada pelo sistema
-    // Futuro: int SkillId; 
 }

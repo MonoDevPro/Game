@@ -27,7 +27,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
     private void ProcessReviveTimer(
         in Entity entity,
         ref Revive revive,
-        ref CombatState combat,
         ref Health health,
         ref Mana mana,
         ref DirtyFlags dirty,
@@ -38,10 +37,6 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         // ✅ Tempo de revive expirou - reviver jogador
         if (revive.TimeRemaining <= 0f)
         {
-            combat.InCombat = false;
-            combat.AttackCooldownTimer = 0f;
-            combat.TimeSinceLastHit = 0f;
-            
             // ✅ Usa a extensão para marcar mudança de posição
             World.SetPosition(entity, revive.SpawnPosition);
         

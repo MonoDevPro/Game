@@ -79,38 +79,36 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     }
 
     [Query]
-    [All<NetworkId, Attack>]
-    private void SyncAttack(
-        in Entity e,
-        ref Attack action,
-        [Data] float deltaTime)
-    {
-        action.RemainingDuration -= deltaTime;
-        // Enquanto a animação está ativa, o visual já foi atualizado
-        // Aqui você pode adicionar lógica extra como:
-        // - Efeitos de impacto
-        // - Números de dano flutuando
-        // - Shake de câmera
-        // - Sons
-        if (action.RemainingDuration <= 0)
-            World.Remove<Attack>(e);
-    }
-    
-    [Query]
     [All<NetworkId>] // ✅ Sem tag específica - aplica a TODOS
     private void SyncAnimations(
         in Entity e, 
+        ref CombatState combatState,
         in NetworkId networkId,
         in Velocity velocity, 
-        in Facing facing)
+        in Facing facing,
+        [Data] in float deltaTime)
     {
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
+        
+        bool isAttacking = false;
+
+        if (World.Has<AttackCommand>(e))
+            if (combatState.CastTimer > 0f)
+            {
+                isAttacking = true;
+                combatState.CastTimer -= deltaTime;
+                if (combatState.CastTimer < 0f)
+                    combatState.CastTimer = 0f;
+            }
 
         var isDead = World.Has<Dead>(e);
-        var isAttacking = World.Has<Attack>(e);
         var isMoving = velocity.Speed > 0f;
         visual.UpdateAnimationState(facing, isMoving, isAttacking, isDead);
+        
+        if (isAttacking)
+            World.Remove<AttackCommand>(e);
+        
     }
     
     [Query]

@@ -135,26 +135,6 @@ public abstract class GameSimulation : GameSystem
         return entity;
     }
 
-    public Entity CreateNpc(in NPCData data, NpcBehaviorData behaviorData)
-    {
-        if (NpcIndex.TryGetEntity(data.NetworkId, out var existingEntity))
-        {
-            if (!DestroyNpc(data.NetworkId))
-                return Entity.Null; // Falha ao destruir a entidade existente
-        }
-        
-        var entity = World.CreateNPC(data, behaviorData);
-        NpcIndex.AddMapping(data.NetworkId, entity);
-        Systems.Get<SpatialSyncSystem>()
-            .OnEntityCreated(entity,
-                new SpatialPosition(
-                    data.PositionX,
-                    data.PositionY,
-                    data.Floor),
-                data.MapId);
-        return entity;
-    }
-
     public Entity CreateNpcFromTemplate(NpcTemplate template, Position position, int floor, int mapId, int networkId)
     {
         if (NpcIndex.TryGetEntity(networkId, out var existingEntity))

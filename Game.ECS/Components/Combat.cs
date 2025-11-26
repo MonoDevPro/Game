@@ -2,12 +2,6 @@ using Arch.Core;
 
 namespace Game.ECS.Components;
 
-// ============================================
-// Combat - Combate
-// ============================================
-public struct Attackable { public float BaseSpeed; public float CurrentModifier; }
-// AttackPower, Defense e CombatState movidos para CombatComponents.cs
-
 /// <summary>
 /// Define o estilo de ataque baseado na vocação.
 /// </summary>
@@ -49,23 +43,14 @@ public struct Projectile
     public bool HasHit;
 }
 
-public struct Attack
-{
-    public AttackType Type;           // tipo de animação/ataque
-    public float RemainingDuration;   // tempo restante da animação (s)
-    public float TotalDuration;       // duração total da animação (s)
-    public bool DamageApplied;        // flag para marcar se o dano já foi aplicado
-}
-
 /// <summary>
 /// Tipos de animação de ataque disponíveis.
 /// </summary>
 public enum AttackType : byte
 {
     Basic = 0,          // Ataque básico
-    Heavy = 1,          // Ataque carregado
-    Critical = 2,       // Golpe crítico
-    Magic = 3,          // Ataque mágico
+    Projectile = 1,     // Ataque com projétil
+    Special = 2         // Ataque especial/habilidade
 }
 
 /// <summary>

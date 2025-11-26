@@ -392,16 +392,25 @@ public partial class GameClient : Node2D
         }
 
         // Se quiser armazenar algo temporário no ECS local para animação:
-        var attackAnim = new Attack
+        var attackCommand = new AttackCommand
         {
-            Type = packet.Type,
-            RemainingDuration = packet.AttackDuration,
-            TotalDuration = packet.AttackDuration,
-            DamageApplied = false
+            Style = packet.Style
         };
-        _simulation.World.Add(attackerEntity, attackAnim);
+        _simulation.World.Add(attackerEntity, attackCommand);
+        
+        if (_simulation.World.TryGet<CombatState>(attackerEntity, out var combatState))
+        {
+            combatState.CastTimer = packet.AttackDuration;
+            combatState.AttackCooldownTimer = packet.CooldownRemaining;
+            _simulation.World.Set(attackerEntity, combatState);
+        }
+        else
+        {
+            GD.PushWarning($"[GameClient] HandleCombatState: Attacker entity {packet.AttackerNetworkId} has no CombatState component");
+        }
+        
 
-        GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Type}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
+        GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
 
     private void HandleNpcSpawn(INetPeerAdapter peer, ref NpcSpawnPacket packet)

@@ -28,7 +28,38 @@ public sealed partial class ServerSyncSystem(
     private readonly List<PlayerStateSnapshot> _playerStateBuffer = [];
     private readonly List<PlayerVitalsSnapshot> _playerVitalsBuffer = [];
     
+    [Query]
+    [All<NetworkId, DirtyFlags>]
+    private void SyncDefault(
+        in Entity entity,
+        in NetworkId networkId,
+        ref DirtyFlags dirty)
+    {
+        // Combate (estado + resultado)
+        if (dirty.IsDirty(DirtyComponentType.Combat) &&
+            World.TryGet(entity, out CombatState combat))
+        {
+            var attackStyle = AttackStyle.Melee;
+                
+            // Verifica se há um comando de ataque (evento)
+            if (World.TryGet(entity, out AttackCommand cmd))
+            {
+                attackStyle = cmd.Style;
+                // Remove o comando após processar o sync
+                World.Remove<AttackCommand>(entity);
+            }
 
+            _combatBuffer.Add(new CombatStateSnapshot(
+                AttackerNetworkId: networkId.Value,
+                Style: attackStyle,
+                AttackDuration: combat.CastTimer,
+                CooldownRemaining: combat.AttackCooldownTimer
+            ));
+            
+            dirty.ClearDirty(DirtyComponentType.Combat);
+        }
+    }
+    
     [Query]
     [All<PlayerControlled, NetworkId, DirtyFlags>]
     private void SyncPlayers(
@@ -57,27 +88,6 @@ public sealed partial class ServerSyncSystem(
             // Vitals
             if (dirty.IsDirty(DirtyComponentType.Vitals))
                 _playerVitalsBuffer.Add(World.BuildPlayerVitalsSnapshot(entity).ToPlayerVitalsSnapshot());
-
-            // Combate (estado + resultado)
-            if (dirty.IsDirty(DirtyComponentType.Combat) &&
-                World.TryGet(entity, out CombatState combat))
-            {
-                var attackType = AttackType.Basic;
-                var attackDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType);
-
-                if (World.TryGet(entity, out Attack attackAction))
-                {
-                    attackType = attackAction.Type;
-                    attackDuration = attackAction.TotalDuration;
-                }
-
-                _combatBuffer.Add(new CombatStateSnapshot(
-                    AttackerNetworkId: networkId.Value,
-                    Type: attackType,
-                    AttackDuration: attackDuration,
-                    CooldownRemaining: combat.AttackCooldownTimer
-                ));
-            }
         }
         
         dirty.ClearAll();
@@ -116,27 +126,6 @@ public sealed partial class ServerSyncSystem(
                 .BuildNpcHealthData(entity)
                 .ToNpcHealthSnapshot();
             _npcHealthBuffer.Add(healthData);
-        }
-        
-        // Combate (estado + resultado)
-        if (dirty.IsDirty(DirtyComponentType.Combat) &&
-            World.TryGet(entity, out CombatState combat))
-        {
-            var attackType = AttackType.Basic;
-            var attackDuration = CombatLogic.GetAttackTypeSpeedMultiplier(attackType);
-
-            if (World.TryGet(entity, out Attack attackAction))
-            {
-                attackType = attackAction.Type;
-                attackDuration = attackAction.TotalDuration;
-            }
-
-            _combatBuffer.Add(new CombatStateSnapshot(
-                AttackerNetworkId: networkId.Value,
-                Type: attackType,
-                AttackDuration: attackDuration,
-                CooldownRemaining: combat.AttackCooldownTimer
-            ));
         }
         
         dirty.ClearAll();

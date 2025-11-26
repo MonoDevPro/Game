@@ -28,7 +28,6 @@ public static partial class GameArchetypes
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
         Component<Walkable>.ComponentType,
-        Component<Attackable>.ComponentType,
         Component<CombatStats>.ComponentType,
         Component<CombatState>.ComponentType,
         Component<Input>.ComponentType,

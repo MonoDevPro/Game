@@ -14,17 +14,13 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class RegenerationSystem(World world, ILogger<RegenerationSystem>? logger = null) : GameSystem(world)
 {
     [Query]
-    [All<Health, DirtyFlags, CombatState>]
+    [All<Health, DirtyFlags>]
     [None<Dead>]
     private void ProcessHealthRegeneration(
         ref Health health,
         ref DirtyFlags dirty,
-        in CombatState combat,
         [Data] float deltaTime)
     {
-        if (combat.InCombat)
-            return;
-
         // Usa lógica unificada de regen acumulada
         bool changed = RegenLogic.ApplyRegeneration(
             ref health.Current,
@@ -38,16 +34,13 @@ public sealed partial class RegenerationSystem(World world, ILogger<Regeneration
     }
 
     [Query]
-    [All<Mana, DirtyFlags, CombatState>]
+    [All<Mana, DirtyFlags>]
     [None<Dead>]
     private void ProcessManaRegeneration(
         ref Mana mana,
         ref DirtyFlags dirty,
-        in CombatState combat,
         [Data] float deltaTime)
     {
-        if (combat.InCombat)
-            return;
 
         bool changed = RegenLogic.ApplyRegeneration(
             ref mana.Current,

@@ -6,7 +6,7 @@ namespace Game.Network.Packets.Game;
 [MemoryPackable]
 public readonly partial record struct CombatStateSnapshot(
     int AttackerNetworkId,
-    AttackType Type,
+    AttackStyle Style,
     float AttackDuration,
     float CooldownRemaining);
 

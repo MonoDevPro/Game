@@ -103,10 +103,6 @@ public sealed partial class ProjectileSystem(World world, IMapService mapService
             // Aplica dano (considerando defesa do alvo)
             int finalDamage = ApplyProjectileDamage(foundEntity, projectile.Damage, projectile.IsMagical);
             
-            // Ambos entram em combate
-            CombatLogic.EnterCombat(World, in projectile.Source);
-            CombatLogic.EnterCombat(World, in foundEntity);
-            
             logger?.LogDebug("[ProjectileSystem] Projectile hit! Final damage: {Damage} (magical: {IsMagical})", 
                 finalDamage, projectile.IsMagical);
             

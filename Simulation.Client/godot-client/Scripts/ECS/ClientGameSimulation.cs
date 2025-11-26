@@ -1,5 +1,6 @@
 using Arch.Core;
 using Arch.System;
+using Game.Domain.Templates;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Data;
@@ -125,7 +126,7 @@ public sealed class ClientGameSimulation : GameSimulation
 
     public Entity CreateNpc(in NPCData data, NpcVisual visual)
     {
-        var entity = base.CreateNpc(data, new NpcBehaviorData());
+        var entity = base.World.CreateNPC(in data);
         _visualSyncSystem?.RegisterNpcVisual(data.NetworkId, visual);
         visual.UpdateFromSnapshot(data);
         return entity;
