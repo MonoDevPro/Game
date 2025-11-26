@@ -39,7 +39,7 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
         if (revive.TimeRemaining <= 0f)
         {
             combat.InCombat = false;
-            combat.LastAttackTime = 0f;
+            combat.AttackCooldownTimer = 0f;
             combat.TimeSinceLastHit = 0f;
             
             // ✅ Usa a extensão para marcar mudança de posição

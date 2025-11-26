@@ -122,9 +122,9 @@ public sealed partial class ProjectileSystem(World world, IMapService mapService
         int finalDamage = baseDamage;
         
         // Aplica redução de defesa
-        if (World.TryGet<Defense>(target, out var defense))
+        if (World.TryGet<CombatStats>(target, out var stats))
         {
-            int defensePower = isMagical ? defense.Magical : defense.Physical;
+            int defensePower = isMagical ? stats.MagicDefense : stats.Defense;
             finalDamage = Math.Max(1, baseDamage - defensePower);
         }
         

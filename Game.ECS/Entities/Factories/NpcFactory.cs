@@ -26,10 +26,24 @@ public static partial class EntityFactory
             new Health { Current = template.BaseHp, Max = template.BaseHp, RegenerationRate = template.Stats.HpRegen },
             new Mana { Current = template.BaseMp, Max = template.BaseMp, RegenerationRate = template.Stats.MpRegen },
             new Walkable { BaseSpeed = 2f, CurrentModifier = template.Stats.MovementSpeed },
-            new Attackable { BaseSpeed = 1f, CurrentModifier = template.Stats.AttackSpeed },
-            new AttackPower { Physical = template.Stats.PhysicalAttack, Magical = template.Stats.MagicAttack },
-            new Defense { Physical = template.Stats.PhysicalDefense, Magical = template.Stats.MagicDefense },
-            new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
+            // new Attackable { BaseSpeed = 1f, CurrentModifier = template.Stats.AttackSpeed }, // Removed in favor of CombatStats
+            new CombatStats 
+            { 
+                AttackPower = template.Stats.PhysicalAttack,
+                MagicPower = template.Stats.MagicAttack,
+                Defense = template.Stats.PhysicalDefense,
+                MagicDefense = template.Stats.MagicDefense,
+                AttackRange = template.Behavior.AttackRange,
+                AttackSpeed = template.Stats.AttackSpeed > 0 ? template.Stats.AttackSpeed : 1f
+            },
+            new CombatState 
+            { 
+                InCombat = false, 
+                TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat,
+                AttackCooldownTimer = 0f,
+                IsCasting = false,
+                CastTimer = 0f
+            },
             new Input { },
             new DirtyFlags { },
             new AIControlled { },
@@ -80,10 +94,24 @@ public static partial class EntityFactory
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
             new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
             new Walkable { BaseSpeed = 2f, CurrentModifier = data.MovementSpeed },
-            new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
-            new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
-            new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
-            new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
+            // new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
+            new CombatStats 
+            { 
+                AttackPower = data.PhysicalAttack,
+                MagicPower = data.MagicAttack,
+                Defense = data.PhysicalDefense,
+                MagicDefense = data.MagicDefense,
+                AttackRange = behaviorData.AttackRange,
+                AttackSpeed = data.AttackSpeed > 0 ? data.AttackSpeed : 1f
+            },
+            new CombatState 
+            { 
+                InCombat = false, 
+                TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat,
+                AttackCooldownTimer = 0f,
+                IsCasting = false,
+                CastTimer = 0f
+            },
             new Input { },
             new DirtyFlags { },
             new AIControlled { },

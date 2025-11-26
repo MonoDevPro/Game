@@ -33,7 +33,7 @@ public sealed partial class NpcNavigationSystem(
 
         // Boilerplate de recalculo reduzido:
         // Só recalcula se o alvo se moveu significativamente ou se a flag está ativa
-        if (nav.IsPathPending || ShouldRecalculatePath(pos, nav.Destination.Value, path))
+        if (nav.IsPathPending || ShouldRecalculatePath(nav.Destination.Value, path))
         {
             var grid = mapService.GetMapGrid(mapId.Value);
             var spatial = mapService.GetMapSpatial(mapId.Value);
@@ -60,7 +60,7 @@ public sealed partial class NpcNavigationSystem(
         }
     }
     
-    private bool ShouldRecalculatePath(Position currentPos, Position dest, NpcPath path)
+    private bool ShouldRecalculatePath(Position dest, NpcPath path)
     {
         if (!path.HasPath) return true;
         if (path.IsPathComplete) return true;

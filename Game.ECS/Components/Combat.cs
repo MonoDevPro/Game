@@ -6,8 +6,7 @@ namespace Game.ECS.Components;
 // Combat - Combate
 // ============================================
 public struct Attackable { public float BaseSpeed; public float CurrentModifier; }
-public struct AttackPower { public int Physical; public int Magical; }
-public struct Defense { public int Physical; public int Magical; }
+// AttackPower, Defense e CombatState movidos para CombatComponents.cs
 
 /// <summary>
 /// Define o estilo de ataque baseado na vocação.
@@ -48,19 +47,6 @@ public struct Projectile
     
     /// <summary>Se o projétil já atingiu algo</summary>
     public bool HasHit;
-}
-
-/// Estado de combate básico (mantém cooldown)
-public struct CombatState
-{
-    public bool InCombat; 
-    public float LastAttackTime;
-    
-    /// <summary>
-    /// Tempo (em segundos) desde o último evento de combate relevante (ex: tomar dano).
-    /// Usado para pausar/retomar regeneração de HP/MP.
-    /// </summary>
-    public float TimeSinceLastHit;
 }
 
 public struct Attack

@@ -55,22 +55,12 @@ public sealed class ServerGameSimulation : GameSimulation
             throw new InvalidOperationException("MapService não pode ser nulo na simulação do servidor.");
         
         // ⭐ Ordem importante:
-        // 0. NPC AI processa percepção, estado e decisões antes dos inputs
-        // systems.Add(new NpcPerceptionSystem(world, MapService, _loggerFactory.CreateLogger<NpcPerceptionSystem>()));
-        // systems.Add(new NpcAISystem(world, _loggerFactory.CreateLogger<NpcAISystem>()));
         
-        // New Pipeline
+        // 0. NPC Systems rodando ANTES dos sistemas de jogador
         systems.Add(new NpcDecisionSystem(world, _npcRepository, MapService, _loggerFactory.CreateLogger<NpcDecisionSystem>()));
-        
-        // 0.5 NPC Pathfinding calcula caminhos A* (ANTES do NpcMovementSystem)
-        // systems.Add(new NpcPathfindingSystem(world, MapService, _loggerFactory.CreateLogger<NpcPathfindingSystem>()));
+        systems.Add(new NpcCombatStrategySystem(world));
         systems.Add(new NpcNavigationSystem(world, MapService, _loggerFactory.CreateLogger<NpcNavigationSystem>()));
-        
-        // 0.6 NPC Movement usa waypoints do pathfinding para gerar inputs
-        // systems.Add(new NpcMovementSystem(world, _loggerFactory.CreateLogger<NpcMovementSystem>()));
         systems.Add(new NpcMotorSystem(world, _loggerFactory.CreateLogger<NpcMotorSystem>()));
-        
-        systems.Add(new NpcCombatSystem(world, _loggerFactory.CreateLogger<NpcCombatSystem>()));
 
         // 1. Input processa entrada do jogador
         systems.Add(new InputSystem(world));
@@ -79,7 +69,8 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new MovementSystem(world, MapService));
         
         // 4. Combat processa estado de combate
-        systems.Add(new CombatSystem(world, _loggerFactory.CreateLogger<CombatSystem>()));
+        // systems.Add(new CombatSystem(world, _loggerFactory.CreateLogger<CombatSystem>()));
+        systems.Add(new CombatResolutionSystem(world));
         
         // 4.1 Damage processa dano periódico (DoT), dano adiado e cria projéteis
         systems.Add(new DamageSystem(world, MapService, _loggerFactory.CreateLogger<DamageSystem>()));

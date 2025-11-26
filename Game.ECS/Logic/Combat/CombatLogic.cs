@@ -24,13 +24,13 @@ public static partial class CombatLogic
     /// </summary>
     public static int CalculateDamage(World world, in Entity attacker, in Entity targetEntity, AttackType attackType, bool isCritical)
     {
-        if (!world.TryGet<AttackPower>(attacker, out var attack) || !world.TryGet<Defense>(targetEntity, out var defense))
+        if (!world.TryGet<CombatStats>(attacker, out var attackerStats) || !world.TryGet<CombatStats>(targetEntity, out var targetStats))
             return 0;
         
         bool isMagical = attackType == AttackType.Magic;
         
-        int attackPower = isMagical ? attack.Magical : attack.Physical;
-        int defensePower = isMagical ? defense.Magical : defense.Physical;
+        int attackPower = isMagical ? attackerStats.MagicPower : attackerStats.AttackPower;
+        int defensePower = isMagical ? targetStats.MagicDefense : targetStats.Defense;
         
         int multiplier = isCritical ? CriticalDamageMultiplier : 1;
 
@@ -44,10 +44,10 @@ public static partial class CombatLogic
     /// </summary>
     public static int CalculateProjectileDamage(World world, in Entity attacker, bool isMagical, bool isCritical)
     {
-        if (!world.TryGet<AttackPower>(attacker, out var attack))
+        if (!world.TryGet<CombatStats>(attacker, out var attackerStats))
             return 1;
         
-        int attackPower = isMagical ? attack.Magical : attack.Physical;
+        int attackPower = isMagical ? attackerStats.MagicPower : attackerStats.AttackPower;
         int multiplier = isCritical ? CriticalDamageMultiplier : 1;
 
         int baseDamage = Math.Max(1, attackPower) * multiplier;

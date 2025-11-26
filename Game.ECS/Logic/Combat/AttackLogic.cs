@@ -6,10 +6,10 @@ namespace Game.ECS.Logic;
 public static partial class CombatLogic
 {
     public static bool CheckAttackCooldown(in CombatState combat) 
-        => combat.LastAttackTime <= 0f;
+        => combat.AttackCooldownTimer <= 0f;
     
     public static void ReduceCooldown(ref CombatState combat, float deltaTime) 
-        => combat.LastAttackTime = MathF.Max(0f, combat.LastAttackTime - deltaTime);
+        => combat.AttackCooldownTimer = MathF.Max(0f, combat.AttackCooldownTimer - deltaTime);
     
     public static bool CheckAttackDistance(in Position attackerPos, in Position targetPos, AttackType attackType)
     {

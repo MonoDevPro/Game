@@ -19,8 +19,7 @@ public static partial class EntityBuilder
         ref var mana = ref world.Get<Mana>(entity);
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var attackable = ref world.Get<Attackable>(entity);
-        ref var attackPower = ref world.Get<AttackPower>(entity);
-        ref var defense = ref world.Get<Defense>(entity);
+        ref var combatStats = ref world.Get<CombatStats>(entity);
 
         return new PlayerData
         {
@@ -30,9 +29,9 @@ public static partial class EntityBuilder
             FacingX = facing.DirectionX, FacingY = facing.DirectionY,
             Hp = health.Current, MaxHp = health.Max, HpRegen = health.RegenerationRate,
             Mp = mana.Current, MaxMp = mana.Max, MpRegen = mana.RegenerationRate,
-            MovementSpeed = walkable.CurrentModifier, AttackSpeed = attackable.CurrentModifier,
-            PhysicalAttack = attackPower.Physical, MagicAttack = attackPower.Magical,
-            PhysicalDefense = defense.Physical, MagicDefense = defense.Magical
+            MovementSpeed = walkable.CurrentModifier, AttackSpeed = combatStats.AttackSpeed,
+            PhysicalAttack = combatStats.AttackPower, MagicAttack = combatStats.MagicPower,
+            PhysicalDefense = combatStats.Defense, MagicDefense = combatStats.MagicDefense
         };
     }
     

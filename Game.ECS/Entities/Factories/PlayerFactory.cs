@@ -24,10 +24,24 @@ public static partial class EntityFactory
             new Health { Current = data.Hp, Max = data.MaxHp, RegenerationRate = data.HpRegen },
             new Mana { Current = data.Mp, Max = data.MaxMp, RegenerationRate = data.MpRegen },
             new Walkable { BaseSpeed = 3f, CurrentModifier = data.MovementSpeed },
-            new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
-            new AttackPower { Physical = data.PhysicalAttack, Magical = data.MagicAttack },
-            new Defense { Physical = data.PhysicalDefense, Magical = data.MagicDefense },
-            new CombatState { InCombat = false, TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat },
+            // new Attackable { BaseSpeed = 1f, CurrentModifier = data.AttackSpeed },
+            new CombatStats 
+            { 
+                AttackPower = data.PhysicalAttack,
+                MagicPower = data.MagicAttack,
+                Defense = data.PhysicalDefense,
+                MagicDefense = data.MagicDefense,
+                AttackRange = 1.5f,
+                AttackSpeed = data.AttackSpeed > 0 ? data.AttackSpeed : 1f
+            },
+            new CombatState 
+            { 
+                InCombat = false, 
+                TimeSinceLastHit = SimulationConfig.HealthRegenDelayAfterCombat,
+                AttackCooldownTimer = 0f,
+                IsCasting = false,
+                CastTimer = 0f
+            },
             new Input { },
             new DirtyFlags { },
             new PlayerControlled { },

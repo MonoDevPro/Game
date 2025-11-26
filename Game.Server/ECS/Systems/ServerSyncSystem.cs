@@ -75,7 +75,7 @@ public sealed partial class ServerSyncSystem(
                     AttackerNetworkId: networkId.Value,
                     Type: attackType,
                     AttackDuration: attackDuration,
-                    CooldownRemaining: combat.LastAttackTime
+                    CooldownRemaining: combat.AttackCooldownTimer
                 ));
             }
         }
@@ -135,7 +135,7 @@ public sealed partial class ServerSyncSystem(
                 AttackerNetworkId: networkId.Value,
                 Type: attackType,
                 AttackDuration: attackDuration,
-                CooldownRemaining: combat.LastAttackTime
+                CooldownRemaining: combat.AttackCooldownTimer
             ));
         }
         
