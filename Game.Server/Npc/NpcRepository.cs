@@ -1,6 +1,5 @@
 using Game.Domain.Templates;
 using Game.Domain.Enums;
-using Game.ECS.Components;
 
 namespace Game.Server.Npc;
 
@@ -14,7 +13,7 @@ public interface INpcRepository
 public class NpcRepository : INpcRepository
 {
     private readonly Dictionary<string, NpcTemplate> _templates = new();
-    private readonly List<NpcSpawnPoint> _spawnPoints = new();
+    private readonly List<NpcSpawnPoint> _spawnPoints = [];
 
     public NpcRepository()
     {
@@ -40,7 +39,6 @@ public class NpcRepository : INpcRepository
             },
             Behavior = new NpcBehaviorConfig
             {
-                Type = (int)NpcBehaviorType.Aggressive,
                 VisionRange = 8f,
                 AttackRange = 1.5f,
                 LeashRange = 10f,
@@ -71,7 +69,6 @@ public class NpcRepository : INpcRepository
             },
             Behavior = new NpcBehaviorConfig
             {
-                Type = (int)NpcBehaviorType.Defensive,
                 VisionRange = 6f,
                 AttackRange = 5f,
                 LeashRange = 12f,

@@ -1,20 +1,19 @@
 using Game.ECS.Components;
-using Game.ECS.Entities.Factories;
 using MemoryPack;
 
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPacket, PlayerSnapshot LocalPlayer, PlayerSnapshot[] OtherPlayers);
+public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPacket, PlayerSpawnPacket LocalPlayer, PlayerSpawnPacket[] OtherPlayers);
 
 [MemoryPackable]
-public readonly partial record struct PlayerSpawnPacket(PlayerSnapshot[] PlayerData);
+public readonly partial record struct PlayerSpawnPacket(PlayerSpawnPacket[] PlayerData);
 
 [MemoryPackable]
-public readonly partial record struct PlayerStatePacket(PlayerStateSnapshot[] States);
+public readonly partial record struct PlayerStatePacket(PlayerStateUpdate[] States);
 
 [MemoryPackable]
-public readonly partial record struct PlayerVitalsPacket(PlayerVitalsSnapshot[] Vitals);
+public readonly partial record struct PlayerVitalsPacket(PlayerVitalsUpdate[] Vitals);
 
 [MemoryPackable]
 public readonly partial record struct PlayerInputPacket(sbyte InputX, sbyte InputY, InputFlags Flags);

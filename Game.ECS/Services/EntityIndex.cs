@@ -1,15 +1,13 @@
 using Arch.Core;
 
-// ajuste se seu Entity estiver em outro namespace
-
-namespace Game.ECS.Entities.Repositories;
+namespace Game.ECS.Services;
 
 /// <summary>
 /// Índice bidirecional entre uma chave genérica TKey <-> Entity (struct do Arch).
 /// Thread-safe: leituras lock-free, escritas com lock para manter os dois dicionários consistentes.
 /// </summary>
 /// <typeparam name="TKey">Tipo da chave (ex.: int, Guid, string, ulong). Deve ser notnull.</typeparam>
-public abstract class EntityIndex<TKey> where TKey : notnull
+public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnull
 {
     // key -> Entity (capturamos Entity.Id e Entity.Version)
     private readonly Dictionary<TKey, Entity> _keyToEntity = new();

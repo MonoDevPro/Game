@@ -12,18 +12,18 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class MovementSystem(World world, IMapService mapService) : GameSystem(world)
 {
     [Query]
-    [All<Facing, Velocity, DirtyFlags>]
+    [All<Direction, Velocity, DirtyFlags>]
     [None<Dead>]
-    private void ProcessEntityFacing(in Velocity velocity, ref Facing facing, ref DirtyFlags dirty)
+    private void ProcessEntityFacing(in Velocity velocity, ref Direction direction, ref DirtyFlags dirty)
     {
         if (velocity is { X: 0, Y: 0 }) return;
-        int previousX = facing.DirectionX;
-        int previousY = facing.DirectionY;
+        int previousX = direction.DirectionX;
+        int previousY = direction.DirectionY;
 
-        facing.DirectionX = velocity.X;
-        facing.DirectionY = velocity.Y;
+        direction.DirectionX = velocity.X;
+        direction.DirectionY = velocity.Y;
 
-        if (previousX != facing.DirectionX || previousY != facing.DirectionY)
+        if (previousX != direction.DirectionX || previousY != direction.DirectionY)
             dirty.MarkDirty(DirtyComponentType.State);
     }
     

@@ -1,8 +1,9 @@
 using System;
 using Game.Domain.Enums;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Player;
 using Godot;
 using GodotClient.Core.Autoloads;
 
@@ -22,13 +23,13 @@ public sealed partial class PlayerVisual : DefaultVisual
         return playerVisual;
     }
 
-    public void UpdateFromSnapshot(in PlayerData data)
+    public void UpdateFromSnapshot(in PlayerSnapshot snapshot)
     {
-        LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
-        UpdateName(data.Name);
-        UpdateAnimationState(new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY }, false, false, false);
-        UpdatePosition(new Vector3I(data.PosX, data.PosY, data.Floor));
-        UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
-        UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
+        LoadSprite((VocationType)snapshot.VocationId, (Gender)snapshot.GenderId);
+        UpdateName(snapshot.Name);
+        UpdateAnimationState(new Direction { DirectionX = snapshot.DirX, DirectionY = snapshot.DirY }, false, false, false);
+        UpdatePosition(new Vector3I(snapshot.PosX, snapshot.PosY, snapshot.Floor));
+        UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
+        UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
     }
 }

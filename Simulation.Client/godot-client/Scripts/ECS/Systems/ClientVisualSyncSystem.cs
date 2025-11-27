@@ -85,7 +85,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         ref CombatState combatState,
         in NetworkId networkId,
         in Velocity velocity, 
-        in Facing facing,
+        in Direction direction,
         [Data] in float deltaTime)
     {
         if (!TryGetAnyVisual(networkId.Value, out var visual))
@@ -104,7 +104,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
 
         var isDead = World.Has<Dead>(e);
         var isMoving = velocity.Speed > 0f;
-        visual.UpdateAnimationState(facing, isMoving, isAttacking, isDead);
+        visual.UpdateAnimationState(direction, isMoving, isAttacking, isDead);
         
         if (isAttacking)
             World.Remove<AttackCommand>(e);

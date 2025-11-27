@@ -3,13 +3,13 @@ using MemoryPack;
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct NpcSpawnPacket(NpcSpawnSnapshot[] Npcs);
+public readonly partial record struct NpcSpawnPacket(NpcSpawnRequest[] Npcs);
 
 [MemoryPackable]
-public readonly partial record struct NpcDespawnPacket(int NetworkId);
+public readonly partial record struct NpcDespawnPacket(int[] NetworkIds);
 
 [MemoryPackable]
-public readonly partial record struct NpcStatePacket(NpcStateSnapshot[] States);
+public readonly partial record struct NpcStatePacket(NpcStateUpdate[] States);
 
 [MemoryPackable]
-public readonly partial record struct NpcHealthPacket(NpcHealthSnapshot[] Healths);
+public readonly partial record struct NpcHealthPacket(NpcVitalsUpdate[] Healths);

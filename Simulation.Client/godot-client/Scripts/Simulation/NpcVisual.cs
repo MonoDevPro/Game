@@ -1,6 +1,8 @@
 using Game.Domain.Enums;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Npc;
 using Godot;
 
 namespace GodotClient.Simulation;
@@ -17,13 +19,13 @@ public sealed partial class NpcVisual : DefaultVisual
         return GD.Load<PackedScene>("res://Scenes/Prefabs/NpcVisual.tscn").Instantiate<NpcVisual>();
     }
     
-    public void UpdateFromSnapshot(NPCData data)
+    public void UpdateFromSnapshot(NpcSnapshot snapshot)
     {
-        LoadSprite((VocationType)data.Vocation, (Gender)data.Gender);
-        UpdateName("NPC " + data.NetworkId);
-        UpdateAnimationState(new Facing { DirectionX = data.FacingX, DirectionY = data.FacingY }, false, false, false);
-        UpdatePosition(new Vector3I(data.PositionX, data.PositionY, data.Floor));
-        UpdateVitals(data.Hp, data.MaxHp, data.Mp, data.MaxMp);
-        if (Sprite is not null) UpdateAnimationSpeed(data.MovementSpeed, data.AttackSpeed);
+        LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
+        UpdateName("NPC " + snapshot.NetworkId);
+        UpdateAnimationState(new Direction { DirectionX = snapshot.DirX, DirectionY = snapshot.DirY }, false, false, false);
+        UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Floor));
+        UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
+        if (Sprite is not null) UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
     }
 }

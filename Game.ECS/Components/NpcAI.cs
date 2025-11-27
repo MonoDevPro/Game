@@ -4,14 +4,6 @@ using Arch.Core;
 
 namespace Game.ECS.Components;
 
-public enum NpcBehaviorType : byte
-{
-    Passive = 0,
-    Defensive = 1,
-    Aggressive = 2
-}
-
-
 public struct NpcPatrol
 {
     public Position HomePosition;

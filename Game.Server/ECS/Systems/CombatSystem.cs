@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities.Combat;
 using Game.ECS.Logic;
 using Game.ECS.Services;
 using Game.ECS.Systems;
@@ -21,7 +22,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService, IL
     /// O tipo de ataque é determinado pela vocação do jogador.
     /// </summary>
     [Query]
-    [All<PlayerControlled, Input, PlayerInfo, Position, MapId, Floor, Facing>]
+    [All<PlayerControlled, Input, PlayerInfo, Position, MapId, Floor, Direction>]
     [None<Dead>]
     private void ProcessPlayerAttack(
         in Entity e,
@@ -29,7 +30,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService, IL
         in Position pos,
         in MapId mapId,
         in Floor floor,
-        in Facing facing,
+        in Direction direction,
         ref Input input,
         ref CombatState state,
         in CombatStats stats,
@@ -61,8 +62,8 @@ public sealed partial class CombatSystem(World world, IMapService mapService, IL
         
         // Lógica de Mira (Targeting)
         SpatialPosition lookAtPos = new(
-            pos.X + facing.DirectionX, 
-            pos.Y + facing.DirectionY, 
+            pos.X + direction.DirectionX, 
+            pos.Y + direction.DirectionY, 
             floor.Level);
         
         // Tenta achar um alvo na frente (Raycast simples de 1 tile)
@@ -96,7 +97,7 @@ public sealed partial class CombatSystem(World world, IMapService mapService, IL
         { 
             Target = target,
             TargetPosition = targetPosition, // Snapshot da posição
-            Style = CombatLogic.GetAttackStyleForVocation(info.VocationId),
+            Style = CombatHelper.GetAttackStyleForVocation(info.VocationId),
             IsReady = false 
         });
     }

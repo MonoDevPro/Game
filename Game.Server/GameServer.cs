@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -17,6 +17,7 @@ using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using PlayerSnapshot = Game.ECS.Entities.Player.PlayerSnapshot;
 
 namespace Game.Server;
 
@@ -264,15 +265,15 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                PlayerData snapshot = _simulation.World.BuildPlayerDataSnapshot(session.Entity);
+                PlayerSnapshot snapshot = _simulation.World.BuildPlayerSnapshot(session.Entity);
                 
                 characterPersistData = characterPersistData with
                 {
                     PositionX = snapshot.PosX,
                     PositionY = snapshot.PosY,
                     Floor = snapshot.Floor,
-                    FacingX = snapshot.FacingX,
-                    FacingY = snapshot.FacingY,
+                    FacingX = snapshot.DirX,
+                    FacingY = snapshot.DirY,
                     CurrentHp = snapshot.Hp,
                     CurrentMp = snapshot.Mp
                 };
@@ -733,7 +734,7 @@ public sealed class GameServer : IDisposable
                 .ToArray();
             
             // ✅ 6. Broadcasta spawn para outros jogadores
-            _networkManager.SendToAllExcept<PlayerSnapshot>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept<Network.Packets.Game.PlayerSpawnPacket>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();

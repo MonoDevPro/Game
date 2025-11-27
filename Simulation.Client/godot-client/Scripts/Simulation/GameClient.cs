@@ -2,7 +2,9 @@ using System;
 using System.Linq;
 using Game.Core.Extensions;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Npc;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -13,6 +15,7 @@ using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
 using Input = Godot.Input;
+using PlayerSnapshot = Game.ECS.Entities.Player.PlayerSnapshot;
 
 namespace GodotClient.Simulation;
 
@@ -92,7 +95,7 @@ public partial class GameClient : Node2D
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
             
-            _network.UnregisterPacketHandler<PlayerSnapshot>();
+            _network.UnregisterPacketHandler<Game.Network.Packets.Game.PlayerSpawnPacket>();
             _network.UnregisterPacketHandler<LeftPacket>();
             _network.UnregisterPacketHandler<PlayerStatePacket>();
             _network.UnregisterPacketHandler<PlayerVitalsPacket>();
@@ -208,11 +211,11 @@ public partial class GameClient : Node2D
         }
     }
     
-    private PlayerVisual SpawnPlayerVisual(in PlayerData data)
+    private PlayerVisual SpawnPlayerVisual(in PlayerSnapshot snapshot)
     {
         var playerVisual = PlayerVisual.Create();
         
-        playerVisual.Name = $"Player_{data.NetworkId}";
+        playerVisual.Name = $"Player_{snapshot.NetworkId}";
         
         return playerVisual;
     }
@@ -229,7 +232,7 @@ public partial class GameClient : Node2D
 
         _network.OnPeerDisconnected += OnPeerDisconnected;
         
-        _network.RegisterPacketHandler<PlayerSnapshot>(HandlePlayerSpawn);
+        _network.RegisterPacketHandler<Game.Network.Packets.Game.PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<LeftPacket>(HandlePlayerDespawn);
         _network.RegisterPacketHandler<PlayerStatePacket>(HandlePlayerState);
         _network.RegisterPacketHandler<PlayerVitalsPacket>(HandlePlayerVitals);
@@ -249,7 +252,7 @@ public partial class GameClient : Node2D
             HandleSinglePlayerState(singlePacket);
     }
     
-    private void HandleSinglePlayerState(in PlayerStateSnapshot packet)
+    private void HandleSinglePlayerState(in PlayerStateUpdate packet)
     {
         if (_simulation is null)
             return;
@@ -266,8 +269,8 @@ public partial class GameClient : Node2D
             return;
 
         ref var localPos = ref _simulation.World.Get<Position>(entity);
-        int deltaX = Math.Abs(localPos.X - packet.PositionX);
-        int deltaY = Math.Abs(localPos.Y - packet.PositionY);
+        int deltaX = Math.Abs(localPos.X - packet.X);
+        int deltaY = Math.Abs(localPos.Y - packet.Y);
         
         const int threshold = 1;
         if (deltaX >= threshold || deltaY >= threshold)
@@ -285,10 +288,10 @@ public partial class GameClient : Node2D
                 Y = packet.VelocityY,
                 Speed = packet.Speed
             };
-            _simulation.World.Get<Facing>(entity) = new Facing
+            _simulation.World.Get<Direction>(entity) = new Direction
             {
-                DirectionX = packet.FacingX,
-                DirectionY = packet.FacingY
+                DirectionX = packet.DirX,
+                DirectionY = packet.DirY
             };
         }
     }
@@ -302,7 +305,7 @@ public partial class GameClient : Node2D
             HandleSinglePlayerVitals(singlePacket);
     }
     
-    private void HandleSinglePlayerVitals(in PlayerVitalsSnapshot packet)
+    private void HandleSinglePlayerVitals(in PlayerVitalsUpdate packet)
     {
         if (_simulation is null)
             return;
@@ -340,10 +343,10 @@ public partial class GameClient : Node2D
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
 
-    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSnapshot snapshot)
+    private void HandlePlayerSpawn(INetPeerAdapter peer, ref Game.Network.Packets.Game.PlayerSpawnPacket spawnPacket)
     {
-        var isLocal = snapshot.NetworkId == _localNetworkId;
-        var playerData = snapshot.ToPlayerData();
+        var isLocal = spawnPacket.NetworkId == _localNetworkId;
+        var playerData = spawnPacket.ToPlayerData();
 
         if (isLocal)
             _simulation?.CreateLocalPlayer(playerData, SpawnPlayerVisual(playerData));
@@ -353,7 +356,7 @@ public partial class GameClient : Node2D
         if (!isLocal) 
             UpdateStatus($"{playerData.Name} joined");
         
-        GD.Print($"[GameClient] Spawned player '{snapshot.Name}' (NetID: {snapshot.NetworkId})");
+        GD.Print($"[GameClient] Spawned player '{spawnPacket.Name}' (NetID: {spawnPacket.NetworkId})");
     }
     
     private void HandlePlayerDespawn(INetPeerAdapter peer, ref LeftPacket packet)
@@ -447,10 +450,10 @@ public partial class GameClient : Node2D
             _simulation?.UpdateNpcVitals(vitals.ToNpcHealthData());
     }
 
-    private NpcVisual SpawnNpcVisual(NPCData npcData)
+    private NpcVisual SpawnNpcVisual(NpcSnapshot npcSnapshot)
     {
         var npcVisual = NpcVisual.Create();
-        npcVisual.Name = $"Npc_{npcData.NetworkId}";
+        npcVisual.Name = $"Npc_{npcSnapshot.NetworkId}";
         return npcVisual;
     }
     

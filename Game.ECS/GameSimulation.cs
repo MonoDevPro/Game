@@ -3,11 +3,12 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Templates;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
-using Game.ECS.Entities.Factories;
-using Game.ECS.Entities.Repositories;
+using Game.ECS.Entities;
+using Game.ECS.Entities.Npc;
+using Game.ECS.Entities.Player;
 using Game.ECS.Services;
 using Game.ECS.Systems;
+using Microsoft.Extensions.Logging;
 
 namespace Game.ECS;
 
@@ -49,40 +50,30 @@ public class FixedTimeStep(float fixedDeltaTime)
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class GameSimulation : GameSystem
+public abstract class GameSimulation(GameServices services, ILoggerFactory loggerFactory) 
+    : GameSystem(
+        World.Create(
+            chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: SimulationConfig.ArchetypeCapacity,
+            entityCapacity: SimulationConfig.EntityCapacity), services, loggerFactory.CreateLogger<GameSimulation>())
 {
-    protected readonly Group<float> Systems;
-    private readonly FixedTimeStep _fixedTimeStep;
+    protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
+    private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
     public uint CurrentTick { get; private set; }
     
-    protected IMapService? MapService;
-    protected PlayerIndex PlayerIndex { get; } = new();
-    protected NpcIndex NpcIndex { get; } = new();
-    
-    protected GameSimulation(IMapService? mapService = null) : this(
-        World.Create(chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
-        minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
-        archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-        entityCapacity: SimulationConfig.EntityCapacity), mapService) { }   
-
-    private GameSimulation(World world, IMapService? mapService) : base(world)
-    {
-        Systems = new Group<float>(SimulationConfig.SimulationName);
-        _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
-        
-        MapService = mapService;
-    }
+    protected ILoggerFactory LoggerFactory { get; } = loggerFactory;
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, GameServices services, ILoggerFactory loggerFactory, Group<float> systems);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)
     {
         _fixedTimeStep.Accumulate(deltaTime);
-
+    
         while (_fixedTimeStep.ShouldUpdate())
         {
             CurrentTick++;
@@ -96,110 +87,11 @@ public abstract class GameSimulation : GameSystem
             _fixedTimeStep.Step();
         }
     }
-    
-    public bool TryGetPlayerEntity(int playerId, out Entity entity) => PlayerIndex.TryGetEntity(playerId, out entity);
-    
-    public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
-    
-    public bool TryGetAnyEntity(int networkId, out Entity entity) => 
-        PlayerIndex.TryGetEntity(networkId, out entity) || NpcIndex.TryGetEntity(networkId, out entity);
 
-    public void RegisterMap(int mapId, IMapGrid grid, IMapSpatial spatial)
-    {
-        MapService ??= new MapService();
-        MapService.RegisterMap(mapId, grid, spatial);
-    }
-
-    public void UnregisterMap(int mapId)
-    {
-        MapService?.UnregisterMap(mapId);
-    }
-    
-    public Entity CreatePlayer(in PlayerData data)
-    {
-        if (PlayerIndex.TryGetEntity(data.NetworkId, out _))
-            if (!DestroyPlayer(data.NetworkId))
-                return Entity.Null;
-        
-        var entity = World.CreatePlayer(PlayerIndex, data);
-        if (World.TryGet(entity, out MapId mapId) && 
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityCreated(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level), 
-                    mapId.Value);
-        return entity;
-    }
-
-    public Entity CreateNpcFromTemplate(NpcTemplate template, Position position, int floor, int mapId, int networkId)
-    {
-        if (NpcIndex.TryGetEntity(networkId, out var existingEntity))
-        {
-            if (!DestroyNpc(networkId))
-                return Entity.Null; // Falha ao destruir a entidade existente
-        }
-        
-        var entity = World.CreateNPC(template, position, floor, mapId, networkId);
-        NpcIndex.AddMapping(networkId, entity);
-        Systems.Get<SpatialSyncSystem>()
-            .OnEntityCreated(entity,
-                new SpatialPosition(
-                    position.X,
-                    position.Y,
-                    (sbyte)floor),
-                mapId);
-        return entity;
-    }
-    
-    public virtual bool DestroyPlayer(int networkId)
-    {
-        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        if (World.TryGet(entity, out MapId mapId) && 
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level),
-                    mapId.Value);
-        PlayerIndex.RemoveByEntity(entity);
-        World.Destroy(entity);
-        return true;
-    }
-
-    public virtual bool DestroyNpc(int networkId)
-    {
-        if (!NpcIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        if (World.TryGet(entity, out MapId mapId) &&
-            World.TryGet(entity, out Position position) &&
-            World.TryGet(entity, out Floor floor))
-            Systems.Get<SpatialSyncSystem>()
-                .OnEntityDestroyed(entity, 
-                    new SpatialPosition(
-                        position.X, 
-                        position.Y, 
-                        floor.Level),
-                    mapId.Value);
-        NpcIndex.RemoveByKey(networkId);
-        World.Destroy(entity);
-        return true;
-    }
-    
     public override void Dispose()
     {
         Systems.Dispose();
-        PlayerIndex.Clear();
-        NpcIndex.Clear();
+        LoggerFactory.Dispose();
         base.Dispose();
     }
 }

@@ -1,11 +1,16 @@
-using Arch.Core;
 using Game.Domain.Enums;
 using Game.ECS.Components;
 
-namespace Game.ECS.Logic;
+namespace Game.ECS.Entities.Combat;
 
-public static partial class CombatLogic
+public static class CombatHelper
 {
+    /// <summary>
+    /// Retorna o estilo de ataque básico baseado no ID de vocação (byte).
+    /// </summary>
+    public static AttackStyle GetAttackStyleForVocation(byte vocationId) 
+        => GetAttackStyleForVocation((VocationType)vocationId);
+    
     /// <summary>
     /// Retorna o estilo de ataque básico baseado na vocação.
     /// </summary>
@@ -16,11 +21,4 @@ public static partial class CombatLogic
         VocationType.Mage    => AttackStyle.Magic,
         _ => AttackStyle.Melee // Default para vocações desconhecidas
     };
-    
-    /// <summary>
-    /// Retorna o estilo de ataque básico baseado no ID de vocação (byte).
-    /// </summary>
-    public static AttackStyle GetAttackStyleForVocation(byte vocationId) 
-        => GetAttackStyleForVocation((VocationType)vocationId);
-    
 }

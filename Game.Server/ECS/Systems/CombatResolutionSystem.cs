@@ -10,7 +10,7 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class CombatResolutionSystem(World world) : GameSystem(world)
 {
     [Query]
-    [All<AttackCommand, CombatStats, Position, MapId, Floor, Facing>]
+    [All<AttackCommand, CombatStats, Position, MapId, Floor, Direction>]
     public void ResolveAttacks(
         Entity attacker, 
         ref AttackCommand cmd,
@@ -97,7 +97,7 @@ public sealed partial class CombatResolutionSystem(World world) : GameSystem(wor
         // Validação de distância para evitar "Melee Sniper" (lag switch)
         if (World.TryGet(target, out Position tPos) && World.TryGet(attacker, out Position aPos))
         {
-            if (PositionLogic.CalculateDistance(in aPos, in tPos) > stats.AttackRange)
+            if (PositionHelper.CalculateDistance(in aPos, in tPos) > stats.AttackRange)
                 return; // Fora do alcance
         }
 

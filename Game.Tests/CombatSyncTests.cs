@@ -5,7 +5,6 @@ using Arch.Core;
 using FluentAssertions;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Services;
 using Game.Network.Abstractions;

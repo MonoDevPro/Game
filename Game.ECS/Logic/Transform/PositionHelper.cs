@@ -2,7 +2,7 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Logic;
 
-public static partial class PositionLogic
+public static partial class PositionHelper
 {
     public static (sbyte X, sbyte Y) GetDirectionTowards(in Position from, in Position to) 
         => ((sbyte)Math.Sign(to.X - from.X), (sbyte)Math.Sign(to.Y - from.Y));
@@ -13,5 +13,9 @@ public static partial class PositionLogic
         float deltaY = b.Y - a.Y;
         return MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
     }
+    
+    public static int ManhattanDistance(Position pos, Position other) => Math.Abs(pos.X - other.X) + Math.Abs(pos.Y - other.Y);
+    
+    public static int EuclideanDistanceSquared(Position pos, Position other) => (pos.X - other.X) * (pos.X - other.X) + (pos.Y - other.Y) * (pos.Y - other.Y);
     
 }

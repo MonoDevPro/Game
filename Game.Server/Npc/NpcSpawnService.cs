@@ -1,8 +1,9 @@
 using Game.Domain.Enums;
 using Game.Domain.Templates;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Npc;
 using Game.Server.ECS;
 
 namespace Game.Server.Npc;
@@ -59,7 +60,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         }
     }
 
-    public IEnumerable<NPCData> BuildSnapshots()
+    public IEnumerable<NpcSnapshot> BuildSnapshots()
     {
         foreach (var networkId in _activeNetworkIds)
         {

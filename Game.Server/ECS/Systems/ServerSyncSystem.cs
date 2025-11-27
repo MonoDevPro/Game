@@ -4,6 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.Core.Extensions;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Logic;
 using Game.ECS.Systems;
@@ -20,13 +21,13 @@ public sealed partial class ServerSyncSystem(
 {
     private readonly List<CombatStateSnapshot> _combatBuffer = [];
     
-    private readonly List<NpcSpawnSnapshot> _npcSpawnBuffer = [];
-    private readonly List<NpcStateSnapshot> _npcStateBuffer = [];
-    private readonly List<NpcHealthSnapshot> _npcHealthBuffer = [];
+    private readonly List<NpcSpawnRequest> _npcSpawnBuffer = [];
+    private readonly List<NpcStateUpdate> _npcStateBuffer = [];
+    private readonly List<NpcVitalsUpdate> _npcHealthBuffer = [];
     
-    private readonly List<PlayerSnapshot> _playerSpawnBuffer = [];
-    private readonly List<PlayerStateSnapshot> _playerStateBuffer = [];
-    private readonly List<PlayerVitalsSnapshot> _playerVitalsBuffer = [];
+    private readonly List<PlayerSpawnPacket> _playerSpawnBuffer = [];
+    private readonly List<PlayerStateUpdate> _playerStateBuffer = [];
+    private readonly List<PlayerVitalsUpdate> _playerVitalsBuffer = [];
     
     [Query]
     [All<NetworkId, DirtyFlags>]
@@ -75,7 +76,7 @@ public sealed partial class ServerSyncSystem(
 
         if (spawnRequested)
         {
-            _playerSpawnBuffer.Add(World.BuildPlayerDataSnapshot(entity).ToPlayerSpawnSnapshot());
+            _playerSpawnBuffer.Add(World.BuildPlayerSnapshot(entity).ToPlayerSpawnSnapshot());
             dirty.ClearDirtyMask(DirtyComponentType.All);
         }
 
@@ -123,7 +124,7 @@ public sealed partial class ServerSyncSystem(
         if (!spawnRequested && dirty.IsDirtyMask(DirtyComponentType.Vitals))
         {
             var healthData = World
-                .BuildNpcHealthData(entity)
+                .BuildNpcVitalsSnapshot(entity)
                 .ToNpcHealthSnapshot();
             _npcHealthBuffer.Add(healthData);
         }

@@ -132,9 +132,9 @@ public abstract partial class DefaultVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateAnimationState(Facing facing, bool isMoving = false, bool isAttacking = false, bool isDead = false)
+    public void UpdateAnimationState(Direction direction, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
-        _currentFacing = ConvertToFacingEnum(facing.DirectionX, facing.DirectionY);
+        _currentFacing = ConvertToFacingEnum(direction.DirectionX, direction.DirectionY);
         if (Sprite is null) return;
         UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
     }

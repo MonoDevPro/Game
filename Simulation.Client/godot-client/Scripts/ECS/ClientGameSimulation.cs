@@ -3,10 +3,12 @@ using Arch.System;
 using Game.Domain.Templates;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities.Data;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
-using Game.ECS.Entities.Updates;
+using Game.ECS.Entities.Npc;
+using Game.ECS.Entities.Player;
 using Game.ECS.Logic;
+using Game.ECS.Services;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
@@ -50,14 +52,14 @@ public sealed class ClientGameSimulation : GameSimulation
         systems.Add(_visualSyncSystem);
         
         // Spatial updates
-        systems.Add(new SpatialSyncSystem(world, MapService));
+        systems.Add(new SpatialService(world, MapService));
         
         // Sincronização com o servidor
         systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
-    public bool ApplyPlayerState(PlayerStateData data) => World.ApplyPlayerState(PlayerIndex, data);
-    public bool ApplyPlayerVitals(PlayerVitalsData data) => World.ApplyPlayerVitals(PlayerIndex, data);
+    public bool ApplyPlayerState(PlayerStateSnapshot snapshot) => World.ApplyPlayerState(PlayerIndex, snapshot);
+    public bool ApplyPlayerVitals(PlayerVitalsSnapshot snapshot) => World.ApplyPlayerVitals(PlayerIndex, snapshot);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
@@ -97,24 +99,24 @@ public sealed class ClientGameSimulation : GameSimulation
         return false;
     }
 
-    public Entity CreateLocalPlayer(in PlayerData data, PlayerVisual visual)
+    public Entity CreateLocalPlayer(in PlayerSnapshot snapshot, PlayerVisual visual)
     {
-        GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {true})");
-        var entity = base.CreatePlayer(data);
+        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
+        var entity = base.CreatePlayer(snapshot);
         World.Add<LocalPlayerTag>(entity);
-        _visualSyncSystem?.RegisterPlayerVisual(data.NetworkId, visual);
-        visual.UpdateFromSnapshot(in data);
+        _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
+        visual.UpdateFromSnapshot(in snapshot);
         visual.MakeCamera();
         return entity;
     }
     
-    public Entity CreateRemotePlayer(in PlayerData data, PlayerVisual visual)
+    public Entity CreateRemotePlayer(in PlayerSnapshot snapshot, PlayerVisual visual)
     {
-        GD.Print($"[GameClient] Spawning player visual for '{data.Name}' (NetID: {data.NetworkId}, Local: {false})");
-        var entity = base.CreatePlayer(data);
+        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
+        var entity = base.CreatePlayer(snapshot);
         World.Add<RemotePlayerTag>(entity);
-        _visualSyncSystem?.RegisterPlayerVisual(data.NetworkId, visual);
-        visual.UpdateFromSnapshot(data);
+        _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
+        visual.UpdateFromSnapshot(snapshot);
         return entity;
     }
     
@@ -124,11 +126,11 @@ public sealed class ClientGameSimulation : GameSimulation
         return base.DestroyPlayer(networkId);
     }
 
-    public Entity CreateNpc(in NPCData data, NpcVisual visual)
+    public Entity CreateNpc(in NpcSnapshot snapshot, NpcVisual visual)
     {
-        var entity = base.World.CreateNPC(in data);
-        _visualSyncSystem?.RegisterNpcVisual(data.NetworkId, visual);
-        visual.UpdateFromSnapshot(data);
+        var entity = base.World.CreateNPC(in snapshot);
+        _visualSyncSystem?.RegisterNpcVisual(snapshot.NetworkId, visual);
+        visual.UpdateFromSnapshot(snapshot);
         return entity;
     }
 
@@ -138,15 +140,15 @@ public sealed class ClientGameSimulation : GameSimulation
         return base.DestroyNpc(networkId);
     }
 
-    public bool UpdateNpcState(in NpcStateData state)
+    public bool UpdateNpcState(in NpcStateSnapshot state)
     {
         return NpcIndex.TryGetEntity(state.NetworkId, out var entity) && 
                World.ApplyNpcState(entity, state);
     }
     
-    public bool UpdateNpcVitals(in NpcVitalsData data)
+    public bool UpdateNpcVitals(in NpcVitalsSnapshot snapshot)
     {
-        return NpcIndex.TryGetEntity(data.NetworkId, out var entity) && 
-               World.ApplyNpcVitals(entity, data);
+        return NpcIndex.TryGetEntity(snapshot.NetworkId, out var entity) && 
+               World.ApplyNpcVitals(entity, snapshot);
     }
 }

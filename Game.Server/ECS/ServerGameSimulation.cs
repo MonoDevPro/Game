@@ -25,7 +25,7 @@ public sealed class ServerGameSimulation : GameSimulation
         INetworkManager network, 
         ILoggerFactory factory, 
         IEnumerable<Map> maps,
-        INpcRepository npcRepository) : base(mapService: new MapService())
+        INpcRepository npcRepository) : base()
     {
         _networkManager = network;
         _loggerFactory = factory;
@@ -89,7 +89,7 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
         //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
-        systems.Add(new SpatialSyncSystem(World, MapService, _loggerFactory.CreateLogger<SpatialSyncSystem>()));
+        systems.Add(new SpatialService(World, MapService, _loggerFactory.CreateLogger<SpatialService>()));
         
         // 9. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
