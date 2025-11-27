@@ -1,12 +1,6 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.Domain.Templates;
-using Game.ECS.Components;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Npc;
-using Game.ECS.Entities.Player;
-using Game.ECS.Services;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
 
@@ -61,13 +55,12 @@ public abstract class GameSimulation(GameServices services, ILoggerFactory logge
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
     private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
     public uint CurrentTick { get; private set; }
-    
     protected ILoggerFactory LoggerFactory { get; } = loggerFactory;
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, GameServices services, ILoggerFactory loggerFactory, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, GameServices services, Group<float> systems);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)

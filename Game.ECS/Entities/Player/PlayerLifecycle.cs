@@ -1,4 +1,6 @@
+using System.Reflection.Metadata;
 using Arch.Core;
+using Arch.LowLevel;
 using Game.ECS.Components;
 using Game.ECS.Services;
 
@@ -13,7 +15,7 @@ public record PlayerTemplate(
     int PhysicalAttack, int MagicAttack,
     int PhysicalDefense, int MagicDefense);
 
-public sealed class PlayerLifecycle(World world, GameResources resources, PlayerIndex playerIndex)
+public static class PlayerLifecycle
 {
     /// <summary>
     /// Arquétipo de jogador completo com todos os componentes necessários.
@@ -41,7 +43,7 @@ public sealed class PlayerLifecycle(World world, GameResources resources, Player
         Component<PlayerControlled>.ComponentType,
     ];
     
-    public Entity CreatePlayer(PlayerTemplate template, Position position, sbyte floor, int mapId, int networkId)
+    public static Entity CreatePlayer(World world, Func<string, Handle<string>> resources, PlayerTemplate template, Position position, sbyte floor, int mapId, int networkId)
     {
         var entity = world.Create(PlayerArchetype);
         
@@ -50,7 +52,7 @@ public sealed class PlayerLifecycle(World world, GameResources resources, Player
             new NetworkId { Value = networkId },
             new PlayerId { Value = template.PlayerId },
             new MapId { Value = mapId },
-            new NameHandle { Value = resources.Strings.Register(template.Name) },
+            new NameHandle { Value = resources(template.Name) },
             new GenderId { Value = template.GenderId },
             new VocationId { Value = template.VocationId },
             new Position { X = position.X, Y = position.Y },
@@ -81,18 +83,16 @@ public sealed class PlayerLifecycle(World world, GameResources resources, Player
         };
         
         world.SetRange(entity, components);
-        playerIndex.AddMapping(networkId, entity);
         return entity;
     }
     
-    public void DestroyPlayer(Entity entity)
+    public static void DestroyPlayer(World world, Entity entity, Action<Handle<string>> resources)
     {
         if (world.Has<NameHandle>(entity))
         {
             var nameRef = world.Get<NameHandle>(entity);
-            resources.Strings.Unregister(nameRef.Value);
+            resources(nameRef.Value);
         }
-        playerIndex.RemoveByEntity(entity);
         world.Destroy(entity);
     }
 }

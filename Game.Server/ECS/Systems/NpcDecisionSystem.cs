@@ -12,7 +12,6 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class NpcDecisionSystem(
     World world,
     INpcRepository npcRepository,
-    IMapService mapService,
     ILogger<NpcDecisionSystem>? logger = null)
     : GameSystem(world)
 {

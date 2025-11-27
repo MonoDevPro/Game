@@ -1,11 +1,12 @@
 using Arch.Core;
+using Arch.LowLevel;
 using Game.Domain.Templates;
 using Game.ECS.Components;
 using Game.ECS.Services;
 
 namespace Game.ECS.Entities.Npc;
 
-public sealed class NpcLifecycle(World world, GameResources resources, NpcIndex npcIndex)
+public static class NpcLifecycle
 {
     /// <summary>
     /// Arquétipo de NPC com IA.
@@ -39,14 +40,14 @@ public sealed class NpcLifecycle(World world, GameResources resources, NpcIndex 
     /// <summary>
     /// Cria um NPC com IA controlada e suporte a pathfinding A*.
     /// </summary>
-    public Entity CreateNPC(NpcTemplate template, Position pos, int floor, int mapId, int networkId)
+    public static Entity CreateNPC(World world, Func<string, Handle<string>> resources, NpcTemplate template, Position pos, int floor, int mapId, int networkId)
     {
         var entity = world.Create(NpcArchetype);
         var components = new object[]
         {
             new NetworkId { Value = networkId },
             new MapId { Value = mapId },
-            new NameHandle { Value = resources.Strings.Register(template.Name) },
+            new NameHandle { Value = resources(template.Name) },
             new Position { X = pos.X, Y = pos.Y },
             new Floor { Level = (sbyte)floor },
             new Direction { DirectionX = 0, DirectionY = 1 },
@@ -84,18 +85,16 @@ public sealed class NpcLifecycle(World world, GameResources resources, NpcIndex 
         };
         
         world.SetRange(entity, components);
-        npcIndex.AddMapping(networkId, entity);
         return entity;
     }
     
-    public void DestroyNPC(Entity entity)
+    public static void DestroyNPC(World world, Action<Handle<string>> resources, Entity entity)
     {
         if (world.Has<NameHandle>(entity))
         {
             var nameRef = world.Get<NameHandle>(entity);
-            resources.Strings.Unregister(nameRef.Value);
+            resources(nameRef.Value);
         }
-        npcIndex.RemoveByEntity(entity);
         world.Destroy(entity);
     }
 }

@@ -1,13 +1,14 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Logic;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
 
-public sealed partial class CombatResolutionSystem(World world) : GameSystem(world)
+public sealed partial class CombatResolutionSystem(World world, GameServices services) : GameSystem(world, services)
 {
     [Query]
     [All<AttackCommand, CombatStats, Position, MapId, Floor, Direction>]
