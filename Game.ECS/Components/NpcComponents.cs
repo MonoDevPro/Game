@@ -35,3 +35,30 @@ public struct NavigationAgent
     public float StoppingDistance;
     public bool IsPathPending; // Flag para pedir recalculo de path
 }
+
+/// <summary>
+/// NPC behavior configuration component.
+/// Stores the behavior type and ranges for AI decision making.
+/// </summary>
+public struct NpcBehavior
+{
+    public NpcBehaviorType Type;
+    public float VisionRange;
+    public float AttackRange;
+    public float LeashRange;
+    public float PatrolRadius;
+    public float IdleDurationMin;
+    public float IdleDurationMax;
+}
+
+/// <summary>
+/// Types of NPC behavior patterns.
+/// </summary>
+public enum NpcBehaviorType : byte
+{
+    Passive,      // Won't attack unless attacked
+    Aggressive,   // Attacks on sight
+    Defensive,    // Defends territory
+    Fearful,      // Runs from players
+    Neutral       // Ignores players
+}
