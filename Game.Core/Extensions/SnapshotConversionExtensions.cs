@@ -6,11 +6,11 @@ using Game.Network.Packets.Game;
 namespace Game.Core.Extensions;
 
 /// <summary>
-/// Extension methods for converting ECS snapshots to network packet types.
+/// Extension methods for converting between ECS snapshots and network packet types.
 /// </summary>
 public static class SnapshotConversionExtensions
 {
-    #region Player Conversions
+    #region Player Conversions (ECS to Network)
     
     /// <summary>
     /// Converts a PlayerSnapshot to a PlayerSpawn network packet.
@@ -74,7 +74,71 @@ public static class SnapshotConversionExtensions
     
     #endregion
     
-    #region NPC Conversions
+    #region Player Conversions (Network to ECS)
+    
+    /// <summary>
+    /// Converts a PlayerSpawn network packet to a PlayerSnapshot.
+    /// </summary>
+    public static PlayerSnapshot ToPlayerData(this PlayerSpawn spawn)
+    {
+        return new PlayerSnapshot(
+            PlayerId: spawn.PlayerId,
+            NetworkId: spawn.NetworkId,
+            MapId: spawn.MapId,
+            Name: spawn.Name,
+            GenderId: spawn.Gender,
+            VocationId: spawn.Vocation,
+            PosX: spawn.X,
+            PosY: spawn.Y,
+            Floor: spawn.Floor,
+            DirX: spawn.DirX,
+            DirY: spawn.DirY,
+            Hp: spawn.Hp,
+            MaxHp: spawn.MaxHp,
+            Mp: spawn.Mp,
+            MaxMp: spawn.MaxMp,
+            MovementSpeed: spawn.MovementSpeed,
+            AttackSpeed: spawn.AttackSpeed,
+            PhysicalAttack: spawn.PhysicalAttack,
+            MagicAttack: spawn.MagicAttack,
+            PhysicalDefense: spawn.PhysicalDefense,
+            MagicDefense: spawn.MagicDefense
+        );
+    }
+    
+    /// <summary>
+    /// Converts a PlayerStateUpdate network packet to a PlayerStateSnapshot.
+    /// </summary>
+    public static PlayerStateSnapshot ToPlayerStateData(this PlayerStateUpdate update)
+    {
+        return new PlayerStateSnapshot(
+            NetworkId: update.NetworkId,
+            PositionX: update.X,
+            PositionY: update.Y,
+            Floor: update.Floor,
+            Speed: update.Speed,
+            DirX: update.DirX,
+            DirY: update.DirY
+        );
+    }
+    
+    /// <summary>
+    /// Converts a PlayerVitalsUpdate network packet to a PlayerVitalsSnapshot.
+    /// </summary>
+    public static PlayerVitalsSnapshot ToPlayerVitalsData(this PlayerVitalsUpdate update)
+    {
+        return new PlayerVitalsSnapshot(
+            NetworkId: update.NetworkId,
+            Hp: update.CurrentHp,
+            MaxHp: update.MaxHp,
+            Mp: update.CurrentMp,
+            MaxMp: update.MaxMp
+        );
+    }
+    
+    #endregion
+    
+    #region NPC Conversions (ECS to Network)
     
     /// <summary>
     /// Converts an NpcSnapshot to an NpcSpawnRequest network packet.
@@ -118,6 +182,61 @@ public static class SnapshotConversionExtensions
             NetworkId: snapshot.NetworkId,
             CurrentHp: snapshot.CurrentHp,
             CurrentMp: snapshot.CurrentMp
+        );
+    }
+    
+    #endregion
+    
+    #region NPC Conversions (Network to ECS)
+    
+    /// <summary>
+    /// Converts an NpcSpawnRequest network packet to an NpcSnapshot.
+    /// </summary>
+    public static NpcSnapshot ToNpcData(this NpcSpawnRequest request)
+    {
+        return new NpcSnapshot(
+            NetworkId: request.NetworkId,
+            MapId: 0, // Not available in NpcSpawnRequest
+            Name: $"NPC_{request.NetworkId}", // Not available in NpcSpawnRequest
+            X: request.X,
+            Y: request.Y,
+            Floor: request.Floor,
+            DirX: request.DirectionX,
+            DirY: request.DirectionY,
+            Hp: request.CurrentHp,
+            MaxHp: request.MaxHp,
+            Mp: 0, // Not available in NpcSpawnRequest
+            MaxMp: 0 // Not available in NpcSpawnRequest
+        );
+    }
+    
+    /// <summary>
+    /// Converts an NpcStateUpdate network packet to an NpcStateSnapshot.
+    /// </summary>
+    public static NpcStateSnapshot ToNpcStateData(this NpcStateUpdate update)
+    {
+        return new NpcStateSnapshot(
+            NetworkId: update.NetworkId,
+            X: update.X,
+            Y: update.Y,
+            Floor: 0, // Not available in NpcStateUpdate
+            Speed: update.Speed,
+            DirectionX: update.DirectionX,
+            DirectionY: update.DirectionY
+        );
+    }
+    
+    /// <summary>
+    /// Converts an NpcVitalsUpdate network packet to an NpcVitalsSnapshot.
+    /// </summary>
+    public static NpcVitalsSnapshot ToNpcVitalsData(this NpcVitalsUpdate update)
+    {
+        return new NpcVitalsSnapshot(
+            NetworkId: update.NetworkId,
+            CurrentHp: update.CurrentHp,
+            MaxHp: 0, // Not available in NpcVitalsUpdate
+            CurrentMp: update.CurrentMp,
+            MaxMp: 0 // Not available in NpcVitalsUpdate
         );
     }
     

@@ -72,6 +72,22 @@ public abstract class GameSimulation : GameSystem
     /// Access to the map service for spatial queries.
     /// </summary>
     public new IMapService? MapService => Services!.MapService;
+    
+    /// <summary>
+    /// Registers a map with the map service.
+    /// </summary>
+    public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial)
+    {
+        Services!.MapService?.RegisterMap(mapId, mapGrid, mapSpatial);
+    }
+    
+    /// <summary>
+    /// Tries to get any entity (player or NPC) by network ID.
+    /// </summary>
+    public bool TryGetAnyEntity(int networkId, out Entity entity)
+    {
+        return Services!.TryGetAnyEntity(networkId, out entity);
+    }
 
     protected GameSimulation(GameServices services, ILoggerFactory loggerFactory) 
         : base(

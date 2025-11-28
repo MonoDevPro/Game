@@ -13,7 +13,7 @@ public static class WorldUpdateExtensions
     /// <summary>
     /// Applies a player state snapshot to the entity identified by networkId.
     /// </summary>
-    public static bool ApplyPlayerState(this World world, PlayerIndex index, PlayerStateSnapshot snapshot)
+    public static bool ApplyPlayerState(this World world, IPlayerIndex index, PlayerStateSnapshot snapshot)
     {
         if (!index.TryGetEntity(snapshot.NetworkId, out var entity))
             return false;
@@ -34,7 +34,7 @@ public static class WorldUpdateExtensions
     /// <summary>
     /// Applies a player vitals snapshot to the entity identified by networkId.
     /// </summary>
-    public static bool ApplyPlayerVitals(this World world, PlayerIndex index, PlayerVitalsSnapshot snapshot)
+    public static bool ApplyPlayerVitals(this World world, IPlayerIndex index, PlayerVitalsSnapshot snapshot)
     {
         if (!index.TryGetEntity(snapshot.NetworkId, out var entity))
             return false;
