@@ -6,14 +6,33 @@ using Game.ECS.Services;
 
 namespace Game.ECS.Entities.Player;
 
+/// <summary>
+/// Template for creating a player entity with all required data.
+/// </summary>
 public record PlayerTemplate(
-    int PlayerId, string Name, byte GenderId, byte VocationId,
-    sbyte DirX, sbyte DirY,
-    int Hp, int MaxHp, float HpRegen,
-    int Mp, int MaxMp, float MpRegen,
-    float MovementSpeed, float AttackSpeed,
-    int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense);
+    int PlayerId,
+    int NetworkId,
+    int MapId,
+    string Name, 
+    byte GenderId, 
+    byte VocationId,
+    int PosX,
+    int PosY,
+    sbyte Floor,
+    sbyte DirX, 
+    sbyte DirY,
+    int Hp, 
+    int MaxHp, 
+    float HpRegen,
+    int Mp, 
+    int MaxMp, 
+    float MpRegen,
+    float MovementSpeed, 
+    float AttackSpeed,
+    int PhysicalAttack, 
+    int MagicAttack,
+    int PhysicalDefense, 
+    int MagicDefense);
 
 public static class PlayerLifecycle
 {
@@ -28,6 +47,7 @@ public static class PlayerLifecycle
         Component<MapId>.ComponentType,
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
+        Component<PlayerInfo>.ComponentType,
         Component<Position>.ComponentType,
         Component<Floor>.ComponentType,
         Component<Direction>.ComponentType,
@@ -43,20 +63,24 @@ public static class PlayerLifecycle
         Component<PlayerControlled>.ComponentType,
     ];
     
-    public static Entity CreatePlayer(World world, Func<string, Handle<string>> resources, PlayerTemplate template, Position position, sbyte floor, int mapId, int networkId)
+    /// <summary>
+    /// Creates a player entity from a template. Uses template values for position, floor, map, and network ID.
+    /// </summary>
+    public static Entity CreatePlayer(World world, Func<string, Handle<string>> resources, PlayerTemplate template)
     {
         var entity = world.Create(PlayerArchetype);
         
         var components = new object[]
         {
-            new NetworkId { Value = networkId },
+            new NetworkId { Value = template.NetworkId },
             new PlayerId { Value = template.PlayerId },
-            new MapId { Value = mapId },
+            new MapId { Value = template.MapId },
             new NameHandle { Value = resources(template.Name) },
             new GenderId { Value = template.GenderId },
             new VocationId { Value = template.VocationId },
-            new Position { X = position.X, Y = position.Y },
-            new Floor { Level = floor },
+            new PlayerInfo { GenderId = template.GenderId, VocationId = template.VocationId },
+            new Position { X = template.PosX, Y = template.PosY },
+            new Floor { Level = template.Floor },
             new Direction { DirectionX = template.DirX, DirectionY = template.DirY },
             new Velocity { X = 0, Y = 0, Speed = 0f },
             new Movement { Timer = 0f },

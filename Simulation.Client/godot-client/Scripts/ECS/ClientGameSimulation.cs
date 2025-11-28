@@ -32,17 +32,18 @@ public sealed class ClientGameSimulation : GameSimulation
     /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
     /// Estado autorizado vem do servidor.
     /// </summary>
-    public ClientGameSimulation(INetworkManager networkManager)
+    public ClientGameSimulation(INetworkManager networkManager) 
+        : base(new GameServices(), Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance)
     {
         _networkManager = networkManager;
-        ConfigureSystems(World, Systems);
+        ConfigureSystems(World, Services!, Systems);
     }
 
     /// <summary>
     /// Configura sistemas apenas para o cliente.
     /// Ordem: Input → Movement (previsão local) → Sync (recebe correções do servidor)
     /// </summary>
-    protected override void ConfigureSystems(World world, Group<float> systems)
+    protected override void ConfigureSystems(World world, GameServices services, Group<float> systems)
     {
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));

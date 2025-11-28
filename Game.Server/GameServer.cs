@@ -734,7 +734,7 @@ public sealed class GameServer : IDisposable
                 .ToArray();
             
             // ✅ 6. Broadcasta spawn para outros jogadores
-            _networkManager.SendToAllExcept<Network.Packets.Game.PlayerSpawnPacket>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept<Network.Packets.Game.PlayerSpawn>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();

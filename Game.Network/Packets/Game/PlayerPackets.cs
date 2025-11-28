@@ -4,10 +4,10 @@ using MemoryPack;
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPacket, PlayerSpawnPacket LocalPlayer, PlayerSpawnPacket[] OtherPlayers);
+public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPacket, PlayerSpawn LocalPlayer, PlayerSpawn[] OtherPlayers);
 
 [MemoryPackable]
-public readonly partial record struct PlayerSpawnPacket(PlayerSpawnPacket[] PlayerData);
+public readonly partial record struct PlayerSpawnPacket(PlayerSpawn[] PlayerData);
 
 [MemoryPackable]
 public readonly partial record struct PlayerStatePacket(PlayerStateUpdate[] States);

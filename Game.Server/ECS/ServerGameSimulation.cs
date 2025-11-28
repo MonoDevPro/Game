@@ -42,7 +42,7 @@ public sealed class ServerGameSimulation : GameSimulation
         }
         
         // Configura os sistemas
-        ConfigureSystems(World, Systems);
+        ConfigureSystems(World, Services!, Systems);
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public sealed class ServerGameSimulation : GameSimulation
         // ⭐ Ordem importante:
         
         // 0. NPC Systems rodando ANTES dos sistemas de jogador
-        systems.Add(new NpcDecisionSystem(world, _npcRepository, mapService, _loggerFactory.CreateLogger<NpcDecisionSystem>()));
+        systems.Add(new NpcDecisionSystem(world, _npcRepository, mapService));
         systems.Add(new NpcCombatStrategySystem(world));
         systems.Add(new NpcNavigationSystem(world, mapService, _loggerFactory.CreateLogger<NpcNavigationSystem>()));
         systems.Add(new NpcMotorSystem(world, _loggerFactory.CreateLogger<NpcMotorSystem>()));
@@ -64,17 +64,17 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new InputSystem(world));
         
         // 2. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, mapService));
+        systems.Add(new MovementSystem(world, mapService!));
         
         // 4. Combat processa estado de combate
-        systems.Add(new CombatSystem(world, mapService, _loggerFactory.CreateLogger<CombatSystem>()));
-        systems.Add(new CombatResolutionSystem(world));
+        systems.Add(new CombatSystem(world, mapService!, _loggerFactory.CreateLogger<CombatSystem>()));
+        systems.Add(new CombatResolutionSystem(world, services));
         
         // 4.1 Damage processa dano periódico (DoT), dano adiado e cria projéteis
-        systems.Add(new DamageSystem(world, mapService, _loggerFactory.CreateLogger<DamageSystem>()));
+        systems.Add(new DamageSystem(world, mapService!, _loggerFactory.CreateLogger<DamageSystem>()));
         
         // 4.2 Projectile processa movimento e colisão de projéteis
-        systems.Add(new ProjectileSystem(world, mapService, _loggerFactory.CreateLogger<ProjectileSystem>()));
+        systems.Add(new ProjectileSystem(world, mapService!, _loggerFactory.CreateLogger<ProjectileSystem>()));
         
         // 4.3 Death processa morte de entidades
         systems.Add(new DeathSystem(world, _loggerFactory.CreateLogger<DeathSystem>()));
@@ -87,7 +87,7 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
         //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
-        systems.Add(new SpatialService(World, mapService, _loggerFactory.CreateLogger<SpatialService>()));
+        systems.Add(new SpatialService(World, mapService!));
         
         // 9. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
