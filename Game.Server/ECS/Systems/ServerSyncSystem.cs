@@ -25,7 +25,7 @@ public sealed partial class ServerSyncSystem(
     private readonly List<NpcStateUpdate> _npcStateBuffer = [];
     private readonly List<NpcVitalsUpdate> _npcHealthBuffer = [];
     
-    private readonly List<PlayerSpawnPacket> _playerSpawnBuffer = [];
+    private readonly List<PlayerSpawn> _playerSpawnBuffer = [];
     private readonly List<PlayerStateUpdate> _playerStateBuffer = [];
     private readonly List<PlayerVitalsUpdate> _playerVitalsBuffer = [];
     

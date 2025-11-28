@@ -12,10 +12,12 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class NpcDecisionSystem(
     World world,
     INpcRepository npcRepository,
-    ILogger<NpcDecisionSystem>? logger = null)
-    : GameSystem(world)
+    IMapService? mapService)
+    : GameSystem(world, mapService)
 {
     private const int MaxSpatialResults = 32;
+    private readonly INpcRepository _npcRepository = npcRepository;
+    private readonly IMapService? _mapService = mapService;
 
     [Query]
     [All<NpcBrain, Position, NpcType, NavigationAgent, Floor, MapId, NpcPatrol>]
@@ -83,7 +85,9 @@ public sealed partial class NpcDecisionSystem(
     private bool SearchForTarget(Entity self, Position position, Floor floor, MapId mapId, float visionRange, out Entity target)
     {
         target = Entity.Null;
-        var spatial = mapService.GetMapSpatial(mapId.Value);
+        var spatial = _mapService?.GetMapSpatial(mapId.Value);
+        if (spatial == null) return false;
+        
         int radius2D = Math.Max(1, (int)MathF.Ceiling(visionRange));
         var center = new SpatialPosition(position.X, position.Y, floor.Level);
 
