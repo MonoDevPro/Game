@@ -4,6 +4,8 @@ using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.ECS.Services;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace Game.ECS.Entities.Factories;
 
@@ -13,19 +15,19 @@ namespace Game.ECS.Entities.Factories;
 /// </summary>
 public static class WorldSnapshotExtensions
 {
-    // Thread-local builders to avoid allocations (note: this assumes single-threaded usage per World)
-    // In a multi-threaded scenario, consider using a dictionary keyed by World
-    [ThreadStatic]
-    private static PlayerSnapshotBuilder? _playerSnapshotBuilder;
+    // Thread-safe cache of builders keyed by World hash code
+    // This allows multiple World instances to each have their own builders
+    private static readonly ConditionalWeakTable<World, SnapshotBuildersHolder> _buildersCache = new();
     
-    [ThreadStatic]
-    private static NpcSnapshotBuilder? _npcSnapshotBuilder;
-    
-    [ThreadStatic]
-    private static GameResources? _resources;
-    
-    [ThreadStatic]
-    private static World? _currentWorld;
+    /// <summary>
+    /// Holds the snapshot builders for a specific World instance.
+    /// </summary>
+    private sealed class SnapshotBuildersHolder
+    {
+        public required PlayerSnapshotBuilder PlayerBuilder { get; init; }
+        public required NpcSnapshotBuilder NpcBuilder { get; init; }
+        public required GameResources Resources { get; init; }
+    }
 
     /// <summary>
     /// Initializes the snapshot builders for the given world and resources.
@@ -33,23 +35,28 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static void InitializeSnapshotBuilders(this World world, GameResources resources)
     {
-        _currentWorld = world;
-        _resources = resources;
-        _playerSnapshotBuilder = new PlayerSnapshotBuilder(world, resources);
-        _npcSnapshotBuilder = new NpcSnapshotBuilder(world, resources);
+        var holder = new SnapshotBuildersHolder
+        {
+            PlayerBuilder = new PlayerSnapshotBuilder(world, resources),
+            NpcBuilder = new NpcSnapshotBuilder(world, resources),
+            Resources = resources
+        };
+        _buildersCache.AddOrUpdate(world, holder);
     }
     
-    private static void EnsureInitialized(World world)
+    private static SnapshotBuildersHolder GetOrCreateBuilders(World world)
     {
-        if (_currentWorld != world || _resources == null)
+        return _buildersCache.GetValue(world, w =>
         {
-            // Auto-initialize with a new GameResources if not yet initialized
-            // This is a fallback - ideally InitializeSnapshotBuilders should be called explicitly
-            _currentWorld = world;
-            _resources ??= new GameResources();
-            _playerSnapshotBuilder = new PlayerSnapshotBuilder(world, _resources);
-            _npcSnapshotBuilder = new NpcSnapshotBuilder(world, _resources);
-        }
+            // Create default resources if not explicitly initialized
+            var resources = new GameResources();
+            return new SnapshotBuildersHolder
+            {
+                PlayerBuilder = new PlayerSnapshotBuilder(w, resources),
+                NpcBuilder = new NpcSnapshotBuilder(w, resources),
+                Resources = resources
+            };
+        });
     }
     
     /// <summary>
@@ -57,8 +64,7 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static PlayerSnapshot BuildPlayerSnapshot(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _playerSnapshotBuilder!.BuildPlayerSnapshot(entity);
+        return GetOrCreateBuilders(world).PlayerBuilder.BuildPlayerSnapshot(entity);
     }
     
     /// <summary>
@@ -66,8 +72,7 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static PlayerStateSnapshot BuildPlayerStateSnapshot(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _playerSnapshotBuilder!.BuildPlayerStateSnapshot(entity);
+        return GetOrCreateBuilders(world).PlayerBuilder.BuildPlayerStateSnapshot(entity);
     }
     
     /// <summary>
@@ -75,8 +80,7 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static PlayerVitalsSnapshot BuildPlayerVitalsSnapshot(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _playerSnapshotBuilder!.BuildPlayerVitalsSnapshot(entity);
+        return GetOrCreateBuilders(world).PlayerBuilder.BuildPlayerVitalsSnapshot(entity);
     }
     
     /// <summary>
@@ -84,8 +88,7 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static NpcSnapshot BuildNpcData(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _npcSnapshotBuilder!.BuildNpcData(entity);
+        return GetOrCreateBuilders(world).NpcBuilder.BuildNpcData(entity);
     }
     
     /// <summary>
@@ -93,8 +96,7 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static NpcStateSnapshot BuildNpcStateData(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _npcSnapshotBuilder!.BuildNpcStateData(entity);
+        return GetOrCreateBuilders(world).NpcBuilder.BuildNpcStateData(entity);
     }
     
     /// <summary>
@@ -102,7 +104,6 @@ public static class WorldSnapshotExtensions
     /// </summary>
     public static NpcVitalsSnapshot BuildNpcVitalsSnapshot(this World world, Entity entity)
     {
-        EnsureInitialized(world);
-        return _npcSnapshotBuilder!.BuildNpcVitalsSnapshot(entity);
+        return GetOrCreateBuilders(world).NpcBuilder.BuildNpcVitalsSnapshot(entity);
     }
 }

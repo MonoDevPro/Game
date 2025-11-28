@@ -106,10 +106,16 @@ public static class WorldEntityExtensions
     }
     
     /// <summary>
-    /// Creates an NPC entity from snapshot data with default string handling.
+    /// Creates an NPC entity from snapshot data.
+    /// Note: This overload does not properly register string resources. Use the 
+    /// overload with Func&lt;string, Handle&lt;string&gt;&gt; for proper resource management.
+    /// This is primarily for client-side entity creation where resource handles
+    /// are not needed for name display (names are stored as strings in the visual).
     /// </summary>
     public static Entity CreateNPC(this World world, in NpcSnapshot snapshot)
     {
+        // Using default handle - the NameHandle component will have an invalid handle
+        // but the name is still accessible via the snapshot for display purposes
         return world.CreateNPC(_ => default, in snapshot);
     }
     
