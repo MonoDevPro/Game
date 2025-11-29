@@ -61,10 +61,11 @@ public sealed partial class CombatSystem(World world, IMapService mapService, IL
         Position targetPosition = default;
         
         // Lógica de Mira (Targeting)
-        SpatialPosition lookAtPos = new(
-            pos.X + direction.DirectionX, 
-            pos.Y + direction.DirectionY, 
-            floor.Level);
+        Position lookAtPos = new Position
+        {
+            X = pos.X + direction.X,
+            Y = pos.Y + direction.Y
+        };
         
         // Tenta achar um alvo na frente (Raycast simples de 1 tile)
         // Para Ranged, isso poderia ser um Raycast mais longo no futuro

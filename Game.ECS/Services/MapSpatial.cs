@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Arch.Core;
-using Game.ECS.Components;
+using Position = Game.ECS.Components.Position;
 
 namespace Game.ECS.Services;
 
@@ -184,89 +184,112 @@ public sealed class MapSpatial : IMapSpatial
         }
     }
     
-    private readonly Dictionary<SpatialPosition, CellData> _grid;
+    // Troca: chave agora é (Position, int floor)
+    private readonly Dictionary<(Position Pos, sbyte Floor), CellData> _grid;
     private readonly Stack<List<Entity>> _listPool;
     
     public MapSpatial(int initialCapacity = 1024)
     {
-        _grid = new Dictionary<SpatialPosition, CellData>(initialCapacity);
+        _grid = new Dictionary<(Position, sbyte), CellData>(initialCapacity);
         _listPool = new Stack<List<Entity>>(32);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Insert(SpatialPosition position, in Entity entity)
+    public void Insert(Position position, sbyte floor, in Entity entity)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrAddDefault(_grid, position, out _);
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrAddDefault(_grid, key, out _);
         cell.Add(entity, _listPool);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Remove(SpatialPosition position, in Entity entity)
+    public bool Remove(Position position, sbyte floor, in Entity entity)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, position);
-        if (Unsafe.IsNullRef(ref cell))
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
+        if (Unsafe.IsNullRef(ref cell) || !cell.Remove(entity, _listPool))
             return false;
 
-        if (!cell.Remove(entity, _listPool))
-            return false;
-
+        // Remove a célula se ficou vazia
         if (cell.Count == 0)
         {
             cell.ReturnToPool(_listPool);
-            _grid.Remove(position);
+            _grid.Remove(key);
         }
 
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Update(SpatialPosition oldPosition, SpatialPosition newPosition, in Entity entity)
+    public void ForEachAt(Position position, sbyte floor, Func<Entity, bool> visitor)
     {
-        if (!Remove(oldPosition, entity))
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
+        if (Unsafe.IsNullRef(ref cell))
+            return;
+        
+        cell.ForEach(visitor);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Update(Position oldPosition, sbyte oldFloor, Position newPosition, sbyte newFloor, in Entity entity)
+    {
+        var oldKey = (oldPosition, oldFloor);
+        ref var oldCell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, oldKey);
+        if (Unsafe.IsNullRef(ref oldCell) || !oldCell.Remove(entity, _listPool))
             return false;
 
-        Insert(newPosition, entity);
+        // Remove a célula se ficou vazia
+        if (oldCell.Count == 0)
+        {
+            oldCell.ReturnToPool(_listPool);
+            _grid.Remove(oldKey);
+        }
+
+        var newKey = (newPosition, newFloor);
+        ref var newCell = ref CollectionsMarshal.GetValueRefOrAddDefault(_grid, newKey, out _);
+        newCell.Add(entity, _listPool);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryMove(SpatialPosition from, SpatialPosition to, in Entity entity)
+    public bool TryMove(Position from, sbyte fromFloor, Position to, sbyte toFloor, in Entity entity)
     {
-        if (HasOccupant(to))
+        if (HasOccupant(to, toFloor))
             return false;
 
-        return Update(from, to, entity);
+        return Update(from, fromFloor, to, toFloor, entity);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int QueryAt(SpatialPosition position, Span<Entity> results)
+    public int QueryAt(Position position, sbyte floor, Span<Entity> results)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, position);
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
         if (Unsafe.IsNullRef(ref cell))
             return 0;
 
         return cell.CopyTo(results);
     }
 
-    public int QueryArea(SpatialPosition min, SpatialPosition max, Span<Entity> results)
+    public int QueryArea(Position min, Position max, sbyte minFloor, sbyte maxFloor, Span<Entity> results)
     {
         int count = 0;
         int maxCount = results.Length;
 
         // Otimização: se área for pequena, itera diretamente
-        int areaSize = (max.X - min.X + 1) * (max.Y - min.Y + 1) * (max.Floor - min.Floor + 1);
+        int areaSize = (max.X - min.X + 1) * (max.Y - min.Y + 1) * (maxFloor - minFloor + 1);
         
         if (areaSize <= _grid.Count)
         {
             // Área pequena: itera pelas posições
-            for (sbyte z = min.Floor; z <= max.Floor && count < maxCount; z++)
+            for (sbyte z = minFloor; z <= maxFloor && count < maxCount; z++)
             {
                 for (int x = min.X; x <= max.X && count < maxCount; x++)
                 {
                     for (int y = min.Y; y <= max.Y && count < maxCount; y++)
                     {
-                        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(
-                            _grid, new SpatialPosition(x, y, z));
+                        var key = (new Position { X = x, Y = y }, z);
+                        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
                         
                         if (!Unsafe.IsNullRef(ref cell))
                             count += cell.CopyTo(results[count..]);
@@ -282,9 +305,9 @@ public sealed class MapSpatial : IMapSpatial
                 if (count >= maxCount) break;
                 
                 var pos = kvp.Key;
-                if (pos.X >= min.X && pos.X <= max.X &&
-                    pos.Y >= min.Y && pos.Y <= max.Y &&
-                    pos.Floor >= min.Floor && pos.Floor <= max.Floor)
+                if (pos.Pos.X >= min.X && pos.Pos.X <= max.X &&
+                    pos.Pos.Y >= min.Y && pos.Pos.Y <= max.Y &&
+                    pos.Floor >= minFloor && pos.Floor <= maxFloor)
                 {
                     count += kvp.Value.CopyTo(results[count..]);
                 }
@@ -298,7 +321,7 @@ public sealed class MapSpatial : IMapSpatial
     /// Query otimizada para área circular (ideal para percepção de NPCs).
     /// Evita criar SpatialPosition para células fora do círculo.
     /// </summary>
-    public int QueryCircle(SpatialPosition center, int radius, Span<Entity> results)
+    public int QueryCircle(Position center, sbyte centerFloor, sbyte radius, Span<Entity> results)
     {
         int count = 0;
         int maxCount = results.Length;
@@ -311,9 +334,9 @@ public sealed class MapSpatial : IMapSpatial
             
             for (int dy = -maxDy; dy <= maxDy && count < maxCount; dy++)
             {
-                var pos = new SpatialPosition(center.X + dx, center.Y + dy, center.Floor);
+                var key = (new Position { X = center.X + dx, Y = center.Y + dy }, centerFloor);
                 
-                ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, pos);
+                ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
                 if (!Unsafe.IsNullRef(ref cell))
                     count += cell.CopyTo(results[count..]);
             }
@@ -322,24 +345,16 @@ public sealed class MapSpatial : IMapSpatial
         return count;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ForEachAt(SpatialPosition position, Func<Entity, bool> visitor)
+    public void ForEachArea(Position min, Position max, sbyte minFloor, sbyte maxFloor, Func<Entity, bool> visitor)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, position);
-        if (!Unsafe.IsNullRef(ref cell))
-            cell.ForEach(visitor);
-    }
-
-    public void ForEachArea(SpatialPosition min, SpatialPosition max, Func<Entity, bool> visitor)
-    {
-        for (sbyte z = min.Floor; z <= max.Floor; z++)
+        for (sbyte z = minFloor; z <= maxFloor; z++)
         {
             for (int x = min.X; x <= max.X; x++)
             {
                 for (int y = min.Y; y <= max.Y; y++)
                 {
-                    ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(
-                        _grid, new SpatialPosition(x, y, z));
+                    var key = (new Position { X = x, Y = y }, z);
+                    ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
                     
                     if (!Unsafe.IsNullRef(ref cell))
                         if (!cell.ForEach(visitor))
@@ -350,9 +365,10 @@ public sealed class MapSpatial : IMapSpatial
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFirstAt(SpatialPosition position, out Entity entity)
+    public bool TryGetFirstAt(Position position, sbyte floor, out Entity entity)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, position);
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
         if (!Unsafe.IsNullRef(ref cell) && cell.Count > 0)
         {
             entity = cell.GetFirst();
@@ -374,9 +390,10 @@ public sealed class MapSpatial : IMapSpatial
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HasOccupant(SpatialPosition position)
+    private bool HasOccupant(Position position, sbyte floor)
     {
-        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, position);
+        var key = (position, floor);
+        ref var cell = ref CollectionsMarshal.GetValueRefOrNullRef(_grid, key);
         return !Unsafe.IsNullRef(ref cell) && cell.Count > 0;
     }
     

@@ -134,7 +134,7 @@ public abstract partial class DefaultVisual : Node2D
 
     public void UpdateAnimationState(Direction direction, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
-        _currentFacing = ConvertToFacingEnum(direction.DirectionX, direction.DirectionY);
+        _currentFacing = ConvertToFacingEnum(direction.X, direction.Y);
         if (Sprite is null) return;
         UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
     }

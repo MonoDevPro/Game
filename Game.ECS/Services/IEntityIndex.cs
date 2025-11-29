@@ -4,16 +4,19 @@ namespace Game.ECS.Services;
 
 public interface IEntityIndex<TKey> where TKey : notnull
 {
+    /// Número de mapeamentos atuais.
+    int Count { get; }
+    
     /// <summary>
     /// Adiciona ou atualiza o mapeamento key -> entity.
     /// Substitui a entrada anterior, removendo o reverse mapping antigo se necessário.
     /// </summary>
-    void AddMapping(TKey key, Entity entity);
+    void Register(TKey key, Entity entity);
 
     /// <summary>
     /// Tenta adicionar apenas se a chave ainda não existir. Retorna true se adicionou.
     /// </summary>
-    bool TryAddMappingUnique(TKey key, Entity entity);
+    bool TryRegisterUnique(TKey key, Entity entity);
 
     /// <summary>
     /// Remove mapeamento por chave (se existir).
@@ -24,7 +27,7 @@ public interface IEntityIndex<TKey> where TKey : notnull
     /// Remove mapeamento por Entity (se existir).
     /// </summary>
     void RemoveByEntity(Entity entity);
-
+    
     /// <summary>
     /// Tenta obter a Entity associada à chave (retorna true se existir).
     /// Notar: a Entity retornada contém a versão registrada — verifique Entity.Version se precisar validar staleness.
@@ -35,6 +38,11 @@ public interface IEntityIndex<TKey> where TKey : notnull
     /// Tenta obter a chave a partir do entity.Id.
     /// </summary>
     bool TryGetKeyByEntityId(int entityId, out TKey? key);
+
+    /// <summary>
+    /// Tenta obter a chave a partir da Entity.
+    /// </summary>
+    bool TryGetKeyByEntity(Entity entity, out TKey? key);
 
     /// <summary>
     /// Atualiza somente a Entity registrada para a chave (útil para atualizar versão).

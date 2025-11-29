@@ -5,20 +5,7 @@ namespace Game.ECS.Logic;
 
 public static class DamageLogic
 {
-    public static bool TryDamage(ref Health health, int amount)
-    {
-        if (amount <= 0)
-            return false;
-        
-        int previous = health.Current;
-        int newValue = Math.Max(0, previous - amount);
-
-        if (newValue == previous)
-            return false;
-
-        health.Current = newValue;
-        return true;
-    }
+    
     
     public static void ApplyDeferredDamage(World world, in Entity targetEntity, int amount, bool isCritical = false, Entity? attacker = null)
     {

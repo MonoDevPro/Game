@@ -23,34 +23,30 @@ public static class MovementLogic
         in Entity entity,
         in Position current,
         in Floor floor,
-        in Velocity vel,
+        in Speed vel,
         in Movement movement,
+        in Direction dir,
         float deltaTime,
         IMapGrid? grid,
         IMapSpatial? spatial,
-        out SpatialPosition newSpatialPosition)
+        out Position newPos)
     {
         // compute candidate
-        newSpatialPosition = new SpatialPosition(
-            current.X, 
-            current.Y, 
-            floor.Level);
+        newPos = new Position { X = current.X, Y = current.Y };
 
-        if (vel is { X: 0, Y: 0 }) return MovementResult.None;
-        if (vel.Speed <= 0f) return MovementResult.None;
+        if (dir is { X: 0, Y: 0 }) return MovementResult.None;
+        if (vel.Value <= 0f) return MovementResult.None;
 
         if (movement.Timer < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
         
         // compute candidate
-        newSpatialPosition = new SpatialPosition(
-            current.X + vel.X, 
-            current.Y + vel.Y, 
-            floor.Level);
+        newPos = new Position { X = current.X + dir.X, Y = current.Y + dir.Y };
+        sbyte z = floor.Level;
         
-        if (grid != null && !grid.InBounds(newSpatialPosition)) return MovementResult.OutOfBounds;
-        if (grid != null && grid.IsBlocked(newSpatialPosition)) return MovementResult.BlockedByMap;
+        if (grid != null && !grid.InBounds(newPos, z)) return MovementResult.OutOfBounds;
+        if (grid != null && grid.IsBlocked(newPos, z)) return MovementResult.BlockedByMap;
 
-        if (spatial != null && spatial.TryGetFirstAt(newSpatialPosition, out var occupant) 
+        if (spatial != null && spatial.TryGetFirstAt(newPos, z, out var occupant) 
                             && occupant != default && occupant != Entity.Null && occupant != entity)
         {
             // aqui, MovementLogic não conhece a entidade que está movendo — caller decide se occupant == mover

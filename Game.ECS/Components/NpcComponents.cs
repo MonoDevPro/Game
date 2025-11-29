@@ -3,11 +3,19 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Components;
 
-// 1. Identificador do Tipo (Leve) - Substitui dados hardcoded na entidade
-public struct NpcType
+/// <summary>
+/// NPC behavior configuration component.
+/// Stores the behavior type and ranges for AI decision making.
+/// </summary>
+public struct NpcBehavior
 {
-    public string TemplateId; // "orc_warrior"
-    // O System usará isso para buscar ranges e configs em um Singleton/Cache
+    public NpcBehaviorType Type;
+    public float VisionRange;
+    public float AttackRange;
+    public float LeashRange;
+    public float PatrolRadius;
+    public float IdleDurationMin;
+    public float IdleDurationMax;
 }
 
 // 2. Estado Mental (O "Cérebro" Dinâmico)
@@ -15,7 +23,7 @@ public struct NpcBrain
 {
     public NpcState CurrentState;
     public float StateTimer;
-    public Entity CurrentTarget; // Substitui NpcTarget complexo
+    public Entity CurrentTarget;
 }
 
 public enum NpcState : byte
@@ -34,21 +42,6 @@ public struct NavigationAgent
     public Position? Destination; 
     public float StoppingDistance;
     public bool IsPathPending; // Flag para pedir recalculo de path
-}
-
-/// <summary>
-/// NPC behavior configuration component.
-/// Stores the behavior type and ranges for AI decision making.
-/// </summary>
-public struct NpcBehavior
-{
-    public NpcBehaviorType Type;
-    public float VisionRange;
-    public float AttackRange;
-    public float LeashRange;
-    public float PatrolRadius;
-    public float IdleDurationMin;
-    public float IdleDurationMax;
 }
 
 /// <summary>

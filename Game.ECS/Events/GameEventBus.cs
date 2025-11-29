@@ -1,5 +1,5 @@
-using Arch.Core;
-using Game.ECS.Components;
+using Arch.Bus;
+using Arch.LowLevel;
 
 namespace Game.ECS.Events;
 
@@ -7,14 +7,18 @@ namespace Game.ECS.Events;
 /// Simple in-memory event bus for game events.
 /// Provides a centralized way for systems to communicate without direct coupling.
 /// </summary>
-public sealed class GameEventBus
+public sealed partial class GameEventBus : IDisposable
 {
+    public GameEventBus() { Hook(); }
+    ~GameEventBus() { Dispose(); }
+
     // Event queues for deferred processing
-    private readonly List<DamageEvent> _damageEvents = new();
-    private readonly List<DeathEvent> _deathEvents = new();
-    private readonly List<SpawnEvent> _spawnEvents = new();
-    private readonly List<DespawnEvent> _despawnEvents = new();
-    private readonly List<AttackEvent> _attackEvents = new();
+    private const int InitialQueueCapacity = 10;
+    private UnsafeQueue<DamageEvent> _unsafeDamageEvents = new(capacity: InitialQueueCapacity);
+    private UnsafeQueue<DeathEvent> _unsafeDeathEvents = new(capacity: InitialQueueCapacity);
+    private UnsafeQueue<SpawnEvent> _unsafeSpawnEvents = new(capacity: InitialQueueCapacity);
+    private UnsafeQueue<DespawnEvent> _unsafeDespawnEvents = new(capacity: InitialQueueCapacity);
+    private UnsafeQueue<AttackEvent> _unsafeAttackEvents = new(capacity: InitialQueueCapacity);
     
     // Event handlers
     public event Action<DamageEvent>? OnDamage;
@@ -32,76 +36,90 @@ public sealed class GameEventBus
     /// <summary>
     /// Sends a damage event immediately to all handlers.
     /// </summary>
-    public void Send(in DamageEvent evt) => OnDamage?.Invoke(evt);
+    [Event]
+    public void Send(ref DamageEvent evt) => OnDamage?.Invoke(evt);
     
     /// <summary>
     /// Sends a death event immediately to all handlers.
     /// </summary>
-    public void Send(in DeathEvent evt) => OnDeath?.Invoke(evt);
+    [Event]
+    public void Send(ref DeathEvent evt) => OnDeath?.Invoke(evt);
     
     /// <summary>
     /// Sends a spawn event immediately to all handlers.
     /// </summary>
-    public void Send(in SpawnEvent evt) => OnSpawn?.Invoke(evt);
+    [Event]
+    public void Send(ref SpawnEvent evt) => OnSpawn?.Invoke(evt);
     
     /// <summary>
     /// Sends a despawn event immediately to all handlers.
     /// </summary>
-    public void Send(in DespawnEvent evt) => OnDespawn?.Invoke(evt);
+    [Event]
+    public void Send(ref DespawnEvent evt) => OnDespawn?.Invoke(evt);
     
     /// <summary>
     /// Sends an attack event immediately to all handlers.
     /// </summary>
-    public void Send(in AttackEvent evt) => OnAttack?.Invoke(evt);
+    [Event]
+    public void Send(ref AttackEvent evt) => OnAttack?.Invoke(evt);
     
     /// <summary>
     /// Sends a health changed event immediately to all handlers.
     /// </summary>
-    public void Send(in HealthChangedEvent evt) => OnHealthChanged?.Invoke(evt);
+    [Event]
+    public void Send(ref HealthChangedEvent evt) => OnHealthChanged?.Invoke(evt);
     
     /// <summary>
     /// Sends a mana changed event immediately to all handlers.
     /// </summary>
-    public void Send(in ManaChangedEvent evt) => OnManaChanged?.Invoke(evt);
+    [Event]
+    public void Send(ref ManaChangedEvent evt) => OnManaChanged?.Invoke(evt);
     
     /// <summary>
     /// Sends a movement event immediately to all handlers.
     /// </summary>
-    public void Send(in MovementEvent evt) => OnMovement?.Invoke(evt);
+    [Event]
+    public void Send(ref MovementEvent evt) => OnMovement?.Invoke(evt);
     
     /// <summary>
     /// Sends an NPC state changed event immediately to all handlers.
     /// </summary>
-    public void Send(in NpcStateChangedEvent evt) => OnNpcStateChanged?.Invoke(evt);
+    [Event]
+    public void Send(ref NpcStateChangedEvent evt) => OnNpcStateChanged?.Invoke(evt);
     
     #endregion
     
     #region Queue Events (Deferred)
-    
+
     /// <summary>
     /// Queues a damage event for deferred processing.
     /// </summary>
-    public void Queue(in DamageEvent evt) => _damageEvents.Add(evt);
+    [Event]
+    public void Queue(ref DamageEvent evt) => _unsafeDamageEvents.Enqueue(evt);
     
     /// <summary>
     /// Queues a death event for deferred processing.
     /// </summary>
-    public void Queue(in DeathEvent evt) => _deathEvents.Add(evt);
+    [Event]
+    public void Queue(ref DeathEvent evt) => _unsafeDeathEvents.Enqueue(evt);
     
     /// <summary>
     /// Queues a spawn event for deferred processing.
     /// </summary>
-    public void Queue(in SpawnEvent evt) => _spawnEvents.Add(evt);
+    [Event]
+    public void Queue(ref SpawnEvent evt) => _unsafeSpawnEvents.Enqueue(evt);
     
     /// <summary>
     /// Queues a despawn event for deferred processing.
     /// </summary>
-    public void Queue(in DespawnEvent evt) => _despawnEvents.Add(evt);
+    [Event]
+    public void Queue(ref DespawnEvent evt) => _unsafeDespawnEvents.Enqueue(evt);
     
     /// <summary>
     /// Queues an attack event for deferred processing.
     /// </summary>
-    public void Queue(in AttackEvent evt) => _attackEvents.Add(evt);
+    [Event]
+    public void Queue(ref AttackEvent evt) => _unsafeAttackEvents.Enqueue(evt);
     
     #endregion
     
@@ -114,29 +132,30 @@ public sealed class GameEventBus
     public void ProcessQueuedEvents()
     {
         // Process damage events
-        foreach (var evt in _damageEvents)
+        
+        foreach (ref var evt in _unsafeDamageEvents)
             OnDamage?.Invoke(evt);
-        _damageEvents.Clear();
+        _unsafeDamageEvents.Clear();
         
         // Process death events
-        foreach (var evt in _deathEvents)
+        foreach (ref var evt in _unsafeDeathEvents)
             OnDeath?.Invoke(evt);
-        _deathEvents.Clear();
+        _unsafeDeathEvents.Clear();
         
         // Process spawn events
-        foreach (var evt in _spawnEvents)
+        foreach (ref var evt in _unsafeSpawnEvents)
             OnSpawn?.Invoke(evt);
-        _spawnEvents.Clear();
+        _unsafeSpawnEvents.Clear();
         
         // Process despawn events
-        foreach (var evt in _despawnEvents)
+        foreach (ref var evt in _unsafeDespawnEvents)
             OnDespawn?.Invoke(evt);
-        _despawnEvents.Clear();
+        _unsafeDespawnEvents.Clear();
         
         // Process attack events
-        foreach (var evt in _attackEvents)
+        foreach (ref var evt in _unsafeAttackEvents)
             OnAttack?.Invoke(evt);
-        _attackEvents.Clear();
+        _unsafeAttackEvents.Clear();
     }
     
     /// <summary>
@@ -144,11 +163,11 @@ public sealed class GameEventBus
     /// </summary>
     public void ClearQueues()
     {
-        _damageEvents.Clear();
-        _deathEvents.Clear();
-        _spawnEvents.Clear();
-        _despawnEvents.Clear();
-        _attackEvents.Clear();
+        _unsafeDamageEvents.Clear();
+        _unsafeDeathEvents.Clear();
+        _unsafeSpawnEvents.Clear();
+        _unsafeDespawnEvents.Clear();
+        _unsafeAttackEvents.Clear();
     }
     
     #endregion
@@ -159,11 +178,35 @@ public sealed class GameEventBus
     /// Returns the number of queued events across all types.
     /// </summary>
     public int QueuedEventCount => 
-        _damageEvents.Count + 
-        _deathEvents.Count + 
-        _spawnEvents.Count + 
-        _despawnEvents.Count + 
-        _attackEvents.Count;
+        _unsafeDamageEvents.Count + 
+        _unsafeDeathEvents.Count + 
+        _unsafeSpawnEvents.Count + 
+        _unsafeDespawnEvents.Count + 
+        _unsafeAttackEvents.Count;
     
     #endregion
+
+    private void ReleaseUnmanagedResources()
+    {
+        Unhook();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _unsafeDamageEvents.Dispose();
+            _unsafeDeathEvents.Dispose();
+            _unsafeSpawnEvents.Dispose();
+            _unsafeDespawnEvents.Dispose();
+            _unsafeAttackEvents.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 }

@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Logic;
 using Game.ECS.Services;
@@ -13,42 +14,42 @@ namespace Game.Server.ECS.Systems;
 public sealed partial class MovementSystem(World world, IMapService mapService) : GameSystem(world, mapService)
 {
     [Query]
-    [All<Direction, Velocity, DirtyFlags>]
+    [All<Direction, Speed, DirtyFlags>]
     [None<Dead>]
-    private void ProcessEntityFacing(in Velocity velocity, ref Direction direction, ref DirtyFlags dirty)
+    private void ProcessEntityFacing(in Speed speed, ref Direction direction, ref DirtyFlags dirty)
     {
-        if (velocity is { X: 0, Y: 0 }) return;
-        int previousX = direction.DirectionX;
-        int previousY = direction.DirectionY;
+        if (speed is { X: 0, Y: 0 }) return;
+        int previousX = direction.X;
+        int previousY = direction.Y;
 
-        direction.DirectionX = velocity.X;
-        direction.DirectionY = velocity.Y;
+        direction.X = speed.X;
+        direction.Y = speed.Y;
 
-        if (previousX != direction.DirectionX || previousY != direction.DirectionY)
+        if (previousX != direction.X || previousY != direction.Y)
             dirty.MarkDirty(DirtyComponentType.State);
     }
     
     [Query]
-    [All<Position, Movement, Velocity, Walkable, DirtyFlags, MapId>]
+    [All<Position, Movement, Speed, Walkable, DirtyFlags, MapId>]
     [None<Dead>]
     private void ProcessMovement(in Entity e, 
         in MapId mapId, 
         in Position pos, 
         in Floor floor,
-        in Velocity velocity,
+        in Speed speed,
         ref Movement movement, 
         ref DirtyFlags dirty, 
         [Data] float deltaTime)
     {
-        if (velocity is { X: 0, Y: 0 }) return;
+        if (speed is { X: 0, Y: 0 }) return;
     
-        movement.Timer += velocity.Speed * deltaTime;
+        movement.Timer += speed.Value * deltaTime;
         
         var grid = mapService.GetMapGrid(mapId.Value);
         var spatial = mapService.GetMapSpatial(mapId.Value);
 
         var moveResult = MovementLogic.TryComputeStep(
-            e, pos, floor, velocity, movement, deltaTime, grid, spatial, out var candidatePos);
+            e, pos, floor, speed, movement, deltaTime, grid, spatial, out var candidatePos);
     
         if (moveResult != MovementLogic.MovementResult.Allowed && 
             moveResult != MovementLogic.MovementResult.None)
@@ -68,16 +69,16 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     }
     
     [Query]
-    [All<Velocity>]
-    private void DecayVelocity(ref Velocity velocity, [Data] float deltaTime)
+    [All<Speed>]
+    private void DecayVelocity(ref Speed speed, [Data] float deltaTime)
     {
         // desacelera velocity gradualmente quando não há input
-        if (velocity is { X: 0, Y: 0 })
+        if (speed is { X: 0, Y: 0 })
         {
             float decayRate = 10f; // unidades por segundo ao quadrado
-            velocity.Speed -= decayRate * deltaTime;
-            if (velocity.Speed < 0f)
-                velocity.Speed = 0f;
+            speed.Value -= decayRate * deltaTime;
+            if (speed.Value < 0f)
+                speed.Value = 0f;
         }
     }
 }

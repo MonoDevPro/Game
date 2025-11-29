@@ -1,11 +1,7 @@
 namespace Game.ECS.Components;
 
 // ============================================
-// Tags - Marcadores de comportamento
+// Tags - Marcadores
 // ============================================
-public struct LocalPlayerTag { }
-public struct RemotePlayerTag { }
-public struct PlayerControlled { }
-public struct AIControlled { }
 public struct Dead { }
 public struct Invulnerable { }

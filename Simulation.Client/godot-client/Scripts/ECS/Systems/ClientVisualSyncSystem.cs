@@ -84,7 +84,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         in Entity e, 
         ref CombatState combatState,
         in NetworkId networkId,
-        in Velocity velocity, 
+        in Speed speed, 
         in Direction direction,
         [Data] in float deltaTime)
     {
@@ -103,7 +103,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
             }
 
         var isDead = World.Has<Dead>(e);
-        var isMoving = velocity.Speed > 0f;
+        var isMoving = speed.Value > 0f;
         visual.UpdateAnimationState(direction, isMoving, isAttacking, isDead);
         
         if (isAttacking)
@@ -115,7 +115,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     [All<NetworkId>]
     private void InterpolatePosition(
         in Position pos, 
-        in Velocity velocity,
+        in Speed speed,
         in NetworkId networkId)
     {
         const float pixelsPerCell = 32f;
@@ -128,10 +128,10 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
 
         // Extrapolação para compensar latência
-        if (velocity is not { X: 0, Y: 0, Speed: > 0f })
+        if (speed is not { X: 0, Y: 0, Value: > 0f })
         {
             float extrapolation = 0.5f;
-            Vector2 direction = new(velocity.X, velocity.Y);
+            Vector2 direction = new(speed.X, speed.Y);
             target += direction * (pixelsPerCell * extrapolation);
         }
 

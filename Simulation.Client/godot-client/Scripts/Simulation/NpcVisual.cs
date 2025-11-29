@@ -23,7 +23,7 @@ public sealed partial class NpcVisual : DefaultVisual
     {
         LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
         UpdateName("NPC " + snapshot.NetworkId);
-        UpdateAnimationState(new Direction { DirectionX = snapshot.DirX, DirectionY = snapshot.DirY }, false, false, false);
+        UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Floor));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
         if (Sprite is not null) UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);

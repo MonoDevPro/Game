@@ -3,24 +3,24 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Entities.Npc;
 
-public class NpcUpdate(World world)
+public static class NpcUpdate
 {
-    public bool ApplyNpcState(Entity entity, NpcStateSnapshot snapshot)
+    public static void ApplyNpcState(this World world, Entity entity, NpcStateSnapshot snapshot)
     {
         ref var position = ref world.Get<Position>(entity);
         ref var floor = ref world.Get<Floor>(entity);
         ref var direction = ref world.Get<Direction>(entity);
-        ref var velocity = ref world.Get<Velocity>(entity);
+        ref var velocity = ref world.Get<Speed>(entity);
         
-        position = new Position(X: snapshot.X, Y: snapshot.Y);
+        position.X = snapshot.X;
+        position.Y = snapshot.Y;
         floor.Level = snapshot.Floor;
-        velocity.Speed = snapshot.Speed;
-        direction.DirectionX = snapshot.DirectionX;
-        direction.DirectionY = snapshot.DirectionY;
-        return true;
+        direction.X = snapshot.DirectionX;
+        direction.Y = snapshot.DirectionY;
+        velocity.Value = snapshot.Speed;
     }
     
-    public bool ApplyNpcVitals(Entity entity, NpcVitalsSnapshot snapshot)
+    public static void ApplyNpcVitals(this World world, Entity entity, NpcVitalsSnapshot snapshot)
     {
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
@@ -29,6 +29,5 @@ public class NpcUpdate(World world)
         health.Max = snapshot.MaxHp;
         mana.Current = snapshot.CurrentMp;
         mana.Max = snapshot.MaxMp;
-        return true;
     }
 }

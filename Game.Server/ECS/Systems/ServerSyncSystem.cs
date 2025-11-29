@@ -6,6 +6,8 @@ using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Npc;
+using Game.ECS.Entities.Player;
 using Game.ECS.Logic;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;

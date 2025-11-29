@@ -6,7 +6,7 @@ namespace Game.ECS.Services;
 /// Gerencia o ciclo de vida de recursos unmanaged/managed associados a entidades.
 /// </summary>
 /// <typeparam name="T">O tipo do recurso (ex: string, NpcPath, AIState)</typeparam>
-public class ResourceLifecycle<T>(int capacity = 50)
+public class ResourceStack<T>(int capacity = 50)
     where T : notnull
 {
     // O banco de dados de baixo nível do Arch

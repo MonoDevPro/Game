@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.LowLevel;
 using Arch.System;
-using Game.Domain.Templates;
 using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
@@ -50,75 +49,46 @@ public class FixedTimeStep(float fixedDeltaTime)
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class GameSimulation : GameSystem
+public abstract class GameSimulation(ILoggerFactory loggerFactory) : GameSystem(World.Create(
+        chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+        minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
+        archetypeCapacity: SimulationConfig.ArchetypeCapacity,
+        entityCapacity: SimulationConfig.EntityCapacity),
+    loggerFactory.CreateLogger<GameSimulation>())
 {
-    protected readonly Group<float> Systems;
-    private readonly FixedTimeStep _fixedTimeStep;
+    protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
+    private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
     
     public uint CurrentTick { get; private set; }
-    protected ILoggerFactory LoggerFactory { get; }
-    
-    /// <summary>
-    /// Access to the player index for lookups by network ID.
-    /// </summary>
-    public IPlayerIndex PlayerIndex => Services!.PlayerIndex;
-    
-    /// <summary>
-    /// Access to the NPC index for lookups by network ID.
-    /// </summary>
-    public INpcIndex NpcIndex => Services!.NpcIndex;
+    protected ILoggerFactory LoggerFactory { get; } = loggerFactory;
+
+    public readonly IEntityIndex<int> EntityIndex = new EntityIndex<int>();
     
     /// <summary>
     /// Access to the map service for spatial queries.
     /// </summary>
-    public new IMapService? MapService => Services!.MapService;
+    public readonly IMapService MapService = new MapService();
+    
+    // Banco de Strings (Nomes de NPCs, etc)
+    public readonly ResourceStack<string> Strings = new(capacity: 10);
     
     /// <summary>
     /// Registers a map with the map service.
     /// </summary>
-    public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial)
-    {
-        Services!.MapService?.RegisterMap(mapId, mapGrid, mapSpatial);
-    }
+    public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial) =>
+        MapService.RegisterMap(mapId, mapGrid, mapSpatial);
     
     /// <summary>
     /// Tries to get any entity (player or NPC) by network ID.
     /// </summary>
-    public bool TryGetAnyEntity(int networkId, out Entity entity)
-    {
-        return Services!.TryGetAnyEntity(networkId, out entity);
-    }
-
-    protected GameSimulation(GameServices services, ILoggerFactory loggerFactory) 
-        : base(
-            World.Create(
-                chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
-                minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
-                archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-                entityCapacity: SimulationConfig.EntityCapacity), 
-            services, 
-            loggerFactory.CreateLogger<GameSimulation>())
-    {
-        Systems = new Group<float>(SimulationConfig.SimulationName);
-        _fixedTimeStep = new FixedTimeStep(SimulationConfig.TickDelta);
-        LoggerFactory = loggerFactory;
-    }
+    public bool TryGetAnyEntity(int networkId, out Entity entity) => 
+        EntityIndex.TryGetEntity(networkId, out entity);
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, GameServices services, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, Group<float> systems);
     
-    /// <summary>
-    /// Helper for creating string handles using GameResources.
-    /// </summary>
-    protected Handle<string> CreateStringHandle(string value) => Services!.Resources.Strings.Register(value);
-    
-    /// <summary>
-    /// Helper for releasing string handles.
-    /// </summary>
-    protected void ReleaseStringHandle(Handle<string> handle) => Services!.Resources.Strings.Unregister(handle);
-
     #region Player Lifecycle
     
     /// <summary>
@@ -126,43 +96,10 @@ public abstract class GameSimulation : GameSystem
     /// </summary>
     public Entity CreatePlayer(PlayerTemplate template)
     {
-        var entity = PlayerLifecycle.CreatePlayer(World, CreateStringHandle, template);
-        PlayerIndex.Register(template.NetworkId, entity);
-        Services!.RegisterEntity(entity, new Position(template.PosX, template.PosY), template.Floor, template.MapId);
-        return entity;
-    }
-    
-    /// <summary>
-    /// Creates a player entity from a snapshot.
-    /// </summary>
-    public Entity CreatePlayer(in PlayerSnapshot snapshot)
-    {
-        var template = new PlayerTemplate(
-            PlayerId: snapshot.PlayerId,
-            NetworkId: snapshot.NetworkId,
-            MapId: snapshot.MapId,
-            Name: snapshot.Name,
-            GenderId: snapshot.GenderId,
-            VocationId: snapshot.VocationId,
-            PosX: snapshot.PosX,
-            PosY: snapshot.PosY,
-            Floor: snapshot.Floor,
-            DirX: snapshot.DirX,
-            DirY: snapshot.DirY,
-            Hp: snapshot.Hp,
-            MaxHp: snapshot.MaxHp,
-            HpRegen: 0f,
-            Mp: snapshot.Mp,
-            MaxMp: snapshot.MaxMp,
-            MpRegen: 0f,
-            MovementSpeed: snapshot.MovementSpeed,
-            AttackSpeed: snapshot.AttackSpeed,
-            PhysicalAttack: snapshot.PhysicalAttack,
-            MagicAttack: snapshot.MagicAttack,
-            PhysicalDefense: snapshot.PhysicalDefense,
-            MagicDefense: snapshot.MagicDefense
-        );
-        return CreatePlayer(template);
+        // TODO: Generate unique network ID for player,
+        // TODO: Register player in PlayerIndex and EntityIndex
+        // TODO: Register entity in Services (e.g., spatial map)
+        return Entity.Null;
     }
     
     /// <summary>
@@ -170,18 +107,13 @@ public abstract class GameSimulation : GameSystem
     /// </summary>
     public virtual bool DestroyPlayer(int networkId)
     {
-        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
+        if (!EntityIndex.TryGetEntity(networkId, out var entity))
             return false;
             
-        PlayerLifecycle.DestroyPlayer(World, entity, ReleaseStringHandle);
-        PlayerIndex.Unregister(networkId);
+        PlayerFactories.DestroyPlayer(World, entity, Strings);
+        EntityIndex.RemoveByKey(networkId);
         return true;
     }
-    
-    /// <summary>
-    /// Tries to get a player entity by network ID.
-    /// </summary>
-    public bool TryGetPlayerEntity(int networkId, out Entity entity) => PlayerIndex.TryGetEntity(networkId, out entity);
     
     #endregion
     
@@ -190,11 +122,10 @@ public abstract class GameSimulation : GameSystem
     /// <summary>
     /// Creates an NPC entity from a template.
     /// </summary>
-    public Entity CreateNpcFromTemplate(NpcTemplate template, Position position, int floor, int mapId, int networkId)
+    public Entity CreateNpc(NpcTemplate template, Position position, int floor, int mapId, int networkId)
     {
-        var entity = NpcLifecycle.CreateNPC(World, CreateStringHandle, template, position, floor, mapId, networkId);
+        var entity = NpcFactories.CreateNpc(World, Strings, template, position, floor, mapId, networkId);
         NpcIndex.Register(networkId, entity);
-        Services!.RegisterEntity(entity, position, (sbyte)floor, mapId);
         return entity;
     }
     
@@ -210,11 +141,6 @@ public abstract class GameSimulation : GameSystem
         NpcIndex.Unregister(networkId);
         return true;
     }
-    
-    /// <summary>
-    /// Tries to get an NPC entity by network ID.
-    /// </summary>
-    public bool TryGetNpcEntity(int networkId, out Entity entity) => NpcIndex.TryGetEntity(networkId, out entity);
     
     #endregion
 

@@ -7,7 +7,7 @@ namespace Game.ECS.Services;
 /// Thread-safe: leituras lock-free, escritas com lock para manter os dois dicionários consistentes.
 /// </summary>
 /// <typeparam name="TKey">Tipo da chave (ex.: int, Guid, string, ulong). Deve ser notnull.</typeparam>
-public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnull
+public class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnull
 {
     // key -> Entity (capturamos Entity.Id e Entity.Version)
     private readonly Dictionary<TKey, Entity> _keyToEntity = new();
@@ -15,13 +15,11 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
     // entityId -> key (reverse lookup rápido)
     private readonly Dictionary<int, TKey> _entityIdToKey = new();
 
+    /// <inheritdoc/>
     public int Count => _keyToEntity.Count;
 
-    /// <summary>
-    /// Adiciona ou atualiza o mapeamento key -> entity.
-    /// Substitui a entrada anterior, removendo o reverse mapping antigo se necessário.
-    /// </summary>
-    public void AddMapping(TKey key, Entity entity)
+    /// <inheritdoc/>
+    public void Register(TKey key, Entity entity)
     {
         if (_keyToEntity.TryGetValue(key, out var existing) && existing.Id != entity.Id)
             _entityIdToKey.Remove(existing.Id, out _);
@@ -30,10 +28,8 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
         _entityIdToKey[entity.Id] = key;
     }
 
-    /// <summary>
-    /// Tenta adicionar apenas se a chave ainda não existir. Retorna true se adicionou.
-    /// </summary>
-    public bool TryAddMappingUnique(TKey key, Entity entity)
+    /// <inheritdoc/>
+    public bool TryRegisterUnique(TKey key, Entity entity)
     {
         if (!_keyToEntity.TryAdd(key, entity))
             return false;
@@ -42,45 +38,39 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
         return true;
     }
 
-    /// <summary>
-    /// Remove mapeamento por chave (se existir).
-    /// </summary>
+    /// <inheritdoc/>
     public void RemoveByKey(TKey key)
     {
         if (_keyToEntity.Remove(key, out var entity))
             _entityIdToKey.Remove(entity.Id, out _);
     }
 
-    /// <summary>
-    /// Remove mapeamento por Entity (se existir).
-    /// </summary>
+    /// <inheritdoc/>
     public void RemoveByEntity(Entity entity)
     {
         if (_entityIdToKey.Remove(entity.Id, out var key))
             _keyToEntity.Remove(key, out _);
     }
 
-    /// <summary>
-    /// Tenta obter a Entity associada à chave (retorna true se existir).
-    /// Notar: a Entity retornada contém a versão registrada — verifique Entity.Version se precisar validar staleness.
-    /// </summary>
+    /// <inheritdoc/>
     public bool TryGetEntity(TKey key, out Entity entity)
     {
         return _keyToEntity.TryGetValue(key, out entity);
     }
 
-    /// <summary>
-    /// Tenta obter a chave a partir do entity.Id.
-    /// </summary>
+    /// <inheritdoc/>
     public bool TryGetKeyByEntityId(int entityId, out TKey? key)
     {
         return _entityIdToKey.TryGetValue(entityId, out key);
     }
+    
+    /// <inheritdoc/>
+    public bool TryGetKeyByEntity(Entity entity, out TKey? key)
+    {
+        return _entityIdToKey.TryGetValue(entity.Id, out key);
+    }
 
-    /// <summary>
-    /// Atualiza somente a Entity registrada para a chave (útil para atualizar versão).
-    /// Retorna false se a chave não existir.
-    /// </summary>
+    /// <inheritdoc/>
     public bool TryUpdateEntity(TKey key, Entity newEntity)
     {
         if (!_keyToEntity.TryGetValue(key, out var existing))
@@ -102,10 +92,7 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
         return true;
     }
 
-    /// <summary>
-    /// Remove a entrada para a chave apenas se a versão registrada bater com expectedVersion.
-    /// Retorna true se removeu.
-    /// </summary>
+    /// <inheritdoc/>
     public bool TryRemoveByKeyIfVersionMatches(TKey key, int expectedVersion)
     {
         if (_keyToEntity.TryGetValue(key, out var entity) && entity.Version == expectedVersion)
@@ -117,10 +104,7 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
         return false;
     }
 
-    /// <summary>
-    /// Remove a entrada para a entidade apenas se a versão registrada bater com expectedVersion.
-    /// Retorna true se removeu.
-    /// </summary>
+    /// <inheritdoc/>
     public bool TryRemoveByEntityIfVersionMatches(Entity entity, int expectedVersion)
     {
         if (_entityIdToKey.TryGetValue(entity.Id, out var key) &&
@@ -134,26 +118,20 @@ public abstract class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnul
         return false;
     }
 
-    /// <summary>
-    /// Limpa todos os mapeamentos.
-    /// </summary>
+    /// <inheritdoc/>
     public void Clear()
     {
         _keyToEntity.Clear();
         _entityIdToKey.Clear();
     }
 
-    /// <summary>
-    /// Snapshot imutável (cópia) dos mapeamentos atuais (key -> Entity).
-    /// </summary>
+    /// <inheritdoc/>
     public IReadOnlyDictionary<TKey, Entity> Snapshot()
     {
         return _keyToEntity.ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
-    /// <summary>
-    /// Reconstrói o índice a partir de um enumerável de tuplas (key, entity).
-    /// </summary>
+    /// <inheritdoc/>
     public void RebuildFrom(IEnumerable<(TKey key, Entity entity)> items)
     {
         ArgumentNullException.ThrowIfNull(items);

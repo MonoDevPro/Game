@@ -283,16 +283,16 @@ public partial class GameClient : Node2D
         {
             // Pequena divergência → confia no cliente, só atualiza velocity/facing
             // Note: Velocity.X/Y are direction components (-1, 0, 1), combined with Speed
-            _simulation.World.Get<Velocity>(entity) = new Velocity
+            _simulation.World.Get<Speed>(entity) = new Speed
             {
                 X = packet.DirX,
                 Y = packet.DirY,
-                Speed = packet.Speed
+                Value = packet.Speed
             };
             _simulation.World.Get<Direction>(entity) = new Direction
             {
-                DirectionX = packet.DirX,
-                DirectionY = packet.DirY
+                X = packet.DirX,
+                Y = packet.DirY
             };
         }
     }

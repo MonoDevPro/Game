@@ -15,9 +15,9 @@ public sealed partial class InputSystem(World world)
     : GameSystem(world)
 {
     [Query]
-    [All<Input, Walkable, Velocity, DirtyFlags>]
+    [All<Input, Walkable, Direction, Speed, DirtyFlags>]
     [None<Dead>]
-    private void ProcessInput(ref Velocity velocity, in Walkable speed, in Input input, ref DirtyFlags dirty)
+    private void ProcessInput(ref Speed velocity, in Walkable walk, in Input input, ref DirtyFlags dirty)
     {
         sbyte newDirX = input.InputX;
         sbyte newDirY = input.InputY;
@@ -25,20 +25,15 @@ public sealed partial class InputSystem(World world)
         // ✅ Se não há input de movimento ou se está atacando, zera a velocidade
         if (newDirX == 0 && newDirY == 0 || (input.Flags & InputFlags.BasicAttack) != 0)
         {
-            if (velocity.X != 0 || velocity.Y != 0 || velocity.Speed != 0f)
-            {
-                velocity.X = 0;
-                velocity.Y = 0;
-                velocity.Speed = 0f;
-                dirty.MarkDirty(DirtyComponentType.State);
-            }
+            velocity.Value = 0f;
+            dirty.MarkDirty(DirtyComponentType.State);
             return;
         }
         
         // Atualiza velocity baseado em input
         velocity.X = newDirX;
         velocity.Y = newDirY;
-        velocity.Speed = MovementLogic.ComputeCellsPerSecond(in speed, in input.Flags);
+        velocity.Value = MovementLogic.ComputeCellsPerSecond(in walk, in input.Flags);
         dirty.MarkDirty(DirtyComponentType.State);
     }
 }

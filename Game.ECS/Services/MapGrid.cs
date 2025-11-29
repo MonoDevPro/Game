@@ -3,9 +3,6 @@ using Game.ECS.Components;
 namespace Game.ECS.Services;
 
 /// <summary>
-/// Implementação padrão de IMapGrid para gerenciar limites e bloqueios de mapa.
-/// </summary>
-/// <summary>
 /// Implementação padrão de IMapGrid para gerenciar limites e bloqueios de mapa (agora com suporte a camadas Z).
 /// </summary>
 public class MapGrid : IMapGrid
@@ -27,37 +24,37 @@ public class MapGrid : IMapGrid
         _blocked = blockedCells ?? new bool[width, height, layers];
     }
 
-    public bool InBounds(SpatialPosition position)
+    public bool InBounds(Position position, int floor)
     {
         return position.X >= 0 && position.X < _width &&
                position.Y >= 0 && position.Y < _height &&
-               position.Floor >= 0 && position.Floor < _layers;
+               floor >= 0 && floor < _layers;
     }
 
-    public SpatialPosition ClampToBounds(SpatialPosition position)
+    public (Position Position, int Floor) ClampToBounds(Position position, int floor)
     {
-        return new SpatialPosition(
-            Math.Max(0, Math.Min(position.X, _width - 1)), 
-            Math.Max(0, Math.Min(position.Y, _height - 1)), 
-            (sbyte)Math.Max(0, Math.Min(position.Floor, _layers - 1)));
+        var clampedX = Math.Max(0, Math.Min(position.X, _width - 1));
+        var clampedY = Math.Max(0, Math.Min(position.Y, _height - 1));
+        var clampedFloor = Math.Max(0, Math.Min(floor, _layers - 1));
+        return (new Position { X = clampedX, Y = clampedY }, clampedFloor);
     }
 
-    public bool IsBlocked(SpatialPosition position)
+    public bool IsBlocked(Position position, int floor)
     {
-        if (!InBounds(position))
+        if (!InBounds(position, floor))
             return true; // Fora do mapa é considerado bloqueado
 
-        return _blocked[position.X, position.Y, position.Floor];
+        return _blocked[position.X, position.Y, floor];
     }
 
-    public bool AnyBlockedInArea(SpatialPosition min, SpatialPosition max)
+    public bool AnyBlockedInArea(Position min, Position max, int minFloor, int maxFloor)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
         int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
         int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
-        int minLayer = Math.Max((sbyte)0, Math.Min(min.Floor, max.Floor));
-        int maxLayer = Math.Min(_layers - 1, Math.Max(min.Floor, max.Floor));
+        int minLayer = Math.Max(0, Math.Min(minFloor, maxFloor));
+        int maxLayer = Math.Min(_layers - 1, Math.Max(minFloor, maxFloor));
 
         for (int z = minLayer; z <= maxLayer; z++)
             for (int x = minX; x <= maxX; x++)
@@ -67,14 +64,14 @@ public class MapGrid : IMapGrid
         return false;
     }
 
-    public int CountBlockedInArea(SpatialPosition min, SpatialPosition max)
+    public int CountBlockedInArea(Position min, Position max, int minFloor, int maxFloor)
     {
         int minX = Math.Max(0, Math.Min(min.X, max.X));
         int maxX = Math.Min(_width - 1, Math.Max(min.X, max.X));
         int minY = Math.Max(0, Math.Min(min.Y, max.Y));
         int maxY = Math.Min(_height - 1, Math.Max(min.Y, max.Y));
-        int minLayer = Math.Max((sbyte)0, Math.Min(min.Floor, max.Floor));
-        int maxLayer = Math.Min(_layers - 1, Math.Max(min.Floor, max.Floor));
+        int minLayer = Math.Max(0, Math.Min(minFloor, maxFloor));
+        int maxLayer = Math.Min(_layers - 1, Math.Max(minFloor, maxFloor));
 
         int count = 0;
         for (int z = minLayer; z <= maxLayer; z++)
@@ -88,10 +85,10 @@ public class MapGrid : IMapGrid
     /// <summary>
     /// Define se uma célula está bloqueada.
     /// </summary>
-    public void SetBlocked(SpatialPosition position, bool blocked)
+    public void SetBlocked(Position position, int floor, bool blocked)
     {
-        if (InBounds(position))
-            _blocked[position.X, position.Y, position.Floor] = blocked;
+        if (InBounds(position, floor))
+            _blocked[position.X, position.Y, floor] = blocked;
     }
 
     /// <summary>
@@ -123,8 +120,9 @@ public class MapGrid : IMapGrid
     
     /// <summary>
     /// Obtém as posições vizinhas válidas (walkable) de uma posição central.
+    /// Retorna apenas Position (X/Y); o floor é o mesmo do parâmetro.
     /// </summary>
-    public int GetWalkableNeighbors(SpatialPosition center, Span<SpatialPosition> neighbors, bool allowDiagonal = false)
+    public int GetWalkableNeighbors(Position center, int floor, Span<Position> neighbors, bool allowDiagonal = false)
     {
         var directions = allowDiagonal ? AllDirections : CardinalDirections;
         int count = 0;
@@ -132,19 +130,19 @@ public class MapGrid : IMapGrid
         for (int i = 0; i < directions.Length && count < neighbors.Length; i++)
         {
             var (dx, dy) = directions[i];
-            var neighbor = new SpatialPosition(center.X + dx, center.Y + dy, center.Floor);
+            var neighborPos = new Position { X = center.X + dx, Y = center.Y + dy };
             
-            if (InBounds(neighbor) && !IsBlocked(neighbor))
+            if (InBounds(neighborPos, floor) && !IsBlocked(neighborPos, floor))
             {
                 // Se diagonal, verifica se os tiles adjacentes estão livres (evita cortar cantos)
                 if (allowDiagonal && dx != 0 && dy != 0)
                 {
-                    if (IsBlocked(new SpatialPosition(center.X + dx, center.Y, center.Floor)) ||
-                        IsBlocked(new SpatialPosition(center.X, center.Y + dy, center.Floor)))
+                    if (IsBlocked(new Position { X = center.X + dx, Y = center.Y }, floor) ||
+                        IsBlocked(new Position { X = center.X, Y = center.Y + dy }, floor))
                         continue;
                 }
                 
-                neighbors[count++] = neighbor;
+                neighbors[count++] = neighborPos;
             }
         }
         

@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Logic;
 using Game.ECS.Systems;

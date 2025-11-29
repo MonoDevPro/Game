@@ -27,7 +27,7 @@ public sealed partial class PlayerVisual : DefaultVisual
     {
         LoadSprite((VocationType)snapshot.VocationId, (Gender)snapshot.GenderId);
         UpdateName(snapshot.Name);
-        UpdateAnimationState(new Direction { DirectionX = snapshot.DirX, DirectionY = snapshot.DirY }, false, false, false);
+        UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
         UpdatePosition(new Vector3I(snapshot.PosX, snapshot.PosY, snapshot.Floor));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
         UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
