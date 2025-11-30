@@ -1,12 +1,12 @@
 using Arch.LowLevel;
 
-namespace Game.ECS.Services;
+namespace Game.ECS.Services.Index;
 
 /// <summary>
 /// Gerencia o ciclo de vida de recursos unmanaged/managed associados a entidades.
 /// </summary>
 /// <typeparam name="T">O tipo do recurso (ex: string, NpcPath, AIState)</typeparam>
-public class ResourceStack<T>(int capacity = 50)
+public class ResourceIndex<T>(int capacity = 50)
     where T : notnull
 {
     // O banco de dados de baixo nível do Arch

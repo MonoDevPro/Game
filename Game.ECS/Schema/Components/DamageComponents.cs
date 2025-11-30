@@ -1,6 +1,15 @@
 using Arch.Core;
 
-namespace Game.ECS.Components;
+namespace Game.ECS.Schema.Components;
+
+public struct Invulnerable { }
+
+public struct DeferredDamage
+{
+    public int Amount;
+    public bool IsCritical;
+    public Entity SourceEntity;
+}
 
 public struct DamageOverTime
 {

@@ -1,5 +1,4 @@
 using Game.ECS.Components;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.Network.Packets.Game;
@@ -16,7 +15,7 @@ public static class SnapshotConversionExtensions
     /// <summary>
     /// Converts a PlayerSnapshot to a PlayerSpawn network packet.
     /// </summary>
-    public static PlayerSpawn ToPlayerSpawnSnapshot(this PlayerSnapshot snapshot)
+    public static PlayerSpawn ToPlayerSpawn(this PlayerSnapshot snapshot)
     {
         return new PlayerSpawn(
             PlayerId: snapshot.PlayerId,
@@ -46,12 +45,12 @@ public static class SnapshotConversionExtensions
     /// <summary>
     /// Converts a PlayerStateSnapshot to a PlayerStateUpdate network packet.
     /// </summary>
-    public static PlayerStateUpdate ToPlayerStateSnapshot(this PlayerStateSnapshot snapshot)
+    public static StateUpdate ToPlayerStateSnapshot(this StateSnapshot snapshot)
     {
-        return new PlayerStateUpdate(
+        return new StateUpdate(
             NetworkId: snapshot.NetworkId,
-            X: snapshot.PositionX,
-            Y: snapshot.PositionY,
+            X: snapshot.PosX,
+            Y: snapshot.PosY,
             Floor: snapshot.Floor,
             Speed: snapshot.Speed,
             DirX: snapshot.DirX,
@@ -62,9 +61,9 @@ public static class SnapshotConversionExtensions
     /// <summary>
     /// Converts a PlayerVitalsSnapshot to a PlayerVitalsUpdate network packet.
     /// </summary>
-    public static PlayerVitalsUpdate ToPlayerVitalsSnapshot(this PlayerVitalsSnapshot snapshot)
+    public static VitalsUpdate ToPlayerVitalsSnapshot(this VitalsSnapshot snapshot)
     {
-        return new PlayerVitalsUpdate(
+        return new VitalsUpdate(
             NetworkId: snapshot.NetworkId,
             CurrentHp: snapshot.Hp,
             MaxHp: snapshot.MaxHp,
@@ -110,12 +109,12 @@ public static class SnapshotConversionExtensions
     /// <summary>
     /// Converts a PlayerStateUpdate network packet to a PlayerStateSnapshot.
     /// </summary>
-    public static PlayerStateSnapshot ToPlayerStateData(this PlayerStateUpdate update)
+    public static StateSnapshot ToPlayerStateData(this StateUpdate update)
     {
-        return new PlayerStateSnapshot(
+        return new StateSnapshot(
             NetworkId: update.NetworkId,
-            PositionX: update.X,
-            PositionY: update.Y,
+            PosX: update.X,
+            PosY: update.Y,
             Floor: update.Floor,
             Speed: update.Speed,
             DirX: update.DirX,
@@ -126,9 +125,9 @@ public static class SnapshotConversionExtensions
     /// <summary>
     /// Converts a PlayerVitalsUpdate network packet to a PlayerVitalsSnapshot.
     /// </summary>
-    public static PlayerVitalsSnapshot ToPlayerVitalsData(this PlayerVitalsUpdate update)
+    public static VitalsSnapshot ToPlayerVitalsData(this VitalsUpdate update)
     {
-        return new PlayerVitalsSnapshot(
+        return new VitalsSnapshot(
             NetworkId: update.NetworkId,
             Hp: update.CurrentHp,
             MaxHp: update.MaxHp,

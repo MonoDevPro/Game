@@ -67,7 +67,7 @@ public sealed partial class ReviveSystem(World world, ILogger<ReviveSystem> logg
             TimeRemaining = SimulationConfig.DefaultRespawnTime,
             TotalTime = SimulationConfig.DefaultRespawnTime,
             SpawnPosition = new Position { X = SimulationConfig.DefaultSpawnX, Y = SimulationConfig.DefaultSpawnY },
-            SpawnFloor = new Floor { Level = SimulationConfig.DefaultSpawnFloor }
+            SpawnFloor = new Floor { Value = SimulationConfig.DefaultSpawnFloor }
         });
     }
 }

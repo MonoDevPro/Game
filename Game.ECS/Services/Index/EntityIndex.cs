@@ -1,13 +1,40 @@
 using Arch.Core;
 
-namespace Game.ECS.Services;
+namespace Game.ECS.Services.Index;
+
+public class IdGenerator
+{
+    // Começamos do 1, pois 0 costuma ser inválido ou "null" em networking
+    private int _nextId = 1;
+    
+    // Armazena IDs que foram liberados e podem ser reutilizados
+    private readonly Queue<int> _freeIds = new();
+
+    /// <summary>
+    /// Obtém o próximo NetworkID disponível.
+    /// Prioriza IDs reciclados antes de gerar novos sequenciais.
+    /// </summary>
+    public int Next() => _freeIds.TryDequeue(out var id) ? id : _nextId++;
+
+    /// <summary>
+    /// Devolve um ID para o pool de reciclagem.
+    /// Deve ser chamado quando uma entidade de rede é destruída.
+    /// </summary>
+    public void Recycle(int id)
+    {
+        // Evita reciclar IDs inválidos
+        if (id <= 0) return;
+        
+        _freeIds.Enqueue(id);
+    }
+}
 
 /// <summary>
 /// Índice bidirecional entre uma chave genérica TKey <-> Entity (struct do Arch).
 /// Thread-safe: leituras lock-free, escritas com lock para manter os dois dicionários consistentes.
 /// </summary>
 /// <typeparam name="TKey">Tipo da chave (ex.: int, Guid, string, ulong). Deve ser notnull.</typeparam>
-public class EntityIndex<TKey> : IEntityIndex<TKey> where TKey : notnull
+public class EntityIndex<TKey> where TKey : notnull
 {
     // key -> Entity (capturamos Entity.Id e Entity.Version)
     private readonly Dictionary<TKey, Entity> _keyToEntity = new();

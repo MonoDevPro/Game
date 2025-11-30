@@ -1,38 +1,21 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Components;
+namespace Game.ECS.Schema.Components;
 
 /// <summary>
 /// NPC behavior configuration component.
 /// Stores the behavior type and ranges for AI decision making.
 /// </summary>
-public struct NpcBehavior
+public struct AIBehaviour
 {
-    public NpcBehaviorType Type;
+    public BehaviorType Type;
     public float VisionRange;
     public float AttackRange;
     public float LeashRange;
     public float PatrolRadius;
     public float IdleDurationMin;
     public float IdleDurationMax;
-}
-
-// 2. Estado Mental (O "Cérebro" Dinâmico)
-public struct NpcBrain
-{
-    public NpcState CurrentState;
-    public float StateTimer;
-    public Entity CurrentTarget;
-}
-
-public enum NpcState : byte
-{
-    Idle,
-    Patrol,
-    Chase,
-    Combat,
-    ReturnHome
 }
 
 // 3. Intenção de Navegação (Desacopla "Querer ir" de "Como ir")
@@ -44,10 +27,27 @@ public struct NavigationAgent
     public bool IsPathPending; // Flag para pedir recalculo de path
 }
 
+// 2. Estado Mental (O "Cérebro" Dinâmico)
+public struct Brain
+{
+    public AIState CurrentState;
+    public float StateTimer;
+    public Entity CurrentTarget;
+}
+
+public enum AIState : byte
+{
+    Idle,
+    Patrol,
+    Chase,
+    Combat,
+    ReturnHome
+}
+
 /// <summary>
 /// Types of NPC behavior patterns.
 /// </summary>
-public enum NpcBehaviorType : byte
+public enum BehaviorType : byte
 {
     Passive,      // Won't attack unless attacked
     Aggressive,   // Attacks on sight

@@ -1,23 +1,17 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Entities.Npc;
+using Game.ECS.Schema.Archetypes;
+using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Templates;
 using Game.ECS.Services;
+using Game.ECS.Services.Index;
 
 namespace Game.ECS.Entities.Player;
 
 public static class PlayerFactories
 {
-    public static void DestroyPlayer(this World world, Entity entity, ResourceStack<string> nameRegistry)
-    {
-        if (world.Has<NameHandle>(entity))
-        {
-            var nameRef = world.Get<NameHandle>(entity);
-            nameRegistry.Unregister(nameRef.Value);
-        }
-        world.Destroy(entity);
-    }
-    
-    public static Entity CreatePlayer(this World world, ResourceStack<string> nameRegistry, PlayerTemplate template, 
-        int networkId, int mapId, int floor, Position position)
+    public static Entity CreatePlayer(this World world, ResourceIndex<string> nameRegistry, PlayerTemplate template)
     {
         // Create the player entity with all necessary components
         var entity = world.Create(PlayerArchetypes.PlayerArchetype);
@@ -25,38 +19,44 @@ public static class PlayerFactories
         // Set up components
         var components = new object[]
         {
-            new NetworkId { Value = networkId },
-            new PlayerId { Value = template.PlayerId },
-            new GenderId { Value = template.GenderId },
-            new VocationId { Value = template.VocationId },
+            // Set from systems
+            new NetworkId { /* Value will be set by NetworkEntitySystem */ },
+            new MapId { /* Value will be set by SpawnSystem */  },
+            new Floor { /* Value will be set by SpawnSystem */ },
+            new Position { /* Value will be set by SpawnSystem */ },
             
-            new MapId { Value = mapId },
-            new Floor { Level = (sbyte)floor },
-            new NameHandle { Value = nameRegistry.Register(template.Name) },
+            // Identity
+            new PlayerControlled { },
+            new UniqueID { Value = template.Id },
+            new GenderId { Value = (byte)template.IdentityTemplate.Gender },
+            new VocationId { Value = (byte)template.IdentityTemplate.Vocation },
+            new NameHandle { Value = nameRegistry.Register(template.IdentityTemplate.Name) },
             
-            new Position { X = position.X, Y = position.Y },
-            new Direction { X = template.DirX, Y = template.DirY },
-            new Speed { Value = 0f },
-            new Movement { Timer = 0f },
-            new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
-            new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
-            new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
-            new CombatStats 
-            { 
-                AttackPower = template.PhysicalAttack,
-                MagicPower = template.MagicAttack,
-                Defense = template.PhysicalDefense,
-                MagicDefense = template.MagicDefense,
-                AttackRange = 1.5f,
-                AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
-            },
-            new CombatState 
-            { 
-                AttackCooldownTimer = 0f,
-                CastTimer = 0f
-            },
+            // Input
             new Input { },
-            new DirtyFlags { }
+            
+            // Transform
+            new Direction { X = template.DirectionTemplate.DirX, Y = template.DirectionTemplate.DirY },
+            new Speed { Value = 0f },
+            
+            // Movement
+            new Walkable { BaseSpeed = 3f, CurrentModifier = template.StatsTemplate.MovementSpeed },
+            
+            // Combat
+            new CombatStats
+            { 
+                AttackPower = template.StatsTemplate.PhysicalAttack,
+                MagicPower = template.StatsTemplate.MagicAttack,
+                Defense = template.StatsTemplate.PhysicalDefense,
+                MagicDefense = template.StatsTemplate.MagicDefense,
+                AttackRange = 1.5f,
+                AttackSpeed = template.StatsTemplate.AttackSpeed > 0 ? template.StatsTemplate.AttackSpeed : 1f
+            },
+            new CombatState { AttackCooldownTimer = 0f, CastTimer = 0f },
+            
+            // Vitals
+            new Health { Current = template.VitalsTemplate.CurrentHp, Max = template.VitalsTemplate.MaxHp, RegenerationRate = template.VitalsTemplate.HpRegen },
+            new Mana { Current = template.VitalsTemplate.CurrentMp, Max = template.VitalsTemplate.MaxMp, RegenerationRate = template.VitalsTemplate.MpRegen },
         };
         world.SetRange(entity, components);
         return entity;

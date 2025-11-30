@@ -10,10 +10,10 @@ public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPack
 public readonly partial record struct PlayerSpawnPacket(PlayerSpawn[] PlayerData);
 
 [MemoryPackable]
-public readonly partial record struct PlayerStatePacket(PlayerStateUpdate[] States);
+public readonly partial record struct PlayerStatePacket(StateUpdate[] States);
 
 [MemoryPackable]
-public readonly partial record struct PlayerVitalsPacket(PlayerVitalsUpdate[] Vitals);
+public readonly partial record struct PlayerVitalsPacket(VitalsUpdate[] Vitals);
 
 [MemoryPackable]
 public readonly partial record struct PlayerInputPacket(sbyte InputX, sbyte InputY, InputFlags Flags);

@@ -5,6 +5,7 @@ using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities.Combat;
 using Game.ECS.Logic;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 

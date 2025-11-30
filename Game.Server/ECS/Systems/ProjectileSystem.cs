@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Logic;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
@@ -77,7 +78,7 @@ public sealed partial class ProjectileSystem(World world, IMapService mapService
         
         // Verifica colisão com entidades no tile atual
         var spatial = mapService.GetMapSpatial(mapId.Value);
-        SpatialPosition currentSpatialPos = new(gridX, gridY, floor.Level);
+        SpatialPosition currentSpatialPos = new(gridX, gridY, floor.Value);
         
         if (spatial.TryGetFirstAt(currentSpatialPos, out Entity foundEntity))
         {

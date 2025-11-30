@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Logic.Pathfinding;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
@@ -52,7 +53,7 @@ public sealed partial class NpcNavigationSystem(
                 targetEntity, 
                 pos,
                 nav.Destination.Value,
-                floor.Level,
+                floor.Value,
                 ref path,
                 allowDiagonal: false);
                 

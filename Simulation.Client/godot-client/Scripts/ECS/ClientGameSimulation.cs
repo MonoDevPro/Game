@@ -53,14 +53,14 @@ public sealed class ClientGameSimulation : GameSimulation
         systems.Add(_visualSyncSystem);
         
         // Spatial updates
-        systems.Add(new SpatialService(world, MapService));
+        systems.Add(new SpatialService(world, MapIndex));
         
         // Sincronização com o servidor
         systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
-    public bool ApplyPlayerState(PlayerStateSnapshot snapshot) => World.ApplyPlayerState(PlayerIndex, snapshot);
-    public bool ApplyPlayerVitals(PlayerVitalsSnapshot snapshot) => World.ApplyPlayerVitals(PlayerIndex, snapshot);
+    public bool ApplyPlayerState(StateSnapshot snapshot) => World.ApplyPlayerState(PlayerIndex, snapshot);
+    public bool ApplyPlayerVitals(VitalsSnapshot snapshot) => World.ApplyPlayerVitals(PlayerIndex, snapshot);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
@@ -121,10 +121,10 @@ public sealed class ClientGameSimulation : GameSimulation
         return entity;
     }
     
-    public override bool DestroyPlayer(int networkId)
+    public override bool DestroyEntity(int networkId)
     {
         _visualSyncSystem?.UnregisterPlayerVisual(networkId);
-        return base.DestroyPlayer(networkId);
+        return base.DestroyEntity(networkId);
     }
 
     public Entity CreateNpc(in NpcSnapshot snapshot, NpcVisual visual)
@@ -144,7 +144,7 @@ public sealed class ClientGameSimulation : GameSimulation
     public bool UpdateNpcState(in NpcStateSnapshot state)
     {
         return NpcIndex.TryGetEntity(state.NetworkId, out var entity) && 
-               World.ApplyNpcState(entity, state);
+               World.ApplyNpcUpdate(entity, state);
     }
     
     public bool UpdateNpcVitals(in NpcVitalsSnapshot snapshot)

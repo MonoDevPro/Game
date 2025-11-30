@@ -5,6 +5,7 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.Server.Npc;
 using System;
+using Game.ECS.Schema.Components;
 
 namespace Game.Server.ECS.Systems;
 

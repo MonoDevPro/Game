@@ -5,6 +5,7 @@ using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -252,7 +253,7 @@ public partial class GameClient : Node2D
             HandleSinglePlayerState(singlePacket);
     }
     
-    private void HandleSinglePlayerState(in PlayerStateUpdate packet)
+    private void HandleSinglePlayerState(in StateUpdate packet)
     {
         if (_simulation is null)
             return;
@@ -276,7 +277,7 @@ public partial class GameClient : Node2D
         if (deltaX >= threshold || deltaY >= threshold)
         {
             // Grande divergência → servidor manda
-            _simulation.World.Get<Movement>(entity).Timer = 0f; // Reset timer
+            _simulation.World.Get<Movement>(entity).Accumulator = 0f; // Reset timer
             _simulation.ApplyPlayerState(packet.ToPlayerStateData());
         }
         else
@@ -306,7 +307,7 @@ public partial class GameClient : Node2D
             HandleSinglePlayerVitals(singlePacket);
     }
     
-    private void HandleSinglePlayerVitals(in PlayerVitalsUpdate packet)
+    private void HandleSinglePlayerVitals(in VitalsUpdate packet)
     {
         if (_simulation is null)
             return;
@@ -362,7 +363,7 @@ public partial class GameClient : Node2D
     
     private void HandlePlayerDespawn(INetPeerAdapter peer, ref LeftPacket packet)
     {
-        _simulation?.DestroyPlayer(packet.NetworkId);
+        _simulation?.DestroyEntity(packet.NetworkId);
         if (packet.NetworkId == _localNetworkId)
         {
             GD.PushWarning("[GameClient] You have been disconnected from the server!");

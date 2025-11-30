@@ -1,7 +1,8 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Events;
+namespace Game.ECS.Schema;
 
 /// <summary>
 /// Event fired when an entity takes damage.
@@ -26,7 +27,7 @@ public readonly record struct DeathEvent(Entity Entity, Entity Killer, Position 
 /// <param name="Entity">The newly spawned entity.</param>
 /// <param name="Position">The spawn position.</param>
 /// <param name="NetworkId">The network identifier for the entity.</param>
-public readonly record struct SpawnEvent(Entity Entity, Position Position, int NetworkId);
+public readonly record struct SpawnEvent(Entity Entity, SpawnPoint SpawnPoint, int NetworkId);
 
 /// <summary>
 /// Event fired when an entity despawns.
@@ -70,10 +71,4 @@ public readonly record struct ManaChangedEvent(Entity Entity, int OldValue, int 
 /// <param name="NewPosition">The new position.</param>
 public readonly record struct MovementEvent(Entity Entity, Position OldPosition, Position NewPosition);
 
-/// <summary>
-/// Event fired when an NPC changes its AI state.
-/// </summary>
-/// <param name="Entity">The NPC entity.</param>
-/// <param name="OldState">The previous AI state.</param>
-/// <param name="NewState">The new AI state.</param>
-public readonly record struct NpcStateChangedEvent(Entity Entity, NpcState OldState, NpcState NewState);
+public readonly record struct NpcStateChangedEvent(Entity Entity, AIState OldState, AIState NewState);

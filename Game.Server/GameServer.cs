@@ -727,10 +727,10 @@ public sealed class GameServer : IDisposable
             _spawnService.SpawnPlayer(session);
 
             // ✅ 5. Monta dados do jogo
-            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerSpawnSnapshot();
+            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerSpawn();
             var othersSnapshots = _sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerSpawnSnapshot())
+                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerSpawn())
                 .ToArray();
             
             // ✅ 6. Broadcasta spawn para outros jogadores

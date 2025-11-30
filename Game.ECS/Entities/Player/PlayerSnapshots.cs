@@ -17,16 +17,17 @@ public readonly record struct PlayerSnapshot(
     int PhysicalAttack, int MagicAttack,
     int PhysicalDefense, int MagicDefense);
 
-public readonly record struct PlayerStateSnapshot(
+public readonly record struct StateSnapshot(
     int NetworkId,
-    int PositionX,
-    int PositionY,
+    int PosX,
+    int PosY,
     sbyte Floor,
     float Speed,
     sbyte DirX,
-    sbyte DirY);
+    sbyte DirY
+);
 
-public readonly record struct PlayerVitalsSnapshot(
+public readonly record struct VitalsSnapshot(
     int NetworkId, 
     int Hp, 
     int MaxHp, 

@@ -1,15 +1,17 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
+using Game.ECS.Services.Index;
 
 namespace Game.ECS.Entities.Player;
 
 public static class PlayerBuilders
 {
-    public static PlayerSnapshot BuildPlayerSnapshot(this World world, Entity entity, ResourceStack<string> namesResource)
+    public static PlayerSnapshot BuildPlayerSnapshot(this World world, Entity entity, ResourceIndex<string> namesResource)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var playerId = ref world.Get<PlayerId>(entity);
+        ref var playerId = ref world.Get<UniqueID>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
         ref var name = ref world.Get<NameHandle>(entity);
         ref var gender = ref world.Get<GenderId>(entity);
@@ -31,7 +33,7 @@ public static class PlayerBuilders
             VocationId: vocation.Value,
             PosX: position.X,
             PosY: position.Y,
-            Floor: floor.Level,
+            Floor: floor.Value,
             DirX: facing.X,
             DirY: facing.Y,
             Hp: health.Current,
@@ -47,7 +49,7 @@ public static class PlayerBuilders
         );
     }
     
-    public static PlayerStateSnapshot BuildPlayerStateSnapshot(this World world, Entity entity)
+    public static StateSnapshot BuildPlayerStateSnapshot(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
@@ -55,25 +57,25 @@ public static class PlayerBuilders
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var direction = ref world.Get<Direction>(entity);
         
-        return new PlayerStateSnapshot
+        return new StateSnapshot
         {
             NetworkId = networkId.Value,
-            PositionX = position.X,
-            PositionY = position.Y,
-            Floor = floor.Level,
+            PosX = position.X,
+            PosY = position.Y,
+            Floor = floor.Value,
             Speed = walkable.BaseSpeed * walkable.CurrentModifier,
             DirX = direction.X,
             DirY = direction.Y,
         };
     }
     
-    public static PlayerVitalsSnapshot BuildPlayerVitalsSnapshot(this World world, Entity entity)
+    public static VitalsSnapshot BuildPlayerVitalsSnapshot(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
 
-        return new PlayerVitalsSnapshot
+        return new VitalsSnapshot
         {
             NetworkId = networkId.Value,
             Hp = health.Current,

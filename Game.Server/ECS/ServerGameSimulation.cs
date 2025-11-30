@@ -18,23 +18,22 @@ namespace Game.Server.ECS;
 public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
-    private readonly ILoggerFactory _loggerFactory;
     private readonly INpcRepository _npcRepository;
     
     public ServerGameSimulation(
         INetworkManager network, 
-        ILoggerFactory factory, 
         IEnumerable<Map> maps,
-        INpcRepository npcRepository) : base(new GameServices(), factory)
+        INpcRepository npcRepository,
+        ILoggerFactory? factory = null)
+        : base(factory?.CreateLogger<ServerGameSimulation>())
     {
         _networkManager = network;
-        _loggerFactory = factory;
         _npcRepository = npcRepository;
         
         // Registra os mapas fornecidoss
         foreach (var map in maps)
         {
-            MapService?.RegisterMap(
+            MapIndex.RegisterMap(
                 map.Id,
                 new MapGrid(map.Width, map.Height, map.Layers, map.GetCollisionGrid()),
                 new MapSpatial()
@@ -42,14 +41,14 @@ public sealed class ServerGameSimulation : GameSimulation
         }
         
         // Configura os sistemas
-        ConfigureSystems(World, Services!, Systems);
+        ConfigureSystems(World, Systems, factory);
     }
 
     /// <summary>
     /// Configura todos os sistemas de servidor.
     /// Ordem importante: Input → Movement → Combat → Sync
     /// </summary>
-    protected override void ConfigureSystems(World world, GameServices services, Group<float> systems)
+    protected override void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null)
     {
         var mapService = services.MapService;
         // ⭐ Ordem importante:

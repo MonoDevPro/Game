@@ -1,35 +1,31 @@
-using Game.Domain.Templates;
 using Game.Domain.Enums;
+using Game.ECS.Entities.Npc;
 
 namespace Game.Server.Npc;
 
 public interface INpcRepository
 {
-    NpcTemplate GetTemplate(string templateId);
+    NpcTemplate GetTemplate(int templateId);
     IEnumerable<NpcSpawnPoint> GetSpawnPoints(int mapId);
     void LoadTemplates(string jsonContent);
 }
 
 public class NpcRepository : INpcRepository
 {
-    private readonly Dictionary<string, NpcTemplate> _templates = new();
+    
+    private readonly Dictionary<int, NpcTemplate> _templates = new();
     private readonly List<NpcSpawnPoint> _spawnPoints = [];
 
-    public NpcRepository()
-    {
-        // Temporary: Load default templates and spawn points
-        var orcTemplate = new NpcTemplate
+    private NpcTemplate[] LoadDefaultTemplates() =>
+    [
+        new() // Orc Warrior Template
         {
-            Id = "orc_warrior",
+            Id = 1,
             Name = "Orc Warrior",
             Gender = (byte)Gender.Male,
             Vocation = (byte)VocationType.Warrior,
-            BaseHp = 150,
-            BaseMp = 50,
-            Stats = new NpcStats
+            StatsTemplate = new Stats
             {
-                HpRegen = 0.5f,
-                MpRegen = 0.2f,
                 MovementSpeed = 1.0f,
                 AttackSpeed = 1.0f,
                 PhysicalAttack = 25,
@@ -37,55 +33,81 @@ public class NpcRepository : INpcRepository
                 PhysicalDefense = 10,
                 MagicDefense = 5
             },
-            Behavior = new NpcBehaviorConfig
+            VitalsTemplate = new Vitals
+            {
+                CurrentHp = 200,
+                MaxHp = 200,
+                CurrentMp = 50,
+                MaxMp = 50,
+                HpRegen = 0.5f,
+                MpRegen = 0.2f
+            },
+            Behavior = new BehaviorConfig
             {
                 VisionRange = 8f,
                 AttackRange = 1.5f,
                 LeashRange = 10f,
                 PatrolRadius = 0f
             }
-        };
-        AddTemplate(orcTemplate);
-        AddSpawnPoint(new NpcSpawnPoint { TemplateId = "orc_warrior", MapId = 0, X = 10, Y = 10, Floor = 0 });
-
-        var goblinTemplate = new NpcTemplate
+        },
+        
+        new() // Goblin Template
         {
-            Id = "goblin",
+            Id = 2,
             Name = "Goblin",
             Gender = (byte)Gender.Male,
             Vocation = (byte)VocationType.Archer,
-            BaseHp = 120,
-            BaseMp = 80,
-            Stats = new NpcStats
+            StatsTemplate = new Stats
             {
-                HpRegen = 0.3f,
-                MpRegen = 0.4f,
                 MovementSpeed = 1.2f,
-                AttackSpeed = 1.1f,
-                PhysicalAttack = 18,
-                MagicAttack = 8,
-                PhysicalDefense = 8,
-                MagicDefense = 6
+                AttackSpeed = 1.5f,
+                PhysicalAttack = 15,
+                MagicAttack = 0,
+                PhysicalDefense = 5,
+                MagicDefense = 2
             },
-            Behavior = new NpcBehaviorConfig
+            VitalsTemplate = new Vitals
+            {
+                CurrentHp = 100,
+                MaxHp = 100,
+                CurrentMp = 30,
+                MaxMp = 30,
+                HpRegen = 0.3f,
+                MpRegen = 0.1f
+            },
+            Behavior = new BehaviorConfig
             {
                 VisionRange = 6f,
                 AttackRange = 5f,
-                LeashRange = 12f,
-                PatrolRadius = 0f
+                LeashRange = 8f,
+                PatrolRadius = 0f,
+                IdleDurationMin = 2f,
+                IdleDurationMax = 5f,
             }
-        };
-        AddTemplate(goblinTemplate);
-        AddSpawnPoint(new NpcSpawnPoint { TemplateId = "goblin", MapId = 0, X = 20, Y = 20, Floor = 0 });
+        }
+    ];
+    private NpcSpawnPoint[] LoadDefaultSpawnPoints() =>
+    [
+        // Orc Warrior Spawn
+        new NpcSpawnPoint(Id: 1, MapId: 1, Floor: 0, X: 10, Y: 15),
+        // Goblin Spawn
+        new NpcSpawnPoint(Id: 2, MapId: 1, Floor: 0, X: 20, Y: 25)
+    ];
+        
+
+    public NpcRepository()
+    {
+        // Load default templates and spawn points
+        foreach (var template in LoadDefaultTemplates())
+            _templates[template.Id] = template;
+        _spawnPoints.AddRange(LoadDefaultSpawnPoints());
     }
 
-    public NpcTemplate GetTemplate(string templateId)
+    public NpcTemplate GetTemplate(int templateId)
     {
-        if (_templates.TryGetValue(templateId, out var template))
-        {
-            return template;
-        }
-        throw new KeyNotFoundException($"NpcTemplate with Id {templateId} not found.");
+        return _templates.TryGetValue(templateId, out var template) 
+            ? template 
+            : throw new KeyNotFoundException($"NpcTemplate with Id {templateId} not found.");
     }
 
     public IEnumerable<NpcSpawnPoint> GetSpawnPoints(int mapId)

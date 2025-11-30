@@ -1,12 +1,12 @@
 using Arch.Core;
+using Game.ECS.Components;
 
-namespace Game.ECS.Components;
+namespace Game.ECS.Schema.Components;
 
 // ============================================
-// Combat Refactor - Command Based
+// Componentes de Combate
 // ============================================
 
-// Substitui AttackPower, Defense, AttackSpeed dispersos
 public struct CombatStats
 {
     public int AttackPower;     // Physical Attack
@@ -35,4 +35,30 @@ public struct AttackCommand
     public Position TargetPosition; // Posição alvo (para ataques à distância)
     public AttackStyle Style; // Estilo de ataque (Melee, Ranged, Magic)
     public bool IsReady; // Flag processada pelo sistema
+}
+
+/// <summary>
+/// Componente que representa um projétil em movimento.
+/// </summary>
+public struct Projectile
+{
+    public Entity Source;
+    public Position TargetPosition;
+    public float CurrentX;
+    public float CurrentY;
+    public float Speed;
+    public int Damage;
+    public bool IsMagical;
+    public float RemainingLifetime;
+    public bool HasHit;
+}
+
+/// <summary>
+/// Define o estilo de ataque baseado na vocação.
+/// </summary>
+public enum AttackStyle : byte
+{
+    Melee = 0,   // Ataque corpo a corpo (Warriors)
+    Ranged = 1,  // Ataque à distância com projétil físico (Archers)
+    Magic = 2    // Ataque à distância com projétil mágico (Mages)
 }

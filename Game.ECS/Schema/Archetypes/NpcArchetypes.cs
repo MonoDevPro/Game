@@ -1,7 +1,8 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Entities.Npc;
+namespace Game.ECS.Schema.Archetypes;
 
 public static class NpcArchetypes
 {
@@ -11,20 +12,29 @@ public static class NpcArchetypes
     /// </summary>
     public static readonly ComponentType[] NPC =
     [
+        // Set from systems
+        Component<NetworkId>.ComponentType, // Assigned by the networking system
+        Component<MapId>.ComponentType,     // Assigned by the map management system
+        Component<Position>.ComponentType,  // Assigned by the spawn system
+        Component<Floor>.ComponentType,     // Assigned by the spawn system
+        
         // Identity
-        Component<NetworkId>.ComponentType,
-        Component<NpcId>.ComponentType,
-        Component<MapId>.ComponentType,
-        Component<NameHandle>.ComponentType,
+        Component<AIControlled>.ComponentType,
+        Component<UniqueID>.ComponentType,
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
+        Component<NameHandle>.ComponentType,
+        
+        // AI
+        Component<Brain>.ComponentType,
+        Component<AIBehaviour>.ComponentType,
+        Component<NavigationAgent>.ComponentType,
         
         // Transform
-        Component<Position>.ComponentType,
-        Component<Floor>.ComponentType,
         Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
-        Component<Movement>.ComponentType,
+        
+        // Movement
         Component<Walkable>.ComponentType,
         
         // Combat
@@ -34,13 +44,5 @@ public static class NpcArchetypes
         // Vitals
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
-        
-        // AI
-        Component<NpcBrain>.ComponentType,
-        Component<NpcBehavior>.ComponentType,
-        Component<NavigationAgent>.ComponentType,
-        
-        // Sync
-        Component<DirtyFlags>.ComponentType,
     ];
 }

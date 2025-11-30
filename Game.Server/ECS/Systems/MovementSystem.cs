@@ -43,7 +43,7 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
     {
         if (speed is { X: 0, Y: 0 }) return;
     
-        movement.Timer += speed.Value * deltaTime;
+        movement.Accumulator += speed.Value * deltaTime;
         
         var grid = mapService.GetMapGrid(mapId.Value);
         var spatial = mapService.GetMapSpatial(mapId.Value);
@@ -54,12 +54,12 @@ public sealed partial class MovementSystem(World world, IMapService mapService) 
         if (moveResult != MovementLogic.MovementResult.Allowed && 
             moveResult != MovementLogic.MovementResult.None)
         {
-            movement.Timer = 0f;
+            movement.Accumulator = 0f;
             return;
         }
     
-        if (movement.Timer >= SimulationConfig.CellSize)
-            movement.Timer -= SimulationConfig.CellSize;
+        if (movement.Accumulator >= SimulationConfig.CellSize)
+            movement.Accumulator -= SimulationConfig.CellSize;
 
         dirty.MarkDirty(DirtyComponentType.State);
         

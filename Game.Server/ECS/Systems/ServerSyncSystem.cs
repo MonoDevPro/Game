@@ -9,6 +9,7 @@ using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.ECS.Logic;
+using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -28,8 +29,8 @@ public sealed partial class ServerSyncSystem(
     private readonly List<NpcVitalsUpdate> _npcHealthBuffer = [];
     
     private readonly List<PlayerSpawn> _playerSpawnBuffer = [];
-    private readonly List<PlayerStateUpdate> _playerStateBuffer = [];
-    private readonly List<PlayerVitalsUpdate> _playerVitalsBuffer = [];
+    private readonly List<StateUpdate> _playerStateBuffer = [];
+    private readonly List<VitalsUpdate> _playerVitalsBuffer = [];
     
     [Query]
     [All<NetworkId, DirtyFlags>]
@@ -78,7 +79,7 @@ public sealed partial class ServerSyncSystem(
 
         if (spawnRequested)
         {
-            _playerSpawnBuffer.Add(World.BuildPlayerSnapshot(entity).ToPlayerSpawnSnapshot());
+            _playerSpawnBuffer.Add(World.BuildPlayerSnapshot(entity).ToPlayerSpawn());
             dirty.ClearDirtyMask(DirtyComponentType.All);
         }
 

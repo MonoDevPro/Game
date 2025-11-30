@@ -3,6 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Domain.Templates;
 using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 using Game.Server.Npc;
@@ -89,7 +90,7 @@ public sealed partial class NpcDecisionSystem(
         if (spatial == null) return false;
         
         int radius2D = Math.Max(1, (int)MathF.Ceiling(visionRange));
-        var center = new SpatialPosition(position.X, position.Y, floor.Level);
+        var center = new SpatialPosition(position.X, position.Y, floor.Value);
 
         Span<Entity> results = stackalloc Entity[MaxSpatialResults];
         int found = spatial.QueryCircle(center, radius2D, results);
@@ -104,7 +105,7 @@ public sealed partial class NpcDecisionSystem(
             if (!World.Has<PlayerControlled>(candidate)) continue; // Only target players for now
             if (World.Has<Dead>(candidate)) continue;
             if (!World.TryGet(candidate, out MapId candidateMap) || candidateMap.Value != mapId.Value) continue;
-            if (!World.TryGet(candidate, out Floor candidateFloor) || candidateFloor.Level != floor.Level) continue;
+            if (!World.TryGet(candidate, out Floor candidateFloor) || candidateFloor.Value != floor.Value) continue;
             if (!World.TryGet(candidate, out Position candidatePosition)) continue;
 
             float distanceSq = DistanceSquared(position, candidatePosition);

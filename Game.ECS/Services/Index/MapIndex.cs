@@ -1,22 +1,28 @@
-namespace Game.ECS.Services;
+namespace Game.ECS.Services.Index;
+
+
+public interface IMapIndex
+{
+    IMapGrid GetMapGrid(int mapId);
+    IMapSpatial GetMapSpatial(int mapId);
+    void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial);
+    void UnregisterMap(int mapId);
+    bool HasMap(int mapId);
+}
 
 /// <summary>
 /// Implementação de IMapService para gerenciar múltiplos mapas do jogo.
 /// </summary>
-public class MapService : IMapService
+public class MapIndex : IMapIndex
 {
     private readonly Dictionary<int, IMapGrid> _grids = [];
     private readonly Dictionary<int, IMapSpatial> _spatials = [];
 
-    public IMapGrid GetMapGrid(int mapId) => 
-        _grids.TryGetValue(mapId, out var grid) 
-        ? grid 
-        : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
+    public IMapGrid GetMapGrid(int mapId) => _grids.TryGetValue(mapId, out var grid) 
+        ? grid : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
 
-    public IMapSpatial GetMapSpatial(int mapId)
-    {
-        return _spatials.TryGetValue(mapId, out var spatial) ? spatial : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
-    }
+    public IMapSpatial GetMapSpatial(int mapId) => _spatials.TryGetValue(mapId, out var spatial) 
+        ? spatial : throw new KeyNotFoundException($"Mapa com ID {mapId} não encontrado");
 
     /// <summary>
     /// Registra um novo mapa no serviço.

@@ -3,6 +3,7 @@ using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Player;
+using Game.ECS.Schema.Templates;
 using Game.Server.ECS;
 using Game.Server.Sessions;
 
@@ -64,7 +65,7 @@ public sealed class PlayerSpawnService(
         if (!simulation.World.TryGet<NetworkId>(session.Entity, out var networkId))
             return;
         
-        simulation.DestroyPlayer(networkId.Value);
+        simulation.DestroyEntity(networkId.Value);
         logger.LogInformation("Despawned player {Name}", character.Name);
         session.Entity = Entity.Null;
     }

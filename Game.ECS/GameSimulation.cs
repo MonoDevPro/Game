@@ -1,11 +1,12 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
-using Arch.LowLevel;
 using Arch.System;
 using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
+using Game.ECS.Events;
 using Game.ECS.Services;
+using Game.ECS.Services.Index;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
 
@@ -49,45 +50,44 @@ public class FixedTimeStep(float fixedDeltaTime)
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class GameSimulation(ILoggerFactory loggerFactory) : GameSystem(World.Create(
+public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : GameSystem(World.Create(
         chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
         minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
         archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-        entityCapacity: SimulationConfig.EntityCapacity),
-    loggerFactory.CreateLogger<GameSimulation>())
+        entityCapacity: SimulationConfig.EntityCapacity), logger)
 {
+    
+    /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
+    
+    protected readonly GameEventBus EventBus = new();
+    
+    /// Fixed timestep para updates da simulação.
     private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
     
-    public uint CurrentTick { get; private set; }
-    protected ILoggerFactory LoggerFactory { get; } = loggerFactory;
-
-    public readonly IEntityIndex<int> EntityIndex = new EntityIndex<int>();
+    /// Tick atual da simulação.
+    private uint CurrentTick { get; set; }
     
     /// <summary>
     /// Access to the map service for spatial queries.
     /// </summary>
-    public readonly IMapService MapService = new MapService();
+    protected readonly IMapIndex MapIndex = new MapIndex();
     
-    // Banco de Strings (Nomes de NPCs, etc)
-    public readonly ResourceStack<string> Strings = new(capacity: 10);
+    /// <summary>
+    /// Resource stack for managing string handles.
+    /// </summary>
+    public readonly ResourceIndex<string> Strings = new(capacity: 10);
     
     /// <summary>
     /// Registers a map with the map service.
     /// </summary>
     public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial) =>
-        MapService.RegisterMap(mapId, mapGrid, mapSpatial);
-    
-    /// <summary>
-    /// Tries to get any entity (player or NPC) by network ID.
-    /// </summary>
-    public bool TryGetAnyEntity(int networkId, out Entity entity) => 
-        EntityIndex.TryGetEntity(networkId, out entity);
+        MapIndex.RegisterMap(mapId, mapGrid, mapSpatial);
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, Group<float> systems);
+    protected abstract void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null);
     
     #region Player Lifecycle
     
@@ -96,22 +96,27 @@ public abstract class GameSimulation(ILoggerFactory loggerFactory) : GameSystem(
     /// </summary>
     public Entity CreatePlayer(PlayerTemplate template)
     {
-        // TODO: Generate unique network ID for player,
-        // TODO: Register player in PlayerIndex and EntityIndex
-        // TODO: Register entity in Services (e.g., spatial map)
-        return Entity.Null;
+        var playerEntity = PlayerFactories.CreatePlayer(World, Strings, template);
+        
     }
     
     /// <summary>
     /// Destroys a player entity by network ID.
     /// </summary>
-    public virtual bool DestroyPlayer(int networkId)
+    public virtual bool DestroyEntity(int networkId)
     {
-        if (!EntityIndex.TryGetEntity(networkId, out var entity))
+        if (!_entityIndex.TryGetEntity(networkId, out var entity))
             return false;
-            
-        PlayerFactories.DestroyPlayer(World, entity, Strings);
-        EntityIndex.RemoveByKey(networkId);
+        
+        _entityIndex.RemoveByKey(networkId);
+        
+        if (World.Has<NameHandle>(entity))
+        {
+            var nameRef = World.Get<NameHandle>(entity);
+            Strings.Unregister(nameRef.Value);
+        }
+        
+        World.Destroy(entity);
         return true;
     }
     
@@ -122,12 +127,14 @@ public abstract class GameSimulation(ILoggerFactory loggerFactory) : GameSystem(
     /// <summary>
     /// Creates an NPC entity from a template.
     /// </summary>
-    public Entity CreateNpc(NpcTemplate template, Position position, int floor, int mapId, int networkId)
+    public Entity CreateNpc(NpcTemplate template, int networkId, int mapId, int floor, Position position)
     {
-        var entity = NpcFactories.CreateNpc(World, Strings, template, position, floor, mapId, networkId);
-        NpcIndex.Register(networkId, entity);
-        return entity;
+        var npcEntity = NpcFactories.CreateNpc(World, template, Strings, networkId, mapId, floor, position);
+        _entityIndex.Register(networkId, npcEntity);
+        
+        return npcEntity;
     }
+    
     
     /// <summary>
     /// Destroys an NPC entity by network ID.

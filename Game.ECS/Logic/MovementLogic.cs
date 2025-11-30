@@ -37,11 +37,11 @@ public static class MovementLogic
         if (dir is { X: 0, Y: 0 }) return MovementResult.None;
         if (vel.Value <= 0f) return MovementResult.None;
 
-        if (movement.Timer < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
+        if (movement.Accumulator < SimulationConfig.CellSize) return MovementResult.None; // ainda não passou célula
         
         // compute candidate
         newPos = new Position { X = current.X + dir.X, Y = current.Y + dir.Y };
-        sbyte z = floor.Level;
+        sbyte z = floor.Value;
         
         if (grid != null && !grid.InBounds(newPos, z)) return MovementResult.OutOfBounds;
         if (grid != null && grid.IsBlocked(newPos, z)) return MovementResult.BlockedByMap;

@@ -1,5 +1,6 @@
 using Arch.Bus;
 using Arch.LowLevel;
+using Game.ECS.Schema;
 
 namespace Game.ECS.Events;
 

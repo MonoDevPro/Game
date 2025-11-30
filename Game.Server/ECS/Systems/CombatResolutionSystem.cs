@@ -4,6 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Logic;
+using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 
 namespace Game.Server.ECS.Systems;
@@ -89,7 +90,7 @@ public sealed partial class CombatResolutionSystem(World world, GameServices ser
                 HasHit = false
             },
             new MapId { Value = mapId.Value },
-            new Floor { Level = floor.Level }
+            new Floor { Value = floor.Value }
         );
     }
 

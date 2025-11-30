@@ -12,19 +12,21 @@ public readonly partial record struct PlayerSpawn(
     int Mp, int MaxMp,
     float MovementSpeed, float AttackSpeed,
     int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense);
-    
+    int PhysicalDefense, int MagicDefense
+);
+
 [MemoryPackable]
-public readonly partial record struct PlayerStateUpdate(
+public readonly partial record struct StateUpdate(
     int NetworkId,
     int X, int Y, sbyte Floor,
     float Speed,
     sbyte DirX, sbyte DirY);
     
 [MemoryPackable]
-public readonly partial record struct PlayerVitalsUpdate(
+public readonly partial record struct VitalsUpdate(
     int NetworkId,
     int CurrentHp,
     int MaxHp,
     int CurrentMp,
-    int MaxMp);
+    int MaxMp
+);

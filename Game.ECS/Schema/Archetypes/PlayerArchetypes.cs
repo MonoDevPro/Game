@@ -1,7 +1,8 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Entities.Player;
+namespace Game.ECS.Schema.Archetypes;
 
 /// <summary>
 /// Um arqutipo  um blueprint que define quais componentes uma entidade deve ter.
@@ -18,22 +19,35 @@ public static class PlayerArchetypes
     /// </summary>
     public static readonly ComponentType[] PlayerArchetype =
     [
-        Component<PlayerId>.ComponentType,
-        Component<NetworkId>.ComponentType,
-        Component<MapId>.ComponentType,
+        // Set from systems
+        Component<NetworkId>.ComponentType, // Assigned by the networking system
+        Component<MapId>.ComponentType,     // Assigned by the map management system
+        Component<Position>.ComponentType,  // Assigned by the spawn system
+        Component<Floor>.ComponentType,     // Assigned by the spawn system
+        
+        // Identity
+        Component<PlayerControlled>.ComponentType,
+        Component<UniqueID>.ComponentType,
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
-        Component<Position>.ComponentType,
-        Component<Floor>.ComponentType,
+        Component<NameHandle>.ComponentType,
+        
+        // Input
+        Component<Input>.ComponentType,
+        
+        // Transform
         Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
-        Component<Movement>.ComponentType,
-        Component<Health>.ComponentType,
-        Component<Mana>.ComponentType,
+        
+        // Movement
         Component<Walkable>.ComponentType,
+        
+        // Combat
         Component<CombatStats>.ComponentType,
         Component<CombatState>.ComponentType,
-        Component<Input>.ComponentType,
-        Component<DirtyFlags>.ComponentType,
+        
+        // Vitals
+        Component<Health>.ComponentType,
+        Component<Mana>.ComponentType,
     ];
 }

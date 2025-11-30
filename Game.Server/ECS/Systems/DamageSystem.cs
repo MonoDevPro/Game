@@ -4,6 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Logic;
+using Game.ECS.Schema;
 using Game.ECS.Services;
 using Game.ECS.Systems;
 
