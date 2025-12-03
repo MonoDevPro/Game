@@ -19,10 +19,10 @@ public static class PlayerFactories
         var components = new object[]
         {
             // Set from systems
-            new NetworkId { /* Value will be set by NetworkEntitySystem */ },
-            new MapId { /* Value will be set by SpawnSystem */  },
-            new Floor { /* Value will be set by SpawnSystem */ },
-            new Position { /* Value will be set by SpawnSystem */ },
+            new NetworkId { Value = template.IdentityTemplate.NetworkId },
+            new MapId { Value = template.LocationTemplate.MapId },
+            new Floor { Value = (sbyte)template.LocationTemplate.Floor },
+            new Position { X = template.LocationTemplate.X, Y = template.LocationTemplate.Y },
             
             // Identity
             new PlayerControlled { },
@@ -56,6 +56,9 @@ public static class PlayerFactories
             // Vitals
             new Health { Current = template.VitalsTemplate.CurrentHp, Max = template.VitalsTemplate.MaxHp, RegenerationRate = template.VitalsTemplate.HpRegen },
             new Mana { Current = template.VitalsTemplate.CurrentMp, Max = template.VitalsTemplate.MaxMp, RegenerationRate = template.VitalsTemplate.MpRegen },
+            
+            // Lifecycle - SpawnPoint for respawning
+            new SpawnPoint(template.LocationTemplate.MapId, template.LocationTemplate.X, template.LocationTemplate.Y, (sbyte)template.LocationTemplate.Floor),
         };
         world.SetRange(entity, components);
         return entity;

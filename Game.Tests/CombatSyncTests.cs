@@ -4,7 +4,7 @@ using System.Linq;
 using Arch.Core;
 using FluentAssertions;
 using Game.ECS;
-using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Player;
 using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;

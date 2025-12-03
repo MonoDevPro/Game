@@ -48,5 +48,8 @@ public static class PlayerArchetypes
         // Vitals
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
+        
+        // Lifecycle
+        Component<SpawnPoint>.ComponentType,
     ];
 }

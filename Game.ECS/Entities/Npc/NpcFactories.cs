@@ -17,22 +17,10 @@ public static class NpcFactories
         var components = new object[]
         {
             // Set from systems
-            new NetworkId
-            {
-                /* Value will be set by NetworkEntitySystem */
-            },
-            new MapId
-            {
-                /* Value will be set by SpawnSystem */
-            },
-            new Floor
-            {
-                /* Value will be set by SpawnSystem */
-            },
-            new Position
-            {
-                /* Value will be set by SpawnSystem */
-            },
+            new NetworkId { Value = template.IdentityTemplate.NetworkId },
+            new MapId { Value = template.LocationTemplate.MapId },
+            new Floor { Value = (sbyte)template.LocationTemplate.Floor },
+            new Position { X = template.LocationTemplate.X, Y = template.LocationTemplate.Y },
 
             // Identity
             new AIControlled { },
@@ -42,6 +30,7 @@ public static class NpcFactories
             new NameHandle { Value = nameRegistry.Register(template.IdentityTemplate.Name) },
 
             // AI
+            new Brain { CurrentState = AIState.Idle, StateTimer = 0f, CurrentTarget = Entity.Null },
             new AIBehaviour
             {
                 Type = template.BehaviorTemplate.BehaviorType,
@@ -52,6 +41,7 @@ public static class NpcFactories
                 IdleDurationMin = template.BehaviorTemplate.IdleDurationMin,
                 IdleDurationMax = template.BehaviorTemplate.IdleDurationMax
             },
+            new NavigationAgent { Destination = null, StoppingDistance = 0f, IsPathPending = false },
 
             // Transform
             new Direction { X = template.DirectionTemplate.DirX, Y = template.DirectionTemplate.DirY },
@@ -67,58 +57,30 @@ public static class NpcFactories
                 MagicPower = template.StatsTemplate.MagicAttack,
                 Defense = template.StatsTemplate.PhysicalDefense,
                 MagicDefense = template.StatsTemplate.MagicDefense,
-                AttackRange = 1.5f,
+                AttackRange = template.BehaviorTemplate.AttackRange,
                 AttackSpeed = template.StatsTemplate.AttackSpeed > 0 ? template.StatsTemplate.AttackSpeed : 1f
             },
-            new CombatState
-            {
-                AttackCooldownTimer = 0f,
-                CastTimer = 0f
-            },
+            new CombatState { AttackCooldownTimer = 0f, CastTimer = 0f },
 
             // Vitals
             new Health
             {
-                Current = template.VitalsTemplate.CurrentHp, Max = template.VitalsTemplate.MaxHp,
+                Current = template.VitalsTemplate.CurrentHp, 
+                Max = template.VitalsTemplate.MaxHp,
                 RegenerationRate = template.VitalsTemplate.HpRegen
             },
             new Mana
             {
-                Current = template.VitalsTemplate.CurrentMp, Max = template.VitalsTemplate.MaxMp,
+                Current = template.VitalsTemplate.CurrentMp, 
+                Max = template.VitalsTemplate.MaxMp,
                 RegenerationRate = template.VitalsTemplate.MpRegen
-            }
+            },
+            
+            // Lifecycle - SpawnPoint for respawning
+            new SpawnPoint(template.LocationTemplate.MapId, template.LocationTemplate.X, template.LocationTemplate.Y, (sbyte)template.LocationTemplate.Floor),
         };
         
         world.SetRange(entity, components);
         return entity;
     }
-
-    public static readonly ComponentType[] NPC =
-    [
-        // Set from systems
-        Component<NetworkId>.ComponentType, // Assigned by the networking system
-        Component<MapId>.ComponentType,     // Assigned by the map management system
-        Component<Position>.ComponentType,  // Assigned by the spawn system
-        Component<Floor>.ComponentType,     // Assigned by the spawn system
-        // Identity
-        Component<AIControlled>.ComponentType,
-        Component<UniqueID>.ComponentType,
-        Component<GenderId>.ComponentType,
-        Component<VocationId>.ComponentType,
-        Component<NameHandle>.ComponentType,
-        // AI
-        Component<AIBehaviour>.ComponentType,
-        // Transform
-        Component<Direction>.ComponentType,
-        Component<Speed>.ComponentType,
-        // Movement
-        Component<Walkable>.ComponentType,
-        // Combat
-        Component<CombatStats>.ComponentType,
-        Component<CombatState>.ComponentType,
-        // Vitals
-        Component<Health>.ComponentType,
-        Component<Mana>.ComponentType,
-    ];
 }
-        

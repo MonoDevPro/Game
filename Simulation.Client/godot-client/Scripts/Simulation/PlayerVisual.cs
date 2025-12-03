@@ -1,7 +1,5 @@
 using System;
 using Game.Domain.Enums;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
 using Godot;

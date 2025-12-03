@@ -43,5 +43,8 @@ public static class NpcArchetypes
         // Vitals
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,
+        
+        // Lifecycle
+        Component<SpawnPoint>.ComponentType,
     ];
 }

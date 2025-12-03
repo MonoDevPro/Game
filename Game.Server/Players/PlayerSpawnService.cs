@@ -1,6 +1,5 @@
 using Arch.Core;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
+using Game.Domain.Enums;
 using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
@@ -22,29 +21,39 @@ public sealed class PlayerSpawnService(
                         ?? throw new InvalidOperationException("No character selected for session.");
 
         var playerTemplate = new PlayerTemplate(
-            PlayerId: session.Account.Id,
-            NetworkId: session.Peer.Id,
-            MapId: 0,
-            Name: character.Name,
-            GenderId: (byte)character.Gender,
-            VocationId: (byte)character.Vocation,
-            PosX: character.PositionX,
-            PosY: character.PositionY,
-            Floor: character.Floor,
-            DirX: character.FacingX,
-            DirY: character.FacingY,
-            Hp: character.Stats.CurrentHp,
-            MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
-            Mp: character.Stats.CurrentMp,
-            MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
-            MovementSpeed: (float)character.Stats.MovementSpeed,
-            AttackSpeed: (float)character.Stats.AttackSpeed,
-            PhysicalAttack: character.Stats.PhysicalAttack,
-            MagicAttack: character.Stats.MagicAttack,
-            PhysicalDefense: character.Stats.PhysicalDefense,
-            MagicDefense: character.Stats.MagicDefense
+            Id: session.Account.Id,
+            IdentityTemplate: new IdentityTemplate(
+                NetworkId: session.Peer.Id,
+                Name: character.Name,
+                Gender: (Gender)character.Gender,
+                Vocation: (VocationType)character.Vocation
+            ),
+            LocationTemplate: new LocationTemplate(
+                MapId: 0,
+                Floor: character.Floor,
+                X: character.PositionX,
+                Y: character.PositionY
+            ),
+            DirectionTemplate: new DirectionTemplate(
+                DirX: character.FacingX,
+                DirY: character.FacingY
+            ),
+            VitalsTemplate: new VitalsTemplate(
+                CurrentHp: character.Stats.CurrentHp,
+                MaxHp: character.Stats.MaxHp,
+                CurrentMp: character.Stats.CurrentMp,
+                MaxMp: character.Stats.MaxMp,
+                HpRegen: character.Stats.HpRegenPerTick(),
+                MpRegen: character.Stats.MpRegenPerTick()
+            ),
+            StatsTemplate: new StatsTemplate(
+                MovementSpeed: (float)character.Stats.MovementSpeed,
+                AttackSpeed: (float)character.Stats.AttackSpeed,
+                PhysicalAttack: character.Stats.PhysicalAttack,
+                MagicAttack: character.Stats.MagicAttack,
+                PhysicalDefense: character.Stats.PhysicalDefense,
+                MagicDefense: character.Stats.MagicDefense
+            )
         );
         
         var entity = simulation.CreatePlayer(playerTemplate);
@@ -78,7 +87,7 @@ public sealed class PlayerSpawnService(
         if (simulation.World.IsAlive(session.Entity))
         {
             return simulation.World
-                .BuildPlayerSnapshot(session.Entity) with { Name = character.Name, };
+                .BuildPlayerSnapshot(session.Entity, simulation.Strings) with { Name = character.Name, };
         }
         return new PlayerSnapshot(
             PlayerId: session.Account.Id,

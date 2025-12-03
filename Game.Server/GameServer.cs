@@ -1,10 +1,8 @@
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
+using Game.ECS.Entities.Player;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -17,7 +15,6 @@ using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
-using PlayerSnapshot = Game.ECS.Entities.Player.PlayerSnapshot;
 
 namespace Game.Server;
 
@@ -265,7 +262,7 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                PlayerSnapshot snapshot = _simulation.World.BuildPlayerSnapshot(session.Entity);
+                var snapshot = _simulation.World.BuildPlayerSnapshot(session.Entity, _simulation.Strings);
                 
                 characterPersistData = characterPersistData with
                 {

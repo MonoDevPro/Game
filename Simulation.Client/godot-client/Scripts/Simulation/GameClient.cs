@@ -1,9 +1,8 @@
 using System;
 using System.Linq;
 using Game.Core.Extensions;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
+using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
@@ -16,7 +15,6 @@ using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
 using Input = Godot.Input;
-using PlayerSnapshot = Game.ECS.Entities.Player.PlayerSnapshot;
 
 namespace GodotClient.Simulation;
 

@@ -1,9 +1,6 @@
-using Game.Domain.Enums;
-using Game.Domain.Templates;
-using Game.ECS.Entities;
-using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Templates;
 using Game.Server.ECS;
 
 namespace Game.Server.Npc;
@@ -28,33 +25,45 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
             return;
 
         // O serviço pede ao repositório: "Onde devo criar monstros?"
-        var spawnPoints = _repository.GetSpawnPoints(mapId: 0); 
+        var spawnPoints = _repository.GetSpawnPoints(mapId: 1); 
 
         foreach (var spawn in spawnPoints)
         {
-            SpawnNpc(spawn.TemplateId, new Position(spawn.X, spawn.Y), spawn.Floor, spawn.MapId);
+            SpawnNpc(spawn.TemplateId, spawn.X, spawn.Y, spawn.Floor, spawn.MapId);
         }
 
         _initialized = true;
     }
 
-    public void SpawnNpc(string templateId, Position position, int floor, int mapId)
+    public void SpawnNpc(int templateId, int x, int y, sbyte floor, int mapId)
     {
         var template = _repository.GetTemplate(templateId);
         var networkId = GenerateNetworkId();
         
+        // Cria um template atualizado com a localização de spawn e networkId
+        var spawnTemplate = new NpcTemplate
+        {
+            Id = template.Id,
+            IdentityTemplate = template.IdentityTemplate with { NetworkId = networkId },
+            LocationTemplate = new LocationTemplate(mapId, floor, x, y),
+            DirectionTemplate = template.DirectionTemplate,
+            VitalsTemplate = template.VitalsTemplate,
+            StatsTemplate = template.StatsTemplate,
+            BehaviorTemplate = template.BehaviorTemplate
+        };
+        
         // Transforma Template em Entidade ECS
-        var entity = simulation.CreateNpcFromTemplate(template, position, floor, mapId, networkId);
+        var entity = simulation.CreateNpcFromTemplate(spawnTemplate, x, y, floor, mapId, networkId);
         
         if (entity != Arch.Core.Entity.Null)
         {
-            _activeNetworkIds.Add(networkId, new NpcInfo(template.Name));
+            _activeNetworkIds.Add(networkId, new NpcInfo(template.IdentityTemplate.Name));
             logger.LogInformation(
                 "[NPC] Spawned NPC NetID={NetworkId} Name={Name} at ({X}, {Y}, {Z}) on map {MapId}",
                 networkId,
-                template.Name,
-                position.X,
-                position.Y,
+                template.IdentityTemplate.Name,
+                x,
+                y,
                 floor,
                 mapId);
         }
