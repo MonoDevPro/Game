@@ -1,3 +1,5 @@
+using Game.Domain.Enums;
+
 namespace Game.ECS.Entities.Npc;
 
 /// <summary>
@@ -15,7 +17,15 @@ public readonly record struct NpcSnapshot(
     int Hp,
     int MaxHp,
     int Mp,
-    int MaxMp);
+    int MaxMp,
+    byte GenderId = 0,
+    byte VocationId = 0,
+    float MovementSpeed = 1f,
+    float AttackSpeed = 1f)
+{
+    public Gender Gender => (Gender)GenderId;
+    public VocationType Vocation => (VocationType)VocationId;
+}
 
 /// <summary>
 /// Snapshot de estado de um NPC (posição e movimento).

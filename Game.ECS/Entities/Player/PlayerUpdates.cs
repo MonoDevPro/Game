@@ -1,5 +1,6 @@
 using Arch.Core;
 using Game.ECS.Schema.Components;
+using Game.ECS.Services;
 
 namespace Game.ECS.Entities.Player;
 
@@ -19,6 +20,17 @@ public static class EntityBuilder
         facing.Y = snapshot.DirY;
     }
     
+    /// <summary>
+    /// Aplica estado a partir de EntityIndex por networkId.
+    /// </summary>
+    public static bool ApplyPlayerState(this World world, EntityIndex<int> index, StateSnapshot snapshot)
+    {
+        if (!index.TryGetEntity(snapshot.NetworkId, out var entity))
+            return false;
+        world.ApplyPlayerState(entity, snapshot);
+        return true;
+    }
+    
     public static void ApplyPlayerVitals(this World world, Entity entity, VitalsSnapshot snapshot)
     {
         ref var health = ref world.Get<Health>(entity);
@@ -27,5 +39,16 @@ public static class EntityBuilder
         health.Max = snapshot.MaxHp;
         mana.Current = snapshot.Mp;
         mana.Max = snapshot.MaxMp;
+    }
+    
+    /// <summary>
+    /// Aplica vitals a partir de EntityIndex por networkId.
+    /// </summary>
+    public static bool ApplyPlayerVitals(this World world, EntityIndex<int> index, VitalsSnapshot snapshot)
+    {
+        if (!index.TryGetEntity(snapshot.NetworkId, out var entity))
+            return false;
+        world.ApplyPlayerVitals(entity, snapshot);
+        return true;
     }
 }

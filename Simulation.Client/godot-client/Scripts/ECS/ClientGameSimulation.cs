@@ -5,10 +5,7 @@ using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
-using Game.ECS.Services;
 using Game.ECS.Services.Index;
-using Game.ECS.Services.Map;
-using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.ECS.Systems;
@@ -45,21 +42,19 @@ public sealed class ClientGameSimulation : GameSimulation
 
     /// <summary>
     /// Configura sistemas apenas para o cliente.
-    /// Ordem: Input → Movement (previsão local) → Sync (recebe correções do servidor)
+    /// Ordem: Input → Visual Sync → Network Sync
+    /// O cliente não executa sistemas de movimento/combate - recebe estado do servidor.
     /// </summary>
     protected override void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null)
     {
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));
         
-        // Sync de nós visuais
+        // Sync de nós visuais (interpolação e animação)
         _visualSyncSystem = new ClientVisualSyncSystem(world, GameClient.Instance.EntitiesRoot);
         systems.Add(_visualSyncSystem);
         
-        // Spatial updates
-        systems.Add(new SpatialService(world, MapIndex));
-        
-        // Sincronização com o servidor
+        // Sincronização com o servidor (envia input)
         systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
@@ -235,7 +230,7 @@ public sealed class ClientGameSimulation : GameSimulation
     public bool UpdateNpcState(in NpcStateSnapshot state)
     {
         return NpcIndex.TryGetEntity(state.NetworkId, out var entity) && 
-               World.ApplyNpcUpdate(entity, state);
+               World.ApplyNpcState(entity, state);
     }
     
     public bool UpdateNpcVitals(in NpcVitalsSnapshot snapshot)
@@ -243,4 +238,32 @@ public sealed class ClientGameSimulation : GameSimulation
         return NpcIndex.TryGetEntity(snapshot.NetworkId, out var entity) && 
                World.ApplyNpcVitals(entity, snapshot);
     }
+    
+    #region Entity Lookup
+    
+    /// <summary>
+    /// Tenta obter a entidade de um jogador pelo NetworkId.
+    /// </summary>
+    public bool TryGetPlayerEntity(int networkId, out Entity entity) =>
+        _playerIndex.TryGetEntity(networkId, out entity);
+    
+    /// <summary>
+    /// Tenta obter a entidade de um NPC pelo NetworkId.
+    /// </summary>
+    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
+        _npcIndex.TryGetEntity(networkId, out entity);
+    
+    /// <summary>
+    /// Tenta obter qualquer entidade (player ou NPC) pelo NetworkId.
+    /// </summary>
+    public bool TryGetAnyEntity(int networkId, out Entity entity)
+    {
+        if (_playerIndex.TryGetEntity(networkId, out entity))
+            return true;
+        if (_npcIndex.TryGetEntity(networkId, out entity))
+            return true;
+        return false;
+    }
+    
+    #endregion
 }

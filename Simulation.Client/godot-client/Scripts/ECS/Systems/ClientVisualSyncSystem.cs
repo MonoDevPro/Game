@@ -116,6 +116,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     private void InterpolatePosition(
         in Position pos, 
         in Speed speed,
+        in Direction dir,
         in NetworkId networkId)
     {
         const float pixelsPerCell = 32f;
@@ -127,11 +128,11 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         Vector2 current = visual.GlobalPosition;
         Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
 
-        // Extrapolação para compensar latência
-        if (speed is not { X: 0, Y: 0, Value: > 0f })
+        // Extrapolação para compensar latência (usa Direction para saber a direção do movimento)
+        if (speed.Value > 0f && dir is not { X: 0, Y: 0 })
         {
             float extrapolation = 0.5f;
-            Vector2 direction = new(speed.X, speed.Y);
+            Vector2 direction = new(dir.X, dir.Y);
             target += direction * (pixelsPerCell * extrapolation);
         }
 

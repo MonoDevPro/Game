@@ -4,7 +4,6 @@ using Game.Core.Extensions;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
-using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -274,20 +273,14 @@ public partial class GameClient : Node2D
         const int threshold = 1;
         if (deltaX >= threshold || deltaY >= threshold)
         {
-            // Grande divergência → servidor manda
-            _simulation.World.Get<Movement>(entity).Accumulator = 0f; // Reset timer
+            // Grande divergência → servidor manda, reset walkable accumulator
+            _simulation.World.Get<Walkable>(entity).Accumulator = 0f;
             _simulation.ApplyPlayerState(packet.ToPlayerStateData());
         }
         else
         {
-            // Pequena divergência → confia no cliente, só atualiza velocity/facing
-            // Note: Velocity.X/Y are direction components (-1, 0, 1), combined with Speed
-            _simulation.World.Get<Speed>(entity) = new Speed
-            {
-                X = packet.DirX,
-                Y = packet.DirY,
-                Value = packet.Speed
-            };
+            // Pequena divergência → confia no cliente, só atualiza speed/facing
+            _simulation.World.Get<Speed>(entity).Value = packet.Speed;
             _simulation.World.Get<Direction>(entity) = new Direction
             {
                 X = packet.DirX,

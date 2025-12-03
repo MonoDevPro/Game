@@ -36,6 +36,11 @@ public struct DirtyFlags
     
     public void Mark(DirtyComponentType flag) => Flags |= flag;
     
+    /// <summary>
+    /// Marca um componente como dirty (alias para Mark).
+    /// </summary>
+    public void MarkDirty(DirtyComponentType flag) => Flags |= flag;
+    
     public void Clear() => Flags = DirtyComponentType.None;
     
     public bool HasFlag(DirtyComponentType flag) => (Flags & flag) != 0;
