@@ -1,6 +1,5 @@
 using Arch.Core;
 using Arch.System;
-using Game.ECS.Components;
 using Game.ECS.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

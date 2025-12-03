@@ -1,6 +1,6 @@
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Services;
+namespace Game.ECS.Services.Map;
 
 public interface IMapGrid
 {

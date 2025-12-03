@@ -1,5 +1,4 @@
 using Arch.Core;
-using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Schema.Archetypes;
 using Game.ECS.Schema.Components;

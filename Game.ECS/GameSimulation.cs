@@ -1,12 +1,13 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
-using Game.ECS.Events;
+using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Templates;
 using Game.ECS.Services;
 using Game.ECS.Services.Index;
+using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
 
@@ -89,68 +90,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// </summary>
     protected abstract void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null);
     
-    #region Player Lifecycle
-    
-    /// <summary>
-    /// Creates a player entity from a template.
-    /// </summary>
-    public Entity CreatePlayer(PlayerTemplate template)
-    {
-        var playerEntity = PlayerFactories.CreatePlayer(World, Strings, template);
-        
-    }
-    
-    /// <summary>
-    /// Destroys a player entity by network ID.
-    /// </summary>
-    public virtual bool DestroyEntity(int networkId)
-    {
-        if (!_entityIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        _entityIndex.RemoveByKey(networkId);
-        
-        if (World.Has<NameHandle>(entity))
-        {
-            var nameRef = World.Get<NameHandle>(entity);
-            Strings.Unregister(nameRef.Value);
-        }
-        
-        World.Destroy(entity);
-        return true;
-    }
-    
-    #endregion
-    
-    #region NPC Lifecycle
-    
-    /// <summary>
-    /// Creates an NPC entity from a template.
-    /// </summary>
-    public Entity CreateNpc(NpcTemplate template, int networkId, int mapId, int floor, Position position)
-    {
-        var npcEntity = NpcFactories.CreateNpc(World, template, Strings, networkId, mapId, floor, position);
-        _entityIndex.Register(networkId, npcEntity);
-        
-        return npcEntity;
-    }
-    
-    
-    /// <summary>
-    /// Destroys an NPC entity by network ID.
-    /// </summary>
-    public virtual bool DestroyNpc(int networkId)
-    {
-        if (!NpcIndex.TryGetEntity(networkId, out var entity))
-            return false;
-            
-        NpcLifecycle.DestroyNPC(World, ReleaseStringHandle, entity);
-        NpcIndex.Unregister(networkId);
-        return true;
-    }
-    
-    #endregion
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)
     {
@@ -173,7 +112,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     public override void Dispose()
     {
         Systems.Dispose();
-        LoggerFactory.Dispose();
         base.Dispose();
     }
 }

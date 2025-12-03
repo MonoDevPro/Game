@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Arch.Core;
-using Position = Game.ECS.Components.Position;
+using Position = Game.ECS.Schema.Components.Position;
 
-namespace Game.ECS.Services;
+namespace Game.ECS.Services.Map;
 
 public interface IMapSpatial
 {

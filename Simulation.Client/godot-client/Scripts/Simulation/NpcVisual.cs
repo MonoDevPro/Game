@@ -1,8 +1,8 @@
 using Game.Domain.Enums;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
+using Game.ECS.Schema.Components;
 using Godot;
 
 namespace GodotClient.Simulation;

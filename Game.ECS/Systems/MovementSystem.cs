@@ -1,0 +1,97 @@
+using Arch.Bus;
+using Arch.Core;
+using Arch.System;
+using Arch.System.SourceGenerator;
+using Game.ECS.Schema;
+using Game.ECS.Schema.Components;
+using Game.ECS.Services.Map;
+
+namespace Game.ECS.Systems;
+
+public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : GameSystem(world)
+{
+    [Query]
+    [All<Position, Direction, Speed, Walkable, Floor>]
+    [None<Dead, MovementIntent>] // Não processa se já tem intent pendente
+    private void GenerateIntent(
+        in Entity entity,
+        in Position pos,
+        in Direction dir,
+        in Speed speed,
+        in Floor floor,
+        ref Walkable walk,
+        [Data] float deltaTime)
+    {
+        // Sem movimento
+        if (speed. Value <= 0f || dir is { X: 0, Y: 0 })
+            return;
+
+        // Acumula
+        walk.Accumulator += speed.Value * deltaTime;
+
+        // Ainda não acumulou o suficiente
+        if (walk. Accumulator < SimulationConfig.CellSize)
+            return;
+
+        // Consome o acumulador
+        walk.Accumulator -= SimulationConfig.CellSize;
+
+        // Cria intenção de movimento
+        var intent = new MovementIntent
+        {
+            TargetPosition = new Position { X = pos.X + dir. X, Y = pos.Y + dir. Y }, 
+            TargetFloor = floor.Value
+        };
+
+        World.Add<MovementIntent>(entity, intent);
+    }
+    
+    [Query]
+    [All<MovementIntent, MapId>]
+    [None<MovementApproved, MovementBlocked>]
+    private void ValidateMovement(
+        in Entity entity,
+        in MapId mapId,
+        in MovementIntent intent)
+    {
+        var result = mapIndex. ValidateMove(
+            mapId. Value,
+            intent.TargetPosition,
+            intent. TargetFloor,
+            entity
+        );
+
+        if (result == MovementResult. Allowed)
+            World.Add<MovementApproved>(entity);
+        else
+            World.Add(entity, new MovementBlocked { Reason = result });
+    }
+    
+    [Query]
+    [All<MovementIntent, MovementApproved, Position>]
+    private void ApplyApprovedMovement(
+        in Entity entity,
+        in MovementIntent intent,
+        ref Position pos)
+    {
+        var moveEvent = new MovementEvent(entity, pos, intent.TargetPosition);
+        EventBus.Send(ref moveEvent);
+        
+        // Aplica a nova posição
+        pos.X = intent.TargetPosition.X;
+        pos.Y = intent.TargetPosition.Y;
+        
+        // Limpa os componentes temporários
+        World.Remove<MovementIntent, MovementApproved>(entity);
+    }
+
+    [Query]
+    [All<MovementIntent, MovementBlocked>]
+    private void CleanupBlockedMovement(
+        in Entity entity,
+        in MovementBlocked blocked)
+    {
+        // Limpa os componentes temporários
+        World.Remove<MovementIntent, MovementBlocked>(entity);
+    }
+}

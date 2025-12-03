@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
 
 namespace Game.ECS.Entities.Npc;

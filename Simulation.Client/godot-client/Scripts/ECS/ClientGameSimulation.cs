@@ -2,7 +2,6 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Templates;
 using Game.ECS;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;

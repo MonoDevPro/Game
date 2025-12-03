@@ -1,5 +1,5 @@
 using Game.Domain.Enums;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Entities.Combat;
 

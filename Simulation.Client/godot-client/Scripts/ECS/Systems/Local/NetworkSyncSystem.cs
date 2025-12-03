@@ -2,13 +2,13 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Core.Extensions;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Adapters;
 using Godot;
 using LiteNetLib;
-using Input = Game.ECS.Components.Input;
+using Input = Game.ECS.Schema.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 

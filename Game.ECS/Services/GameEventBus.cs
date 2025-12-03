@@ -2,7 +2,7 @@ using Arch.Bus;
 using Arch.LowLevel;
 using Game.ECS.Schema;
 
-namespace Game.ECS.Events;
+namespace Game.ECS.Services;
 
 /// <summary>
 /// Simple in-memory event bus for game events.
@@ -30,6 +30,7 @@ public sealed partial class GameEventBus : IDisposable
     public event Action<HealthChangedEvent>? OnHealthChanged;
     public event Action<ManaChangedEvent>? OnManaChanged;
     public event Action<MovementEvent>? OnMovement;
+    public event Action<DirectionChangedEvent>? OnDirectionChanged; 
     public event Action<NpcStateChangedEvent>? OnNpcStateChanged;
 
     #region Send Events (Immediate)
@@ -81,6 +82,12 @@ public sealed partial class GameEventBus : IDisposable
     /// </summary>
     [Event]
     public void Send(ref MovementEvent evt) => OnMovement?.Invoke(evt);
+    
+    /// <summary>
+    /// Sends a direction changed event immediately to all handlers.
+    /// </summary>
+    [Event]
+    public void Send(ref DirectionChangedEvent evt) => OnDirectionChanged?.Invoke(evt);
     
     /// <summary>
     /// Sends an NPC state changed event immediately to all handlers.

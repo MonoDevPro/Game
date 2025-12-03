@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using Game.Core.Extensions;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services;
+using Game.ECS.Services.Map;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Godot;

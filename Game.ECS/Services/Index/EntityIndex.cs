@@ -1,6 +1,6 @@
 using Arch.Core;
 
-namespace Game.ECS.Services.Index;
+namespace Game.ECS.Services;
 
 public class IdGenerator
 {

@@ -1,6 +1,6 @@
-using Game.ECS.Components;
 using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
+using Game.ECS.Schema.Components;
 using Game.Network.Packets.Game;
 
 namespace Game.Core.Extensions;

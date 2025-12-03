@@ -1,5 +1,4 @@
 using Arch.Core;
-using Game.ECS.Components;
 using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Schema;
@@ -70,5 +69,13 @@ public readonly record struct ManaChangedEvent(Entity Entity, int OldValue, int 
 /// <param name="OldPosition">The previous position.</param>
 /// <param name="NewPosition">The new position.</param>
 public readonly record struct MovementEvent(Entity Entity, Position OldPosition, Position NewPosition);
+
+/// <summary>
+/// Event fired when an Entity changes its direction/state.
+/// </summary>
+/// <param name="Entity">The entity whose state changed.</param>
+/// <param name="OldDirection">The previous direction.</param>
+/// <param name="NewDirection">The new direction.</param>
+public readonly record struct DirectionChangedEvent(Entity Entity, Direction OldDirection, Direction NewDirection);
 
 public readonly record struct NpcStateChangedEvent(Entity Entity, AIState OldState, AIState NewState);

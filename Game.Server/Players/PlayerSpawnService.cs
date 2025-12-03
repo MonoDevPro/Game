@@ -1,8 +1,8 @@
 using Arch.Core;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Player;
+using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
 using Game.Server.ECS;
 using Game.Server.Sessions;

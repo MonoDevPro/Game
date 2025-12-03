@@ -1,6 +1,5 @@
 using Arch.Core;
 using Game.Domain.Enums;
-using Game.ECS.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
 using Game.ECS.Services.Index;

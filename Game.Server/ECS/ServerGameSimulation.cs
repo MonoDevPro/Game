@@ -2,8 +2,9 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Services;
+using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
@@ -50,46 +51,31 @@ public sealed class ServerGameSimulation : GameSimulation
     /// </summary>
     protected override void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null)
     {
-        var mapService = services.MapService;
+        var mapService = MapIndex;
         // ⭐ Ordem importante:
         
-        // 0. NPC Systems rodando ANTES dos sistemas de jogador
-        systems.Add(new NpcDecisionSystem(world, _npcRepository, mapService));
-        systems.Add(new NpcCombatStrategySystem(world));
-        systems.Add(new NpcNavigationSystem(world, mapService, _loggerFactory.CreateLogger<NpcNavigationSystem>()));
-        systems.Add(new NpcMotorSystem(world, _loggerFactory.CreateLogger<NpcMotorSystem>()));
-
+        // ======== SISTEMAS DE JOGO ==========
+        
+        //0. NetworkEntity gerencia IDs de rede
+        systems.Add(new NetworkEntitySystem(world, loggerFactory?.CreateLogger<NetworkEntitySystem>()));
+        
         // 1. Input processa entrada do jogador
         systems.Add(new InputSystem(world));
         
         // 2. Movement calcula novas posições
         systems.Add(new MovementSystem(world, mapService!));
         
-        // 4. Combat processa estado de combate
-        systems.Add(new CombatSystem(world, mapService!, _loggerFactory.CreateLogger<CombatSystem>()));
-        systems.Add(new CombatResolutionSystem(world, services));
-        
         // 4.1 Damage processa dano periódico (DoT), dano adiado e cria projéteis
-        systems.Add(new DamageSystem(world, mapService!, _loggerFactory.CreateLogger<DamageSystem>()));
-        
-        // 4.2 Projectile processa movimento e colisão de projéteis
-        systems.Add(new ProjectileSystem(world, mapService!, _loggerFactory.CreateLogger<ProjectileSystem>()));
+        systems.Add(new DamageSystem(world, loggerFactory?.CreateLogger<DamageSystem>()));
         
         // 4.3 Death processa morte de entidades
-        systems.Add(new DeathSystem(world, _loggerFactory.CreateLogger<DeathSystem>()));
+        systems.Add(new LifecycleSystem(world, loggerFactory?.CreateLogger<LifecycleSystem>()));
         
         // 5. Regeneration processa vida/mana/dano
-        systems.Add(new RegenerationSystem(world, _loggerFactory.CreateLogger<RegenerationSystem>()));
-        
-        // 6. Revive processa ressurreição
-        systems.Add(new ReviveSystem(World, _loggerFactory.CreateLogger<ReviveSystem>()));
-        
-        // 8. ⭐ SpatialSync sincroniza mudanças de posição com o índice espacial
-        //    (DEVE rodar ANTES do ServerSyncSystem para garantir que queries espaciais funcionem)
-        systems.Add(new SpatialService(World, mapService!));
+        systems.Add(new RegenerationSystem(world, loggerFactory?.CreateLogger<RegenerationSystem>()));
         
         // 9. ServerSync envia atualizações para clientes
-        systems.Add(new ServerSyncSystem(world, _networkManager, _loggerFactory.CreateLogger<ServerSyncSystem>()));
+        systems.Add(new ServerSyncSystem(world, _networkManager, loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
 
     public bool ApplyPlayerInput(Entity e, Input data)

@@ -1,11 +1,10 @@
-using Game.ECS.Components;
-
 namespace Game.ECS.Schema.Components;
 
 /// <summary>
 /// Componentes Tags - Marcadores
 /// </summary>
 public struct Dead { }
+public struct SpawnRequest { }
 
 /// <summary>
 /// Ponto de spawn de uma entidade.

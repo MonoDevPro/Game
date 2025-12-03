@@ -1,6 +1,6 @@
 using System;
 using Game.Domain.Enums;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
 

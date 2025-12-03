@@ -1,4 +1,4 @@
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Logic;
 
@@ -32,56 +32,6 @@ public static class RegenLogic
 
         mana.Current = newValue;
         return true;
-    }
-    
-    /// <summary>
-    /// Lida com regeneração baseada em taxa float + acumulação, aplicando
-    /// apenas os pontos inteiros quando acumulados.
-    /// Exemplos de uso:
-    /// - HP: RegenRate = 0.7/s → acumula até >= 1, aplica 1, sobra fração.
-    /// - MP: mesmo padrão.
-    /// </summary>
-    /// <param name="current">valor atual (HP/MP/etc).</param>
-    /// <param name="max">valor máximo.</param>
-    /// <param name="regenRatePerSecond">taxa de regen por segundo (float).</param>
-    /// <param name="deltaTime">delta de tempo em segundos.</param>
-    /// <param name="accumulated">
-    /// acumulador de frações; será incrementado e terá os inteiros descontados.
-    /// </param>
-    /// <returns>true se o valor atual foi incrementado.</returns>
-    public static bool ApplyRegeneration(
-        ref int current,
-        int max,
-        float regenRatePerSecond,
-        float deltaTime,
-        ref float accumulated)
-    {
-        // Já está cheio, zera acumulação para não vlogar float ao infinito.
-        if (current >= max)
-        {
-            accumulated = 0f;
-            return false;
-        }
-
-        if (regenRatePerSecond <= 0f || deltaTime <= 0f)
-            return false;
-
-        accumulated += regenRatePerSecond * deltaTime;
-
-        if (accumulated < 1.0f)
-            return false;
-
-        int regenToApply = (int)accumulated;
-        if (regenToApply <= 0)
-            return false;
-
-        int previous = current;
-        current = Math.Min(max, current + regenToApply);
-
-        // Desconta apenas o que virou inteiro.
-        accumulated -= regenToApply;
-
-        return current != previous;
     }
     
 }

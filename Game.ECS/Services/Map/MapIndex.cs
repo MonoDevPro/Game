@@ -1,5 +1,7 @@
-namespace Game.ECS.Services.Index;
+using Arch.Core;
+using Game.ECS.Schema.Components;
 
+namespace Game.ECS.Services.Map;
 
 public interface IMapIndex
 {
@@ -8,6 +10,12 @@ public interface IMapIndex
     void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial);
     void UnregisterMap(int mapId);
     bool HasMap(int mapId);
+    
+    MovementResult ValidateMove(
+        int mapId,
+        Position targetPos,
+        sbyte floor,
+        Entity movingEntity);
 }
 
 /// <summary>
@@ -58,4 +66,28 @@ public class MapIndex : IMapIndex
     /// Verifica se um mapa está registrado.
     /// </summary>
     public bool HasMap(int mapId) => _grids.ContainsKey(mapId);
+
+    public MovementResult ValidateMove(int mapId, Position targetPos, sbyte floor, Entity movingEntity)
+    {
+        if (!HasMap(mapId))
+            return MovementResult.OutOfBounds;
+
+        var grid = GetMapGrid(mapId);
+        var spatial = GetMapSpatial(mapId);
+
+        if (!grid.InBounds(targetPos, floor))
+            return MovementResult.OutOfBounds;
+
+        if (grid.IsBlocked(targetPos, floor))
+            return MovementResult.BlockedByMap;
+
+        if (spatial.TryGetFirstAt(targetPos, floor, out var occupant) 
+            && occupant != default && occupant != Entity.Null 
+            && occupant != movingEntity)
+        {
+            return MovementResult.BlockedByEntity;
+        }
+
+        return MovementResult.Allowed;
+    }
 }

@@ -1,11 +1,11 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Components;
+using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Godot;
 using GodotClient.Simulation;
-using Input = Game.ECS.Components.Input;
+using Input = Game.ECS.Schema.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 

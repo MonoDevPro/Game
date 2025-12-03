@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using GodotClient.Simulation;

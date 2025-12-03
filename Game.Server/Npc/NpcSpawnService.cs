@@ -1,9 +1,9 @@
 using Game.Domain.Enums;
 using Game.Domain.Templates;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Factories;
 using Game.ECS.Entities.Npc;
+using Game.ECS.Schema.Components;
 using Game.Server.ECS;
 
 namespace Game.Server.Npc;

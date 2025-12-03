@@ -1,12 +1,15 @@
+using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.ECS.Entities.Npc;
+using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Templates;
 
 namespace Game.Server.Npc;
 
 public interface INpcRepository
 {
     NpcTemplate GetTemplate(int templateId);
-    IEnumerable<NpcSpawnPoint> GetSpawnPoints(int mapId);
+    IEnumerable<SpawnPoint> GetSpawnPoints(int mapId);
     void LoadTemplates(string jsonContent);
 }
 
