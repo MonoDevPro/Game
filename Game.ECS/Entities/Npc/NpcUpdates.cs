@@ -39,7 +39,7 @@ public static class NpcUpdate
     /// <summary>
     /// Aplica um snapshot de estado (movimento) a um NPC.
     /// </summary>
-    public static void ApplyNpcState(this World world, Entity entity, NpcStateSnapshot state)
+    public static bool ApplyNpcState(this World world, Entity entity, NpcStateSnapshot state)
     {
         ref var position = ref world.Get<Position>(entity);
         ref var floor = ref world.Get<Floor>(entity);
@@ -52,12 +52,13 @@ public static class NpcUpdate
         speed.Value = state.Speed;
         direction.X = state.DirectionX;
         direction.Y = state.DirectionY;
+        return true;
     }
     
     /// <summary>
     /// Aplica um snapshot de vitals (HP/MP) a um NPC.
     /// </summary>
-    public static void ApplyNpcVitals(this World world, Entity entity, NpcVitalsSnapshot vitals)
+    public static bool ApplyNpcVitals(this World world, Entity entity, NpcVitalsSnapshot vitals)
     {
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
@@ -66,5 +67,6 @@ public static class NpcUpdate
         health.Max = vitals.MaxHp;
         mana.Current = vitals.CurrentMp;
         mana.Max = vitals.MaxMp;
+        return true;
     }
 }

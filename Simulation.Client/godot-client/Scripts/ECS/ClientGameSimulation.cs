@@ -5,6 +5,7 @@ using Game.ECS.Entities.Npc;
 using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Templates;
+using Game.ECS.Services;
 using Game.ECS.Services.Index;
 using Game.Network.Abstractions;
 using Godot;
