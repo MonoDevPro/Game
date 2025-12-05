@@ -104,7 +104,7 @@ public sealed class ClientGameSimulation : GameSimulation
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
-        World.Add<LocalPlayerTag>(entity);
+        World.Add<LocalPlayerTag, DirtyFlags>(entity);
         _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(in snapshot);
         visual.MakeCamera();
