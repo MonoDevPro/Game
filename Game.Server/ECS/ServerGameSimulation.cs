@@ -21,7 +21,6 @@ namespace Game.Server.ECS;
 public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
-    private readonly INpcRepository _npcRepository;
     
     public ServerGameSimulation(
         INetworkManager network, 
@@ -31,7 +30,6 @@ public sealed class ServerGameSimulation : GameSimulation
         : base(factory?.CreateLogger<ServerGameSimulation>())
     {
         _networkManager = network;
-        _npcRepository = npcRepository;
         
         // Registra os mapas fornecidos
         foreach (var map in maps)

@@ -24,9 +24,9 @@ public sealed partial class NetworkSyncSystem(World world, INetworkManager sende
         ref DirtyFlags dirty)
     {
         if (dirty.IsEmpty) return;
-            
+        
         var dirtyFlags = dirty.ConsumeSnapshot();
-
+        
         // Capture snapshot of dirty flags
         if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out Input input))
         {
