@@ -1,6 +1,5 @@
-using Game.ECS.Entities.Npc;
-using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Snapshots;
 using Game.Network.Packets.Game;
 
 namespace Game.Core.Extensions;
@@ -10,14 +9,71 @@ namespace Game.Core.Extensions;
 /// </summary>
 public static class SnapshotConversionExtensions
 {
-    #region Player Conversions (ECS to Network)
+    
+    #region State
+    
+    public static StateSnapshot ToStateSnapshot(this StateData update)
+    {
+        return new StateSnapshot(
+            NetworkId: update.NetworkId,
+            PosX: update.X,
+            PosY: update.Y,
+            Floor: update.Floor,
+            Speed: update.Speed,
+            DirX: update.DirX,
+            DirY: update.DirY
+        );
+    }
+    
+    public static StateData ToStateData(this StateSnapshot snapshot)
+    {
+        return new StateData(
+            NetworkId: snapshot.NetworkId,
+            X: snapshot.PosX,
+            Y: snapshot.PosY,
+            Floor: snapshot.Floor,
+            Speed: snapshot.Speed,
+            DirX: snapshot.DirX,
+            DirY: snapshot.DirY
+        );
+    }
+    
+    #endregion
+    
+    #region Vitals
+    
+    public static VitalsSnapshot ToVitalsSnapshot(this VitalsData update)
+    {
+        return new VitalsSnapshot(
+            NetworkId: update.NetworkId,
+            Hp: update.CurrentHp,
+            MaxHp: update.MaxHp,
+            Mp: update.CurrentMp,
+            MaxMp: update.MaxMp
+        );
+    }
+    
+    public static VitalsData ToVitalsData(this VitalsSnapshot snapshot)
+    {
+        return new VitalsData(
+            NetworkId: snapshot.NetworkId,
+            CurrentHp: snapshot.Hp,
+            MaxHp: snapshot.MaxHp,
+            CurrentMp: snapshot.Mp,
+            MaxMp: snapshot.MaxMp
+        );
+    }
+    
+    #endregion
+    
+    #region Spawn Conversions (Player)
     
     /// <summary>
     /// Converts a PlayerSnapshot to a PlayerSpawn network packet.
     /// </summary>
-    public static PlayerSpawn ToPlayerSpawn(this PlayerSnapshot snapshot)
+    public static PlayerData ToPlayerData(this PlayerSnapshot snapshot)
     {
-        return new PlayerSpawn(
+        return new PlayerData(
             PlayerId: snapshot.PlayerId,
             NetworkId: snapshot.NetworkId,
             MapId: snapshot.MapId,
@@ -31,8 +87,10 @@ public static class SnapshotConversionExtensions
             DirY: snapshot.DirY,
             Hp: snapshot.Hp,
             MaxHp: snapshot.MaxHp,
+            HpRegen: snapshot.HpRegen,
             Mp: snapshot.Mp,
             MaxMp: snapshot.MaxMp,
+            MpRegen: snapshot.MpRegen,
             MovementSpeed: snapshot.MovementSpeed,
             AttackSpeed: snapshot.AttackSpeed,
             PhysicalAttack: snapshot.PhysicalAttack,
@@ -43,230 +101,131 @@ public static class SnapshotConversionExtensions
     }
     
     /// <summary>
-    /// Converts a PlayerStateSnapshot to a PlayerStateUpdate network packet.
-    /// </summary>
-    public static StateUpdate ToPlayerStateSnapshot(this StateSnapshot snapshot)
-    {
-        return new StateUpdate(
-            NetworkId: snapshot.NetworkId,
-            X: snapshot.PosX,
-            Y: snapshot.PosY,
-            Floor: snapshot.Floor,
-            Speed: snapshot.Speed,
-            DirX: snapshot.DirX,
-            DirY: snapshot.DirY
-        );
-    }
-    
-    /// <summary>
-    /// Converts a PlayerVitalsSnapshot to a PlayerVitalsUpdate network packet.
-    /// </summary>
-    public static VitalsUpdate ToPlayerVitalsSnapshot(this VitalsSnapshot snapshot)
-    {
-        return new VitalsUpdate(
-            NetworkId: snapshot.NetworkId,
-            CurrentHp: snapshot.Hp,
-            MaxHp: snapshot.MaxHp,
-            CurrentMp: snapshot.Mp,
-            MaxMp: snapshot.MaxMp
-        );
-    }
-    
-    #endregion
-    
-    #region Player Conversions (Network to ECS)
-    
-    /// <summary>
     /// Converts a PlayerSpawn network packet to a PlayerSnapshot.
     /// </summary>
-    public static PlayerSnapshot ToPlayerData(this PlayerSpawn spawn)
+    public static PlayerSnapshot ToPlayerSnapshot(this PlayerData data)
     {
         return new PlayerSnapshot(
-            PlayerId: spawn.PlayerId,
-            NetworkId: spawn.NetworkId,
-            MapId: spawn.MapId,
-            Name: spawn.Name,
-            GenderId: spawn.Gender,
-            VocationId: spawn.Vocation,
-            PosX: spawn.X,
-            PosY: spawn.Y,
-            Floor: spawn.Floor,
-            DirX: spawn.DirX,
-            DirY: spawn.DirY,
-            Hp: spawn.Hp,
-            MaxHp: spawn.MaxHp,
-            Mp: spawn.Mp,
-            MaxMp: spawn.MaxMp,
-            MovementSpeed: spawn.MovementSpeed,
-            AttackSpeed: spawn.AttackSpeed,
-            PhysicalAttack: spawn.PhysicalAttack,
-            MagicAttack: spawn.MagicAttack,
-            PhysicalDefense: spawn.PhysicalDefense,
-            MagicDefense: spawn.MagicDefense
-        );
-    }
-    
-    /// <summary>
-    /// Converts a PlayerStateUpdate network packet to a PlayerStateSnapshot.
-    /// </summary>
-    public static StateSnapshot ToPlayerStateData(this StateUpdate update)
-    {
-        return new StateSnapshot(
-            NetworkId: update.NetworkId,
-            PosX: update.X,
-            PosY: update.Y,
-            Floor: update.Floor,
-            Speed: update.Speed,
-            DirX: update.DirX,
-            DirY: update.DirY
-        );
-    }
-    
-    /// <summary>
-    /// Converts a PlayerVitalsUpdate network packet to a PlayerVitalsSnapshot.
-    /// </summary>
-    public static VitalsSnapshot ToPlayerVitalsData(this VitalsUpdate update)
-    {
-        return new VitalsSnapshot(
-            NetworkId: update.NetworkId,
-            Hp: update.CurrentHp,
-            MaxHp: update.MaxHp,
-            Mp: update.CurrentMp,
-            MaxMp: update.MaxMp
+            PlayerId: data.PlayerId,
+            NetworkId: data.NetworkId,
+            MapId: data.MapId,
+            Name: data.Name,
+            GenderId: data.Gender,
+            VocationId: data.Vocation,
+            PosX: data.X,
+            PosY: data.Y,
+            Floor: data.Floor,
+            DirX: data.DirX,
+            DirY: data.DirY,
+            Hp: data.Hp,
+            MaxHp: data.MaxHp,
+            HpRegen: data.HpRegen,
+            Mp: data.Mp,
+            MaxMp: data.MaxMp,
+            MpRegen: data.MpRegen,
+            MovementSpeed: data.MovementSpeed,
+            AttackSpeed: data.AttackSpeed,
+            PhysicalAttack: data.PhysicalAttack,
+            MagicAttack: data.MagicAttack,
+            PhysicalDefense: data.PhysicalDefense,
+            MagicDefense: data.MagicDefense
         );
     }
     
     #endregion
     
-    #region NPC Conversions (ECS to Network)
+    #region Spawn Conversions (NPC)
     
     /// <summary>
     /// Converts an NpcSnapshot to an NpcSpawnRequest network packet.
     /// </summary>
-    public static NpcSpawnRequest ToNpcSpawnData(this NpcSnapshot snapshot)
+    public static NpcData ToNpcData(this NpcSnapshot snapshot)
     {
-        return new NpcSpawnRequest(
+        return new NpcData(
+            NpcId: snapshot.NpcId,
             NetworkId: snapshot.NetworkId,
-            TemplateId: 0, // Template ID not stored in snapshot, would need lookup
-            X: snapshot.X,
-            Y: snapshot.Y,
+            MapId: snapshot.MapId,
+            Name: snapshot.Name,
+            Gender: snapshot.GenderId,
+            Vocation: snapshot.VocationId,
+            X: snapshot.PosX,
+            Y: snapshot.PosY,
             Floor: snapshot.Floor,
-            DirectionX: snapshot.DirX,
-            DirectionY: snapshot.DirY,
-            CurrentHp: snapshot.Hp,
-            MaxHp: snapshot.MaxHp
+            DirX: snapshot.DirX,
+            DirY: snapshot.DirY,
+            Hp: snapshot.Hp,
+            MaxHp: snapshot.MaxHp,
+            HpRegen: snapshot.HpRegen,
+            Mp: snapshot.Mp,
+            MaxMp: snapshot.MaxMp,
+            MpRegen: snapshot.MpRegen,
+            MovementSpeed: snapshot.MovementSpeed,
+            AttackSpeed: snapshot.AttackSpeed,
+            PhysicalAttack: snapshot.PhysicalAttack,
+            MagicAttack: snapshot.MagicAttack,
+            PhysicalDefense: snapshot.PhysicalDefense,
+            MagicDefense: snapshot.MagicDefense
         );
+            
     }
-    
-    /// <summary>
-    /// Converts an NpcStateSnapshot to an NpcStateUpdate network packet.
-    /// </summary>
-    public static NpcStateUpdate ToNpcStateSnapshot(this NpcStateSnapshot snapshot)
-    {
-        return new NpcStateUpdate(
-            NetworkId: snapshot.NetworkId,
-            X: snapshot.X,
-            Y: snapshot.Y,
-            Speed: snapshot.Speed,
-            DirectionX: snapshot.DirectionX,
-            DirectionY: snapshot.DirectionY
-        );
-    }
-    
-    /// <summary>
-    /// Converts an NpcVitalsSnapshot to an NpcVitalsUpdate network packet.
-    /// </summary>
-    public static NpcVitalsUpdate ToNpcHealthSnapshot(this NpcVitalsSnapshot snapshot)
-    {
-        return new NpcVitalsUpdate(
-            NetworkId: snapshot.NetworkId,
-            CurrentHp: snapshot.CurrentHp,
-            CurrentMp: snapshot.CurrentMp
-        );
-    }
-    
-    #endregion
-    
-    #region NPC Conversions (Network to ECS)
-    
     /// <summary>
     /// Converts an NpcSpawnRequest network packet to an NpcSnapshot.
     /// </summary>
-    public static NpcSnapshot ToNpcData(this NpcSpawnRequest request)
+    public static NpcSnapshot ToNpcSnapshot(this NpcData request)
     {
         return new NpcSnapshot(
+            NpcId: request.NpcId,
             NetworkId: request.NetworkId,
-            MapId: 0, // Not available in NpcSpawnRequest
-            Name: $"NPC_{request.NetworkId}", // Not available in NpcSpawnRequest
-            X: request.X,
-            Y: request.Y,
+            MapId: request.MapId,
+            Name: request.Name,
+            GenderId: request.Gender,
+            VocationId: request.Vocation,
+            PosX: request.X,
+            PosY: request.Y,
             Floor: request.Floor,
-            DirX: request.DirectionX,
-            DirY: request.DirectionY,
-            Hp: request.CurrentHp,
+            DirX: request.DirX,
+            DirY: request.DirY,
+            Hp: request.Hp,
             MaxHp: request.MaxHp,
-            Mp: 0, // Not available in NpcSpawnRequest
-            MaxMp: 0 // Not available in NpcSpawnRequest
-        );
-    }
-    
-    /// <summary>
-    /// Converts an NpcStateUpdate network packet to an NpcStateSnapshot.
-    /// </summary>
-    public static NpcStateSnapshot ToNpcStateData(this NpcStateUpdate update)
-    {
-        return new NpcStateSnapshot(
-            NetworkId: update.NetworkId,
-            X: update.X,
-            Y: update.Y,
-            Floor: 0, // Not available in NpcStateUpdate
-            Speed: update.Speed,
-            DirectionX: update.DirectionX,
-            DirectionY: update.DirectionY
-        );
-    }
-    
-    /// <summary>
-    /// Converts an NpcVitalsUpdate network packet to an NpcVitalsSnapshot.
-    /// </summary>
-    public static NpcVitalsSnapshot ToNpcVitalsData(this NpcVitalsUpdate update)
-    {
-        return new NpcVitalsSnapshot(
-            NetworkId: update.NetworkId,
-            CurrentHp: update.CurrentHp,
-            MaxHp: 0, // Not available in NpcVitalsUpdate
-            CurrentMp: update.CurrentMp,
-            MaxMp: 0 // Not available in NpcVitalsUpdate
+            HpRegen: request.HpRegen,
+            Mp: request.Mp,
+            MaxMp: request.MaxMp,
+            MpRegen: request.MpRegen,
+            MovementSpeed: request.MovementSpeed,
+            AttackSpeed: request.AttackSpeed,
+            PhysicalAttack: request.PhysicalAttack,
+            MagicAttack: request.MagicAttack,
+            PhysicalDefense: request.PhysicalDefense,
+            MagicDefense: request.MagicDefense
         );
     }
     
     #endregion
     
     #region Input Conversions
-    
+
     /// <summary>
     /// Converts a PlayerInputPacket to an ECS Input component.
     /// </summary>
-    public static Input ToPlayerInput(this PlayerInputPacket packet)
+    public static Input ToPlayerInput(this InputPacket packet)
     {
         return new Input
         {
-            InputX = packet.InputX,
-            InputY = packet.InputY,
-            Flags = packet.Flags
+            InputX = packet.Input.InputX,
+            InputY = packet.Input.InputY,
+            Flags = packet.Input.Flags
         };
     }
-    
+
     /// <summary>
     /// Converts an ECS Input component to a PlayerInputPacket.
     /// </summary>
-    public static PlayerInputPacket ToPlayerInputPacket(this Input input)
+    public static InputPacket ToPlayerInputPacket(this Input input)
     {
-        return new PlayerInputPacket(
+        return new InputPacket(new InputData(
             InputX: input.InputX,
             InputY: input.InputY,
-            Flags: input.Flags
-        );
+            Flags: input.Flags));
     }
     
     #endregion

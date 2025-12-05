@@ -10,7 +10,6 @@ public partial class ConfigManager : Node
     private static ConfigManager? _instance;
     public static ConfigManager Instance => _instance ?? throw new InvalidOperationException("ConfigManager not initialized");
     
-    
     private readonly ClientConfiguration _configuration;
     public ClientConfiguration Configuration => _configuration;
     

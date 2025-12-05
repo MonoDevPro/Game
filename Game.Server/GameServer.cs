@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using System.Net;
+using Arch.Core;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.ECS.Entities.Player;
+using Game.ECS.Entities;
+using Game.ECS.Schema.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -91,7 +93,7 @@ public sealed class GameServer : IDisposable
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
-        RegisterAndValidate<PlayerInputPacket>(HandlePlayerInput);
+        RegisterAndValidate<InputPacket>(HandlePlayerInput);
         RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
     }
 
@@ -262,7 +264,10 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                var snapshot = _simulation.World.BuildPlayerSnapshot(session.Entity, _simulation.Strings);
+                var snapshot = _simulation.World
+                    .BuildPlayerSnapshot(
+                        session.Entity, 
+                        session.SelectedCharacter.Name);
                 
                 characterPersistData = characterPersistData with
                 {
@@ -274,7 +279,6 @@ public sealed class GameServer : IDisposable
                     CurrentHp = snapshot.Hp,
                     CurrentMp = snapshot.Mp
                 };
-                
                     
                 // ✅ Persistir de forma assíncrona (fire-and-forget com tratamento de erro)
                 using var scope = _scopeFactory.CreateScope();
@@ -306,7 +310,7 @@ public sealed class GameServer : IDisposable
             _security?.RemovePeer(peer);
 
             // ✅ Notifica outros jogadores sobre o despawn
-            var packet = new LeftPacket(peer.Id);
+            var packet = new LeftPacket([ peer.Id ]);
             _networkManager.SendToAll(
                 packet, 
                 NetworkChannel.Simulation, 
@@ -724,14 +728,16 @@ public sealed class GameServer : IDisposable
             _spawnService.SpawnPlayer(session);
 
             // ✅ 5. Monta dados do jogo
-            var localSnapshot = _spawnService.BuildSnapshot(session).ToPlayerSpawn();
-            var othersSnapshots = _sessionManager
+            PlayerSpawnPacket localSnapshot = new(
+                [_spawnService.BuildSnapshot(session).ToPlayerData()]);
+            
+            PlayerSpawnPacket othersSnapshots = new(_sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerSpawn())
-                .ToArray();
+                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerData())
+                .ToArray());
             
             // ✅ 6. Broadcasta spawn para outros jogadores
-            _networkManager.SendToAllExcept<Network.Packets.Game.PlayerSpawn>(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToAllExcept(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             // ✅ 7. Envia dados do mapa
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
@@ -740,15 +746,13 @@ public sealed class GameServer : IDisposable
             var gameDataPacket = new PlayerJoinPacket
             {
                 MapDataPacket = currentMap.ToMapDto(currentMap.Id),
-                LocalPlayer = localSnapshot,
-                OtherPlayers = othersSnapshots
+                LocalPlayer = localSnapshot.PlayerData[0],
             };
-
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
             var npcSnapshotArray = _npcSpawnService
                 .BuildSnapshots()
-                .Select(snapshot => snapshot.ToNpcSpawnData())
+                .Select(snapshot => snapshot.ToNpcData())
                 .ToArray();
 
             if (npcSnapshotArray.Length > 0)
@@ -766,7 +770,7 @@ public sealed class GameServer : IDisposable
 
             _logger.LogInformation(
                 "Player '{CharacterName}' entered the game (Peer: {PeerId}, NetID: {NetworkId})",
-                character.Name, peer.Id, localSnapshot.NetworkId
+                character.Name, peer.Id, localSnapshot.PlayerData[0].NetworkId
             );
         }
         catch (Exception ex)
@@ -781,22 +785,16 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler CONNECTED de input de jogador.
     /// </summary>
-    private void HandlePlayerInput(INetPeerAdapter peer, ref PlayerInputPacket input)
+    private void HandlePlayerInput(INetPeerAdapter peer, ref InputPacket input)
     {
-        if (!_sessionManager.TryGetByPeer(peer, out var session) || session is null)
-        {
-            _logger.LogWarning("Received PlayerInputPacket from unknown peer {PeerId}", peer.Id);
-            return;
-        }
-        
-        if (_simulation.ApplyPlayerInput(session.Entity, input.ToPlayerInput()))
+        if (_simulation.ApplyPlayerInput(peer.Id, input.ToPlayerInput()))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
                 peer.Id, 
-                input.InputX,
-                input.InputY,
-                input.Flags
+                input.Input.InputX,
+                input.Input.InputY,
+                input.Input.Flags
             );
         }
     }
@@ -893,7 +891,7 @@ public sealed class GameServer : IDisposable
     
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
-        _networkManager.UnregisterPacketHandler<PlayerInputPacket>();
+        _networkManager.UnregisterPacketHandler<InputPacket>();
         _networkManager.UnregisterPacketHandler<ChatMessagePacket>();
     }
 }

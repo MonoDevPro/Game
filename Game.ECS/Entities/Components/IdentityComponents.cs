@@ -14,7 +14,6 @@ public struct AIControlled { }
 // ============================================
 public struct UniqueID { public int Value; }
 public struct NetworkId { public int Value; }
-public struct NameHandle { public Handle<string> Value; }
 
 // ============================================
 // Outros identificadores

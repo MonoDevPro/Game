@@ -32,7 +32,10 @@ public sealed partial class NetworkSyncSystem(World world, INetworkManager sende
         {
             var inputPacket = input.ToPlayerInputPacket();
             sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            // GD.Print($"[ClientSyncSystem] Sent PlayerInputPacket: InputX={inputPacket.InputX}, InputY={inputPacket.InputY}, Flags={inputPacket.Flags}");
+            GD.Print($"[ClientSyncSystem] Sent PlayerInputPacket: " +
+                     $"InputX={inputPacket.Input.InputX}, " +
+                     $"InputY={inputPacket.Input.InputY}, " +
+                     $"Flags={inputPacket.Input.Flags}");
         }
     }
 }

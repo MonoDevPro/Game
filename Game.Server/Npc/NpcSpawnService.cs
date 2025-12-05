@@ -1,6 +1,5 @@
-using Game.ECS.Entities.Npc;
-using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Templates;
+using Game.ECS.Entities;
+using Game.ECS.Schema.Snapshots;
 using Game.Server.ECS;
 
 namespace Game.Server.Npc;
@@ -11,8 +10,7 @@ namespace Game.Server.Npc;
 public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcRepository repository, ILogger<NpcSpawnService> logger)
 {
     public readonly record struct NpcInfo(string Name);
-    
-    private readonly INpcRepository _repository = repository;
+
     private readonly Dictionary<int, NpcInfo> _activeNetworkIds = [];
     private int _nextNetworkId = 100_000;
     private bool _initialized;
@@ -24,8 +22,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         if (_initialized)
             return;
 
-        // O serviço pede ao repositório: "Onde devo criar monstros?"
-        var spawnPoints = _repository.GetSpawnPoints(mapId: 1); 
+        var spawnPoints = repository.GetSpawnPoints(mapId: 1);
 
         foreach (var spawn in spawnPoints)
         {
@@ -37,31 +34,57 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
 
     public void SpawnNpc(int templateId, int x, int y, sbyte floor, int mapId)
     {
-        var template = _repository.GetTemplate(templateId);
+        var template = repository.GetTemplate(templateId);
         var networkId = GenerateNetworkId();
-        
+
         // Cria um template atualizado com a localização de spawn e networkId
-        var spawnTemplate = new NpcTemplate
+        var npcSnapshot = new NpcSnapshot
         {
-            Id = template.Id,
-            IdentityTemplate = template.IdentityTemplate with { NetworkId = networkId },
-            LocationTemplate = new LocationTemplate(mapId, floor, x, y),
-            DirectionTemplate = template.DirectionTemplate,
-            VitalsTemplate = template.VitalsTemplate,
-            StatsTemplate = template.StatsTemplate,
-            BehaviorTemplate = template.BehaviorTemplate
+            NpcId = template.Id,
+            NetworkId = networkId,
+            Name = template.Name,
+            GenderId = (byte)template.Gender,
+            VocationId = (byte)template.Vocation,
+            DirX = (sbyte)template.DirX,
+            DirY = (sbyte)template.DirY,
+            MapId = mapId,
+            Floor = floor,
+            PosX = x,
+            PosY = y,
+            MovementSpeed = template.MovementSpeed,
+            AttackSpeed = template.AttackSpeed,
+            PhysicalAttack = template.PhysicalAttack,
+            MagicAttack = template.MagicAttack,
+            PhysicalDefense = template.PhysicalDefense,
+            MagicDefense = template.MagicDefense,
+            Hp = template.CurrentHp,
+            MaxHp = template.MaxHp,
+            Mp = template.CurrentMp,
+            MaxMp = template.MaxMp,
+            HpRegen = template.HpRegen,
+            MpRegen = template.MpRegen,
         };
         
+        var behavior = new Behaviour(
+            BehaviorType: template.BehaviorType,
+            VisionRange: template.VisionRange,
+            AttackRange: template.AttackRange,
+            LeashRange: template.LeashRange,
+            PatrolRadius: template.PatrolRadius,
+            IdleDurationMin: template.IdleDurationMin,
+            IdleDurationMax: template.IdleDurationMax
+        );
+
         // Transforma Template em Entidade ECS
-        var entity = simulation.CreateNpcFromTemplate(spawnTemplate, x, y, floor, mapId, networkId);
-        
+        var entity = simulation.CreateNpc(ref npcSnapshot, ref behavior);
+
         if (entity != Arch.Core.Entity.Null)
         {
-            _activeNetworkIds.Add(networkId, new NpcInfo(template.IdentityTemplate.Name));
+            _activeNetworkIds.Add(networkId, new NpcInfo(template.Name));
             logger.LogInformation(
                 "[NPC] Spawned NPC NetID={NetworkId} Name={Name} at ({X}, {Y}, {Z}) on map {MapId}",
                 networkId,
-                template.IdentityTemplate.Name,
+                template.Name,
                 x,
                 y,
                 floor,
@@ -72,13 +95,8 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
     public IEnumerable<NpcSnapshot> BuildSnapshots()
     {
         foreach (var networkId in _activeNetworkIds)
-        {
             if (simulation.TryGetNpcEntity(networkId.Key, out var entity))
-                yield return simulation.World.BuildNpcData(entity) with
-                {
-                    Name = networkId.Value.Name
-                };
-        }
+                yield return simulation.World.BuildNpcSnapshot(entity, networkId.Value.Name);
     }
 
     public bool TryDespawnNpc(int networkId)

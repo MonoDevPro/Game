@@ -3,9 +3,7 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
-using Godot;
 using GodotClient.Simulation;
-using Input = Game.ECS.Schema.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 
@@ -19,13 +17,13 @@ public sealed partial class GodotInputSystem(World world)
     {
         if (GameClient.Instance is { IsChatFocused: true })
         {
-            if (input.InputX != 0 || input.InputY != 0 || input.Flags != InputFlags.None)
-            {
-                input.InputX = 0;
-                input.InputY = 0;
-                input.Flags = InputFlags.None;
-                dirty.MarkDirty(DirtyComponentType.Input);
-            }
+            if (input is { InputX: 0, InputY: 0, Flags: InputFlags.None }) 
+                return;
+            
+            input.InputX = 0;
+            input.InputY = 0;
+            input.Flags = InputFlags.None;
+            dirty.MarkDirty(DirtyComponentType.Input);
             return;
         }
 
@@ -51,6 +49,4 @@ public sealed partial class GodotInputSystem(World world)
         input.Flags = buttons;
         dirty.MarkDirty(DirtyComponentType.Input);
     }
-    
-    
 }

@@ -22,7 +22,6 @@ public static class NpcArchetypes
         Component<UniqueID>.ComponentType,
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
-        Component<NameHandle>.ComponentType,
         
         // AI
         Component<Brain>.ComponentType,

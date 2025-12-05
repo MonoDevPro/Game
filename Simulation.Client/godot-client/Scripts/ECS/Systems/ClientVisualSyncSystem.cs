@@ -108,7 +108,6 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         
         if (isAttacking)
             World.Remove<AttackCommand>(e);
-        
     }
     
     [Query]

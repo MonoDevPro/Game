@@ -1,9 +1,7 @@
-using System;
 using Game.Domain.Enums;
-using Game.ECS.Entities.Player;
 using Game.ECS.Schema.Components;
+using Game.ECS.Schema.Snapshots;
 using Godot;
-using GodotClient.Core.Autoloads;
 
 namespace GodotClient.Simulation;
 

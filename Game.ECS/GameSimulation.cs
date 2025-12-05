@@ -1,12 +1,9 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.ECS.Entities.Npc;
-using Game.ECS.Entities.Player;
-using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Templates;
+using Game.ECS.Entities;
+using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services;
-using Game.ECS.Services.Index;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
@@ -61,7 +58,9 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
     
-    protected readonly GameEventBus EventBus = new();
+    // Index para busca rápida de entidades por NetworkId
+    protected readonly EntityIndex<int> PlayerIndex = new();
+    protected readonly EntityIndex<int> NPCIndex = new();
     
     /// Fixed timestep para updates da simulação.
     private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
@@ -73,11 +72,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// Access to the map service for spatial queries.
     /// </summary>
     protected readonly IMapIndex MapIndex = new MapIndex();
-    
-    /// <summary>
-    /// Resource stack for managing string handles.
-    /// </summary>
-    public readonly ResourceIndex<string> Strings = new(capacity: 10);
     
     /// <summary>
     /// Registers a map with the map service.
@@ -113,5 +107,67 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     {
         Systems.Dispose();
         base.Dispose();
+    }
+    
+    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
+    {
+        var entity = World.CreatePlayer(ref playerSnapshot);
+        PlayerIndex.Register(playerSnapshot.NetworkId, entity);
+        return entity;
+    }
+    
+    public Entity CreateNpc(ref NpcSnapshot snapshot, ref Behaviour behaviour)
+    {
+        // Atualiza o template com a localização de spawn e networkId
+        var entity = World.CreateNpc(ref snapshot, ref behaviour);
+        NPCIndex.Register(snapshot.NetworkId, entity);
+        return entity;
+    }
+    
+    /// <summary>
+    /// Tenta obter a entidade de um jogador pelo NetworkId.
+    /// </summary>
+    public bool TryGetPlayerEntity(int networkId, out Entity entity) =>
+        PlayerIndex.TryGetEntity(networkId, out entity);
+    
+    /// <summary>
+    /// Tenta obter a entidade de um NPC pelo NetworkId.
+    /// </summary>
+    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
+        NPCIndex.TryGetEntity(networkId, out entity);
+    
+    /// <summary>
+    /// Destrói a entidade de um jogador pelo NetworkId.
+    /// </summary>
+    public virtual bool DestroyPlayer(int networkId)
+    {
+        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        
+        PlayerIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
+    }
+    
+    /// <summary>
+    /// Destrói a entidade de um NPC pelo NetworkId.
+    /// </summary>
+    public virtual bool DestroyNpc(int networkId)
+    {
+        if (!NPCIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        
+        NPCIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
+    }
+
+    public virtual bool ApplyPlayerState(ref StateSnapshot snapshot)
+    {
+        if (!TryGetPlayerEntity(snapshot.NetworkId, out var entity))
+            return false;
+        
+        World.UpdateState(entity, ref snapshot);
+        return true;
     }
 }

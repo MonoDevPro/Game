@@ -8,7 +8,7 @@ namespace Game.ECS.Schema.Archetypes;
 /// Using predefined archetypes improves entity creation performance by
 /// pre-registering component combinations.
 /// </summary>
-public static class BasicArchetypes
+public static class VisualArchetypes
 {
     /// <summary>
     /// Minimal archetype for visual-only entities on the client.

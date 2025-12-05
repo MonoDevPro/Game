@@ -45,4 +45,15 @@ public sealed partial class InputSystem(World world)
             speed *= 1.5f;
         return speed;
     }
+    
+    /// <summary>
+    /// Calcula o novo position e avalia se o movimento é permitido.
+    /// Não realiza side-effects.
+    /// </summary>
+    public static (sbyte x, sbyte y) NormalizeInput(sbyte inputX, sbyte inputY)
+    {
+        sbyte nx = inputX switch { < 0 => -1, > 0 => 1, _ => 0 };
+        sbyte ny = inputY switch { < 0 => -1, > 0 => 1, _ => 0 };
+        return (nx, ny);
+    }
 }

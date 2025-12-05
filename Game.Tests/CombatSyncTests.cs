@@ -1,15 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Arch.Core;
-using FluentAssertions;
-using Game.ECS;
-using Game.ECS.Entities.Player;
-using Game.ECS.Services;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
-using Game.Server.ECS.Systems;
-using Xunit;
 
 namespace Game.Tests;
 

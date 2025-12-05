@@ -63,6 +63,7 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         position.Y = spawnPoint.Y;
         
         World.Remove<Dead, Respawning>(entity);
+        
         LogDebug("[LifecycleSystem] Entity {Entity} has respawned at Map {MapId} ({X}, {Y}, Floor {Floor}).",
             entity, spawnPoint.MapId, spawnPoint.X, spawnPoint.Y, spawnPoint.Floor);
     }
@@ -88,5 +89,4 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         
         logger?.LogInformation("[DeathSystem] Entity {Entity} has died.", entity);
     }
-    
 }

@@ -1,12 +1,9 @@
 using Arch.Core;
 using Arch.System;
 using Game.ECS;
-using Game.ECS.Entities.Npc;
-using Game.ECS.Entities.Player;
+using Game.ECS.Entities;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Templates;
-using Game.ECS.Services;
-using Game.ECS.Services.Index;
+using Game.ECS.Schema.Snapshots;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.ECS.Systems;
@@ -25,10 +22,6 @@ public sealed class ClientGameSimulation : GameSimulation
     private readonly INetworkManager _networkManager;
     private ClientVisualSyncSystem? _visualSyncSystem;
     
-    // Index para busca rápida de entidades por NetworkId
-    private readonly EntityIndex<int> _playerIndex = new();
-    private readonly EntityIndex<int> _npcIndex = new();
-
     /// <summary>
     /// Exemplo de uso do ECS como CLIENTE.
     /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
@@ -58,95 +51,6 @@ public sealed class ClientGameSimulation : GameSimulation
         // Sincronização com o servidor (envia input)
         systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
-    
-    #region Player Management
-    
-    /// <summary>
-    /// Index de jogadores por NetworkId.
-    /// </summary>
-    public EntityIndex<int> PlayerIndex => _playerIndex;
-    
-    /// <summary>
-    /// Index de NPCs por NetworkId.
-    /// </summary>
-    public EntityIndex<int> NpcIndex => _npcIndex;
-    
-    /// <summary>
-    /// Cria uma entidade de jogador a partir de snapshot (usado internamente).
-    /// </summary>
-    private Entity CreatePlayer(in PlayerSnapshot snapshot)
-    {
-        var template = new PlayerTemplate(
-            Id: snapshot.PlayerId,
-            IdentityTemplate: new IdentityTemplate(
-                NetworkId: snapshot.NetworkId,
-                Name: snapshot.Name,
-                Gender: (Game.Domain.Enums.Gender)snapshot.GenderId,
-                Vocation: (Game.Domain.Enums.VocationType)snapshot.VocationId
-            ),
-            LocationTemplate: new LocationTemplate(
-                MapId: snapshot.MapId,
-                Floor: snapshot.Floor,
-                X: snapshot.PosX,
-                Y: snapshot.PosY
-            ),
-            DirectionTemplate: new DirectionTemplate(
-                DirX: snapshot.DirX,
-                DirY: snapshot.DirY
-            ),
-            VitalsTemplate: new VitalsTemplate(
-                CurrentHp: snapshot.Hp,
-                MaxHp: snapshot.MaxHp,
-                CurrentMp: snapshot.Mp,
-                MaxMp: snapshot.MaxMp,
-                HpRegen: 0f,
-                MpRegen: 0f
-            ),
-            StatsTemplate: new StatsTemplate(
-                MovementSpeed: snapshot.MovementSpeed,
-                AttackSpeed: snapshot.AttackSpeed,
-                PhysicalAttack: snapshot.PhysicalAttack,
-                MagicAttack: snapshot.MagicAttack,
-                PhysicalDefense: snapshot.PhysicalDefense,
-                MagicDefense: snapshot.MagicDefense
-            )
-        );
-        
-        var entity = World.CreatePlayer(Strings, template);
-        _playerIndex.Register(snapshot.NetworkId, entity);
-        return entity;
-    }
-    
-    /// <summary>
-    /// Destrói uma entidade de jogador pelo NetworkId.
-    /// </summary>
-    public bool DestroyEntity(int networkId)
-    {
-        if (!_playerIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        _playerIndex.RemoveByKey(networkId);
-        World.Destroy(entity);
-        return true;
-    }
-    
-    /// <summary>
-    /// Destrói uma entidade de NPC pelo NetworkId.
-    /// </summary>
-    public bool DestroyNpc(int networkId)
-    {
-        if (!_npcIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        _npcIndex.RemoveByKey(networkId);
-        World.Destroy(entity);
-        return true;
-    }
-    
-    #endregion
-    
-    public bool ApplyPlayerState(StateSnapshot snapshot) => World.ApplyPlayerState(_playerIndex, snapshot);
-    public bool ApplyPlayerVitals(VitalsSnapshot snapshot) => World.ApplyPlayerVitals(_playerIndex, snapshot);
     
     // Visual
     public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
@@ -185,11 +89,21 @@ public sealed class ClientGameSimulation : GameSimulation
         visual = null!;
         return false;
     }
+    
+    public bool TryGetAnyEntity(int networkId, out Entity entity)
+    {
+        if (TryGetPlayerEntity(networkId, out entity))
+            return true;
+        if (TryGetNpcEntity(networkId, out entity))
+            return true;
+        entity = default;
+        return false;
+    }
 
-    public Entity CreateLocalPlayer(in PlayerSnapshot snapshot, PlayerVisual visual)
+    public Entity CreateLocalPlayer(ref PlayerSnapshot snapshot, PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
-        var entity = CreatePlayer(snapshot);
+        var entity = CreatePlayer(ref snapshot);
         World.Add<LocalPlayerTag>(entity);
         _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(in snapshot);
@@ -197,74 +111,70 @@ public sealed class ClientGameSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateRemotePlayer(in PlayerSnapshot snapshot, PlayerVisual visual)
+    public Entity CreateRemotePlayer(ref PlayerSnapshot snapshot, PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
-        var entity = CreatePlayer(snapshot);
+        var entity = CreatePlayer(ref snapshot);
         World.Add<RemotePlayerTag>(entity);
         _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
         return entity;
     }
     
-    public bool DestroyPlayerEntity(int networkId)
+    public override bool DestroyPlayer(int networkId)
     {
         _visualSyncSystem?.UnregisterPlayerVisual(networkId);
-        return DestroyEntity(networkId);
+        return base.DestroyPlayer(networkId);
     }
 
-    public Entity CreateNpc(in NpcSnapshot snapshot, NpcVisual visual)
+    public Entity CreateNpc(ref NpcSnapshot snapshot, NpcVisual visual)
     {
-        var entity = World.CreateNPC(in snapshot);
-        _npcIndex.Register(snapshot.NetworkId, entity);
+        var defaultBehaviour = Behaviour.Default;
+        var entity = base.CreateNpc(ref snapshot, ref defaultBehaviour);
         _visualSyncSystem?.RegisterNpcVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
         return entity;
     }
 
-    public bool DestroyNpcEntity(int networkId)
+    public override bool DestroyNpc(int networkId)
     {
         _visualSyncSystem?.UnregisterNpcVisual(networkId);
-        return DestroyNpc(networkId);
+        return base.DestroyNpc(networkId);
     }
-
-    public bool UpdateNpcState(in NpcStateSnapshot state)
+    
+    public void DestroyAny(int networkId)
     {
-        return NpcIndex.TryGetEntity(state.NetworkId, out var entity) && 
-               World.ApplyNpcState(entity, state);
+        if (TryGetPlayerEntity(networkId, out _))
+        {
+            DestroyPlayer(networkId);
+        }
+        else if (TryGetNpcEntity(networkId, out _))
+        {
+            DestroyNpc(networkId);
+        }
     }
     
-    public bool UpdateNpcVitals(in NpcVitalsSnapshot snapshot)
+    public void ApplyState(ref StateSnapshot stateSnapshot)
     {
-        return NpcIndex.TryGetEntity(snapshot.NetworkId, out var entity) && 
-               World.ApplyNpcVitals(entity, snapshot);
+        if (!TryGetPlayerEntity(stateSnapshot.NetworkId, out var entity) &&
+            !TryGetNpcEntity(stateSnapshot.NetworkId, out entity))
+        {
+            GD.PrintErr($"[GameClient] Cannot apply state: entity with NetworkId {stateSnapshot.NetworkId} not found.");
+            return;
+        }
+        
+        World.UpdateState(entity, ref stateSnapshot);
     }
     
-    #region Entity Lookup
-    
-    /// <summary>
-    /// Tenta obter a entidade de um jogador pelo NetworkId.
-    /// </summary>
-    public bool TryGetPlayerEntity(int networkId, out Entity entity) =>
-        _playerIndex.TryGetEntity(networkId, out entity);
-    
-    /// <summary>
-    /// Tenta obter a entidade de um NPC pelo NetworkId.
-    /// </summary>
-    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
-        _npcIndex.TryGetEntity(networkId, out entity);
-    
-    /// <summary>
-    /// Tenta obter qualquer entidade (player ou NPC) pelo NetworkId.
-    /// </summary>
-    public bool TryGetAnyEntity(int networkId, out Entity entity)
+    public void ApplyVitals(ref VitalsSnapshot vitalsSnapshot)
     {
-        if (_playerIndex.TryGetEntity(networkId, out entity))
-            return true;
-        if (_npcIndex.TryGetEntity(networkId, out entity))
-            return true;
-        return false;
+        if (!TryGetPlayerEntity(vitalsSnapshot.NetworkId, out var entity) &&
+            !TryGetNpcEntity(vitalsSnapshot.NetworkId, out entity))
+        {
+            GD.PrintErr($"[GameClient] Cannot apply vitals: entity with NetworkId {vitalsSnapshot.NetworkId} not found.");
+            return;
+        }
+        World.UpdateVitals(entity, ref vitalsSnapshot);
     }
     
-    #endregion
 }
