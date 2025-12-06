@@ -62,25 +62,28 @@ public sealed class ServerGameSimulation : GameSimulation
         // 2. NPC AI processa comportamento de NPCs
         systems.Add(new NpcAISystem(world, mapService, loggerFactory?.CreateLogger<NpcAISystem>()));
         
-        // 3. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, mapService));
+        // 3. Spatial sync garante ocupação inicial no grid
+        systems.Add(new SpatialSyncSystem(world, mapService, loggerFactory?.CreateLogger<SpatialSyncSystem>()));
         
-        // 4. Combat processa comandos de ataque
+        // 4. Movement calcula novas posições
+        systems.Add(new MovementSystem(world, mapService, EventBus, loggerFactory?.CreateLogger<MovementSystem>()));
+        
+        // 5. Combat processa comandos de ataque
         systems.Add(new CombatSystem(world, mapService, loggerFactory?.CreateLogger<CombatSystem>()));
         
-        // 5. Projectile move projéteis e aplica dano
+        // 6. Projectile move projéteis e aplica dano
         systems.Add(new ProjectileSystem(world, mapService, loggerFactory?.CreateLogger<ProjectileSystem>()));
         
-        // 6. Damage processa dano periódico (DoT) e dano adiado
+        // 7. Damage processa dano periódico (DoT) e dano adiado
         systems.Add(new DamageSystem(world, loggerFactory?.CreateLogger<DamageSystem>()));
         
-        // 7. Lifecycle processa spawn, morte e respawn de entidades
+        // 8. Lifecycle processa spawn, morte e respawn de entidades
         systems.Add(new LifecycleSystem(world, loggerFactory?.CreateLogger<LifecycleSystem>()));
         
-        // 8. Regeneration processa regeneração de vida/mana
+        // 9. Regeneration processa regeneração de vida/mana
         systems.Add(new RegenerationSystem(world, loggerFactory?.CreateLogger<RegenerationSystem>()));
         
-        // 9. ServerSync envia atualizações para clientes
+        // 10. ServerSync envia atualizações para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     

@@ -149,7 +149,6 @@ public abstract partial class DefaultVisual : Node2D
         // Determina animação
         string animation = isMoving ? "walk" : "idle";
         animation = isAttacking ? "attack" : animation;
-        animation = isDead ? "dead" : animation;
         
         string animName = _currentDirection switch
         {
@@ -158,6 +157,8 @@ public abstract partial class DefaultVisual : Node2D
             DirectionEnum.East or DirectionEnum.West => $"{animation}_side",
             _ => $"{animation}",
         };
+        
+        animName = isDead ? "dead" : animName;
 
         Sprite.FlipH = _currentDirection is DirectionEnum.West;
         

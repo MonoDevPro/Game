@@ -44,3 +44,14 @@ public struct MovementApproved;
 /// Resultado da validação (opcional, para debug/feedback ao cliente).
 /// </summary>
 public struct MovementBlocked { public MovementResult Reason; }
+
+/// <summary>
+/// Rastreia a célula registrada no índice espacial para manter o mapa consistente.
+/// </summary>
+public struct SpatialAnchor
+{
+    public int MapId;
+    public Position Position;
+    public sbyte Floor;
+    public bool IsTracked;
+}

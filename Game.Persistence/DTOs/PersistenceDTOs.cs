@@ -25,6 +25,25 @@ public sealed record DisconnectPersistenceDto
 }
 
 /// <summary>
+/// Snapshot reutilizável de posição/direção para evitar duplicação de campos.
+/// </summary>
+public readonly record struct PositionState(
+    int PositionX,
+    int PositionY,
+    sbyte Floor,
+    sbyte FacingX,
+    sbyte FacingY);
+
+public static class PersistenceDtoExtensions
+{
+    public static PositionState ToPositionState(this DisconnectPersistenceDto dto) =>
+        new(dto.PositionX, dto.PositionY, dto.Floor, dto.FacingX, dto.FacingY);
+
+    public static PositionState ToPositionState(this PositionPersistenceDto dto) =>
+        new(dto.PositionX, dto.PositionY, dto.Floor, dto.FacingX, dto.FacingY);
+}
+
+/// <summary>
 /// DTO para persistir posição do personagem.
 /// </summary>
 public sealed record PositionPersistenceDto

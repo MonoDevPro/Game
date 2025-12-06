@@ -39,6 +39,7 @@ public static class PlayerArchetypes
         
         // Movement
         Component<Walkable>.ComponentType,
+        Component<SpatialAnchor>.ComponentType,
         
         // Combat
         Component<CombatStats>.ComponentType,

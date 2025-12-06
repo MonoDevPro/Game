@@ -1,15 +1,24 @@
-using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Events;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
+using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
 
-public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : GameSystem(world)
+public sealed partial class MovementSystem : GameSystem
 {
+    private readonly IMapIndex _mapIndex;
+    private readonly GameEventBus _eventBus;
+
+    public MovementSystem(World world, IMapIndex mapIndex, GameEventBus eventBus, ILogger<MovementSystem>? logger = null)
+        : base(world, logger)
+    {
+        _mapIndex = mapIndex;
+        _eventBus = eventBus;
+    }
     [Query]
     [All<Position, Direction, Speed, Walkable, Floor>]
     [None<Dead, MovementIntent>] // Não processa se já tem intent pendente
@@ -54,7 +63,7 @@ public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : Ga
         in MapId mapId,
         in MovementIntent intent)
     {
-        var result = mapIndex. ValidateMove(
+        var result = _mapIndex.ValidateMove(
             mapId. Value,
             intent.TargetPosition,
             intent. TargetFloor,
@@ -64,7 +73,17 @@ public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : Ga
         if (result == MovementResult. Allowed)
             World.Add<MovementApproved>(entity);
         else
+        {
+            LogWarning(
+                "[Movement] Blocked move for {Entity} to ({X},{Y},{Floor}) on map {MapId}: {Reason}",
+                entity,
+                intent.TargetPosition.X,
+                intent.TargetPosition.Y,
+                intent.TargetFloor,
+                mapId.Value,
+                result);
             World.Add<MovementBlocked>(entity, new MovementBlocked { Reason = result });
+        }
     }
     
     [Query]
@@ -77,10 +96,22 @@ public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : Ga
         ref Position pos)
     {
         var moveEvent = new MovementEvent(entity, pos, intent.TargetPosition);
-        EventBus.Send(ref moveEvent);
+        _eventBus.Send(ref moveEvent);
 
-        mapIndex.GetMapSpatial(mapId.Value)
-                .Update(pos,floor.Value,intent.TargetPosition,intent.TargetFloor,entity);
+        var spatial = _mapIndex.GetMapSpatial(mapId.Value);
+        if (!spatial.TryMove(pos, floor.Value, intent.TargetPosition, intent.TargetFloor, entity))
+        {
+            LogWarning(
+                "[Movement] Post-approval move failed for {Entity} to ({X},{Y},{Floor}) on map {MapId}. Marking as blocked.",
+                entity,
+                intent.TargetPosition.X,
+                intent.TargetPosition.Y,
+                intent.TargetFloor,
+                mapId.Value);
+            World.Remove<MovementApproved>(entity);
+            World.Add<MovementBlocked>(entity, new MovementBlocked { Reason = MovementResult.BlockedByEntity });
+            return;
+        }
         
         // Aplica a nova posição
         pos.X = intent.TargetPosition.X;

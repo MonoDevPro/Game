@@ -29,6 +29,13 @@ public static class FactoryHelper
             new Speed { Value = 0f },
             
             new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
+            new SpatialAnchor
+            {
+                MapId = template.MapId,
+                Position = new Position { X = template.PosX, Y = template.PosY },
+                Floor = template.Floor,
+                IsTracked = false
+            },
             
             new CombatStats
             { 
@@ -88,6 +95,13 @@ public static class FactoryHelper
             new Speed { Value = 0f },
 
             new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
+            new SpatialAnchor
+            {
+                MapId = template.MapId,
+                Position = new Position { X = template.PosX, Y = template.PosY },
+                Floor = template.Floor,
+                IsTracked = false
+            },
 
             new CombatStats
             {

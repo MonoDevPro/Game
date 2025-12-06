@@ -34,6 +34,7 @@ public static class NpcArchetypes
         
         // Movement
         Component<Walkable>.ComponentType,
+        Component<SpatialAnchor>.ComponentType,
         
         // Combat
         Component<CombatStats>.ComponentType,

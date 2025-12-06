@@ -89,8 +89,8 @@ public class NpcRepository : INpcRepository
 
     private NpcSpawnPoint[] LoadDefaultSpawnPoints() =>
     [
-        new(TemplateId: 1, MapId: 1, Floor: 0, X: 10, Y: 15),
-        new(TemplateId: 2, MapId: 1, Floor: 0, X: 20, Y: 25)
+        new(TemplateId: 1, MapId: 0, Floor: 0, X: 10, Y: 15),
+        new(TemplateId: 2, MapId: 0, Floor: 0, X: 20, Y: 25)
     ];
 
     public NpcRepository()

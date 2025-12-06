@@ -3,6 +3,7 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS.Entities;
 using Game.ECS.Events;
+using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
@@ -115,6 +116,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
+        RegisterSpatialAnchor(entity);
         PlayerIndex.Register(playerSnapshot.NetworkId, entity);
         return entity;
     }
@@ -123,6 +125,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     {
         // Atualiza o template com a localização de spawn e networkId
         var entity = World.CreateNpc(ref snapshot, ref behaviour);
+        RegisterSpatialAnchor(entity);
         NPCIndex.Register(snapshot.NetworkId, entity);
         return entity;
     }
@@ -148,6 +151,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
             return false;
         
         PlayerIndex.RemoveByKey(networkId);
+        UnregisterSpatialAnchor(entity);
         World.Destroy(entity);
         return true;
     }
@@ -161,6 +165,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
             return false;
         
         NPCIndex.RemoveByKey(networkId);
+        UnregisterSpatialAnchor(entity);
         World.Destroy(entity);
         return true;
     }
@@ -172,5 +177,51 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         
         World.UpdateState(entity, ref snapshot);
         return true;
+    }
+
+    /// <summary>
+    /// Garante que a entidade esteja registrada no índice espacial e sincroniza o anchor inicial.
+    /// </summary>
+    private void RegisterSpatialAnchor(Entity entity)
+    {
+        if (!World.Has<SpatialAnchor>(entity) || !World.Has<MapId>(entity) || !World.Has<Position>(entity) || !World.Has<Floor>(entity))
+            return;
+
+        ref var position = ref World.Get<Position>(entity);
+        ref var floor = ref World.Get<Floor>(entity);
+        ref var mapId = ref World.Get<MapId>(entity);
+        ref var anchor = ref World.Get<SpatialAnchor>(entity);
+
+        try
+        {
+            MapIndex.GetMapSpatial(mapId.Value).Insert(position, floor.Value, entity);
+            anchor.MapId = mapId.Value;
+            anchor.Position = position;
+            anchor.Floor = floor.Value;
+            anchor.IsTracked = true;
+        }
+        catch (KeyNotFoundException)
+        {
+            LogWarning("[GameSimulation] Failed to register spatial anchor for entity {Entity}: map {MapId} is not registered", entity, mapId.Value);
+        }
+    }
+
+    /// <summary>
+    /// Remove a entidade do índice espacial, evitando células fantasmas após destruição.
+    /// </summary>
+    private void UnregisterSpatialAnchor(Entity entity)
+    {
+        if (!World.Has<SpatialAnchor>(entity))
+            return;
+
+        ref var anchor = ref World.Get<SpatialAnchor>(entity);
+        if (!anchor.IsTracked)
+            return;
+
+        if (!MapIndex.HasMap(anchor.MapId))
+            return;
+
+        MapIndex.GetMapSpatial(anchor.MapId).Remove(anchor.Position, anchor.Floor, entity);
+        anchor.IsTracked = false;
     }
 }

@@ -1,6 +1,7 @@
 using Game.Domain.Entities;
 using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
+using Game.Persistence.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Persistence.Services;
@@ -16,6 +17,67 @@ internal sealed class PlayerPersistenceService(
     ILogger<PlayerPersistenceService> logger)
     : IPlayerPersistenceService
 {
+    private async Task PersistAsync(
+        int characterId,
+        Func<ICharacterRepository, CancellationToken, Task<Character?>> fetch,
+        Func<Character, bool> apply,
+        string context,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var character = await fetch(unitOfWork.Characters, cancellationToken);
+
+            if (character is null)
+            {
+                logger.LogWarning(
+                    "Cannot persist {Context} for character {CharacterId}: not found",
+                    context,
+                    characterId);
+                return;
+            }
+
+            if (!apply(character))
+                return;
+
+            await SaveCharacterAsync(character, context, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Error persisting {Context} for character {CharacterId}",
+                context,
+                characterId);
+            throw;
+        }
+    }
+
+    private static void ApplyPosition(Character character, PositionState position, bool updateTimestamp)
+    {
+        character.PositionX = position.PositionX;
+        character.PositionY = position.PositionY;
+        character.Floor = position.Floor;
+        character.FacingX = position.FacingX;
+        character.FacingY = position.FacingY;
+
+        if (updateTimestamp)
+            character.LastUpdatedAt = DateTime.UtcNow;
+    }
+
+    private async Task SaveCharacterAsync(Character character, string context, CancellationToken cancellationToken, Action? extraLog = null)
+    {
+        await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "{Context} persisted for character {CharacterId}",
+            context,
+            character.Id);
+
+        extraLog?.Invoke();
+    }
+
     /// <summary>
     /// Persiste dados completos do personagem ao desconectar (posição, direção, vitals).
     /// Não persiste inventário para evitar overhead e problemas de sincronização.
@@ -24,48 +86,26 @@ internal sealed class PlayerPersistenceService(
         DisconnectPersistenceDto dto,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            // ✅ Buscar Character com Stats usando repositório especializado
-            var character = await unitOfWork.Characters
-                .GetByIdWithStatsAsync(dto.CharacterId, cancellationToken);
-
-            if (character is null)
+        await PersistAsync(
+            dto.CharacterId,
+            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            character =>
             {
-                logger.LogWarning(
-                    "Cannot persist disconnect data for character {CharacterId}: not found",
-                    dto.CharacterId);
-                return;
-            }
+                if (character.Stats is null)
+                {
+                    logger.LogWarning(
+                        "Cannot persist disconnect data for character {CharacterId}: stats not found",
+                        dto.CharacterId);
+                    return false;
+                }
 
-            // ✅ Atualizar posição e direção
-            character.PositionX = dto.PositionX;
-            character.PositionY = dto.PositionY;
-            character.Floor = dto.Floor;
-            character.FacingX = dto.FacingX;
-            character.FacingY = dto.FacingY;
-            character.LastUpdatedAt = DateTime.UtcNow;
-
-            character.Stats.CurrentHp = dto.CurrentHp;
-            character.Stats.CurrentMp = dto.CurrentMp;
-
-            // ✅ Salvar via Unit of Work
-            await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation(
-                "Disconnect data persisted for character {CharacterName} {DisconnectPersistenceDto} ",
-                character.Name,
-                dto);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Error persisting disconnect data for character {CharacterId}",
-                dto.CharacterId);
-            throw;
-        }
+                ApplyPosition(character, dto.ToPositionState(), updateTimestamp: true);
+                character.Stats.CurrentHp = dto.CurrentHp;
+                character.Stats.CurrentMp = dto.CurrentMp;
+                return true;
+            },
+            context: "disconnect data",
+            cancellationToken);
     }
 
     /// <summary>
@@ -75,45 +115,16 @@ internal sealed class PlayerPersistenceService(
         PositionPersistenceDto dto,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var character = await unitOfWork.Characters
-                .GetByIdAsync(dto.CharacterId, cancellationToken);
-
-            if (character is null)
+        await PersistAsync(
+            dto.CharacterId,
+            (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
+            character =>
             {
-                logger.LogWarning(
-                    "Cannot persist position for character {CharacterId}: not found",
-                    dto.CharacterId);
-                return;
-            }
-
-            character.PositionX = dto.PositionX;
-            character.PositionY = dto.PositionY;
-            character.Floor = dto.Floor;
-            character.FacingX = dto.FacingX;
-            character.FacingY = dto.FacingY;
-
-            await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            logger.LogDebug(
-                "Position persisted for character {CharacterId}: ({X},{Y}, {Z}) facing {FacingX},{FacingY})",
-                dto.CharacterId,
-                dto.PositionX,
-                dto.PositionY,
-                dto.Floor,
-                dto.FacingX,
-                dto.FacingY);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Error persisting position for character {CharacterId}",
-                dto.CharacterId);
-            throw;
-        }
+                ApplyPosition(character, dto.ToPositionState(), updateTimestamp: false);
+                return true;
+            },
+            context: "position",
+            cancellationToken);
     }
 
     /// <summary>
@@ -123,39 +134,25 @@ internal sealed class PlayerPersistenceService(
         VitalsPersistenceDto dto,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var character = await unitOfWork.Characters
-                .GetByIdWithStatsAsync(dto.CharacterId, cancellationToken);
-
-            if (character?.Stats is null)
+        await PersistAsync(
+            dto.CharacterId,
+            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            character =>
             {
-                logger.LogWarning(
-                    "Cannot persist vitals for character {CharacterId}: stats not found",
-                    dto.CharacterId);
-                return;
-            }
+                if (character.Stats is null)
+                {
+                    logger.LogWarning(
+                        "Cannot persist vitals for character {CharacterId}: stats not found",
+                        dto.CharacterId);
+                    return false;
+                }
 
-            character.Stats.CurrentHp = dto.CurrentHp;
-            character.Stats.CurrentMp = dto.CurrentMp;
-
-            await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            logger.LogDebug(
-                "Vitals persisted for character {CharacterId}: HP {HP}, MP {MP}",
-                dto.CharacterId,
-                dto.CurrentHp,
-                dto.CurrentMp);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Error persisting vitals for character {CharacterId}",
-                dto.CharacterId);
-            throw;
-        }
+                character.Stats.CurrentHp = dto.CurrentHp;
+                character.Stats.CurrentMp = dto.CurrentMp;
+                return true;
+            },
+            context: "vitals",
+            cancellationToken);
     }
 
     /// <summary>
@@ -165,47 +162,32 @@ internal sealed class PlayerPersistenceService(
         StatsPersistenceDto dto,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var character = await unitOfWork.Characters
-                .GetByIdWithStatsAsync(dto.CharacterId, cancellationToken);
-
-            if (character?.Stats is null)
+        await PersistAsync(
+            dto.CharacterId,
+            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            character =>
             {
-                logger.LogWarning(
-                    "Cannot persist stats for character {CharacterId}: stats not found",
-                    dto.CharacterId);
-                return;
-            }
+                if (character.Stats is null)
+                {
+                    logger.LogWarning(
+                        "Cannot persist stats for character {CharacterId}: stats not found",
+                        dto.CharacterId);
+                    return false;
+                }
 
-            // ✅ Atualizar todos os stats
-            character.Stats.Level = dto.Level;
-            character.Stats.Experience = dto.Experience;
-            character.Stats.BaseStrength = dto.BaseStrength;
-            character.Stats.BaseDexterity = dto.BaseDexterity;
-            character.Stats.BaseIntelligence = dto.BaseIntelligence;
-            character.Stats.BaseConstitution = dto.BaseConstitution;
-            character.Stats.BaseSpirit = dto.BaseSpirit;
-            character.Stats.CurrentHp = dto.CurrentHp;
-            character.Stats.CurrentMp = dto.CurrentMp;
-
-            await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation(
-                "Stats persisted for character {CharacterId}: Level {Level}, Experience {Experience}",
-                dto.CharacterId,
-                dto.Level,
-                dto.Experience);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Error persisting stats for character {CharacterId}",
-                dto.CharacterId);
-            throw;
-        }
+                character.Stats.Level = dto.Level;
+                character.Stats.Experience = dto.Experience;
+                character.Stats.BaseStrength = dto.BaseStrength;
+                character.Stats.BaseDexterity = dto.BaseDexterity;
+                character.Stats.BaseIntelligence = dto.BaseIntelligence;
+                character.Stats.BaseConstitution = dto.BaseConstitution;
+                character.Stats.BaseSpirit = dto.BaseSpirit;
+                character.Stats.CurrentHp = dto.CurrentHp;
+                character.Stats.CurrentMp = dto.CurrentMp;
+                return true;
+            },
+            context: "stats",
+            cancellationToken);
     }
 
     /// <summary>
@@ -296,13 +278,14 @@ internal sealed class PlayerPersistenceService(
             foreach (var leftover in existingSlots.Values)
                 character.Inventory.Slots.Remove(leftover);
             
-            await unitOfWork.Characters.UpdateAsync(character, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation(
-                "Inventory persisted for character {CharacterId}: {SlotCount} slots",
-                dto.CharacterId,
-                dto.Slots.Count);
+            await SaveCharacterAsync(
+                character,
+                context: "inventory",
+                cancellationToken,
+                () => logger.LogInformation(
+                    "Inventory persisted for character {CharacterId}: {SlotCount} slots",
+                    dto.CharacterId,
+                    dto.Slots.Count));
         }
         catch (Exception ex)
         {
