@@ -234,48 +234,13 @@ public partial class GameClient : Node2D
 
     private void HandleState(INetPeerAdapter peer, ref StatePacket packet)
     {
-        foreach (var singlePacket in packet.States)
-            HandleSingleState(singlePacket);
-    }
-    
-    private void HandleSingleState(in StateData packet)
-    {
         if (_simulation is null)
             return;
         
-        // Remotos: aplica tudo
-        if (packet.NetworkId != _localNetworkId)
+        foreach (var singlePacket in packet.States)
         {
-            var stateSnapshot = packet.ToStateSnapshot();
+            var stateSnapshot = singlePacket.ToStateSnapshot();
             _simulation?.ApplyState(ref stateSnapshot);
-            return;
-        }
-
-        // Local: reconciliação inteligente
-        if (_simulation is null || !_simulation.TryGetPlayerEntity(packet.NetworkId, out var entity))
-            return;
-
-        ref var localPos = ref _simulation.World.Get<Position>(entity);
-        int deltaX = Math.Abs(localPos.X - packet.X);
-        int deltaY = Math.Abs(localPos.Y - packet.Y);
-        
-        const int threshold = 1;
-        if (deltaX >= threshold || deltaY >= threshold)
-        {
-            // Grande divergência → servidor manda, reset walkable accumulator
-            _simulation.World.Get<Walkable>(entity).Accumulator = 0f;
-            var stateSnapshot = packet.ToStateSnapshot();
-            _simulation.ApplyState(ref stateSnapshot);
-        }
-        else
-        {
-            // Pequena divergência → confia no cliente, só atualiza speed/facing
-            _simulation.World.Get<Speed>(entity).Value = packet.Speed;
-            _simulation.World.Get<Direction>(entity) = new Direction
-            {
-                X = packet.DirX,
-                Y = packet.DirY
-            };
         }
     }
 
@@ -293,35 +258,34 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
         
-        if (!_simulation.TryGetPlayerEntity(packet.NetworkId, out var playerEntity))
+        if (!_simulation.TryGetAnyEntity(packet.NetworkId, out var entity))
+            return;
+        if (!_simulation.TryGetAnyVisual(packet.NetworkId, out var visual))
             return;
         
-        if (!_simulation.TryGetPlayerVisual(packet.NetworkId, out var playerVisual))
-            return;
-        
-        var heathCurrent = _simulation.World.Get<Health>(playerEntity).Current;
+        var heathCurrent = _simulation.World.Get<Health>(entity).Current;
         if (packet.CurrentHp < heathCurrent)
         {
             var damageAmount = heathCurrent - packet.CurrentHp;
             // Exemplo simples: troca cor rápida
-            playerVisual.ChangeTempColor(Colors.Red, 0.2f);
-            playerVisual.CreateFloatingDamageLabel(damageAmount, critical: false);
+            visual.ChangeTempColor(Colors.Red, 0.2f);
+            visual.CreateFloatingDamageLabel(damageAmount, critical: false);
         }
         if (packet.CurrentHp > heathCurrent)
         {
             var healAmount = packet.CurrentHp - heathCurrent;
-            playerVisual.CreateFloatingHealLabel(healAmount);
+            visual.CreateFloatingHealLabel(healAmount);
         }
         
-        if (packet.CurrentHp <= 0 && !_simulation.World.Has<Dead>(playerEntity))
-            _simulation.World.Add<Dead>(playerEntity);
-        else if (_simulation.World.Has<Dead>(playerEntity))
-            _simulation.World.Remove<Dead>(playerEntity);
+        if (packet.CurrentHp <= 0 && !_simulation.World.Has<Dead>(entity))
+            _simulation.World.Add<Dead>(entity);
+        else if (_simulation.World.Has<Dead>(entity))
+            _simulation.World.Remove<Dead>(entity);
         
         var vitalsSnapshot = packet.ToVitalsSnapshot();
         _simulation.ApplyVitals(ref vitalsSnapshot);
         
-        playerVisual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
+        visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
         
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
@@ -334,7 +298,6 @@ public partial class GameClient : Node2D
             HandlePlayerSpawn(peer, ref dataPacket);
         }
     }
-
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
     {
         var isLocal = dataPacket.NetworkId == _localNetworkId;
@@ -372,6 +335,7 @@ public partial class GameClient : Node2D
         foreach (var singlePacket in packet.CombatStates)
             HandleSingleCombatState(singlePacket);
     }
+    
     private void HandleSingleCombatState(in CombatStateSnapshot packet)
     {
         GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerNetworkId}");
@@ -390,10 +354,8 @@ public partial class GameClient : Node2D
         }
 
         // Se quiser armazenar algo temporário no ECS local para animação:
-        var attackCommand = new AttackCommand
-        {
-            Style = packet.Style
-        };
+        var attackCommand = new AttackCommand { Style = packet.Style };
+        
         _simulation.World.Add(attackerEntity, attackCommand);
         
         if (_simulation.World.TryGet<CombatState>(attackerEntity, out var combatState))

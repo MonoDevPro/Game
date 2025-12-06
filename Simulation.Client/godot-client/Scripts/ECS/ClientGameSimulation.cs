@@ -156,8 +156,7 @@ public sealed class ClientGameSimulation : GameSimulation
     
     public void ApplyState(ref StateSnapshot stateSnapshot)
     {
-        if (!TryGetPlayerEntity(stateSnapshot.NetworkId, out var entity) &&
-            !TryGetNpcEntity(stateSnapshot.NetworkId, out entity))
+        if (!TryGetAnyEntity(stateSnapshot.NetworkId, out Entity entity))
         {
             GD.PrintErr($"[GameClient] Cannot apply state: entity with NetworkId {stateSnapshot.NetworkId} not found.");
             return;

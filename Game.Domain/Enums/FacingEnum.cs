@@ -1,6 +1,6 @@
 namespace Game.Domain.Enums;
 
-public enum FacingEnum : sbyte
+public enum DirectionEnum : sbyte
 {
     None,
     North,

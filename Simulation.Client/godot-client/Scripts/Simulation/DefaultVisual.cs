@@ -17,7 +17,7 @@ public abstract partial class DefaultVisual : Node2D
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
-    private FacingEnum _currentFacing = FacingEnum.South;
+    private DirectionEnum _currentDirection = DirectionEnum.South;
     
     private float _movementAnimationDuration = 1f;
     private float _attackAnimationDuration = 1f;
@@ -134,33 +134,33 @@ public abstract partial class DefaultVisual : Node2D
 
     public void UpdateAnimationState(Direction direction, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
-        _currentFacing = ConvertToFacingEnum(direction.X, direction.Y);
         if (Sprite is null) return;
+        
+        var nextDir = ConvertToFacingEnum(direction.X, direction.Y);
+        _currentDirection = nextDir is DirectionEnum.None ? _currentDirection : nextDir;
+        
         UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
     }
     
     private void UpdateAnimationState(AnimatedSprite2D sprite, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
+        if (Sprite is null) return;
+        
         // Determina animação
         string animation = isMoving ? "walk" : "idle";
-        string attackAnimation = isAttacking ? "attack" : string.Empty;
-        if (!string.IsNullOrEmpty(attackAnimation))
-            animation = attackAnimation;
+        animation = isAttacking ? "attack" : animation;
+        animation = isDead ? "dead" : animation;
         
-        // Atualiza direção (flip horizontal se necessário)
-        sprite.FlipH = _currentFacing == FacingEnum.West;
-        
-        string animName = _currentFacing switch
+        string animName = _currentDirection switch
         {
-            FacingEnum.South or FacingEnum.SouthEast or FacingEnum.SouthWest => $"{animation}_south",
-            FacingEnum.North or FacingEnum.NorthEast or FacingEnum.NorthWest => $"{animation}_north",
-            FacingEnum.East or FacingEnum.West => $"{animation}_side",
+            DirectionEnum.South or DirectionEnum.SouthEast or DirectionEnum.SouthWest => $"{animation}_south",
+            DirectionEnum.North or DirectionEnum.NorthEast or DirectionEnum.NorthWest => $"{animation}_north",
+            DirectionEnum.East or DirectionEnum.West => $"{animation}_side",
             _ => $"{animation}",
         };
-        
-        //Dead animation has priority
-        if (isDead) animName = "dead";
 
+        Sprite.FlipH = _currentDirection is DirectionEnum.West;
+        
         if (sprite.Animation == animName) 
             return;
         
@@ -170,29 +170,28 @@ public abstract partial class DefaultVisual : Node2D
         RefreshAnimationSpeeds();
     }
     
-    private FacingEnum ConvertToFacingEnum(sbyte facingX, sbyte facingY)
+    private DirectionEnum ConvertToFacingEnum(sbyte facingX, sbyte facingY)
     {
         return (facingX, facingY) switch
         {
-            (0, -1) => FacingEnum.North,
-            (1, -1) => FacingEnum.NorthEast,
-            (-1, -1) => FacingEnum.NorthWest,
-            (0, 1) => FacingEnum.South,
-            (1, 1) => FacingEnum.SouthEast,
-            (-1, 1) => FacingEnum.SouthWest,
-            (1, 0) => FacingEnum.East,
-            (-1, 0) => FacingEnum.West,
-            _ => FacingEnum.None
+            (0, -1) => DirectionEnum.North,
+            (1, -1) => DirectionEnum.NorthEast,
+            (-1, -1) => DirectionEnum.NorthWest,
+            (0, 1) => DirectionEnum.South,
+            (1, 1) => DirectionEnum.SouthEast,
+            (-1, 1) => DirectionEnum.SouthWest,
+            (1, 0) => DirectionEnum.East,
+            (-1, 0) => DirectionEnum.West,
+            _ => DirectionEnum.None
         };
     }
 
     public void UpdateVitals(int currentHp, int maxHp, int currentMp, int maxMp)
     {
-        if (HealthBar is not null)
-        {
-            HealthBar.MaxValue = Math.Max(1, maxHp);
-            HealthBar.Value = Mathf.Clamp(currentHp, 0, maxHp);
-        }
+        if (HealthBar is null) return;
+        
+        HealthBar.MaxValue = Math.Max(1, maxHp);
+        HealthBar.Value = Mathf.Clamp(currentHp, 0, maxHp);
     }
 
     public void UpdateName(string name)

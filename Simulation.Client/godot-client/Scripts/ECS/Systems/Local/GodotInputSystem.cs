@@ -12,7 +12,7 @@ public sealed partial class GodotInputSystem(World world)
 {
     [Query]
     [All<PlayerControlled, LocalPlayerTag, Input>]
-    //[None<Dead>]
+    [None<Dead>]
     private void ApplyInput(in Entity e, ref Input input, ref DirtyFlags dirty)
     {
         if (GameClient.Instance is { IsChatFocused: true })

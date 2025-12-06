@@ -14,11 +14,9 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por processar comandos de ataque e aplicar dano.
 /// Suporta ataques melee, ranged e mágicos baseados na vocação/estilo.
 /// </summary>
-public sealed partial class CombatSystem : GameSystem
+public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogger<CombatSystem>? logger = null)
+    : GameSystem(world, logger)
 {
-    private readonly IMapIndex _mapIndex;
-    private readonly ILogger<CombatSystem>? _logger;
-    
     // Attack range by style
     private const float MeleeRange = 1.5f;
     private const float RangedRange = 8f;
@@ -27,13 +25,6 @@ public sealed partial class CombatSystem : GameSystem
     // Projectile settings
     private const float ProjectileSpeed = 15f;
     private const float ProjectileLifetime = 3f;
-
-    public CombatSystem(World world, IMapIndex mapIndex, ILogger<CombatSystem>? logger = null) 
-        : base(world, logger)
-    {
-        _mapIndex = mapIndex;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Processes attack input for player-controlled entities.
@@ -86,9 +77,9 @@ public sealed partial class CombatSystem : GameSystem
         
         // Try to find target entity at position
         Entity targetEntity = Entity.Null;
-        if (_mapIndex.HasMap(mapId.Value))
+        if (mapIndex.HasMap(mapId.Value))
         {
-            var spatial = _mapIndex.GetMapSpatial(mapId.Value);
+            var spatial = mapIndex.GetMapSpatial(mapId.Value);
             if (spatial.TryGetFirstAt(targetPosition, floor.Value, out var foundEntity))
             {
                 // Don't attack self
@@ -166,10 +157,10 @@ public sealed partial class CombatSystem : GameSystem
         if (command.Target == Entity.Null || !World.IsAlive(command.Target))
         {
             // Try to find target at position
-            if (!_mapIndex.HasMap(attackerMapId.Value))
+            if (!mapIndex.HasMap(attackerMapId.Value))
                 return;
             
-            var spatial = _mapIndex.GetMapSpatial(attackerMapId.Value);
+            var spatial = mapIndex.GetMapSpatial(attackerMapId.Value);
             if (!spatial.TryGetFirstAt(command.TargetPosition, attackerFloor.Value, out var target) || target == attacker)
                 return;
             
@@ -224,7 +215,7 @@ public sealed partial class CombatSystem : GameSystem
             HasHit = false
         });
         
-        _logger?.LogDebug("[Combat] Created projectile from {Source} towards ({X}, {Y})", 
+        logger?.LogDebug("[Combat] Created projectile from {Source} towards ({X}, {Y})", 
             source, command.TargetPosition.X, command.TargetPosition.Y);
     }
 
@@ -254,7 +245,7 @@ public sealed partial class CombatSystem : GameSystem
         // Apply deferred damage
         DamageSystem.ApplyDeferredDamage(World, target, finalDamage, false, attacker);
         
-        _logger?.LogDebug("[Combat] {Attacker} dealt {Damage} damage to {Target}", attacker, finalDamage, target);
+        logger?.LogDebug("[Combat] {Attacker} dealt {Damage} damage to {Target}", attacker, finalDamage, target);
     }
 
     /// <summary>
