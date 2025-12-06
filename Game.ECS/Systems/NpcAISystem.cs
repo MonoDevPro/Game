@@ -2,6 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.ECS.Events;
 using Game.ECS.Schema;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
@@ -317,7 +318,7 @@ public sealed partial class NpcAISystem : GameSystem
                     Target = brain.CurrentTarget,
                     TargetPosition = targetPos,
                     Style = attackStyle,
-                    IsReady = true
+                    ConjureDuration = 1f, // TODO: Placeholder, can be adjusted per style
                 });
             }
         }

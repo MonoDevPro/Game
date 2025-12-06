@@ -2,15 +2,11 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
-using Game.ECS.Entities;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
-using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.ECS.Systems;
-using Game.Server.Npc;
 
 namespace Game.Server.ECS;
 
@@ -25,7 +21,6 @@ public sealed class ServerGameSimulation : GameSimulation
     public ServerGameSimulation(
         INetworkManager network, 
         IEnumerable<Map> maps,
-        INpcRepository npcRepository,
         ILoggerFactory? factory = null)
         : base(factory?.CreateLogger<ServerGameSimulation>())
     {
@@ -43,6 +38,9 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // Configura os sistemas
         ConfigureSystems(World, Systems, factory);
+        
+        // Inicializa os sistemas
+        Systems.Initialize();
     }
 
     /// <summary>
@@ -83,7 +81,7 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new RegenerationSystem(world, loggerFactory?.CreateLogger<RegenerationSystem>()));
         
         // 9. ServerSync envia atualizações para clientes
-        systems.Add(new ServerSyncSystem(world, _networkManager, loggerFactory?.CreateLogger<ServerSyncSystem>()));
+        systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     
     public bool ApplyPlayerInput(int networkId, Input data)

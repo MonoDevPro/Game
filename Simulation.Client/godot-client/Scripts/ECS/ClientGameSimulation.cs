@@ -31,7 +31,11 @@ public sealed class ClientGameSimulation : GameSimulation
         : base(null)
     {
         _networkManager = networkManager;
+        
         ConfigureSystems(World, Systems, null);
+        
+        // Inicializa os sistemas
+        Systems.Initialize();
     }
 
     /// <summary>

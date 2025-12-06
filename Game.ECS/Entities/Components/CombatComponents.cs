@@ -22,8 +22,6 @@ public struct CombatState
     // New fields
     public float AttackCooldownTimer;   // Tempo até poder atacar de novo
     public bool InCooldown;             // Se está em cooldown de ataque
-    public float CastTimer;             // Tempo restante de cast (se aplicável)
-    public bool IsCasting;              // Se está em cast
 }
 
 // O "Evento" ou "Intenção". 
@@ -33,7 +31,7 @@ public struct AttackCommand
     public Entity Target;
     public Position TargetPosition; // Posição alvo (para ataques à distância)
     public AttackStyle Style; // Estilo de ataque (Melee, Ranged, Magic)
-    public bool IsReady; // Flag processada pelo sistema
+    public float ConjureDuration; // Duração do ataque (para animações)
 }
 
 /// <summary>

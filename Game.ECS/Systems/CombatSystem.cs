@@ -2,7 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Schema;
+using Game.ECS.Events;
 using Game.ECS.Schema.Archetypes;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
@@ -42,7 +42,6 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         in CombatStats stats,
         ref CombatState state,
         in VocationId vocation,
-        in MapId mapId,
         [Data] float deltaTime)
     {
         // Update cooldown timer
@@ -75,31 +74,21 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
             Y = position.Y + (int)(direction.Y * range)
         };
         
-        // Try to find target entity at position
-        Entity targetEntity = Entity.Null;
-        if (mapIndex.HasMap(mapId.Value))
-        {
-            var spatial = mapIndex.GetMapSpatial(mapId.Value);
-            if (spatial.TryGetFirstAt(targetPosition, floor.Value, out var foundEntity))
-            {
-                // Don't attack self
-                if (foundEntity != entity)
-                    targetEntity = foundEntity;
-            }
-        }
+        // Set cooldown
+        state.InCooldown = true;
+        state.AttackCooldownTimer = 1f / stats.AttackSpeed;
         
         // Create attack command
         World.Add(entity, new AttackCommand
         {
-            Target = targetEntity,
+            Target = Entity.Null,
             TargetPosition = targetPosition,
             Style = attackStyle,
-            IsReady = true
+            ConjureDuration = 1f, // TODO: Placeholder, can be adjusted per style
         });
         
-        // Set cooldown
-        state.InCooldown = true;
-        state.AttackCooldownTimer = 1f / stats.AttackSpeed;
+        var attackEvent = new AttackEvent(entity, Entity.Null, attackStyle, stats.AttackPower);
+        EventBus.Send(ref attackEvent);
     }
 
     /// <summary>
@@ -109,17 +98,18 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
     [All<AttackCommand, Position, Floor, Direction, CombatStats, MapId>]
     [None<Dead>]
     private void ProcessAttackCommand(
+        [Data] in float deltaTime,
         in Entity attacker,
-        in AttackCommand command,
+        ref AttackCommand command,
         in Position attackerPos,
         in Floor attackerFloor,
         in Direction attackerDir,
         in CombatStats attackerStats,
         in MapId attackerMapId)
     {
-        if (!command.IsReady)
+        if (command.ConjureDuration > 0f)
         {
-            World.Remove<AttackCommand>(attacker);
+            command.ConjureDuration -= deltaTime;
             return;
         }
         
@@ -133,10 +123,6 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
                 CreateProjectile(attacker, command, attackerPos, attackerFloor, attackerDir, attackerMapId, attackerStats);
                 break;
         }
-        
-        // Fire attack event
-        var attackEvent = new AttackEvent(attacker, command.Target, command.Style, attackerStats.AttackPower);
-        EventBus.Send(ref attackEvent);
         
         // Remove command after processing
         World.Remove<AttackCommand>(attacker);

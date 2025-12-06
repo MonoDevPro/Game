@@ -26,7 +26,7 @@ public sealed class CombatSyncTests
 
         public IPeerRepository Peers { get; } = new DummyPeerRepository();
 
-        public List<CombatStatePacket> CombatPackets { get; } = new();
+        public List<AttackPacket> CombatPackets { get; } = new();
 
         public void Initialize() { }
     public void ConnectToServer() => throw new NotSupportedException();
@@ -43,7 +43,7 @@ public sealed class CombatSyncTests
 
         public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct
         {
-            if (packet is CombatStatePacket combat)
+            if (packet is AttackPacket combat)
                 CombatPackets.Add(combat);
         }
 

@@ -4,14 +4,11 @@ using MemoryPack;
 namespace Game.Network.Packets.Game;
 
 [MemoryPackable]
-public readonly partial record struct CombatStateSnapshot(
+public readonly partial record struct AttackData(
     int AttackerNetworkId,
     AttackStyle Style,
     float AttackDuration,
     float CooldownRemaining);
 
-/// <summary>
-/// Server -> Client: estado de combate do atacante (para iniciar animação).
-/// </summary>
 [MemoryPackable]
-public readonly partial record struct CombatStatePacket(CombatStateSnapshot[] CombatStates);
+public readonly partial record struct AttackPacket(AttackData[] Attacks);

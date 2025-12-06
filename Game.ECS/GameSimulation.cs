@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Game.ECS.Entities;
+using Game.ECS.Events;
 using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
@@ -61,6 +62,8 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     // Index para busca rápida de entidades por NetworkId
     protected readonly EntityIndex<int> PlayerIndex = new();
     protected readonly EntityIndex<int> NPCIndex = new();
+    
+    protected readonly GameEventBus EventBus = new();
     
     /// Fixed timestep para updates da simulação.
     private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);

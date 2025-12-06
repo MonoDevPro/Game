@@ -91,22 +91,17 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
-        bool isAttacking = false;
-
-        if (World.Has<AttackCommand>(e))
-            if (combatState.CastTimer > 0f)
-            {
-                isAttacking = true;
-                combatState.CastTimer -= deltaTime;
-                if (combatState.CastTimer < 0f)
-                    combatState.CastTimer = 0f;
-            }
-
+        bool isAttacking = World.Has<AttackCommand>(e);
         var isDead = World.Has<Dead>(e);
         var isMoving = speed.Value > 0f;
         visual.UpdateAnimationState(direction, isMoving, isAttacking, isDead);
+
+        if (!World.Has<AttackCommand>(e))
+            return;
         
-        if (isAttacking)
+        ref var attackCommand = ref World.Get<AttackCommand>(e);
+        attackCommand.ConjureDuration -= deltaTime;
+        if (attackCommand.ConjureDuration <= 0f)
             World.Remove<AttackCommand>(e);
     }
     

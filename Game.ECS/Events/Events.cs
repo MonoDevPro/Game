@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Schema;
+namespace Game.ECS.Events;
 
 /// <summary>
 /// Event fired when an entity takes damage.

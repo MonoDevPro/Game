@@ -96,7 +96,7 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<LeftPacket>();
             _network.UnregisterPacketHandler<StatePacket>();
             _network.UnregisterPacketHandler<VitalsPacket>();
-            _network.UnregisterPacketHandler<CombatStatePacket>();
+            _network.UnregisterPacketHandler<AttackPacket>();
             _network.UnregisterPacketHandler<NpcSpawnPacket>();
             _network.UnregisterPacketHandler<ChatMessagePacket>();
         }
@@ -225,7 +225,7 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<LeftPacket>(HandleDespawn);
         _network.RegisterPacketHandler<StatePacket>(HandleState);
         _network.RegisterPacketHandler<VitalsPacket>(HandleVitals);
-        _network.RegisterPacketHandler<CombatStatePacket>(HandleCombatState);
+        _network.RegisterPacketHandler<AttackPacket>(HandleCombatState);
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawn);
         _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
@@ -330,13 +330,13 @@ public partial class GameClient : Node2D
         }
     }
     
-    private void HandleCombatState(INetPeerAdapter peer, ref CombatStatePacket packet)
+    private void HandleCombatState(INetPeerAdapter peer, ref AttackPacket packet)
     {
-        foreach (var singlePacket in packet.CombatStates)
+        foreach (var singlePacket in packet.Attacks)
             HandleSingleCombatState(singlePacket);
     }
     
-    private void HandleSingleCombatState(in CombatStateSnapshot packet)
+    private void HandleSingleCombatState(in AttackData packet)
     {
         GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerNetworkId}");
         
@@ -352,23 +352,13 @@ public partial class GameClient : Node2D
             GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
             return;
         }
+        
+        ref var command = ref _simulation.World.AddOrGet<AttackCommand>(attackerEntity);
+        command.Style = packet.Style;
+        command.ConjureDuration = packet.AttackDuration;
 
-        // Se quiser armazenar algo temporário no ECS local para animação:
-        var attackCommand = new AttackCommand { Style = packet.Style };
-        
-        _simulation.World.Add(attackerEntity, attackCommand);
-        
-        if (_simulation.World.TryGet<CombatState>(attackerEntity, out var combatState))
-        {
-            combatState.CastTimer = packet.AttackDuration;
-            combatState.AttackCooldownTimer = packet.CooldownRemaining;
-            _simulation.World.Set(attackerEntity, combatState);
-        }
-        else
-        {
-            GD.PushWarning($"[GameClient] HandleCombatState: Attacker entity {packet.AttackerNetworkId} has no CombatState component");
-        }
-        
+        ref var state = ref _simulation.World.AddOrGet<CombatState>(attackerEntity);
+        state.AttackCooldownTimer = packet.CooldownRemaining;
 
         GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }

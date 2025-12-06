@@ -39,7 +39,7 @@ public static class FactoryHelper
                 AttackRange = 1.5f,
                 AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
             },
-            new CombatState { AttackCooldownTimer = 0f, CastTimer = 0f },
+            new CombatState { AttackCooldownTimer = 0f },
             
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
@@ -98,7 +98,7 @@ public static class FactoryHelper
                 AttackRange = behaviour.AttackRange,
                 AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
             },
-            new CombatState { AttackCooldownTimer = 0f, CastTimer = 0f },
+            new CombatState { AttackCooldownTimer = 0f },
 
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },

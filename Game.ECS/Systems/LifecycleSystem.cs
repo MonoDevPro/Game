@@ -2,6 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.ECS.Events;
 using Game.ECS.Schema;
 using Game.ECS.Schema.Components;
 using Microsoft.Extensions.Logging;
