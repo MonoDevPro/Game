@@ -3,7 +3,6 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Events;
-using Game.ECS.Schema;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 
@@ -72,16 +71,21 @@ public sealed partial class MovementSystem(World world, IMapIndex mapIndex) : Ga
     [All<MovementIntent, MovementApproved, Position>]
     private void ApplyApprovedMovement(
         in Entity entity,
+        in MapId mapId,
+        ref Floor floor,
         in MovementIntent intent,
         ref Position pos)
     {
         var moveEvent = new MovementEvent(entity, pos, intent.TargetPosition);
         EventBus.Send(ref moveEvent);
+
+        mapIndex.GetMapSpatial(mapId.Value)
+                .Update(pos,floor.Value,intent.TargetPosition,intent.TargetFloor,entity);
         
         // Aplica a nova posição
         pos.X = intent.TargetPosition.X;
         pos.Y = intent.TargetPosition.Y;
-        
+        floor.Value = intent.TargetFloor;
         // Limpa os componentes temporários
         World.Remove<MovementIntent, MovementApproved>(entity);
     }

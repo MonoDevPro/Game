@@ -60,16 +60,16 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new InputSystem(world));
         
         // 2. NPC AI processa comportamento de NPCs
-        systems.Add(new NpcAISystem(world, mapService!, loggerFactory?.CreateLogger<NpcAISystem>()));
+        systems.Add(new NpcAISystem(world, mapService, loggerFactory?.CreateLogger<NpcAISystem>()));
         
         // 3. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, mapService!));
+        systems.Add(new MovementSystem(world, mapService));
         
         // 4. Combat processa comandos de ataque
-        systems.Add(new CombatSystem(world, mapService!, loggerFactory?.CreateLogger<CombatSystem>()));
+        systems.Add(new CombatSystem(world, mapService, loggerFactory?.CreateLogger<CombatSystem>()));
         
         // 5. Projectile move projéteis e aplica dano
-        systems.Add(new ProjectileSystem(world, mapService!, loggerFactory?.CreateLogger<ProjectileSystem>()));
+        systems.Add(new ProjectileSystem(world, mapService, loggerFactory?.CreateLogger<ProjectileSystem>()));
         
         // 6. Damage processa dano periódico (DoT) e dano adiado
         systems.Add(new DamageSystem(world, loggerFactory?.CreateLogger<DamageSystem>()));
