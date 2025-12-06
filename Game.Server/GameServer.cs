@@ -749,6 +749,8 @@ public sealed class GameServer : IDisposable
                 LocalPlayer = localSnapshot.PlayerData[0],
             };
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _networkManager.SendToPeer(peer, othersSnapshots, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            
 
             var npcSnapshotArray = _npcSpawnService
                 .BuildSnapshots()

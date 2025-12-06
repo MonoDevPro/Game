@@ -185,6 +185,18 @@ public partial class GameClient : Node2D
         _simulation?.CreateLocalPlayer(
             ref localPlayerSnapshot,
             SpawnPlayerVisual(localPlayer.ToPlayerSnapshot()));
+
+        var bufferedPlayers = gameState.ConsumePlayerSnapshots();
+
+        GD.Print($"[GameClient] Spawning {bufferedPlayers.Length} buffered players");
+
+        foreach (var snapshot in bufferedPlayers)
+        {
+            var playerData = snapshot.ToPlayerSnapshot();
+            _simulation?.CreateRemotePlayer(
+                ref playerData,
+                SpawnPlayerVisual(playerData));
+        }
     }
 
     private void LoadNpcVisuals()

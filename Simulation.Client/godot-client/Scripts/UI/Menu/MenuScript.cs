@@ -641,6 +641,7 @@ public partial class MenuScript : Control
     private void RegisterConnectedHandlers()
     {
         _network!.RegisterPacketHandler<PlayerJoinPacket>(HandleGameData);
+        _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawnWhileConnecting);
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawnWhileConnecting);
     }
     
@@ -678,8 +679,9 @@ public partial class MenuScript : Control
         
         // Unregister CONNECTED handlers
         _network.UnregisterPacketHandler<PlayerJoinPacket>();
+        _network.UnregisterPacketHandler<PlayerSpawnPacket>();
         _network.UnregisterPacketHandler<NpcSpawnPacket>();
-    }
+    }   
     
     // ========== UI EVENTS ==========
     
@@ -1093,6 +1095,15 @@ public partial class MenuScript : Control
         gameState.CurrentGameData = packet;
         
         TransitionToState(MenuState.TransitioningToGame);
+    }
+
+    private void HandlePlayerSpawnWhileConnecting(INetPeerAdapter peer, ref PlayerSpawnPacket packet)
+    {
+        if (packet.PlayerData.Length == 0)
+            return;
+
+        GameStateManager.Instance.StorePlayerSnapshots(packet.PlayerData);
+        GD.Print($"[Menu] Buffered {packet.PlayerData.Length} player snapshots while connecting");
     }
 
     private void HandleNpcSpawnWhileConnecting(INetPeerAdapter peer, ref NpcSpawnPacket packet)

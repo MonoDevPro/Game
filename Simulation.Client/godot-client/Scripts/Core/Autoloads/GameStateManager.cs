@@ -19,6 +19,7 @@ public partial class GameStateManager : Node
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
     public PlayerJoinPacket? CurrentGameData { get; set; }
+    private readonly Dictionary<int, PlayerData> _pendingPlayerSpawns = new();
     private readonly Dictionary<int, NpcData> _pendingNpcSpawns = new();
     
     public override void _Ready()
@@ -37,6 +38,7 @@ public partial class GameStateManager : Node
         GD.Print("[GameStateManager] State reset");
         CurrentGameData = null;
         LocalNetworkId = -1;
+        _pendingPlayerSpawns.Clear();
         _pendingNpcSpawns.Clear();
     }
 
@@ -44,6 +46,17 @@ public partial class GameStateManager : Node
     {
         base._ExitTree();
         _instance = null;
+    }
+
+    /// <summary>
+    /// Stores player spawn snapshots received before the gameplay scene is ready.
+    /// When a player snapshot with the same NetworkId already exists, it's replaced.
+    /// </summary>
+    /// <param name="snapshots">Snapshots to buffer until consumption.</param>
+    public void StorePlayerSnapshots(IEnumerable<PlayerData> snapshots)
+    {
+        foreach (var snapshot in snapshots)
+            _pendingPlayerSpawns[snapshot.NetworkId] = snapshot;
     }
 
     /// <summary>
@@ -55,6 +68,19 @@ public partial class GameStateManager : Node
     {
         foreach (var snapshot in snapshots)
             _pendingNpcSpawns[snapshot.NetworkId] = snapshot;
+    }
+
+    /// <summary>
+    /// Returns all buffered player snapshots and clears the buffer.
+    /// </summary>
+    public PlayerData[] ConsumePlayerSnapshots()
+    {
+        if (_pendingPlayerSpawns.Count == 0)
+            return [];
+
+        var result = _pendingPlayerSpawns.Values.ToArray();
+        _pendingPlayerSpawns.Clear();
+        return result;
     }
 
     /// <summary>
