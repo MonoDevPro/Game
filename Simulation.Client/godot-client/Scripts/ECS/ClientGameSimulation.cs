@@ -2,7 +2,6 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS;
 using Game.ECS.Entities;
-using Game.ECS.Schema.Components;
 using Game.ECS.Schema.Snapshots;
 using Game.Network.Abstractions;
 using Godot;

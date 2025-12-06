@@ -128,7 +128,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
                 FacingY = DefaultFacingY
             };
 
-            character.Stats = CreateInitialStats(character, characterInfo.Vocation);
+            character.Stats = CreateInitialStats(character, 1, characterInfo.Vocation);
             character.Inventory = CreateInitialInventory(character);
 
             // ✅ Adicionar via repositório
@@ -239,7 +239,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         return (true, null);
     }
     
-    private static Stats CreateInitialStats(Character character, VocationType vocation)
+    private static Stats CreateInitialStats(Character character, int level, VocationType vocation)
     {
         // Stats base variam por vocação
         var (strength, dexterity, intelligence, constitution, spirit) = vocation switch
@@ -250,14 +250,14 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
             _ => (10, 10, 10, 10, 10)
         };
         
-        var maxHp = CalculateMaxHp(constitution, character.Stats.Level);
+        var maxHp = CalculateMaxHp(constitution, level);
         var maxMp = CalculateMaxMp(spirit, intelligence, 1);
         
         return new Stats
         {
             CharacterId = character.Id,
             Character = character,
-            Level = 1,
+            Level = level,
             Experience = 0,
             BaseStrength = strength,
             BaseDexterity = dexterity,

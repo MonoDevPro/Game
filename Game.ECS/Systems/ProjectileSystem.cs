@@ -13,20 +13,12 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por mover projéteis e aplicar dano quando atingem alvos.
 /// Projéteis se movem em direção ao alvo e são destruídos após colisão ou timeout.
 /// </summary>
-public sealed partial class ProjectileSystem : GameSystem
+public sealed partial class ProjectileSystem(World world, 
+    IMapIndex mapIndex, ILogger<ProjectileSystem>? logger = null)
+    : GameSystem(world, logger)
 {
-    private readonly IMapIndex _mapIndex;
-    private readonly ILogger<ProjectileSystem>? _logger;
-    
     // Entities to destroy after query iteration
     private readonly List<Entity> _projectilesToDestroy = new(16);
-
-    public ProjectileSystem(World world, IMapIndex mapIndex, ILogger<ProjectileSystem>? logger = null) 
-        : base(world, logger)
-    {
-        _mapIndex = mapIndex;
-        _logger = logger;
-    }
 
     public override void Update(in float deltaTime)
     {
@@ -123,11 +115,11 @@ public sealed partial class ProjectileSystem : GameSystem
     /// </summary>
     private bool CheckCollision(ref Projectile projectile, Position position, sbyte floor, int mapId)
     {
-        if (!_mapIndex.HasMap(mapId))
+        if (!mapIndex.HasMap(mapId))
             return true; // Destroy if no map
         
-        var grid = _mapIndex.GetMapGrid(mapId);
-        var spatial = _mapIndex.GetMapSpatial(mapId);
+        var grid = mapIndex.GetMapGrid(mapId);
+        var spatial = mapIndex.GetMapSpatial(mapId);
         
         // Check map collision
         if (grid.IsBlocked(position, floor))
@@ -155,10 +147,10 @@ public sealed partial class ProjectileSystem : GameSystem
     /// </summary>
     private void TryHitTargetAtPosition(Entity projectileEntity, ref Projectile projectile, Position targetPos, sbyte floor, int mapId)
     {
-        if (!_mapIndex.HasMap(mapId))
+        if (!mapIndex.HasMap(mapId))
             return;
         
-        var spatial = _mapIndex.GetMapSpatial(mapId);
+        var spatial = mapIndex.GetMapSpatial(mapId);
         
         if (spatial.TryGetFirstAt(targetPos, floor, out var hitEntity))
         {
@@ -193,7 +185,7 @@ public sealed partial class ProjectileSystem : GameSystem
         
         projectile.HasHit = true;
         
-        _logger?.LogDebug("[Projectile] Hit {Target} for {Damage} damage (magical: {IsMagical})", 
+        logger?.LogDebug("[Projectile] Hit {Target} for {Damage} damage (magical: {IsMagical})", 
             target, damage, projectile.IsMagical);
     }
 }

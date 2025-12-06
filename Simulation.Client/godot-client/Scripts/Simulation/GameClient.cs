@@ -92,7 +92,7 @@ public partial class GameClient : Node2D
         {
             _network.OnPeerDisconnected -= OnPeerDisconnected;
             
-            _network.UnregisterPacketHandler<Game.Network.Packets.Game.PlayerData>();
+            _network.UnregisterPacketHandler<PlayerSpawnPacket>();
             _network.UnregisterPacketHandler<LeftPacket>();
             _network.UnregisterPacketHandler<StatePacket>();
             _network.UnregisterPacketHandler<VitalsPacket>();
