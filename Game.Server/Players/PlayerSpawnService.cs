@@ -1,7 +1,7 @@
 using Arch.Core;
+using Game.DTOs.Game.Player;
 using Game.ECS.Entities;
-using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
+using Game.ECS.Entities.Components;
 using Game.Server.ECS;
 using Game.Server.Sessions;
 
@@ -19,15 +19,15 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var playerSnapshot = new PlayerSnapshot(
+        var playerSnapshot = new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: 0,
             Name: character.Name,
-            GenderId: (byte)character.Gender,
-            VocationId: (byte)character.Vocation,
-            PosX: character.PositionX,
-            PosY: character.PositionY,
+            Gender: (byte)character.Gender,
+            Vocation: (byte)character.Vocation,
+            X: character.PositionX,
+            Y: character.PositionY,
             Floor: character.Floor,
             DirX: character.FacingX,
             DirY: character.FacingY,
@@ -68,7 +68,7 @@ public sealed class PlayerSpawnService(
         session.Entity = Entity.Null;
     }
 
-    public PlayerSnapshot BuildSnapshot(PlayerSession session)
+    public PlayerData BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
@@ -83,15 +83,15 @@ public sealed class PlayerSpawnService(
                     character.Name);
         }
         
-        return new PlayerSnapshot(
+        return new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: 0,
             Name: character.Name,
-            GenderId: (byte)character.Gender,
-            VocationId: (byte)character.Vocation,
-            PosX: character.PositionX,
-            PosY: character.PositionY,
+            Gender: (byte)character.Gender,
+            Vocation: (byte)character.Vocation,
+            X: character.PositionX,
+            Y: character.PositionY,
             Floor: character.Floor,
             DirX: character.FacingX,
             DirY: character.FacingY,

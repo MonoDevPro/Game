@@ -1,7 +1,5 @@
 
-using Arch.LowLevel;
-
-namespace Game.ECS.Schema.Components;
+namespace Game.ECS.Entities.Components;
 
 // ============================================
 // Tags - Marcadores

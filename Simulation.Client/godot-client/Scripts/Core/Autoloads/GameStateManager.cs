@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Network.Packets.Game;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
+using Game.DTOs.Network;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;

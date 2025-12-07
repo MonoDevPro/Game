@@ -1,5 +1,5 @@
+using Game.DTOs.Game.Npc;
 using Game.ECS.Entities;
-using Game.ECS.Schema.Snapshots;
 using Game.Server.ECS;
 
 namespace Game.Server.Npc;
@@ -38,19 +38,19 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         var networkId = GenerateNetworkId();
 
         // Cria um template atualizado com a localização de spawn e networkId
-        var npcSnapshot = new NpcSnapshot
+        var npcSnapshot = new NpcData
         {
             NpcId = template.Id,
             NetworkId = networkId,
             Name = template.Name,
-            GenderId = (byte)template.Gender,
-            VocationId = (byte)template.Vocation,
+            Gender = (byte)template.Gender,
+            Vocation = (byte)template.Vocation,
             DirX = (sbyte)template.DirX,
             DirY = (sbyte)template.DirY,
             MapId = mapId,
             Floor = floor,
-            PosX = x,
-            PosY = y,
+            X = x,
+            Y = y,
             MovementSpeed = template.MovementSpeed,
             AttackSpeed = template.AttackSpeed,
             PhysicalAttack = template.PhysicalAttack,
@@ -92,7 +92,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         }
     }
 
-    public IEnumerable<NpcSnapshot> BuildSnapshots()
+    public IEnumerable<NpcData> BuildSnapshots()
     {
         foreach (var networkId in _activeNetworkIds)
             if (simulation.TryGetNpcEntity(networkId.Key, out var entity))

@@ -1,10 +1,9 @@
-using System;
 using MemoryPack;
 
-namespace Game.Network.Packets.Game;
+namespace Game.DTOs.Game.Map;
 
 [MemoryPackable]
-public readonly partial record struct MapDataPacket(
+public readonly partial record struct MapData(
     int MapId,
     string Name,
     ushort Width,
@@ -19,7 +18,6 @@ public readonly partial record struct MapDataPacket(
     byte[]? Metadata)
 {
     public const byte CurrentVersion = 1;
-
     public int TotalTiles => Width * Height * Layers;
     public DateTime CreatedAt => new(CreatedAtTicks, DateTimeKind.Utc);
 
@@ -44,7 +42,7 @@ public readonly partial record struct MapDataPacket(
     /// <summary>
     /// Snapshot vazio (útil para testes).
     /// </summary>
-    public static MapDataPacket Empty => new(
+    public static MapData Empty => new(
         MapId: 0,
         Name: string.Empty,
         Width: 0,

@@ -1,4 +1,5 @@
 using Arch.Core;
+using Game.DTOs.Game.Player;
 
 namespace Game.ECS.Schema.Components;
 
@@ -50,12 +51,3 @@ public struct Projectile
     public bool HasHit;
 }
 
-/// <summary>
-/// Define o estilo de ataque baseado na vocação.
-/// </summary>
-public enum AttackStyle : byte
-{
-    Melee = 0,   // Ataque corpo a corpo (Warriors)
-    Ranged = 1,  // Ataque à distância com projétil físico (Archers)
-    Magic = 2    // Ataque à distância com projétil mágico (Mages)
-}

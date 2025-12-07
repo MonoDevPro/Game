@@ -1,13 +1,15 @@
 using Arch.Core;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Archetypes;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
 
 namespace Game.ECS.Entities;
 
 public static class FactoryHelper
 {
-    public static Entity CreatePlayer(this World world, ref PlayerSnapshot template)
+    public static Entity CreatePlayer(this World world, ref PlayerData template)
     {
         var entity = world.Create(PlayerArchetypes.PlayerArchetype);
         
@@ -16,7 +18,7 @@ public static class FactoryHelper
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
             new Floor { Value = (sbyte)template.Floor },
-            new Position { X = template.PosX, Y = template.PosY },
+            new Position { X = template.X, Y = template.Y },
             
             new PlayerControlled { },
             new UniqueID { Value = template.PlayerId },
@@ -32,7 +34,7 @@ public static class FactoryHelper
             new SpatialAnchor
             {
                 MapId = template.MapId,
-                Position = new Position { X = template.PosX, Y = template.PosY },
+                Position = new Position { X = template.X, Y = template.Y },
                 Floor = template.Floor,
                 IsTracked = false
             },
@@ -51,13 +53,13 @@ public static class FactoryHelper
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
             
-            new SpawnPoint(template.MapId, template.PosX, template.PosY, template.Floor),
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Floor),
         };
         world.SetRange(entity, components);
         return entity;
     }
     
-    public static Entity CreateNpc(this World world, ref NpcSnapshot template, ref Behaviour behaviour)
+    public static Entity CreateNpc(this World world, ref NpcData template, ref Behaviour behaviour)
     {
         // Create the entity with all necessary components
         var entity = world.Create(NpcArchetypes.NPC);
@@ -69,7 +71,7 @@ public static class FactoryHelper
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
             new Floor { Value = template.Floor },
-            new Position { X = template.PosX, Y = template.PosY },
+            new Position { X = template.X, Y = template.Y },
 
             // Identity
             new AIControlled { },
@@ -98,7 +100,7 @@ public static class FactoryHelper
             new SpatialAnchor
             {
                 MapId = template.MapId,
-                Position = new Position { X = template.PosX, Y = template.PosY },
+                Position = new Position { X = template.X, Y = template.Y },
                 Floor = template.Floor,
                 IsTracked = false
             },
@@ -117,7 +119,7 @@ public static class FactoryHelper
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
             
-            new SpawnPoint(template.MapId, template.PosX, template.PosY, template.Floor),
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Floor),
         };
         
         world.SetRange(entity, components);

@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
 using Game.ECS.Entities;
 using Game.ECS.Events;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
@@ -113,7 +114,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         base.Dispose();
     }
     
-    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
+    public Entity CreatePlayer(ref PlayerData playerSnapshot)
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
         RegisterSpatialAnchor(entity);
@@ -121,7 +122,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         return entity;
     }
     
-    public Entity CreateNpc(ref NpcSnapshot snapshot, ref Behaviour behaviour)
+    public Entity CreateNpc(ref NpcData snapshot, ref Behaviour behaviour)
     {
         // Atualiza o template com a localização de spawn e networkId
         var entity = World.CreateNpc(ref snapshot, ref behaviour);
@@ -170,7 +171,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         return true;
     }
 
-    public virtual bool ApplyPlayerState(ref StateSnapshot snapshot)
+    public virtual bool ApplyPlayerState(ref StateData snapshot)
     {
         if (!TryGetPlayerEntity(snapshot.NetworkId, out var entity))
             return false;

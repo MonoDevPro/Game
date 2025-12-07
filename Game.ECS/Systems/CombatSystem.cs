@@ -2,6 +2,8 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.DTOs.Game.Player;
+using Game.ECS.Entities.Components;
 using Game.ECS.Events;
 using Game.ECS.Schema.Archetypes;
 using Game.ECS.Schema.Components;

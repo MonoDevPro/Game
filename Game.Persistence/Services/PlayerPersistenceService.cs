@@ -1,5 +1,5 @@
 using Game.Domain.Entities;
-using Game.Persistence.DTOs;
+using Game.DTOs.Persistence;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
@@ -91,39 +91,17 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
             character =>
             {
-                if (character.Stats is null)
-                {
-                    logger.LogWarning(
-                        "Cannot persist disconnect data for character {CharacterId}: stats not found",
-                        dto.CharacterId);
-                    return false;
-                }
-
-                ApplyPosition(character, dto.ToPositionState(), updateTimestamp: true);
+                ApplyPosition(character, 
+                    new PositionState(
+                        dto.PositionX,
+                        dto.PositionY, dto.Floor,
+                        dto.FacingX,
+                        dto.FacingY), updateTimestamp: true);
                 character.Stats.CurrentHp = dto.CurrentHp;
                 character.Stats.CurrentMp = dto.CurrentMp;
                 return true;
             },
             context: "disconnect data",
-            cancellationToken);
-    }
-
-    /// <summary>
-    /// Persiste apenas a posição e direção do personagem (operação rápida).
-    /// </summary>
-    public async Task PersistPositionAsync(
-        PositionPersistenceDto dto,
-        CancellationToken cancellationToken = default)
-    {
-        await PersistAsync(
-            dto.CharacterId,
-            (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
-            character =>
-            {
-                ApplyPosition(character, dto.ToPositionState(), updateTimestamp: false);
-                return true;
-            },
-            context: "position",
             cancellationToken);
     }
 
@@ -139,14 +117,6 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
             character =>
             {
-                if (character.Stats is null)
-                {
-                    logger.LogWarning(
-                        "Cannot persist vitals for character {CharacterId}: stats not found",
-                        dto.CharacterId);
-                    return false;
-                }
-
                 character.Stats.CurrentHp = dto.CurrentHp;
                 character.Stats.CurrentMp = dto.CurrentMp;
                 return true;
@@ -167,14 +137,6 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
             character =>
             {
-                if (character.Stats is null)
-                {
-                    logger.LogWarning(
-                        "Cannot persist stats for character {CharacterId}: stats not found",
-                        dto.CharacterId);
-                    return false;
-                }
-
                 character.Stats.Level = dto.Level;
                 character.Stats.Experience = dto.Experience;
                 character.Stats.BaseStrength = dto.BaseStrength;

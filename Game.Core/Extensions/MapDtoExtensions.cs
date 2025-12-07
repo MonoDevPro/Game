@@ -2,7 +2,7 @@ using System.IO.Compression;
 using Game.Domain;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.Network.Packets.Game;
+using Game.DTOs.Game.Map;
 
 namespace Game.Core.Extensions;
 
@@ -17,10 +17,10 @@ public static class MapDtoExtensions
 {
     #region Factories (Map -> MapDto)
 
-    public static MapDataPacket ToMapDto(
+    public static MapData ToMapDto(
         this Map map,
         int mapId,
-        MapDataPacket.CompressionMode compression = MapDataPacket.CompressionMode.MortonRLE,
+        MapData.CompressionMode compression = MapData.CompressionMode.MortonRLE,
         byte[]? metadata = null)
     {
         if (map == null) throw new ArgumentNullException(nameof(map));
@@ -29,7 +29,7 @@ public static class MapDtoExtensions
         var compressed = Compress(tiles, map.Width, map.Height, compression);
         var checksum = ComputeChecksum(compressed);
 
-        return new MapDataPacket(
+        return new MapData(
             MapId: mapId,
             Name: map.Name,
             Width: (ushort)map.Width,
@@ -40,16 +40,16 @@ public static class MapDtoExtensions
             CompressionType: (byte)compression,
             DataChecksum: checksum,
             CreatedAtTicks: DateTime.UtcNow.Ticks,
-            Version: MapDataPacket.CurrentVersion,
+            Version: MapData.CurrentVersion,
             Metadata: metadata
         );
     }
 
-    public static MapDataPacket ToLayerMapDto(
+    public static MapData ToLayerMapDto(
         this Map map,
         int layer,
         int mapId,
-        MapDataPacket.CompressionMode compression = MapDataPacket.CompressionMode.MortonRLE)
+        MapData.CompressionMode compression = MapData.CompressionMode.MortonRLE)
     {
         if (map == null) throw new ArgumentNullException(nameof(map));
         if (layer < 0 || layer >= map.Layers) throw new ArgumentOutOfRangeException(nameof(layer));
@@ -58,7 +58,7 @@ public static class MapDtoExtensions
         var compressed = Compress(tiles, map.Width, map.Height, compression);
         var checksum = ComputeChecksum(compressed);
 
-        return new MapDataPacket(
+        return new MapData(
             MapId: mapId,
             Name: $"{map.Name}_L{layer}",
             Width: (ushort)map.Width,
@@ -69,7 +69,7 @@ public static class MapDtoExtensions
             CompressionType: (byte)compression,
             DataChecksum: checksum,
             CreatedAtTicks: DateTime.UtcNow.Ticks,
-            Version: MapDataPacket.CurrentVersion,
+            Version: MapData.CurrentVersion,
             Metadata: null
         );
     }
@@ -78,17 +78,17 @@ public static class MapDtoExtensions
 
     #region Validation / Helpers for MapDto
 
-    public static bool IsValid(this MapDataPacket dataPacket)
+    public static bool IsValid(this MapData dataPacket)
     {
         if (dataPacket.Width == 0 || dataPacket.Height == 0 || dataPacket.Layers == 0) return false;
         if (dataPacket.CompressedTileData.Length == 0) return false;
-        if (dataPacket.CompressionType > (byte)MapDataPacket.CompressionMode.MortonRLE) return false;
+        if (dataPacket.CompressionType > (byte)MapData.CompressionMode.MortonRLE) return false;
 
         var computed = ComputeChecksum(dataPacket.CompressedTileData);
         return computed == dataPacket.DataChecksum;
     }
 
-    public static Map LoadMap(this MapDataPacket dataPacket)
+    public static Map LoadMap(this MapData dataPacket)
     {
         if (!dataPacket.IsValid())
             throw new InvalidDataException("Invalid snapshot data");
@@ -100,14 +100,14 @@ public static class MapDtoExtensions
             dataPacket.Width,
             dataPacket.Height,
             dataPacket.Layers,
-            (MapDataPacket.CompressionMode)dataPacket.CompressionType
+            (MapData.CompressionMode)dataPacket.CompressionType
         );
 
         PopulateMap(map, decompressed);
         return map;
     }
 
-    public static byte[] LoadCollisionLayer(this MapDataPacket dataPacket, int layer = 0)
+    public static byte[] LoadCollisionLayer(this MapData dataPacket, int layer = 0)
     {
         if (!dataPacket.IsValid())
             throw new InvalidDataException("Invalid snapshot data");
@@ -118,7 +118,7 @@ public static class MapDtoExtensions
             dataPacket.Width,
             dataPacket.Height,
             dataPacket.Layers,
-            (MapDataPacket.CompressionMode)dataPacket.CompressionType
+            (MapData.CompressionMode)dataPacket.CompressionType
         );
 
         return ExtractCollisionLayer(decompressed, dataPacket.Width, dataPacket.Height, layer);
@@ -172,14 +172,14 @@ public static class MapDtoExtensions
 
     #region Compression / Decompression
 
-    private static byte[] Compress(byte[] data, int width, int height, MapDataPacket.CompressionMode mode)
+    private static byte[] Compress(byte[] data, int width, int height, MapData.CompressionMode mode)
     {
         return mode switch
         {
-            MapDataPacket.CompressionMode.None => data,
-            MapDataPacket.CompressionMode.RLE => CompressRLE(data),
-            MapDataPacket.CompressionMode.Deflate => CompressDeflate(data),
-            MapDataPacket.CompressionMode.MortonRLE => CompressMortonRLE(data, width, height),
+            MapData.CompressionMode.None => data,
+            MapData.CompressionMode.RLE => CompressRLE(data),
+            MapData.CompressionMode.Deflate => CompressDeflate(data),
+            MapData.CompressionMode.MortonRLE => CompressMortonRLE(data, width, height),
             _ => data
         };
     }
@@ -250,14 +250,14 @@ public static class MapDtoExtensions
         int width,
         int height,
         int layers,
-        MapDataPacket.CompressionMode mode)
+        MapData.CompressionMode mode)
     {
         return mode switch
         {
-            MapDataPacket.CompressionMode.None => compressed,
-            MapDataPacket.CompressionMode.RLE => DecompressRLE(compressed, width * height * layers * 2),
-            MapDataPacket.CompressionMode.Deflate => DecompressDeflate(compressed),
-            MapDataPacket.CompressionMode.MortonRLE => DecompressMortonRLE(compressed, width, height, layers),
+            MapData.CompressionMode.None => compressed,
+            MapData.CompressionMode.RLE => DecompressRLE(compressed, width * height * layers * 2),
+            MapData.CompressionMode.Deflate => DecompressDeflate(compressed),
+            MapData.CompressionMode.MortonRLE => DecompressMortonRLE(compressed, width, height, layers),
             _ => throw new NotSupportedException($"Compression mode {mode} not supported")
         };
     }
@@ -401,8 +401,8 @@ public static class MapDtoExtensions
     public static CompressionStats CompareCompressionModes(this Map map)
     {
         var rawData = ExtractTileData(map);
-        var modes = Enum.GetValues<MapDataPacket.CompressionMode>();
-        var results = new Dictionary<MapDataPacket.CompressionMode, (int size, TimeSpan time)>();
+        var modes = Enum.GetValues<MapData.CompressionMode>();
+        var results = new Dictionary<MapData.CompressionMode, (int size, TimeSpan time)>();
 
         foreach (var mode in modes)
         {
@@ -417,7 +417,7 @@ public static class MapDtoExtensions
 
     public record CompressionStats(
         int OriginalSize,
-        Dictionary<MapDataPacket.CompressionMode, (int size, TimeSpan time)> Results)
+        Dictionary<MapData.CompressionMode, (int size, TimeSpan time)> Results)
     {
         public override string ToString()
         {

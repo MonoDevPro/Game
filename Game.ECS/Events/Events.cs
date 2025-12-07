@@ -1,4 +1,6 @@
 using Arch.Core;
+using Game.DTOs.Game.Player;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Events;

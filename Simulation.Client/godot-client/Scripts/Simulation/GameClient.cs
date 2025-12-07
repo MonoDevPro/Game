@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
 using Game.Core.Extensions;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
+using Game.DTOs.Network;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services.Map;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -135,7 +138,7 @@ public partial class GameClient : Node2D
         }
 
         // Mapa (predição clientside e navegação opcional)
-        var mapSnap = gameState.CurrentGameData?.MapDataPacket;
+        var mapSnap = gameState.CurrentGameData?.MapData;
         if (mapSnap is null)
         {
             GD.PushError("[GameClient] Map data is null! Returning to menu...");
@@ -180,11 +183,11 @@ public partial class GameClient : Node2D
         
         var localPlayer = gameState.CurrentGameData.Value.LocalPlayer;
 
-        var localPlayerSnapshot = localPlayer.ToPlayerSnapshot();
+        var localPlayerSnapshot = localPlayer;
 
         _simulation?.CreateLocalPlayer(
             ref localPlayerSnapshot,
-            SpawnPlayerVisual(localPlayer.ToPlayerSnapshot()));
+            SpawnPlayerVisual(localPlayer));
 
         var bufferedPlayers = gameState.ConsumePlayerSnapshots();
 
@@ -192,7 +195,7 @@ public partial class GameClient : Node2D
 
         foreach (var snapshot in bufferedPlayers)
         {
-            var playerData = snapshot.ToPlayerSnapshot();
+            var playerData = snapshot;
             _simulation?.CreateRemotePlayer(
                 ref playerData,
                 SpawnPlayerVisual(playerData));
@@ -207,12 +210,12 @@ public partial class GameClient : Node2D
         
         foreach (var snapshot in bufferedNpcs)
         {
-            var npcData = snapshot.ToNpcSnapshot();
+            var npcData = snapshot;
             _simulation?.CreateNpc(ref npcData, SpawnNpcVisual(npcData));
         }
     }
     
-    private PlayerVisual SpawnPlayerVisual(in PlayerSnapshot snapshot)
+    private PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
     {
         var playerVisual = PlayerVisual.Create();
         
@@ -251,7 +254,7 @@ public partial class GameClient : Node2D
         
         foreach (var singlePacket in packet.States)
         {
-            var stateSnapshot = singlePacket.ToStateSnapshot();
+            var stateSnapshot = singlePacket;
             _simulation?.ApplyState(ref stateSnapshot);
         }
     }
@@ -294,7 +297,7 @@ public partial class GameClient : Node2D
         else if (_simulation.World.Has<Dead>(entity))
             _simulation.World.Remove<Dead>(entity);
         
-        var vitalsSnapshot = packet.ToVitalsSnapshot();
+        var vitalsSnapshot = packet;
         _simulation.ApplyVitals(ref vitalsSnapshot);
         
         visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
@@ -313,7 +316,7 @@ public partial class GameClient : Node2D
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
     {
         var isLocal = dataPacket.NetworkId == _localNetworkId;
-        var playerData = dataPacket.ToPlayerSnapshot();
+        var playerData = dataPacket;
 
         if (isLocal)
             _simulation?.CreateLocalPlayer(ref playerData, SpawnPlayerVisual(playerData));
@@ -384,12 +387,12 @@ public partial class GameClient : Node2D
 
         foreach (var npc in packet.Npcs)
         {
-            var npcData = npc.ToNpcSnapshot();
+            var npcData = npc;
             _simulation.CreateNpc(ref npcData, SpawnNpcVisual(npcData));
         }
     }
 
-    private NpcVisual SpawnNpcVisual(NpcSnapshot npcSnapshot)
+    private NpcVisual SpawnNpcVisual(NpcData npcSnapshot)
     {
         var npcVisual = NpcVisual.Create();
         npcVisual.Name = $"Npc_{npcSnapshot.NetworkId}";

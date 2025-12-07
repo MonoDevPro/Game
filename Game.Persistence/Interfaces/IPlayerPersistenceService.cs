@@ -1,4 +1,4 @@
-using Game.Persistence.DTOs;
+using Game.DTOs.Persistence;
 
 namespace Game.Persistence.Interfaces;
 
@@ -14,13 +14,6 @@ public interface IPlayerPersistenceService
     /// </summary>
     Task PersistDisconnectAsync(
         DisconnectPersistenceDto dto, 
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Persiste apenas a posição e direção do personagem (operação rápida).
-    /// </summary>
-    Task PersistPositionAsync(
-        PositionPersistenceDto dto, 
         CancellationToken cancellationToken = default);
 
     /// <summary>

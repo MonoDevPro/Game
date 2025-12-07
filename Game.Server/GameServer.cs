@@ -1,14 +1,14 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Arch.Core;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
+using Game.DTOs.Network;
+using Game.DTOs.Persistence;
 using Game.ECS.Entities;
-using Game.ECS.Schema.Components;
+using Game.ECS.Entities.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
-using Game.Persistence.DTOs;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
 using Game.Server.Chat;
@@ -271,8 +271,8 @@ public sealed class GameServer : IDisposable
                 
                 characterPersistData = characterPersistData with
                 {
-                    PositionX = snapshot.PosX,
-                    PositionY = snapshot.PosY,
+                    PositionX = snapshot.X,
+                    PositionY = snapshot.Y,
                     Floor = snapshot.Floor,
                     FacingX = snapshot.DirX,
                     FacingY = snapshot.DirY,
@@ -729,11 +729,11 @@ public sealed class GameServer : IDisposable
 
             // ✅ 5. Monta dados do jogo
             PlayerSpawnPacket localSnapshot = new(
-                [_spawnService.BuildSnapshot(session).ToPlayerData()]);
+                [_spawnService.BuildSnapshot(session)]);
             
             PlayerSpawnPacket othersSnapshots = new(_sessionManager
                 .GetSnapshotExcluding(peer.Id)
-                .Select(s => _spawnService.BuildSnapshot(s).ToPlayerData())
+                .Select(s => _spawnService.BuildSnapshot(s))
                 .ToArray());
             
             // ✅ 6. Broadcasta spawn para outros jogadores
@@ -745,7 +745,7 @@ public sealed class GameServer : IDisposable
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
             var gameDataPacket = new PlayerJoinPacket
             {
-                MapDataPacket = currentMap.ToMapDto(currentMap.Id),
+                MapData = currentMap.ToMapDto(currentMap.Id),
                 LocalPlayer = localSnapshot.PlayerData[0],
             };
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
@@ -754,7 +754,7 @@ public sealed class GameServer : IDisposable
 
             var npcSnapshotArray = _npcSpawnService
                 .BuildSnapshots()
-                .Select(snapshot => snapshot.ToNpcData())
+                .Select(snapshot => snapshot)
                 .ToArray();
 
             if (npcSnapshotArray.Length > 0)
@@ -789,7 +789,13 @@ public sealed class GameServer : IDisposable
     /// </summary>
     private void HandlePlayerInput(INetPeerAdapter peer, ref InputPacket input)
     {
-        if (_simulation.ApplyPlayerInput(peer.Id, input.ToPlayerInput()))
+        if (_simulation.ApplyPlayerInput(peer.Id, 
+                new Input
+                {
+                    InputX = input.Input.InputX, 
+                    InputY = input.Input.InputY, 
+                    Flags = input.Input.Flags
+                } ))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",

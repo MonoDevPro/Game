@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using FluentAssertions;
 using Game.Domain.Entities;
+using Game.DTOs.Game.Player;
 using Game.ECS;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
@@ -60,17 +59,17 @@ public sealed class MovementCollisionTests
         simulation.World.Has<MovementIntent>(player1).Should().BeFalse();
     }
 
-    private static PlayerSnapshot CreateSnapshot(int playerId, int networkId, int x, int y)
+    private static PlayerData CreateSnapshot(int playerId, int networkId, int x, int y)
     {
-        return new PlayerSnapshot(
+        return new PlayerData(
             PlayerId: playerId,
             NetworkId: networkId,
             MapId: 1,
             Name: $"Player{playerId}",
-            GenderId: 0,
-            VocationId: 0,
-            PosX: x,
-            PosY: y,
+            Gender: 0,
+            Vocation: 0,
+            X: x,
+            Y: y,
             Floor: 0,
             DirX: 1,
             DirY: 0,

@@ -1,4 +1,5 @@
 using Arch.Core;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Microsoft.Extensions.Logging;

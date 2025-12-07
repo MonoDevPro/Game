@@ -1,6 +1,8 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.DTOs.Game.Player;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using GodotClient.Simulation;

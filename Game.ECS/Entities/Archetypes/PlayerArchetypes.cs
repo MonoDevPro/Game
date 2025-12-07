@@ -1,4 +1,5 @@
 using Arch.Core;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Schema.Archetypes;

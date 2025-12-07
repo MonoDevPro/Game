@@ -1,6 +1,9 @@
 using Arch.Core;
+using Game.DTOs.Game;
+using Game.DTOs.Game.Npc;
+using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Schema.Components;
+namespace Game.ECS.Entities.Components;
 
 /// <summary>
 /// NPC behavior configuration component.
@@ -41,16 +44,4 @@ public enum AIState : byte
     Chase,
     Combat,
     ReturnHome
-}
-
-/// <summary>
-/// Types of NPC behavior patterns.
-/// </summary>
-public enum BehaviorType : byte
-{
-    Passive,      // Won't attack unless attacked
-    Aggressive,   // Attacks on sight
-    Defensive,    // Defends territory
-    Fearful,      // Runs from players
-    Neutral       // Ignores players
 }

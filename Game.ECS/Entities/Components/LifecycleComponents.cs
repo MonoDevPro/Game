@@ -1,4 +1,4 @@
-namespace Game.ECS.Schema.Components;
+namespace Game.ECS.Entities.Components;
 
 /// <summary>
 /// Componentes Tags - Marcadores

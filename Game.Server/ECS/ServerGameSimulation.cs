@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;

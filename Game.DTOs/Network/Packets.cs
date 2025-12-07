@@ -1,7 +1,9 @@
-using Game.ECS.Schema.Components;
+using Game.DTOs.Game.Map;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
 using MemoryPack;
 
-namespace Game.Network.Packets.Game;
+namespace Game.DTOs.Network;
 
 [MemoryPackable]
 public readonly partial record struct InputPacket(InputData Input);
@@ -16,10 +18,13 @@ public readonly partial record struct VitalsPacket(VitalsData[] Vitals);
 public readonly partial record struct LeftPacket(int[] NetworkIds);
 
 [MemoryPackable]
-public readonly partial record struct PlayerJoinPacket(MapDataPacket MapDataPacket, PlayerData LocalPlayer);
+public readonly partial record struct PlayerJoinPacket(MapData MapData, PlayerData LocalPlayer);
 
 [MemoryPackable]
 public readonly partial record struct PlayerSpawnPacket(PlayerData[] PlayerData);
 
 [MemoryPackable]
 public readonly partial record struct NpcSpawnPacket(NpcData[] Npcs);
+
+[MemoryPackable]
+public readonly partial record struct AttackPacket(AttackData[] Attacks);

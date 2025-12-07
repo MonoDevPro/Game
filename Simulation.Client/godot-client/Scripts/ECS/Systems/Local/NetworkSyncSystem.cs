@@ -2,13 +2,16 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Core.Extensions;
+using Game.DTOs.Game.Player;
+using Game.DTOs.Network;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Network.Adapters;
 using Godot;
 using LiteNetLib;
-using Input = Game.ECS.Schema.Components.Input;
+using Input = Game.ECS.Entities.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 
@@ -30,7 +33,14 @@ public sealed partial class NetworkSyncSystem(World world, INetworkManager sende
         // Capture snapshot of dirty flags
         if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out Input input))
         {
-            var inputPacket = input.ToPlayerInputPacket();
+            var inputPacket = new InputPacket{ Input = 
+                new InputData
+                {
+                    InputX = input.InputX, 
+                    InputY = input.InputY, 
+                    Flags = input.Flags
+                } };
+            
             sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             GD.Print($"[ClientSyncSystem] Sent PlayerInputPacket: " +
                      $"InputX={inputPacket.Input.InputX}, " +

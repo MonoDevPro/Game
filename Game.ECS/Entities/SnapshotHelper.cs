@@ -1,12 +1,14 @@
 using Arch.Core;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
+using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
-using Game.ECS.Schema.Snapshots;
 
 namespace Game.ECS.Entities;
 
 public static class SnapshotHelper
 {
-    public static StateSnapshot BuildState(this World world, Entity entity)
+    public static StateData BuildState(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
@@ -14,11 +16,11 @@ public static class SnapshotHelper
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var direction = ref world.Get<Direction>(entity);
 
-        return new StateSnapshot
+        return new StateData
         {
             NetworkId = networkId.Value,
-            PosX = position.X,
-            PosY = position.Y,
+            X = position.X,
+            Y = position.Y,
             Floor = floor.Value,
             Speed = walkable.BaseSpeed * walkable.CurrentModifier,
             DirX = direction.X,
@@ -26,23 +28,23 @@ public static class SnapshotHelper
         };
     }
 
-    public static VitalsSnapshot BuildVitals(this World world, Entity entity)
+    public static VitalsData BuildVitals(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
 
-        return new VitalsSnapshot
+        return new VitalsData
         {
             NetworkId = networkId.Value,
-            Hp = health.Current,
+            CurrentHp = health.Current,
             MaxHp = health.Max,
-            Mp = mana.Current,
+            CurrentMp = mana.Current,
             MaxMp = mana.Max
         };
     }
     
-    public static PlayerSnapshot BuildPlayerSnapshot(this World world, Entity entity, string name)
+    public static PlayerData BuildPlayerSnapshot(this World world, Entity entity, string name)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var playerId = ref world.Get<UniqueID>(entity);
@@ -57,15 +59,15 @@ public static class SnapshotHelper
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var combatStats = ref world.Get<CombatStats>(entity);
 
-        return new PlayerSnapshot(
+        return new PlayerData(
             PlayerId: playerId.Value,
             NetworkId: networkId.Value,
             MapId: mapId.Value,
             Name: name,
-            GenderId: gender.Value,
-            VocationId: vocation.Value,
-            PosX: position.X,
-            PosY: position.Y,
+            Gender: gender.Value,
+            Vocation: vocation.Value,
+            X: position.X,
+            Y: position.Y,
             Floor: floor.Value,
             DirX: facing.X,
             DirY: facing.Y,
@@ -84,7 +86,7 @@ public static class SnapshotHelper
         );
     }
     
-    public static NpcSnapshot BuildNpcSnapshot(this World world, Entity entity, string name)
+    public static NpcData BuildNpcSnapshot(this World world, Entity entity, string name)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var npcId = ref world.Get<UniqueID>(entity);
@@ -99,15 +101,15 @@ public static class SnapshotHelper
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var combatStats = ref world.Get<CombatStats>(entity);
 
-        return new NpcSnapshot(
+        return new NpcData(
             NpcId: npcId.Value,
             NetworkId: networkId.Value,
             MapId: mapId.Value,
             Name: name,
-            GenderId: gender.Value,
-            VocationId: vocation.Value,
-            PosX: position.X,
-            PosY: position.Y,
+            Gender: gender.Value,
+            Vocation: vocation.Value,
+            X: position.X,
+            Y: position.Y,
             Floor: floor.Value,
             DirX: facing.X,
             DirY: facing.Y,

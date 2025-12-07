@@ -1,17 +1,8 @@
-namespace Game.ECS.Schema.Components;
+using Game.DTOs;
+using Game.DTOs.Game;
+using Game.DTOs.Game.Player;
 
-// ============================================
-// Inputs - Entrada do jogador
-// ============================================
-[Flags] 
-public enum InputFlags : ushort 
-{ 
-    None = 0, 
-    ClickLeft = 1 << 0,   // Clique esquerdo
-    ClickRight = 1 << 1,  // Clique direito
-    BasicAttack = 1 << 2, // Atacar (hotkey)
-    Sprint = 1 << 3,      // Correr
-}
+namespace Game.ECS.Entities.Components;
 
 public struct Input
 {

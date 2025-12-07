@@ -1,8 +1,9 @@
 using Arch.Core;
 using Arch.System;
+using Game.DTOs.Game.Npc;
+using Game.DTOs.Game.Player;
 using Game.ECS;
 using Game.ECS.Entities;
-using Game.ECS.Schema.Snapshots;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.ECS.Systems;
@@ -103,7 +104,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return false;
     }
 
-    public Entity CreateLocalPlayer(ref PlayerSnapshot snapshot, PlayerVisual visual)
+    public Entity CreateLocalPlayer(ref PlayerData snapshot, PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
@@ -114,7 +115,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateRemotePlayer(ref PlayerSnapshot snapshot, PlayerVisual visual)
+    public Entity CreateRemotePlayer(ref PlayerData snapshot, PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
         var entity = CreatePlayer(ref snapshot);
@@ -130,7 +131,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return base.DestroyPlayer(networkId);
     }
 
-    public Entity CreateNpc(ref NpcSnapshot snapshot, NpcVisual visual)
+    public Entity CreateNpc(ref NpcData snapshot, NpcVisual visual)
     {
         var defaultBehaviour = Behaviour.Default;
         var entity = base.CreateNpc(ref snapshot, ref defaultBehaviour);
@@ -157,7 +158,7 @@ public sealed class ClientGameSimulation : GameSimulation
         }
     }
     
-    public void ApplyState(ref StateSnapshot stateSnapshot)
+    public void ApplyState(ref StateData stateSnapshot)
     {
         if (!TryGetAnyEntity(stateSnapshot.NetworkId, out Entity entity))
         {
@@ -168,7 +169,7 @@ public sealed class ClientGameSimulation : GameSimulation
         World.UpdateState(entity, ref stateSnapshot);
     }
     
-    public void ApplyVitals(ref VitalsSnapshot vitalsSnapshot)
+    public void ApplyVitals(ref VitalsData vitalsSnapshot)
     {
         if (!TryGetPlayerEntity(vitalsSnapshot.NetworkId, out var entity) &&
             !TryGetNpcEntity(vitalsSnapshot.NetworkId, out entity))
