@@ -76,8 +76,8 @@ public static class FactoryHelper
             // Identity
             new AIControlled { },
             new UniqueID() { Value = template.NpcId }, // Using NetworkId as UniqueId for server-side
-            new GenderId { Value = (byte)template.Gender },
-            new VocationId { Value = (byte)template.Vocation },
+            new GenderId { Value = template.Gender },
+            new VocationId { Value = template.Vocation },
 
             // AI
             new Brain { CurrentState = AIState.Idle, StateTimer = 0f, CurrentTarget = Entity.Null },

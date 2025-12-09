@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Game.DTOs.Network;
+using Game.DTOs.Game;
 using Game.Network.Abstractions;
-using Game.Network.Packets.Game;
 
 namespace Game.Tests;
 
@@ -30,17 +29,17 @@ public sealed class CombatSyncTests
         public List<AttackPacket> CombatPackets { get; } = new();
 
         public void Initialize() { }
-    public void ConnectToServer() => throw new NotSupportedException();
+        public void ConnectToServer() => throw new NotSupportedException();
         public void Stop() { }
         public void PollEvents() { }
 
-    public void RegisterPacketHandler<T>(PacketHandler<T> handler) where T : struct => throw new NotSupportedException();
-    public bool UnregisterPacketHandler<T>() where T : struct => throw new NotSupportedException();
-    public void RegisterUnconnectedPacketHandler<T>(UnconnectedPacketHandler<T> handler) where T : struct => throw new NotSupportedException();
-    public bool UnregisterUnconnectedPacketHandler<T>() where T : struct => throw new NotSupportedException();
-    public void SendToServer<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
-    public void SendToPeer<T>(INetPeerAdapter peer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
-    public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
+        public void RegisterPacketHandler<T>(PacketHandler<T> handler) where T : struct => throw new NotSupportedException();
+        public bool UnregisterPacketHandler<T>() where T : struct => throw new NotSupportedException();
+        public void RegisterUnconnectedPacketHandler<T>(UnconnectedPacketHandler<T> handler) where T : struct => throw new NotSupportedException();
+        public bool UnregisterUnconnectedPacketHandler<T>() where T : struct => throw new NotSupportedException();
+        public void SendToServer<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
+        public void SendToPeer<T>(INetPeerAdapter peer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
+        public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
 
         public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct
         {
@@ -48,9 +47,9 @@ public sealed class CombatSyncTests
                 CombatPackets.Add(combat);
         }
 
-    public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
-    public void SendToAllExcept<T>(int excludePeerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
-    public void SendUnconnected<T>(System.Net.IPEndPoint endPoint, T packet) where T : struct => throw new NotSupportedException();
+        public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
+        public void SendToAllExcept<T>(int excludePeerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct => throw new NotSupportedException();
+        public void SendUnconnected<T>(System.Net.IPEndPoint endPoint, T packet) where T : struct => throw new NotSupportedException();
 
         private sealed class DummyPeerRepository : IPeerRepository
         {

@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thirdparty", "thirdparty", "{550CADA3-2689-4A2E-B845-88F7850D1814}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{A9630F00-6780-4DAE-A90E-A48BDE4D3A26}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotClient", "Simulation.Client\godot-client\GodotClient.csproj", "{A74987B0-796F-4064-A22A-ECCF3499157F}"

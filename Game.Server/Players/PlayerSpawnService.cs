@@ -2,8 +2,8 @@ using Arch.Core;
 using Game.DTOs.Game.Player;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Components;
-using Game.Server.ECS;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 namespace Game.Server.Players;
 

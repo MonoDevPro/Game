@@ -1,16 +1,12 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.Core.Extensions;
+using Game.DTOs.Game;
 using Game.DTOs.Game.Player;
-using Game.DTOs.Network;
 using Game.ECS.Entities.Components;
-using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Network.Adapters;
 using Godot;
-using LiteNetLib;
 using Input = Game.ECS.Entities.Components.Input;
 
 namespace GodotClient.ECS.Systems;

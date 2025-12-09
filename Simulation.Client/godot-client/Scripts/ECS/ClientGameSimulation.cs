@@ -158,15 +158,15 @@ public sealed class ClientGameSimulation : GameSimulation
         }
     }
     
-    public void ApplyState(ref StateData stateSnapshot)
+    public void ApplyState(ref PositionStateData positionStateSnapshot)
     {
-        if (!TryGetAnyEntity(stateSnapshot.NetworkId, out Entity entity))
+        if (!TryGetAnyEntity(positionStateSnapshot.NetworkId, out Entity entity))
         {
-            GD.PrintErr($"[GameClient] Cannot apply state: entity with NetworkId {stateSnapshot.NetworkId} not found.");
+            GD.PrintErr($"[GameClient] Cannot apply state: entity with NetworkId {positionStateSnapshot.NetworkId} not found.");
             return;
         }
         
-        World.UpdateState(entity, ref stateSnapshot);
+        World.UpdateState(entity, ref positionStateSnapshot);
     }
     
     public void ApplyVitals(ref VitalsData vitalsSnapshot)

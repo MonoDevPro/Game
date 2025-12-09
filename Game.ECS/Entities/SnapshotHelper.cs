@@ -8,7 +8,7 @@ namespace Game.ECS.Entities;
 
 public static class SnapshotHelper
 {
-    public static StateData BuildState(this World world, Entity entity)
+    public static PositionStateData BuildState(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
@@ -16,13 +16,12 @@ public static class SnapshotHelper
         ref var walkable = ref world.Get<Walkable>(entity);
         ref var direction = ref world.Get<Direction>(entity);
 
-        return new StateData
+        return new PositionStateData
         {
             NetworkId = networkId.Value,
             X = position.X,
             Y = position.Y,
             Floor = floor.Value,
-            Speed = walkable.BaseSpeed * walkable.CurrentModifier,
             DirX = direction.X,
             DirY = direction.Y,
         };

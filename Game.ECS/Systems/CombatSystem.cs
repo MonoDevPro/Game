@@ -20,7 +20,7 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
     : GameSystem(world, logger)
 {
     // Attack range by style
-    private const float MeleeRange = 1.5f;
+    private const float MeleeRange = 2f; // TODO: Test this value
     private const float RangedRange = 8f;
     private const float MagicRange = 10f;
     

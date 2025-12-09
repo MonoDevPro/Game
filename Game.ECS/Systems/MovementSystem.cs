@@ -20,6 +20,7 @@ public sealed partial class MovementSystem : GameSystem
         _mapIndex = mapIndex;
         _eventBus = eventBus;
     }
+    
     [Query]
     [All<Position, Direction, Speed, Walkable, Floor>]
     [None<Dead, MovementIntent>] // Não processa se já tem intent pendente
@@ -66,17 +67,18 @@ public sealed partial class MovementSystem : GameSystem
     {
         var result = _mapIndex.ValidateMove(
             mapId. Value,
-            intent.TargetPosition,
+            intent. TargetPosition,
             intent. TargetFloor,
             entity
         );
 
-        if (result == MovementResult. Allowed)
+        if (result == MovementResult.Allowed)
+        {
             World.Add<MovementApproved>(entity);
+        }
         else
         {
-            LogWarning(
-                "[Movement] Blocked move for {Entity} to ({X},{Y},{Floor}) on map {MapId}: {Reason}",
+            LogWarning("[Movement] Blocked move for {Entity} to ({X},{Y},{Floor}) on map {MapId}: {Reason}",
                 entity,
                 intent.TargetPosition.X,
                 intent.TargetPosition.Y,
@@ -96,9 +98,6 @@ public sealed partial class MovementSystem : GameSystem
         in MovementIntent intent,
         ref Position pos)
     {
-        var moveEvent = new MovementEvent(entity, pos, intent.TargetPosition);
-        _eventBus.Send(ref moveEvent);
-
         var spatial = _mapIndex.GetMapSpatial(mapId.Value);
         if (!spatial.TryMove(pos, floor.Value, intent.TargetPosition, intent.TargetFloor, entity))
         {
@@ -109,10 +108,14 @@ public sealed partial class MovementSystem : GameSystem
                 intent.TargetPosition.Y,
                 intent.TargetFloor,
                 mapId.Value);
+            
             World.Remove<MovementApproved>(entity);
             World.Add<MovementBlocked>(entity, new MovementBlocked { Reason = MovementResult.BlockedByEntity });
             return;
         }
+        
+        // Dispara o evento de movimento
+        InvokeMovementEvent(entity: entity, from: pos, to: intent.TargetPosition);
         
         // Aplica a nova posição
         pos.X = intent.TargetPosition.X;
@@ -128,8 +131,13 @@ public sealed partial class MovementSystem : GameSystem
         in Entity entity,
         in MovementBlocked blocked)
     {
-        // Limpa os componentes temporários
         World.Remove<MovementIntent, MovementBlocked>(entity);
+    }
+    
+    private void InvokeMovementEvent(in Entity entity, in Position from, in Position to)
+    {
+        var moveEvent = new MovementEvent(entity, from, to);
+        _eventBus.Send(ref moveEvent);
     }
     
     public static (sbyte X, sbyte Y) GetDirectionTowards(in Position from, in Position to) 

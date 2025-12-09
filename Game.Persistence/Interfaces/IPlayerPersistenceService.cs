@@ -20,20 +20,20 @@ public interface IPlayerPersistenceService
     /// Persiste apenas os vitals (HP/MP) do personagem (operação rápida).
     /// </summary>
     Task PersistVitalsAsync(
-        VitalsPersistenceDto dto, 
+        VitalsState dto, 
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Persiste stats completos do personagem.
     /// </summary>
     Task PersistStatsAsync(
-        StatsPersistenceDto dto, 
+        StatsState dto, 
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Persiste inventário completo do personagem (operação pesada).
     /// </summary>
     Task PersistInventoryAsync(
-        InventoryPersistenceDto dto, 
+        InventoryState dto, 
         CancellationToken cancellationToken = default);
 }

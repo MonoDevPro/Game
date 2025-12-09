@@ -3,7 +3,7 @@ namespace Game.DTOs.Persistence;
 /// <summary>
 /// DTO para persistir stats completos do personagem.
 /// </summary>
-public sealed record StatsPersistenceDto
+public sealed record StatsState
 {
     public required int CharacterId { get; init; }
     public required int Level { get; init; }

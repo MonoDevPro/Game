@@ -171,7 +171,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         return true;
     }
 
-    public virtual bool ApplyPlayerState(ref StateData snapshot)
+    public virtual bool ApplyPlayerState(ref PositionStateData snapshot)
     {
         if (!TryGetPlayerEntity(snapshot.NetworkId, out var entity))
             return false;

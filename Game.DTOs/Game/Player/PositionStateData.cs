@@ -3,9 +3,8 @@ using MemoryPack;
 namespace Game.DTOs.Game.Player;
 
 [MemoryPackable]
-public readonly partial record struct StateData(
+public readonly partial record struct PositionStateData(
     int NetworkId,
     int X, int Y, sbyte Floor,
-    float Speed,
     sbyte DirX, sbyte DirY
 );

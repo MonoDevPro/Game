@@ -1,6 +1,6 @@
 using Game.DTOs.Game.Npc;
 using Game.ECS.Entities;
-using Game.Server.ECS;
+using Game.Server.Simulation;
 
 namespace Game.Server.Npc;
 

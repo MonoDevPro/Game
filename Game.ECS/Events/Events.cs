@@ -80,4 +80,10 @@ public readonly record struct MovementEvent(Entity Entity, Position OldPosition,
 /// <param name="NewDirection">The new direction.</param>
 public readonly record struct DirectionChangedEvent(Entity Entity, Direction OldDirection, Direction NewDirection);
 
+/// <summary>
+/// Event fired when an NPC changes its AI state.
+/// </summary>
+/// <param name="Entity">The NPC entity whose state changed.</param>
+/// <param name="OldState">The previous AI state.</param>
+/// <param name="NewState">The new AI state.</param>
 public readonly record struct NpcStateChangedEvent(Entity Entity, AIState OldState, AIState NewState);

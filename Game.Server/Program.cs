@@ -7,12 +7,12 @@ using Game.Persistence;
 using Game.Server;
 using Game.Server.Authentication;
 using Game.Server.Chat;
-using Game.Server.ECS;
 using Game.Server.Loop;
 using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 var builder = CreateHostBuilder(args);
 

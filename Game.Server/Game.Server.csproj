@@ -29,6 +29,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="ECS/Systems/" />
+      <Folder Include="Simulation\Systems\" />
     </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.DTOs.Network;
+using Game.DTOs.Game;
 using Game.DTOs.Persistence;
 using Game.ECS.Entities;
 using Game.ECS.Entities.Components;
@@ -12,11 +12,11 @@ using Game.Network.Packets.Menu;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
 using Game.Server.Chat;
-using Game.Server.ECS;
 using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using Game.Server.Simulation;
 
 namespace Game.Server;
 

@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using Game.Core.Extensions;
+using Game.DTOs.Game;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
-using Game.DTOs.Network;
 using Game.ECS.Entities.Components;
 using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;

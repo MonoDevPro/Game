@@ -109,7 +109,7 @@ internal sealed class PlayerPersistenceService(
     /// Persiste apenas os vitals (HP/MP) do personagem (operação rápida).
     /// </summary>
     public async Task PersistVitalsAsync(
-        VitalsPersistenceDto dto,
+        VitalsState dto,
         CancellationToken cancellationToken = default)
     {
         await PersistAsync(
@@ -129,7 +129,7 @@ internal sealed class PlayerPersistenceService(
     /// Persiste stats completos do personagem.
     /// </summary>
     public async Task PersistStatsAsync(
-        StatsPersistenceDto dto,
+        StatsState dto,
         CancellationToken cancellationToken = default)
     {
         await PersistAsync(
@@ -156,7 +156,7 @@ internal sealed class PlayerPersistenceService(
     /// Persiste inventário completo do personagem (operação pesada).
     /// </summary>
     public async Task PersistInventoryAsync(
-        InventoryPersistenceDto dto,
+        InventoryState dto,
         CancellationToken cancellationToken = default)
     {
         try
@@ -182,7 +182,7 @@ internal sealed class PlayerPersistenceService(
             foreach (var slotDto in dto.Slots)
             {
                 // Slot vazio - remover se existir
-                if (slotDto.ItemId is null || slotDto.Quantity <= 0)
+                if (slotDto.ItemId <= 0 || slotDto.Quantity <= 0)
                 {
                     if (existingSlots.TryGetValue(slotDto.SlotIndex, out var slotToRemove))
                     {

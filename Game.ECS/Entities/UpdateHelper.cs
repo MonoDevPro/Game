@@ -7,18 +7,18 @@ namespace Game.ECS.Entities;
 
 public static class UpdateHelper
 {
-    public static void UpdateState(this World world, Entity entity, ref StateData data)
+    public static void UpdateState(this World world, Entity entity, ref PositionStateData data)
     {
         ref var position = ref world.Get<Position>(entity);
         ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Direction>(entity);
-        ref var velocity = ref world.Get<Speed>(entity);
+        ref var speed = ref world.Get<Speed>(entity);
         position.X = data.X;
         position.Y = data.Y;
         floor.Value = data.Floor;
-        velocity.Value = data.Speed;
         facing.X = data.DirX;
         facing.Y = data.DirY;
+        speed.Value = 0f; // Zera a velocidade ao atualizar a posição
     }
     
     public static void UpdateVitals(this World world, Entity entity, ref VitalsData data)

@@ -3,13 +3,12 @@ using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
 using Game.ECS.Entities.Components;
-using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Server.ECS.Systems;
+using Game.Server.Simulation.Systems;
 
-namespace Game.Server.ECS;
+namespace Game.Server.Simulation;
 
 /// <summary>
 /// Exemplo de uso do ECS como SERVIDOR.

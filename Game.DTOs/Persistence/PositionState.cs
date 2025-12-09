@@ -8,4 +8,5 @@ public readonly record struct PositionState(
     int PositionY,
     sbyte Floor,
     sbyte FacingX,
-    sbyte FacingY);
+    sbyte FacingY
+);

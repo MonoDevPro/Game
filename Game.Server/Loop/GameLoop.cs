@@ -1,4 +1,4 @@
-using Game.Server.ECS;
+using Game.Server.Simulation;
 
 namespace Game.Server.Loop;
 

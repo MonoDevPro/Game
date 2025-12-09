@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Arch.Core;
 using Arch.System;
@@ -16,6 +17,10 @@ namespace GodotClient.ECS.Systems;
 public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesRoot) 
     : GameSystem(world)
 {
+    private const float PixelsPerCell = 32f;
+    private const float LerpSpeed = 0.15f;
+    private const float SnapThreshold = 2f;
+    
     private readonly Dictionary<int, PlayerVisual> _playerVisuals = new();
     private readonly Dictionary<int, NpcVisual> _npcVisuals = new();
 
@@ -83,20 +88,12 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     [All<NetworkId>] // ✅ Sem tag específica - aplica a TODOS
     private void SyncAnimations(
         in Entity e, 
-        ref CombatState combatState,
         in NetworkId networkId,
-        in Speed speed, 
-        in Direction direction,
         [Data] in float deltaTime)
     {
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
-        bool isAttacking = World.Has<AttackCommand>(e);
-        var isDead = World.Has<Dead>(e);
-        var isMoving = speed.Value > 0f;
-        visual.UpdateAnimationState(direction, isMoving, isAttacking, isDead);
-
         if (!World.Has<AttackCommand>(e))
             return;
         
@@ -109,35 +106,36 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     [Query]
     [All<NetworkId>]
     private void InterpolatePosition(
+        in Entity e,
         in Position pos, 
-        in Speed speed,
         in Direction dir,
         in NetworkId networkId)
     {
-        const float pixelsPerCell = 32f;
-        const float lerpSpeed = 0.15f;
-        
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
         Vector2 current = visual.GlobalPosition;
-        Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
-
-        // Extrapolação para compensar latência (usa Direction para saber a direção do movimento)
-        if (speed.Value > 0f && dir is not { X: 0, Y: 0 })
+        Vector2 target = new(pos.X * PixelsPerCell, pos.Y * PixelsPerCell);
+        bool ismoving = false;
+        
+        // Extrapolação
+        if (current != target)
         {
             float extrapolation = 0.5f;
             Vector2 direction = new(dir.X, dir.Y);
-            target += direction * (pixelsPerCell * extrapolation);
+            target += direction * (PixelsPerCell * extrapolation);
+            
+            ismoving = current != target;
         }
-
+        
         // Interpolação suave
-        Vector2 next = current.Lerp(target, lerpSpeed);
+        Vector2 next = current.Lerp(target, LerpSpeed);
         visual.GlobalPosition = next;
 
         // Snap quando muito próximo
-        const float snapThreshold = 2f;
-        if (current.DistanceSquaredTo(target) <= snapThreshold * snapThreshold)
+        if (current.DistanceSquaredTo(target) <= SnapThreshold * SnapThreshold)
             visual.GlobalPosition = target;
+        
+        visual.UpdateAnimationState(dir, ismoving, World.Has<AttackCommand>(e), World.Has<Dead>(e));
     }
 }
