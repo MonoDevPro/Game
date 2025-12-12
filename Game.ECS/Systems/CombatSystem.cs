@@ -3,10 +3,10 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
+using Game.ECS.Helpers;
 using Game.ECS.Schema.Archetypes;
-using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -19,11 +19,6 @@ namespace Game.ECS.Systems;
 public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogger<CombatSystem>? logger = null)
     : GameSystem(world, logger)
 {
-    // Attack range by style
-    private const float MeleeRange = 2f; // TODO: Test this value
-    private const float RangedRange = 8f;
-    private const float MagicRange = 10f;
-    
     // Projectile settings
     private const float ProjectileSpeed = 15f;
     private const float ProjectileLifetime = 3f;
@@ -33,13 +28,12 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
     /// When BasicAttack flag is set, creates an attack command.
     /// </summary>
     [Query]
-    [All<PlayerControlled, Input, Position, Floor, Direction, CombatStats, CombatState, VocationId, MapId>]
+    [All<PlayerControlled, Input, Position, Direction, CombatStats, CombatState, VocationId, MapId>]
     [None<Dead, AttackCommand>]
     private void ProcessPlayerAttackInput(
         in Entity entity,
         in Input input,
         in Position position,
-        in Floor floor,
         in Direction direction,
         in CombatStats stats,
         ref CombatState state,
@@ -66,10 +60,10 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
             return;
         
         // Determine attack style based on vocation
-        var attackStyle = GetAttackStyleFromVocation(vocation.Value);
+        var attackStyle = AttackHelpers.GetAttackStyleFromVocation(vocation.Value);
         
         // Calculate target position based on direction and range
-        var range = GetAttackRange(attackStyle);
+        var range = stats.AttackRange;
         var targetPosition = new Position
         {
             X = position.X + (int)(direction.X * range),
@@ -97,14 +91,13 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
     /// Processes attack commands and applies damage or creates projectiles.
     /// </summary>
     [Query]
-    [All<AttackCommand, Position, Floor, Direction, CombatStats, MapId>]
+    [All<AttackCommand, Position, Direction, CombatStats, MapId>]
     [None<Dead>]
     private void ProcessAttackCommand(
         [Data] in float deltaTime,
         in Entity attacker,
         ref AttackCommand command,
         in Position attackerPos,
-        in Floor attackerFloor,
         in Direction attackerDir,
         in CombatStats attackerStats,
         in MapId attackerMapId)
@@ -118,11 +111,11 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         switch (command.Style)
         {
             case AttackStyle.Melee:
-                ProcessMeleeAttack(attacker, command, attackerPos, attackerFloor, attackerMapId, attackerStats);
+                ProcessMeleeAttack(attacker, command, attackerPos, attackerMapId, attackerStats);
                 break;
             case AttackStyle.Ranged:
             case AttackStyle.Magic:
-                CreateProjectile(attacker, command, attackerPos, attackerFloor, attackerDir, attackerMapId, attackerStats);
+                CreateProjectile(attacker, command, attackerPos, attackerDir, attackerMapId, attackerStats);
                 break;
         }
         
@@ -137,7 +130,6 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         Entity attacker,
         in AttackCommand command,
         in Position attackerPos,
-        in Floor attackerFloor,
         in MapId attackerMapId,
         in CombatStats attackerStats)
     {
@@ -149,7 +141,7 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
                 return;
             
             var spatial = mapIndex.GetMapSpatial(attackerMapId.Value);
-            if (!spatial.TryGetFirstAt(command.TargetPosition, attackerFloor.Value, out var target) || target == attacker)
+            if (!spatial.TryGetFirstAt(command.TargetPosition, out var target) || target == attacker)
                 return;
             
             ApplyDamageToTarget(attacker, target, attackerStats, false);
@@ -161,7 +153,7 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
                 return;
             
             var distance = Math.Abs(attackerPos.X - targetPos.X) + Math.Abs(attackerPos.Y - targetPos.Y);
-            if (distance > MeleeRange)
+            if (distance > attackerStats.AttackRange)
                 return;
             
             ApplyDamageToTarget(attacker, command.Target, attackerStats, false);
@@ -175,7 +167,6 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         Entity source,
         in AttackCommand command,
         in Position sourcePos,
-        in Floor sourceFloor,
         in Direction sourceDir,
         in MapId sourceMapId,
         in CombatStats sourceStats)
@@ -185,8 +176,7 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         
         var projectile = World.Create(ProjectileArchetypes.Projectile);
         
-        World.Set(projectile, new Position { X = sourcePos.X, Y = sourcePos.Y });
-        World.Set(projectile, new Floor { Value = sourceFloor.Value });
+        World.Set(projectile, new Position { X = sourcePos.X, Y = sourcePos.Y, Z = sourcePos.Z });
         World.Set(projectile, new Direction { X = sourceDir.X, Y = sourceDir.Y });
         World.Set(projectile, new Speed { Value = ProjectileSpeed });
         World.Set(projectile, new MapId { Value = sourceMapId.Value });
@@ -235,30 +225,4 @@ public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogge
         
         logger?.LogDebug("[Combat] {Attacker} dealt {Damage} damage to {Target}", attacker, finalDamage, target);
     }
-
-    /// <summary>
-    /// Gets attack style based on vocation ID.
-    /// </summary>
-    private static AttackStyle GetAttackStyleFromVocation(byte vocationId)
-    {
-        // VocationType: 0=Unknown, 1=Warrior, 2=Archer, 3=Mage
-        return vocationId switch
-        {
-            1 => AttackStyle.Melee,   // Warrior
-            2 => AttackStyle.Ranged,  // Archer
-            3 => AttackStyle.Magic,   // Mage
-            _ => AttackStyle.Melee    // Default
-        };
-    }
-
-    /// <summary>
-    /// Gets attack range based on attack style.
-    /// </summary>
-    private static float GetAttackRange(AttackStyle style) => style switch
-    {
-        AttackStyle.Melee => MeleeRange,
-        AttackStyle.Ranged => RangedRange,
-        AttackStyle.Magic => MagicRange,
-        _ => MeleeRange
-    };
 }

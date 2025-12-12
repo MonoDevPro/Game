@@ -2,10 +2,9 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Schema;
-using Game.ECS.Schema.Components;
 using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
@@ -17,8 +16,7 @@ namespace Game.ECS.Systems;
 /// </summary>
 public sealed partial class DamageSystem(
     World world,
-    ILogger<DamageSystem>? logger = null
-    ) : GameSystem(world)
+    ILogger<DamageSystem>? logger = null) : GameSystem(world)
 {
     [Query]
     [All<Health, DamageOverTime>]

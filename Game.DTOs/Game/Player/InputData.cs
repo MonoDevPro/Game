@@ -4,7 +4,8 @@ namespace Game.DTOs.Game.Player;
 
 [MemoryPackable]
 public readonly partial record struct InputData(
-    sbyte InputX, sbyte InputY, 
+    sbyte InputX, 
+    sbyte InputY, 
     InputFlags Flags
 );
 

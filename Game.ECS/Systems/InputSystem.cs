@@ -3,9 +3,8 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
-using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Systems;
 
@@ -21,7 +20,7 @@ public sealed partial class InputSystem(World world)
     [None<Dead>]
     private void ProcessInput(in Entity entity, in Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
     {
-        if (input.InputX == 0 && input.InputY == 0 && (input.Flags & InputFlags.BasicAttack) == 0)
+        if (input is { InputX: 0, InputY: 0 } && (input.Flags & InputFlags.BasicAttack) == 0)
         {
             velocity.Value = 0f;
             return;

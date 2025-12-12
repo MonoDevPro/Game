@@ -1,6 +1,5 @@
 using Arch.Core;
-using Game.ECS.Entities.Components;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 
 namespace Game.ECS.Schema.Archetypes;
 
@@ -20,7 +19,6 @@ public static class VisualArchetypes
         Component<NetworkId>.ComponentType,
         Component<MapId>.ComponentType,
         Component<Position>.ComponentType,
-        Component<Floor>.ComponentType,
         Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
         Component<Health>.ComponentType,

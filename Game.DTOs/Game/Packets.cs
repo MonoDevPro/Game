@@ -9,7 +9,7 @@ namespace Game.DTOs.Game;
 public readonly partial record struct InputPacket(InputData Input);
 
 [MemoryPackable]
-public readonly partial record struct StatePacket(PositionStateData[] States);
+public readonly partial record struct StatePacket(StateData[] States);
 
 [MemoryPackable]
 public readonly partial record struct VitalsPacket(VitalsData[] Vitals);

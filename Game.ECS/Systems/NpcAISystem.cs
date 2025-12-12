@@ -4,10 +4,9 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Schema;
-using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -37,7 +36,7 @@ public sealed partial class NpcAISystem : GameSystem
     /// Inicializa NPCs sem Brain com estado padrão.
     /// </summary>
     [Query]
-    [All<AIControlled, AIBehaviour, Position, Floor>]
+    [All<AIControlled, AIBehaviour, Position>]
     [None<Brain, Dead>]
     private void InitializeBrain(
         in Entity entity,
@@ -66,14 +65,13 @@ public sealed partial class NpcAISystem : GameSystem
     /// Atualiza a máquina de estados e comportamento dos NPCs.
     /// </summary>
     [Query]
-    [All<AIControlled, Brain, AIBehaviour, Position, Floor, MapId, Direction, Speed>]
+    [All<AIControlled, Brain, AIBehaviour, Position, MapId, Direction, Speed>]
     [None<Dead>]
     private void UpdateAI(
         in Entity entity,
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         in MapId mapId,
         ref Direction direction,
         ref Speed speed,
@@ -84,19 +82,19 @@ public sealed partial class NpcAISystem : GameSystem
         switch (brain.CurrentState)
         {
             case AIState.Idle:
-                ProcessIdleState(entity, ref brain, behaviour, position, floor, mapId, deltaTime);
+                ProcessIdleState(entity, ref brain, behaviour, position, mapId, deltaTime);
                 break;
             case AIState.Patrol:
-                ProcessPatrolState(entity, ref brain, behaviour, position, floor, ref direction, ref speed, deltaTime);
+                ProcessPatrolState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
                 break;
             case AIState.Chase:
-                ProcessChaseState(entity, ref brain, behaviour, position, floor, ref direction, ref speed, deltaTime);
+                ProcessChaseState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
                 break;
             case AIState.Combat:
-                ProcessCombatState(entity, ref brain, behaviour, position, floor, ref direction, ref speed, deltaTime);
+                ProcessCombatState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
                 break;
             case AIState.ReturnHome:
-                ProcessReturnHomeState(entity, ref brain, behaviour, position, floor, ref direction, ref speed, deltaTime);
+                ProcessReturnHomeState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
                 break;
         }
     }
@@ -108,14 +106,13 @@ public sealed partial class NpcAISystem : GameSystem
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         in MapId mapId,
         float deltaTime)
     {
         // Check for nearby players (aggression)
         if (behaviour.Type == BehaviorType.Aggressive)
         {
-            if (TryFindNearestPlayer(position, floor.Value, mapId.Value, behaviour.VisionRange, out var player))
+            if (TryFindNearestPlayer(position, mapId.Value, behaviour.VisionRange, out var player))
             {
                 brain.CurrentTarget = player;
                 ChangeState(entity, ref brain, AIState.Chase);
@@ -146,7 +143,6 @@ public sealed partial class NpcAISystem : GameSystem
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         ref Direction direction,
         ref Speed speed,
         float deltaTime)
@@ -154,7 +150,7 @@ public sealed partial class NpcAISystem : GameSystem
         // Check for nearby players during patrol
         if (behaviour.Type == BehaviorType.Aggressive)
         {
-            if (TryFindNearestPlayer(position, floor.Value, 0, behaviour.VisionRange, out var player))
+            if (TryFindNearestPlayer(position, 0, behaviour.VisionRange, out var player))
             {
                 brain.CurrentTarget = player;
                 ChangeState(entity, ref brain, AIState.Chase);
@@ -200,7 +196,6 @@ public sealed partial class NpcAISystem : GameSystem
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         ref Direction direction,
         ref Speed speed,
         float deltaTime)
@@ -262,7 +257,6 @@ public sealed partial class NpcAISystem : GameSystem
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         ref Direction direction,
         ref Speed speed,
         float deltaTime)
@@ -332,7 +326,6 @@ public sealed partial class NpcAISystem : GameSystem
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
-        in Floor floor,
         ref Direction direction,
         ref Speed speed,
         float deltaTime)
@@ -374,7 +367,7 @@ public sealed partial class NpcAISystem : GameSystem
             entity, oldState, newState);
     }
     
-    private bool TryFindNearestPlayer(Position center, sbyte floor, int mapId, float range, out Entity player)
+    private bool TryFindNearestPlayer(Position center, int mapId, float range, out Entity player)
     {
         player = Entity.Null;
         
@@ -387,7 +380,7 @@ public sealed partial class NpcAISystem : GameSystem
         var min = new Position { X = center.X - (int)range, Y = center.Y - (int)range };
         var max = new Position { X = center.X + (int)range, Y = center.Y + (int)range };
         
-        int count = spatial.QueryArea(min, max, (sbyte)(floor - 1), (sbyte)(floor + 1), _nearbyEntities);
+        int count = spatial.QueryArea(min, max,  _nearbyEntities);
         
         float nearestDist = float.MaxValue;
         

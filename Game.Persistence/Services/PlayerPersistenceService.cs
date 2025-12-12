@@ -57,9 +57,9 @@ internal sealed class PlayerPersistenceService(
     {
         character.PositionX = position.PositionX;
         character.PositionY = position.PositionY;
-        character.Floor = position.Floor;
-        character.FacingX = position.FacingX;
-        character.FacingY = position.FacingY;
+        character.PositionZ = position.PositionZ;
+        character.FacingX = position.DirX;
+        character.FacingY = position.DirY;
 
         if (updateTimestamp)
             character.LastUpdatedAt = DateTime.UtcNow;
@@ -94,9 +94,10 @@ internal sealed class PlayerPersistenceService(
                 ApplyPosition(character, 
                     new PositionState(
                         dto.PositionX,
-                        dto.PositionY, dto.Floor,
-                        dto.FacingX,
-                        dto.FacingY), updateTimestamp: true);
+                        dto.PositionY, 
+                        dto.PositionZ,
+                        dto.DirX,
+                        dto.DirY), updateTimestamp: true);
                 character.Stats.CurrentHp = dto.CurrentHp;
                 character.Stats.CurrentMp = dto.CurrentMp;
                 return true;

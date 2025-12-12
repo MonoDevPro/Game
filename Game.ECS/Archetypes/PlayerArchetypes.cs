@@ -1,6 +1,5 @@
 using Arch.Core;
-using Game.ECS.Entities.Components;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 
 namespace Game.ECS.Schema.Archetypes;
 
@@ -23,7 +22,6 @@ public static class PlayerArchetypes
         Component<NetworkId>.ComponentType, // Assigned by the networking system
         Component<MapId>.ComponentType,     // Assigned by the map management system
         Component<Position>.ComponentType,  // Assigned by the spawn system
-        Component<Floor>.ComponentType,     // Assigned by the spawn system
         
         // Identity
         Component<PlayerControlled>.ComponentType,

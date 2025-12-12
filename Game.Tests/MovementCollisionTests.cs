@@ -2,7 +2,7 @@ using FluentAssertions;
 using Game.Domain.Entities;
 using Game.DTOs.Game.Player;
 using Game.ECS;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
@@ -44,8 +44,7 @@ public sealed class MovementCollisionTests
 
         simulation.World.Add(player1, new MovementIntent
         {
-            TargetPosition = new Position { X = 2, Y = 1 },
-            TargetFloor = 0
+            TargetPosition = new Position { X = 2, Y = 1, Z = 0 }
         });
 
         simulation.Update(SimulationConfig.TickDelta);
@@ -54,7 +53,7 @@ public sealed class MovementCollisionTests
         blocked.Reason.Should().Be(MovementResult.BlockedByEntity);
 
         ref var position = ref simulation.World.Get<Position>(player1);
-        position.Should().Be(new Position { X = 1, Y = 1 });
+        position.Should().Be(new Position { X = 1, Y = 1, Z = 0 });
         simulation.World.Has<MovementApproved>(player1).Should().BeFalse();
         simulation.World.Has<MovementIntent>(player1).Should().BeFalse();
     }
@@ -70,7 +69,7 @@ public sealed class MovementCollisionTests
             Vocation: 0,
             X: x,
             Y: y,
-            Floor: 0,
+            Z: 0,
             DirX: 1,
             DirY: 0,
             Hp: 100,

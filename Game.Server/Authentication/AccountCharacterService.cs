@@ -123,7 +123,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
                 Vocation = characterInfo.Vocation,
                 PositionX = DefaultSpawnX,
                 PositionY = DefaultSpawnY,
-                Floor = DefaultSpawnZ,
+                PositionZ = DefaultSpawnZ,
                 FacingX = DefaultFacingX,
                 FacingY = DefaultFacingY
             };

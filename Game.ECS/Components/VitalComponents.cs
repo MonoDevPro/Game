@@ -1,4 +1,4 @@
-namespace Game.ECS.Entities.Components;
+namespace Game.ECS.Components;
 
 // ============================================
 // Vitals - Vida e Mana

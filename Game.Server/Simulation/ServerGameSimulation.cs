@@ -2,11 +2,11 @@ using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
 using Game.ECS;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Server.Simulation.Systems;
+using Game.Server.ECS.Systems;
 
 namespace Game.Server.Simulation;
 

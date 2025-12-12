@@ -1,13 +1,15 @@
 using Arch.Core;
+using Arch.System;
+using Arch.System.SourceGenerator;
 using Game.DTOs.Game;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
-using Game.ECS.Schema.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
+using Game.Network.Packets.Game;
 
-namespace Game.Server.Simulation.Systems;
+namespace Game.Server.ECS.Systems;
 
 /// <summary>
 /// Sistema responsável por sincronizar o estado das entidades com os clientes conectados.
@@ -21,112 +23,104 @@ public sealed partial class ServerSyncSystem(
     : GameSystem(world, logger)
 {
     // Buffers for batching updates
-    private Arch.LowLevel.UnsafeQueue<PositionStateData> _stateQueue = new(16);
-    private Arch.LowLevel.UnsafeQueue<VitalsData> _vitalsQueue = new(16);
-    private Arch.LowLevel.UnsafeQueue<AttackData> _attackQueue = new(16);
+    private readonly List<StateData> _stateUpdates = new(16);
+    private readonly List<VitalsData> _vitalsUpdates = new(16);
+    private readonly List<AttackData> _attackUpdates = new(16);
     
+    // Sync interval tracking
+    private float _stateAccumulator;
+    private float _vitalsAccumulator;
+    private float _attackAccumulator;
+    private const float StateUpdateInterval = 0.05f;  // 20Hz for position updates
+    private const float VitalsUpdateInterval = 0.5f;   // 2Hz for vitals updates
+    private const float AttackUpdateInterval = 0.1f;   // 10Hz for attack updates
+
     public override void Initialize()
     {
-        RegisterEvents();
-        
-        base.Initialize();
+        // Subscribe to attack events
+        bus.OnAttack += (evt) =>
+        {
+            _attackUpdates.Add(new AttackData(
+                AttackerNetworkId: World.Get<NetworkId>(evt.Attacker).Value,
+                Style: evt.Style,
+                AttackDuration: 1.0f, // Placeholder, should be based on attack style
+                CooldownRemaining: 0.0f  // Placeholder, should be based on attack state
+            ));
+        };
+    }
+
+
+    public override void BeforeUpdate(in float deltaTime)
+    {
+        _stateAccumulator += deltaTime;
+        _vitalsAccumulator += deltaTime;
+        _attackAccumulator += deltaTime;
     }
 
     public override void Update(in float deltaTime)
     {
-        SendStateUpdates();
-        SendVitalsUpdates();
-        SendAttackUpdates();
-        
-        base.Update(in deltaTime);
+        // Collect state updates (position/movement)
+        if (_stateAccumulator >= StateUpdateInterval)
+        {
+            CollectStateUpdatesQuery(World);
+            
+            SendStateUpdates();
+            _stateAccumulator = 0f;
+        }
+
+        // Collect vitals updates (HP/MP)
+        if (_vitalsAccumulator >= VitalsUpdateInterval)
+        {
+            CollectVitalsUpdatesQuery(World);
+            
+            SendVitalsUpdates();
+            _vitalsAccumulator = 0f;
+        }
+
+        // Send attack updates
+        if (_attackAccumulator >= AttackUpdateInterval && _attackUpdates.Count > 0)
+        {
+            var packet = new AttackPacket([.._attackUpdates]);
+            networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            _attackUpdates.Clear();
+        }
     }
+
+    #region Player State Collection
     
-    public override void Dispose()
+    [Query]
+    [All<NetworkId, Position, Speed, Direction, Walkable>]
+    [Any<PlayerControlled, AIControlled>]
+    private void CollectStateUpdates(
+        in NetworkId networkId,
+        in Position position,
+        in Speed speed,
+        in Direction direction)
     {
-        UnregisterEvents();
-        
-        base.Dispose();
-    }
-    
-    private void RegisterEvents()
-    {
-        bus.OnAttack += OnAttackHandler;
-        bus.OnHealthChanged += OnHealthChangedHandler;
-        bus.OnManaChanged += OnManaChangedHandler;
-        bus.OnMovement += OnMovementHandler;
-        bus.OnDirectionChanged += OnDirectionChangedHandler;
-    }
-    
-    private void UnregisterEvents()
-    {
-        bus.OnAttack -= OnAttackHandler;
-        bus.OnHealthChanged -= OnHealthChangedHandler;
-        bus.OnManaChanged -= OnManaChangedHandler;
-        bus.OnMovement -= OnMovementHandler;
-        bus.OnDirectionChanged -= OnDirectionChangedHandler;
-    }
-    
-    #region Event Handlers
-    
-    private void OnAttackHandler(AttackEvent evt)
-    {
-        _attackQueue.Enqueue(new AttackData(
-            AttackerNetworkId: World.Get<NetworkId>(evt.Attacker).Value,
-            Style: evt.Style,
-            AttackDuration: 1.0f,
-            CooldownRemaining: 0.0f
-        ));
-    }
-    
-    private void OnHealthChangedHandler(HealthChangedEvent evt)
-    {
-        _vitalsQueue.Enqueue(new VitalsData(
-            NetworkId: World.Get<NetworkId>(evt.Entity).Value,
-            CurrentHp: evt.NewValue,
-            MaxHp: evt.MaxValue,
-            CurrentMp: World.Get<Mana>(evt.Entity).Current,
-            MaxMp: World.Get<Mana>(evt.Entity).Max
-        ));
-    }
-    
-    private void OnManaChangedHandler(ManaChangedEvent evt)
-    {
-        _vitalsQueue.Enqueue(new VitalsData(
-            NetworkId: World.Get<NetworkId>(evt.Entity).Value,
-            CurrentHp: World.Get<Health>(evt.Entity).Current,
-            MaxHp: World.Get<Health>(evt.Entity).Max,
-            CurrentMp: evt.NewValue,
-            MaxMp: evt.MaxValue
-        ));
-    }
-    
-    private void OnMovementHandler(MovementEvent evt)
-    {
-        Direction direction;
-        (direction.X, direction.Y) = MovementSystem.GetDirectionTowards(evt.OldPosition, evt.NewPosition);
-        
-        _stateQueue.Enqueue(new PositionStateData(
-            NetworkId: World.Get<NetworkId>(evt.Entity).Value,
-            Floor: World.Get<Floor>(evt.Entity).Value,
-            X: evt.NewPosition.X,
-            Y: evt.NewPosition.Y,
+        _stateUpdates.Add(new StateData(
+            NetworkId: networkId.Value,
+            X: position.X,
+            Y: position.Y,
+            Z: position.Z,
+            Speed: speed.Value,
             DirX: direction.X,
             DirY: direction.Y
         ));
     }
     
-    private void OnDirectionChangedHandler(DirectionChangedEvent evt)
+    [Query]
+    [All<PlayerControlled, NetworkId, Health, Mana>]
+    private void CollectVitalsUpdates(
+        in NetworkId networkId,
+        in Health health,
+        in Mana mana)
     {
-        ref var position = ref World.Get<Position>(evt.Entity);
-        ref var floor = ref World.Get<Floor>(evt.Entity);
-        
-        _stateQueue.Enqueue(new PositionStateData(
-            NetworkId: World.Get<NetworkId>(evt.Entity).Value,
-            X: position.X,
-            Y: position.Y,
-            Floor: floor.Value,
-            DirX: evt.NewDirection.X,
-            DirY: evt.NewDirection.Y
+        _vitalsUpdates.Add(new VitalsData(
+            NetworkId: networkId.Value,
+            CurrentHp: health.Current,
+            MaxHp: health.Max,
+            CurrentMp: mana.Current,
+            MaxMp: mana.Max
         ));
     }
     
@@ -137,33 +131,22 @@ public sealed partial class ServerSyncSystem(
     private void SendStateUpdates()
     {
         // Send player state updates
-        if (_stateQueue.Count > 0)
+        if (_stateUpdates.Count > 0)
         {
-            var packet = new StatePacket([.._stateQueue]);
+            var packet = new StatePacket([.._stateUpdates]);
             networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Unreliable);
-            _stateQueue.Clear();
+            _stateUpdates.Clear();
         }
     }
     
     private void SendVitalsUpdates()
     {
         // Send player vitals updates
-        if (_vitalsQueue.Count > 0)
+        if (_vitalsUpdates.Count > 0)
         {
-            var packet = new VitalsPacket([.._vitalsQueue]);
+            var packet = new VitalsPacket([.._vitalsUpdates]);
             networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            _vitalsQueue.Clear();
-        }
-    }
-
-    private void SendAttackUpdates()
-    {
-        // Send attack updates
-        if (_attackQueue.Count > 0)
-        {
-            var packet = new AttackPacket([.._attackQueue]);
-            networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            _attackQueue.Clear();
+            _vitalsUpdates.Clear();
         }
     }
     

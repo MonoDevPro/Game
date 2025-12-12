@@ -48,7 +48,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
             DirX = (sbyte)template.DirX,
             DirY = (sbyte)template.DirY,
             MapId = mapId,
-            Floor = floor,
+            Z = floor,
             X = x,
             Y = y,
             MovementSpeed = template.MovementSpeed,

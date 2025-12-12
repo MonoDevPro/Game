@@ -2,9 +2,8 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Events;
-using Game.ECS.Schema.Components;
 using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
@@ -25,13 +24,12 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         in SpawnPoint spawnPoint,
         ref SpawnRequest _,
         ref MapId mapId,
-        ref Floor floor,
         ref Position position)
     {
         mapId.Value = spawnPoint.MapId;
-        floor.Value = spawnPoint.Floor;
         position.X = spawnPoint.X;
         position.Y = spawnPoint.Y;
+        position.Z = spawnPoint.Z;
         
         var spawnEvent = new SpawnEvent(entity, spawnPoint, World.Get<NetworkId>(entity).Value);
         EventBus.Send(ref spawnEvent);
@@ -39,7 +37,7 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         World.Remove<SpawnRequest>(entity);
         
         logger?.LogInformation("[LifecycleSystem] Entity {Entity} has spawned at Map {MapId} ({X}, {Y}, Floor {Floor}).",
-            entity, spawnPoint.MapId, spawnPoint.X, spawnPoint.Y, spawnPoint.Floor);
+            entity, spawnPoint.MapId, spawnPoint.X, spawnPoint.Y, spawnPoint.Z);
     }
 
     [Query]
@@ -49,7 +47,6 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         in SpawnPoint spawnPoint,
         ref Respawning respawning,
         ref MapId mapId,
-        ref Floor floor,
         ref Position position,
         [Data] float deltaTime)
     {
@@ -59,14 +56,14 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         
         // Respawn completo
         mapId.Value = spawnPoint.MapId;
-        floor.Value = spawnPoint.Floor;
         position.X = spawnPoint.X;
         position.Y = spawnPoint.Y;
+        position.Z = spawnPoint.Z;
         
         World.Remove<Dead, Respawning>(entity);
         
         LogDebug("[LifecycleSystem] Entity {Entity} has respawned at Map {MapId} ({X}, {Y}, Floor {Floor}).",
-            entity, spawnPoint.MapId, spawnPoint.X, spawnPoint.Y, spawnPoint.Floor);
+            entity, spawnPoint.MapId, spawnPoint.X, spawnPoint.Y, spawnPoint.Z);
     }
 
     [Query]

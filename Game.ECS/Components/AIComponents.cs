@@ -1,9 +1,7 @@
 using Arch.Core;
-using Game.DTOs.Game;
 using Game.DTOs.Game.Npc;
-using Game.ECS.Schema.Components;
 
-namespace Game.ECS.Entities.Components;
+namespace Game.ECS.Components;
 
 /// <summary>
 /// NPC behavior configuration component.

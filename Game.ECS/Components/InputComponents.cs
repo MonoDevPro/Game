@@ -1,8 +1,6 @@
-using Game.DTOs;
-using Game.DTOs.Game;
 using Game.DTOs.Game.Player;
 
-namespace Game.ECS.Entities.Components;
+namespace Game.ECS.Components;
 
 public struct Input
 {

@@ -1,9 +1,8 @@
 using Arch.Core;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Schema.Archetypes;
-using Game.ECS.Schema.Components;
 
 namespace Game.ECS.Entities;
 
@@ -17,13 +16,12 @@ public static class FactoryHelper
         {
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
-            new Floor { Value = (sbyte)template.Floor },
-            new Position { X = template.X, Y = template.Y },
+            new Position { X = template.X, Y = template.Y, Z =  template.Z },
             
             new PlayerControlled { },
             new UniqueID { Value = template.PlayerId },
-            new GenderId { Value = (byte)template.Gender },
-            new VocationId { Value = (byte)template.Vocation },
+            new GenderId { Value = template.Gender },
+            new VocationId { Value = template.Vocation },
             
             new Input { },
             
@@ -34,8 +32,7 @@ public static class FactoryHelper
             new SpatialAnchor
             {
                 MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y },
-                Floor = template.Floor,
+                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
                 IsTracked = false
             },
             
@@ -53,7 +50,7 @@ public static class FactoryHelper
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
             
-            new SpawnPoint(template.MapId, template.X, template.Y, template.Floor),
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Z),
         };
         world.SetRange(entity, components);
         return entity;
@@ -70,8 +67,7 @@ public static class FactoryHelper
             // Set from systems
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
-            new Floor { Value = template.Floor },
-            new Position { X = template.X, Y = template.Y },
+            new Position { X = template.X, Y = template.Y, Z =  template.Z },
 
             // Identity
             new AIControlled { },
@@ -100,8 +96,7 @@ public static class FactoryHelper
             new SpatialAnchor
             {
                 MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y },
-                Floor = template.Floor,
+                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
                 IsTracked = false
             },
 
@@ -119,7 +114,7 @@ public static class FactoryHelper
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
             
-            new SpawnPoint(template.MapId, template.X, template.Y, template.Floor),
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Z),
         };
         
         world.SetRange(entity, components);

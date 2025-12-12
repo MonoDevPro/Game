@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.DTOs.Game.Player;
+using Game.ECS.Components;
 using Game.ECS.Entities;
-using Game.ECS.Entities.Components;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
 
@@ -28,7 +28,7 @@ public sealed class PlayerSpawnService(
             Vocation: (byte)character.Vocation,
             X: character.PositionX,
             Y: character.PositionY,
-            Floor: character.Floor,
+            Z: character.PositionZ,
             DirX: character.FacingX,
             DirY: character.FacingY,
             Hp: character.Stats.CurrentHp,
@@ -92,7 +92,7 @@ public sealed class PlayerSpawnService(
             Vocation: (byte)character.Vocation,
             X: character.PositionX,
             Y: character.PositionY,
-            Floor: character.Floor,
+            Z: character.PositionZ,
             DirX: character.FacingX,
             DirY: character.FacingY,
             Hp: character.Stats.CurrentHp,

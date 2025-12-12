@@ -3,9 +3,9 @@ using Arch.Core;
 using Arch.System;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
+using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;
-using Game.ECS.Schema.Components;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
@@ -171,7 +171,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         return true;
     }
 
-    public virtual bool ApplyPlayerState(ref PositionStateData snapshot)
+    public virtual bool ApplyPlayerState(ref StateData snapshot)
     {
         if (!TryGetPlayerEntity(snapshot.NetworkId, out var entity))
             return false;
@@ -185,20 +185,18 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// </summary>
     private void RegisterSpatialAnchor(Entity entity)
     {
-        if (!World.Has<SpatialAnchor>(entity) || !World.Has<MapId>(entity) || !World.Has<Position>(entity) || !World.Has<Floor>(entity))
+        if (!World.Has<SpatialAnchor>(entity) || !World.Has<MapId>(entity) || !World.Has<Position>(entity))
             return;
 
         ref var position = ref World.Get<Position>(entity);
-        ref var floor = ref World.Get<Floor>(entity);
         ref var mapId = ref World.Get<MapId>(entity);
         ref var anchor = ref World.Get<SpatialAnchor>(entity);
 
         try
         {
-            MapIndex.GetMapSpatial(mapId.Value).Insert(position, floor.Value, entity);
+            MapIndex.GetMapSpatial(mapId.Value).Insert(position, entity);
             anchor.MapId = mapId.Value;
             anchor.Position = position;
-            anchor.Floor = floor.Value;
             anchor.IsTracked = true;
         }
         catch (KeyNotFoundException)
@@ -222,7 +220,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         if (!MapIndex.HasMap(anchor.MapId))
             return;
 
-        MapIndex.GetMapSpatial(anchor.MapId).Remove(anchor.Position, anchor.Floor, entity);
+        MapIndex.GetMapSpatial(anchor.MapId).Remove(anchor.Position, entity);
         anchor.IsTracked = false;
     }
 }

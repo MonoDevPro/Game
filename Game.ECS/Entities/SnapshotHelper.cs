@@ -1,29 +1,28 @@
 using Arch.Core;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 
 namespace Game.ECS.Entities;
 
 public static class SnapshotHelper
 {
-    public static PositionStateData BuildState(this World world, Entity entity)
+    public static StateData BuildState(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
-        ref var floor = ref world.Get<Floor>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
+        ref var speed = ref world.Get<Speed>(entity);
         ref var direction = ref world.Get<Direction>(entity);
 
-        return new PositionStateData
+        return new StateData
         {
             NetworkId = networkId.Value,
             X = position.X,
             Y = position.Y,
-            Floor = floor.Value,
+            Z = position.Z,
             DirX = direction.X,
             DirY = direction.Y,
+            Speed = speed.Value
         };
     }
 
@@ -51,7 +50,6 @@ public static class SnapshotHelper
         ref var gender = ref world.Get<GenderId>(entity);
         ref var vocation = ref world.Get<VocationId>(entity);
         ref var position = ref world.Get<Position>(entity);
-        ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
@@ -67,7 +65,7 @@ public static class SnapshotHelper
             Vocation: vocation.Value,
             X: position.X,
             Y: position.Y,
-            Floor: floor.Value,
+            Z: position.Z,
             DirX: facing.X,
             DirY: facing.Y,
             Hp: health.Current,
@@ -93,7 +91,6 @@ public static class SnapshotHelper
         ref var gender = ref world.Get<GenderId>(entity);
         ref var vocation = ref world.Get<VocationId>(entity);
         ref var position = ref world.Get<Position>(entity);
-        ref var floor = ref world.Get<Floor>(entity);
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
@@ -109,7 +106,7 @@ public static class SnapshotHelper
             Vocation: vocation.Value,
             X: position.X,
             Y: position.Y,
-            Floor: floor.Value,
+            Z: position.Z,
             DirX: facing.X,
             DirY: facing.Y,
             Hp: health.Current,

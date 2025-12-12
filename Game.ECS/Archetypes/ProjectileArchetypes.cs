@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 
 namespace Game.ECS.Schema.Archetypes;
 
@@ -13,7 +13,6 @@ public static class ProjectileArchetypes
     [
         // Transform
         Component<Position>.ComponentType,
-        Component<Floor>.ComponentType,
         Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
         

@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.DTOs.Game.Player;
 
-namespace Game.ECS.Schema.Components;
+namespace Game.ECS.Components;
 
 // ============================================
 // Componentes de Combate

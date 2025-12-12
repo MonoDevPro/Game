@@ -6,7 +6,7 @@ namespace Game.DTOs.Persistence;
 public readonly record struct PositionState(
     int PositionX,
     int PositionY,
-    sbyte Floor,
-    sbyte FacingX,
-    sbyte FacingY
+    int PositionZ,
+    sbyte DirX,
+    sbyte DirY
 );

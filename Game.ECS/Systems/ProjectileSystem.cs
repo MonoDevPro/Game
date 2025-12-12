@@ -2,9 +2,8 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Schema;
-using Game.ECS.Schema.Components;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -38,12 +37,11 @@ public sealed partial class ProjectileSystem(World world,
     /// Moves projectiles towards their target and checks for collisions.
     /// </summary>
     [Query]
-    [All<Projectile, Position, Floor, Direction, MapId>]
+    [All<Projectile, Position, Direction, MapId>]
     private void MoveProjectiles(
         in Entity entity,
         ref Projectile projectile,
         ref Position position,
-        in Floor floor,
         in Direction direction,
         in MapId mapId,
         [Data] float deltaTime)
@@ -81,7 +79,7 @@ public sealed partial class ProjectileSystem(World world,
             position.Y = projectile.TargetPosition.Y;
             
             // Try to hit target at position
-            TryHitTargetAtPosition(entity, ref projectile, position, floor.Value, mapId.Value);
+            TryHitTargetAtPosition(entity, ref projectile, position, mapId.Value);
             _projectilesToDestroy.Add(entity);
             return;
         }
@@ -104,7 +102,7 @@ public sealed partial class ProjectileSystem(World world,
             position.Y = newY;
             
             // Check for collision at new position
-            if (CheckCollision(ref projectile, position, floor.Value, mapId.Value))
+            if (CheckCollision(ref projectile, position, mapId.Value))
             {
                 _projectilesToDestroy.Add(entity);
             }
@@ -114,7 +112,7 @@ public sealed partial class ProjectileSystem(World world,
     /// <summary>
     /// Checks if projectile hit something at the current position.
     /// </summary>
-    private bool CheckCollision(ref Projectile projectile, Position position, sbyte floor, int mapId)
+    private bool CheckCollision(ref Projectile projectile, Position position, int mapId)
     {
         if (!mapIndex.HasMap(mapId))
             return true; // Destroy if no map
@@ -123,14 +121,14 @@ public sealed partial class ProjectileSystem(World world,
         var spatial = mapIndex.GetMapSpatial(mapId);
         
         // Check map collision
-        if (grid.IsBlocked(position, floor))
+        if (grid.IsBlocked(position))
         {
             projectile.HasHit = true;
             return true;
         }
         
         // Check entity collision
-        if (spatial.TryGetFirstAt(position, floor, out var hitEntity))
+        if (spatial.TryGetFirstAt(position, out var hitEntity))
         {
             // Don't hit source
             if (hitEntity != projectile.Source && hitEntity != Entity.Null)
@@ -146,20 +144,16 @@ public sealed partial class ProjectileSystem(World world,
     /// <summary>
     /// Tries to hit a target at the final target position.
     /// </summary>
-    private void TryHitTargetAtPosition(Entity projectileEntity, ref Projectile projectile, Position targetPos, sbyte floor, int mapId)
+    private void TryHitTargetAtPosition(Entity projectileEntity, ref Projectile projectile, Position targetPos, int mapId)
     {
         if (!mapIndex.HasMap(mapId))
             return;
         
         var spatial = mapIndex.GetMapSpatial(mapId);
         
-        if (spatial.TryGetFirstAt(targetPos, floor, out var hitEntity))
-        {
+        if (spatial.TryGetFirstAt(targetPos, out var hitEntity))
             if (hitEntity != projectile.Source && hitEntity != Entity.Null)
-            {
                 ApplyProjectileDamage(ref projectile, hitEntity);
-            }
-        }
     }
 
     /// <summary>

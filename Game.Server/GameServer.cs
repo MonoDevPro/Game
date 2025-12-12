@@ -4,8 +4,8 @@ using Game.Core.Extensions;
 using Game.Domain.Entities;
 using Game.DTOs.Game;
 using Game.DTOs.Persistence;
+using Game.ECS.Components;
 using Game.ECS.Entities;
-using Game.ECS.Entities.Components;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -256,9 +256,9 @@ public sealed class GameServer : IDisposable
                     CharacterId = session.SelectedCharacter.Id,
                     PositionX = session.SelectedCharacter.PositionX,
                     PositionY = session.SelectedCharacter.PositionY,
-                    Floor = session.SelectedCharacter.Floor,
-                    FacingX = session.SelectedCharacter.FacingX,
-                    FacingY = session.SelectedCharacter.FacingY,
+                    PositionZ = session.SelectedCharacter.PositionZ,
+                    DirX = session.SelectedCharacter.FacingX,
+                    DirY = session.SelectedCharacter.FacingY,
                     CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
                     CurrentMp = session.SelectedCharacter.Stats.CurrentMp
                 };
@@ -273,9 +273,9 @@ public sealed class GameServer : IDisposable
                 {
                     PositionX = snapshot.X,
                     PositionY = snapshot.Y,
-                    Floor = snapshot.Floor,
-                    FacingX = snapshot.DirX,
-                    FacingY = snapshot.DirY,
+                    PositionZ = snapshot.Z,
+                    DirX = snapshot.DirX,
+                    DirY = snapshot.DirY,
                     CurrentHp = snapshot.Hp,
                     CurrentMp = snapshot.Mp
                 };

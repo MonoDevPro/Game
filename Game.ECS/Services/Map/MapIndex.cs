@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.ECS.Schema.Components;
+using Game.ECS.Components;
 
 namespace Game.ECS.Services.Map;
 
@@ -14,7 +14,6 @@ public interface IMapIndex
     MovementResult ValidateMove(
         int mapId,
         Position targetPos,
-        sbyte floor,
         Entity movingEntity);
 }
 
@@ -67,7 +66,7 @@ public class MapIndex : IMapIndex
     /// </summary>
     public bool HasMap(int mapId) => _grids.ContainsKey(mapId);
 
-    public MovementResult ValidateMove(int mapId, Position targetPos, sbyte floor, Entity movingEntity)
+    public MovementResult ValidateMove(int mapId, Position targetPos, Entity movingEntity)
     {
         if (!HasMap(mapId))
             return MovementResult.OutOfBounds;
@@ -75,13 +74,13 @@ public class MapIndex : IMapIndex
         var grid = GetMapGrid(mapId);
         var spatial = GetMapSpatial(mapId);
 
-        if (!grid.InBounds(targetPos, floor))
+        if (!grid.InBounds(targetPos))
             return MovementResult.OutOfBounds;
 
-        if (grid.IsBlocked(targetPos, floor))
+        if (grid.IsBlocked(targetPos))
             return MovementResult.BlockedByMap;
 
-        if (spatial.TryGetFirstAt(targetPos, floor, out var occupant) 
+        if (spatial.TryGetFirstAt(targetPos, out var occupant) 
             && occupant != default && occupant != Entity.Null 
             && occupant != movingEntity)
         {

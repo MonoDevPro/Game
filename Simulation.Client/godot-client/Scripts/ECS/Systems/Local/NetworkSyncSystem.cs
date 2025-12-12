@@ -3,11 +3,11 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.DTOs.Game;
 using Game.DTOs.Game.Player;
-using Game.ECS.Entities.Components;
+using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
-using Input = Game.ECS.Entities.Components.Input;
+using Input = Game.ECS.Components.Input;
 
 namespace GodotClient.ECS.Systems;
 

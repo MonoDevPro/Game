@@ -1,4 +1,4 @@
-namespace Game.ECS.Entities.Components;
+namespace Game.ECS.Components;
 
 /// <summary>
 /// Componentes Tags - Marcadores
@@ -9,7 +9,7 @@ public struct SpawnRequest { }
 /// <summary>
 /// Ponto de spawn de uma entidade.
 /// </summary>
-public readonly record struct SpawnPoint(int MapId, int X, int Y, sbyte Floor );
+public readonly record struct SpawnPoint(int MapId, int X, int Y, int Z );
 
 /// <summary>
 /// Componente que indica que a entidade está em processo de respawn.

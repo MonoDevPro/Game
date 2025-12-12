@@ -1,5 +1,5 @@
 
-namespace Game.ECS.Entities.Components;
+namespace Game.ECS.Components;
 
 // ============================================
 // Tags - Marcadores

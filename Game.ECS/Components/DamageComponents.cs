@@ -1,6 +1,6 @@
 using Arch.Core;
 
-namespace Game.ECS.Schema.Components;
+namespace Game.ECS.Components;
 
 public struct Invulnerable { }
 

@@ -19,7 +19,7 @@ public sealed class Character : BaseEntity
     public sbyte FacingY { get; set; }
     public int PositionX { get; set; }
     public int PositionY { get; set; }
-    public sbyte Floor { get; set; }
+    public int PositionZ { get; set; }
     
     // Relacionamentos
     public int AccountId { get; init; }
@@ -34,6 +34,6 @@ public sealed class Character : BaseEntity
     // Um personagem tem múltiplos slots de equipamento (1:N)
     public ICollection<EquipmentSlot> Equipment { get; init; } = new List<EquipmentSlot>();
     
-    public override string ToString() => $"Character(Id={Id}, Name={Name}, Vocation={Vocation}, Level={Stats.Level}, Pos=({PositionX},{PositionY},{Floor}))";
+    public override string ToString() => $"Character(Id={Id}, Name={Name}, Vocation={Vocation}, Level={Stats.Level}, Pos=({PositionX},{PositionY},{PositionZ}))";
     
 }
