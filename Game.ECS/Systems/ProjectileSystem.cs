@@ -3,7 +3,6 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
-using Game.ECS.Schema;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +13,7 @@ namespace Game.ECS.Systems;
 /// Projéteis se movem em direção ao alvo e são destruídos após colisão ou timeout.
 /// </summary>
 public sealed partial class ProjectileSystem(World world, 
-    IMapIndex mapIndex, ILogger<ProjectileSystem>? logger = null)
+    MapIndex mapIndex, ILogger<ProjectileSystem>? logger = null)
     : GameSystem(world, logger)
 {
     // Entities to destroy after query iteration

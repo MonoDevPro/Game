@@ -13,9 +13,9 @@ namespace Game.ECS.Systems;
 /// </summary>
 public sealed partial class SpatialSyncSystem : GameSystem
 {
-    private readonly IMapIndex _mapIndex;
+    private readonly MapIndex _mapIndex;
 
-    public SpatialSyncSystem(World world, IMapIndex mapIndex, ILogger<SpatialSyncSystem>? logger = null)
+    public SpatialSyncSystem(World world, MapIndex mapIndex, ILogger<SpatialSyncSystem>? logger = null)
         : base(world, logger)
     {
         _mapIndex = mapIndex;

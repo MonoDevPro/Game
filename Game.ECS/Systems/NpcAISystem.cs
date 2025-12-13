@@ -6,7 +6,6 @@ using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
 using Game.ECS.Components;
 using Game.ECS.Events;
-using Game.ECS.Schema;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -16,21 +15,13 @@ namespace Game.ECS.Systems;
 /// Sistema de IA para NPCs. Gerencia a máquina de estados e define destinos de navegação.
 /// Estados: Idle → Patrol → Chase → Combat → ReturnHome
 /// </summary>
-public sealed partial class NpcAISystem : GameSystem
+public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<NpcAISystem>? logger = null)
+    : GameSystem(world, logger)
 {
-    private readonly IMapIndex _mapIndex;
-    private readonly ILogger<NpcAISystem>? _logger;
     private readonly Random _random = new();
     
     // Buffers for entity queries
     private readonly Entity[] _nearbyEntities = new Entity[32];
-
-    public NpcAISystem(World world, IMapIndex mapIndex, ILogger<NpcAISystem>? logger = null) 
-        : base(world, logger)
-    {
-        _mapIndex = mapIndex;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Inicializa NPCs sem Brain com estado padrão.
@@ -107,7 +98,7 @@ public sealed partial class NpcAISystem : GameSystem
         in AIBehaviour behaviour,
         in Position position,
         in MapId mapId,
-        float deltaTime)
+        [Data] in float deltaTime)
     {
         // Check for nearby players (aggression)
         if (behaviour.Type == BehaviorType.Aggressive)
@@ -145,7 +136,7 @@ public sealed partial class NpcAISystem : GameSystem
         in Position position,
         ref Direction direction,
         ref Speed speed,
-        float deltaTime)
+        [Data] in float deltaTime)
     {
         // Check for nearby players during patrol
         if (behaviour.Type == BehaviorType.Aggressive)
@@ -198,7 +189,7 @@ public sealed partial class NpcAISystem : GameSystem
         in Position position,
         ref Direction direction,
         ref Speed speed,
-        float deltaTime)
+        [Data] in float deltaTime)
     {
         // Check if target still valid
         if (brain.CurrentTarget == Entity.Null || !World.IsAlive(brain.CurrentTarget))
@@ -259,7 +250,7 @@ public sealed partial class NpcAISystem : GameSystem
         in Position position,
         ref Direction direction,
         ref Speed speed,
-        float deltaTime)
+        [Data] in float deltaTime)
     {
         // Check if target still valid
         if (brain.CurrentTarget == Entity.Null || !World.IsAlive(brain.CurrentTarget))
@@ -328,7 +319,7 @@ public sealed partial class NpcAISystem : GameSystem
         in Position position,
         ref Direction direction,
         ref Speed speed,
-        float deltaTime)
+        [Data] in float deltaTime)
     {
         var homePos = GetHomePosition(entity, position);
         
@@ -363,7 +354,7 @@ public sealed partial class NpcAISystem : GameSystem
         var stateEvent = new NpcStateChangedEvent(entity, oldState, newState);
         EventBus.Send(ref stateEvent);
         
-        _logger?.LogDebug("[NpcAI] Entity {Entity} changed state: {OldState} -> {NewState}", 
+        logger?.LogDebug("[NpcAI] Entity {Entity} changed state: {OldState} -> {NewState}", 
             entity, oldState, newState);
     }
     
@@ -371,10 +362,10 @@ public sealed partial class NpcAISystem : GameSystem
     {
         player = Entity.Null;
         
-        if (!_mapIndex.HasMap(mapId))
+        if (!mapIndex.HasMap(mapId))
             return false;
         
-        var spatial = _mapIndex.GetMapSpatial(mapId);
+        var spatial = mapIndex.GetMapSpatial(mapId);
         
         // Query area around NPC
         var min = new Position { X = center.X - (int)range, Y = center.Y - (int)range };

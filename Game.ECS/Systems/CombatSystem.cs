@@ -3,10 +3,10 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.DTOs.Game.Player;
+using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Helpers;
-using Game.ECS.Schema.Archetypes;
 using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +16,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por processar comandos de ataque e aplicar dano.
 /// Suporta ataques melee, ranged e mágicos baseados na vocação/estilo.
 /// </summary>
-public sealed partial class CombatSystem(World world, IMapIndex mapIndex, ILogger<CombatSystem>? logger = null)
+public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger<CombatSystem>? logger = null)
     : GameSystem(world, logger)
 {
     // Projectile settings

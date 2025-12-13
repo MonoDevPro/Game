@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Schema.Archetypes;
+namespace Game.ECS.Archetypes;
 
 /// <summary>
 /// Um arqutipo  um blueprint que define quais componentes uma entidade deve ter.

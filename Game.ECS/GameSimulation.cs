@@ -61,10 +61,9 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
     
-    // Index para busca rápida de entidades por NetworkId
+    protected readonly MapIndex MapIndex = new();
     protected readonly EntityIndex<int> PlayerIndex = new();
     protected readonly EntityIndex<int> NPCIndex = new();
-    
     protected readonly GameEventBus EventBus = new();
     
     /// Fixed timestep para updates da simulação.
@@ -74,15 +73,15 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     private uint CurrentTick { get; set; }
     
     /// <summary>
-    /// Access to the map service for spatial queries.
-    /// </summary>
-    protected readonly IMapIndex MapIndex = new MapIndex();
-    
-    /// <summary>
     /// Registers a map with the map service.
     /// </summary>
     public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial) =>
         MapIndex.RegisterMap(mapId, mapGrid, mapSpatial);
+
+    /// <summary>
+    /// Exposes the registered map ids so services (e.g., NPC spawner) can align with available maps.
+    /// </summary>
+    public IEnumerable<int> GetRegisteredMapIds() => MapIndex.GetRegisteredMapIds();
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
@@ -168,15 +167,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         NPCIndex.RemoveByKey(networkId);
         UnregisterSpatialAnchor(entity);
         World.Destroy(entity);
-        return true;
-    }
-
-    public virtual bool ApplyPlayerState(ref StateData snapshot)
-    {
-        if (!TryGetPlayerEntity(snapshot.NetworkId, out var entity))
-            return false;
-        
-        World.UpdateState(entity, ref snapshot);
         return true;
     }
 

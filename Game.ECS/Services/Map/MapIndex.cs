@@ -3,24 +3,10 @@ using Game.ECS.Components;
 
 namespace Game.ECS.Services.Map;
 
-public interface IMapIndex
-{
-    IMapGrid GetMapGrid(int mapId);
-    IMapSpatial GetMapSpatial(int mapId);
-    void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial);
-    void UnregisterMap(int mapId);
-    bool HasMap(int mapId);
-    
-    MovementResult ValidateMove(
-        int mapId,
-        Position targetPos,
-        Entity movingEntity);
-}
-
 /// <summary>
 /// Implementação de IMapService para gerenciar múltiplos mapas do jogo.
 /// </summary>
-public class MapIndex : IMapIndex
+public class MapIndex
 {
     private readonly Dictionary<int, IMapGrid> _grids = [];
     private readonly Dictionary<int, IMapSpatial> _spatials = [];

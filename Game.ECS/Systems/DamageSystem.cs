@@ -4,7 +4,6 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Events;
-using Game.ECS.Schema;
 using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;

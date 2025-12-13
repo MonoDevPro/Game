@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Schema.Archetypes;
+namespace Game.ECS.Archetypes;
 
 public static class ProjectileArchetypes
 {

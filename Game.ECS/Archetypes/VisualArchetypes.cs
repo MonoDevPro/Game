@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.ECS.Components;
 
-namespace Game.ECS.Schema.Archetypes;
+namespace Game.ECS.Archetypes;
 
 /// <summary>
 /// Defines predefined archetypes for common entity types in the game.

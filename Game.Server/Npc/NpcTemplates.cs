@@ -32,6 +32,7 @@ public class NpcTemplate
     public sbyte Floor { get; init; }
     public int X { get; init; }
     public int Y { get; init; }
+    public int Z { get; init; }
 
     // Estatísticas
     public float MovementSpeed { get; init; }

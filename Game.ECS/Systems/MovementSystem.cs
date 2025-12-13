@@ -10,10 +10,10 @@ namespace Game.ECS.Systems;
 
 public sealed partial class MovementSystem : GameSystem
 {
-    private readonly IMapIndex _mapIndex;
+    private readonly MapIndex _mapIndex;
     private readonly GameEventBus _eventBus;
 
-    public MovementSystem(World world, IMapIndex mapIndex, GameEventBus eventBus, ILogger<MovementSystem>? logger = null)
+    public MovementSystem(World world, MapIndex mapIndex, GameEventBus eventBus, ILogger<MovementSystem>? logger = null)
         : base(world, logger)
     {
         _mapIndex = mapIndex;

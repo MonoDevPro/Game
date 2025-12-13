@@ -1,8 +1,8 @@
 using Arch.Core;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
+using Game.ECS.Archetypes;
 using Game.ECS.Components;
-using Game.ECS.Schema.Archetypes;
 
 namespace Game.ECS.Entities;
 

@@ -22,19 +22,36 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         if (_initialized)
             return;
 
-        var spawnPoints = repository.GetSpawnPoints(mapId: 1);
+        var spawnedAny = false;
 
-        foreach (var spawn in spawnPoints)
+        foreach (var mapId in simulation.GetRegisteredMapIds())
         {
-            SpawnNpc(spawn.TemplateId, spawn.X, spawn.Y, spawn.Floor, spawn.MapId);
+            var spawnedOnMap = false;
+
+            foreach (var spawn in repository.GetSpawnPoints(mapId))
+            {
+                SpawnNpc(spawn.TemplateId, spawn.X, spawn.Y, spawn.Floor, spawn.MapId);
+                spawnedOnMap = true;
+                spawnedAny = true;
+            }
+
+            if (!spawnedOnMap)
+            {
+                logger.LogInformation("[NPC] No spawn points configured for map {MapId}", mapId);
+            }
+        }
+
+        if (!spawnedAny)
+        {
+            logger.LogWarning("[NPC] No NPC spawn points found for any registered map. Skipping spawn.");
         }
 
         _initialized = true;
     }
 
-    public void SpawnNpc(int templateId, int x, int y, sbyte floor, int mapId)
+    public void SpawnNpc(int id, int x, int y, sbyte floor, int mapId)
     {
-        var template = repository.GetTemplate(templateId);
+        var template = repository.GetTemplate(id);
         var networkId = GenerateNetworkId();
 
         // Cria um template atualizado com a localização de spawn e networkId
@@ -48,9 +65,9 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
             DirX = (sbyte)template.DirX,
             DirY = (sbyte)template.DirY,
             MapId = mapId,
-            Z = floor,
             X = x,
             Y = y,
+            Z = floor,
             MovementSpeed = template.MovementSpeed,
             AttackSpeed = template.AttackSpeed,
             PhysicalAttack = template.PhysicalAttack,
