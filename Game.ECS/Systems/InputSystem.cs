@@ -20,22 +20,25 @@ public sealed partial class InputSystem(World world)
     [None<Dead>]
     private void ProcessInput(in Entity entity, in Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
     {
-        if (input is { InputX: 0, InputY: 0 } && (input.Flags & InputFlags.BasicAttack) == 0)
+        var (nx, ny) = NormalizeInput(input.InputX, input.InputY);
+
+        // No movement input: keep facing direction as-is.
+        // This prevents "attack while standing still" from zeroing Direction and breaking melee targeting.
+        if (nx == 0 && ny == 0)
         {
             velocity.Value = 0f;
             return;
         }
 
-        Direction previousDir = direction;
-        
-        direction = new Direction { X = input.InputX, Y = input.InputY };
+        var previousDir = direction;
+        direction = new Direction { X = nx, Y = ny };
 
         if (previousDir.X != direction.X || previousDir.Y != direction.Y)
         {
             var dirChangedEvent = new DirectionChangedEvent(entity, previousDir, direction);
             EventBus.Send(ref dirChangedEvent);
         }
-        
+
         velocity.Value = ComputeCellsPerSecond(in walk, in input.Flags);
     }
     
