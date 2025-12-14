@@ -266,17 +266,17 @@ public partial class GameClient : Node2D
         foreach (var singlePacket in packet.Vitals)
             HandleSingleVitals(singlePacket);
     }
-    
+
     private void HandleSingleVitals(in VitalsData packet)
     {
         if (_simulation is null)
             return;
-        
+
         if (!_simulation.TryGetAnyEntity(packet.NetworkId, out var entity))
             return;
         if (!_simulation.TryGetAnyVisual(packet.NetworkId, out var visual))
             return;
-        
+
         var heathCurrent = _simulation.World.Get<Health>(entity).Current;
         if (packet.CurrentHp < heathCurrent)
         {
@@ -285,17 +285,24 @@ public partial class GameClient : Node2D
             visual.ChangeTempColor(Colors.Red, 0.2f);
             visual.CreateFloatingDamageLabel(damageAmount, critical: false);
         }
+
         if (packet.CurrentHp > heathCurrent)
         {
             var healAmount = packet.CurrentHp - heathCurrent;
             visual.CreateFloatingHealLabel(healAmount);
         }
-        
-        if (packet.CurrentHp <= 0 && !_simulation.World.Has<Dead>(entity))
-            _simulation.World.Add<Dead>(entity);
-        else if (_simulation.World.Has<Dead>(entity))
-            _simulation.World.Remove<Dead>(entity);
-        
+
+        if (packet.CurrentHp <= 0)
+        {
+            if (!_simulation.World.Has<Dead>(entity))
+                _simulation.World.Add<Dead>(entity);
+        }
+        else
+        {
+            if (_simulation.World.Has<Dead>(entity))
+                _simulation.World.Remove<Dead>(entity);
+        }
+
         var vitalsSnapshot = packet;
         _simulation.ApplyVitals(ref vitalsSnapshot);
         
