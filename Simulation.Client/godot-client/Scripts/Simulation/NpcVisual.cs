@@ -13,13 +13,11 @@ namespace GodotClient.Simulation;
 public sealed partial class NpcVisual : DefaultVisual
 {
     public static NpcVisual Create()
-    {
-        return GD.Load<PackedScene>("res://Scenes/Prefabs/NpcVisual.tscn").Instantiate<NpcVisual>();
-    }
+        => GD.Load<PackedScene>("res://Scenes/Prefabs/NpcVisual.tscn").Instantiate<NpcVisual>();
     
     public void UpdateFromSnapshot(NpcData snapshot)
     {
-        LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
+        LoadSprite(VocationType.Warrior, Gender.Male);
         UpdateName("NPC " + snapshot.NetworkId);
         UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));

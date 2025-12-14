@@ -4,10 +4,8 @@ namespace Game.DTOs.Game.Npc;
 
 [MemoryPackable]
 public readonly partial record struct NpcData(
-    int NpcId, int NetworkId, int MapId,
-    string Name, byte Gender, byte Vocation,
-    int X, int Y, int Z,
-    sbyte DirX, sbyte DirY,
+    int NpcId, int NetworkId, int MapId, string Name,
+    int X, int Y, int Z, sbyte DirX, sbyte DirY,
     int Hp, int MaxHp, float HpRegen,
     int Mp, int MaxMp, float MpRegen,
     float MovementSpeed, float AttackSpeed,

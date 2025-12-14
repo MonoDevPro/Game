@@ -1,4 +1,3 @@
-using Game.Domain.Enums;
 using Game.DTOs.Game.Npc;
 
 namespace Game.Server.Npc;
@@ -18,21 +17,7 @@ public class NpcTemplate
 {
     // Identidade
     public int Id { get; init; }
-    public int NetworkId { get; init; }
     public string Name { get; init; } = string.Empty;
-    public Gender Gender { get; init; }
-    public VocationType Vocation { get; init; }
-
-    // Direção
-    public int DirX { get; init; }
-    public int DirY { get; init; }
-
-    // Localização
-    public int MapId { get; init; }
-    public sbyte Floor { get; init; }
-    public int X { get; init; }
-    public int Y { get; init; }
-    public int Z { get; init; }
 
     // Estatísticas
     public float MovementSpeed { get; init; }

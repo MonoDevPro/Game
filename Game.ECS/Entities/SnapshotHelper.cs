@@ -88,8 +88,6 @@ public static class SnapshotHelper
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var npcId = ref world.Get<UniqueID>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
-        ref var gender = ref world.Get<GenderId>(entity);
-        ref var vocation = ref world.Get<VocationId>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
@@ -102,8 +100,6 @@ public static class SnapshotHelper
             NetworkId: networkId.Value,
             MapId: mapId.Value,
             Name: name,
-            Gender: gender.Value,
-            Vocation: vocation.Value,
             X: position.X,
             Y: position.Y,
             Z: position.Z,

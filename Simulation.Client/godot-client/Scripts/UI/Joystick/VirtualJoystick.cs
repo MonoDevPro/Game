@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Godot;
 using GodotClient.Core.Environment;
 using GodotClient.Simulation;
