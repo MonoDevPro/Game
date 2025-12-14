@@ -86,7 +86,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
-    protected abstract void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null);
+    protected abstract void ConfigureSystems(World world, Group<float> systems);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in float deltaTime)

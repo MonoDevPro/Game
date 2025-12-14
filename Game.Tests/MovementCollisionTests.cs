@@ -19,14 +19,14 @@ public sealed class MovementCollisionTests
             : base(NullLogger<GameSimulation>.Instance)
         {
             RegisterMap(map.Id, new MapGrid(map.Width, map.Height, map.Layers, map.GetCollisionGrid()), new MapSpatial());
-            ConfigureSystems(World, Systems, NullLoggerFactory.Instance);
+            ConfigureSystems(World, Systems);
             Systems.Initialize();
         }
 
-        protected override void ConfigureSystems(Arch.Core.World world, Arch.System.Group<float> systems, ILoggerFactory? loggerFactory = null)
+        protected override void ConfigureSystems(Arch.Core.World world, Arch.System.Group<float> systems)
         {
-            systems.Add(new SpatialSyncSystem(world, MapIndex, loggerFactory?.CreateLogger<SpatialSyncSystem>()));
-            systems.Add(new MovementSystem(world, MapIndex, EventBus, loggerFactory?.CreateLogger<MovementSystem>()));
+            systems.Add(new SpatialSyncSystem(world, MapIndex, NullLogger<SpatialSyncSystem>.Instance));
+            systems.Add(new MovementSystem(world, MapIndex, EventBus, NullLogger<MovementSystem>.Instance));
         }
     }
 

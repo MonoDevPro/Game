@@ -19,15 +19,15 @@ public sealed class AttackFacingTests
             : base(NullLogger<GameSimulation>.Instance)
         {
             RegisterMap(map.Id, new MapGrid(map.Width, map.Height, map.Layers, map.GetCollisionGrid()), new MapSpatial());
-            ConfigureSystems(World, Systems, NullLoggerFactory.Instance);
+            ConfigureSystems(World, Systems);
             Systems.Initialize();
         }
 
-        protected override void ConfigureSystems(Arch.Core.World world, Arch.System.Group<float> systems, ILoggerFactory? loggerFactory = null)
+        protected override void ConfigureSystems(Arch.Core.World world, Arch.System.Group<float> systems)
         {
             systems.Add(new InputSystem(world));
-            systems.Add(new CombatSystem(world, MapIndex, loggerFactory?.CreateLogger<CombatSystem>()));
-            systems.Add(new DamageSystem(world, loggerFactory?.CreateLogger<DamageSystem>()));
+            systems.Add(new CombatSystem(world, MapIndex, NullLogger<CombatSystem>.Instance));
+            systems.Add(new DamageSystem(world, NullLogger<DamageSystem>.Instance));
         }
     }
 

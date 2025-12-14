@@ -17,6 +17,7 @@ namespace Game.Server.Simulation;
 public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
+    private readonly ILoggerFactory? _loggerFactory;
     
     public ServerGameSimulation(
         INetworkManager network, 
@@ -25,6 +26,7 @@ public sealed class ServerGameSimulation : GameSimulation
         : base(factory?.CreateLogger<ServerGameSimulation>())
     {
         _networkManager = network;
+        _loggerFactory = factory;
         
         // Registra os mapas fornecidos
         foreach (var map in maps)
@@ -37,7 +39,7 @@ public sealed class ServerGameSimulation : GameSimulation
         }
         
         // Configura os sistemas
-        ConfigureSystems(World, Systems, factory);
+        ConfigureSystems(World, Systems);
         
         // Inicializa os sistemas
         Systems.Initialize();
@@ -47,44 +49,42 @@ public sealed class ServerGameSimulation : GameSimulation
     /// Configura todos os sistemas de servidor.
     /// Ordem importante: Input → AI → Movement → Combat → Projectile → Damage → Lifecycle → Regen → Sync
     /// </summary>
-    protected override void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null)
+    protected override void ConfigureSystems(World world, Group<float> systems)
     {
-        var mapService = MapIndex;
-        
         // ======== SISTEMAS DE JOGO ==========
         
         // 0. NetworkEntity gerencia IDs de rede
-        systems.Add(new NetworkEntitySystem(world, loggerFactory?.CreateLogger<NetworkEntitySystem>()));
+        systems.Add(new NetworkEntitySystem(world, _loggerFactory?.CreateLogger<NetworkEntitySystem>()));
         
         // 1. Input processa entrada do jogador
         systems.Add(new InputSystem(world));
         
         // 2. NPC AI processa comportamento de NPCs
-        systems.Add(new NpcAISystem(world, mapService, loggerFactory?.CreateLogger<NpcAISystem>()));
+        systems.Add(new NpcAISystem(world, MapIndex, _loggerFactory?.CreateLogger<NpcAISystem>()));
         
         // 3. Spatial sync garante ocupação inicial no grid
-        systems.Add(new SpatialSyncSystem(world, mapService, loggerFactory?.CreateLogger<SpatialSyncSystem>()));
+        systems.Add(new SpatialSyncSystem(world, MapIndex, _loggerFactory?.CreateLogger<SpatialSyncSystem>()));
         
         // 4. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, mapService, EventBus, loggerFactory?.CreateLogger<MovementSystem>()));
+        systems.Add(new MovementSystem(world, MapIndex, EventBus, _loggerFactory?.CreateLogger<MovementSystem>()));
         
         // 5. Combat processa comandos de ataque
-        systems.Add(new CombatSystem(world, mapService, loggerFactory?.CreateLogger<CombatSystem>()));
+        systems.Add(new CombatSystem(world, MapIndex, _loggerFactory?.CreateLogger<CombatSystem>()));
         
         // 6. Projectile move projéteis e aplica dano
-        systems.Add(new ProjectileSystem(world, mapService, loggerFactory?.CreateLogger<ProjectileSystem>()));
+        systems.Add(new ProjectileSystem(world, MapIndex, _loggerFactory?.CreateLogger<ProjectileSystem>()));
         
         // 7. Damage processa dano periódico (DoT) e dano adiado
-        systems.Add(new DamageSystem(world, loggerFactory?.CreateLogger<DamageSystem>()));
+        systems.Add(new DamageSystem(world, _loggerFactory?.CreateLogger<DamageSystem>()));
         
         // 8. Lifecycle processa spawn, morte e respawn de entidades
-        systems.Add(new LifecycleSystem(world, loggerFactory?.CreateLogger<LifecycleSystem>()));
+        systems.Add(new LifecycleSystem(world, _loggerFactory?.CreateLogger<LifecycleSystem>()));
         
         // 9. Regeneration processa regeneração de vida/mana
-        systems.Add(new RegenerationSystem(world, loggerFactory?.CreateLogger<RegenerationSystem>()));
+        systems.Add(new RegenerationSystem(world, _loggerFactory?.CreateLogger<RegenerationSystem>()));
         
         // 10. ServerSync envia atualizações para clientes
-        systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, loggerFactory?.CreateLogger<ServerSyncSystem>()));
+        systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     
     public bool ApplyPlayerInput(int networkId, Input data)

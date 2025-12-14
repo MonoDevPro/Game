@@ -8,7 +8,6 @@ using Game.Network.Abstractions;
 using Godot;
 using GodotClient.ECS.Systems;
 using GodotClient.Simulation;
-using Microsoft.Extensions.Logging;
 
 namespace GodotClient.ECS;
 
@@ -32,7 +31,7 @@ public sealed class ClientGameSimulation : GameSimulation
     {
         _networkManager = networkManager;
         
-        ConfigureSystems(World, Systems, null);
+        ConfigureSystems(World, Systems);
         
         // Inicializa os sistemas
         Systems.Initialize();
@@ -43,7 +42,7 @@ public sealed class ClientGameSimulation : GameSimulation
     /// Ordem: Input → Visual Sync → Network Sync
     /// O cliente não executa sistemas de movimento/combate - recebe estado do servidor.
     /// </summary>
-    protected override void ConfigureSystems(World world, Group<float> systems, ILoggerFactory? loggerFactory = null)
+    protected override void ConfigureSystems(World world, Group<float> systems)
     {
         // Sistemas de entrada do jogador
         systems.Add(new GodotInputSystem(world));

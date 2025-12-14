@@ -75,6 +75,7 @@ public sealed partial class DamageSystem(
         health.Current = newValue;
         
         var damageEvent = new DamageEvent(Source: target, Target: target, Amount: amount, IsCritical: isCritical);
+        EventBus.Send(ref damageEvent);
     }
     
     public static void ApplyDeferredDamage(World world, in Entity targetEntity, int amount, bool isCritical = false, Entity? attacker = null)
