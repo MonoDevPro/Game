@@ -76,16 +76,16 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
                 ProcessIdleState(entity, ref brain, behaviour, position, mapId, deltaTime);
                 break;
             case AIState.Patrol:
-                ProcessPatrolState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
+                ProcessPatrolState(entity, ref brain, behaviour, position, mapId, ref direction, ref speed, deltaTime);
                 break;
             case AIState.Chase:
-                ProcessChaseState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
+                ProcessChaseState(entity, ref brain, behaviour, position, mapId, ref direction, ref speed, deltaTime);
                 break;
             case AIState.Combat:
-                ProcessCombatState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
+                ProcessCombatState(entity, ref brain, behaviour, position, mapId, ref direction, ref speed, deltaTime);
                 break;
             case AIState.ReturnHome:
-                ProcessReturnHomeState(entity, ref brain, behaviour, position, ref direction, ref speed, deltaTime);
+                ProcessReturnHomeState(entity, ref brain, behaviour, position, mapId, ref direction, ref speed, deltaTime);
                 break;
         }
     }
@@ -134,6 +134,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
+        in MapId mapId,
         ref Direction direction,
         ref Speed speed,
         [Data] in float deltaTime)
@@ -141,7 +142,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         // Check for nearby players during patrol
         if (behaviour.Type == BehaviorType.Aggressive)
         {
-            if (TryFindNearestPlayer(position, 0, behaviour.VisionRange, out var player))
+            if (TryFindNearestPlayer(position, mapId.Value, behaviour.VisionRange, out var player))
             {
                 brain.CurrentTarget = player;
                 ChangeState(entity, ref brain, AIState.Chase);
@@ -153,7 +154,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         if (!World.TryGet<NavigationAgent>(entity, out var nav) || nav.Destination == null)
         {
             // Pick random patrol point
-            var patrolPos = GetRandomPatrolPosition(position, (int)behaviour.PatrolRadius);
+            var patrolPos = ClampToMap(mapId.Value, GetRandomPatrolPosition(position, (int)behaviour.PatrolRadius));
             if (World.Has<NavigationAgent>(entity))
             {
                 ref var navRef = ref World.Get<NavigationAgent>(entity);
@@ -187,6 +188,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
+        in MapId mapId,
         ref Direction direction,
         ref Speed speed,
         [Data] in float deltaTime)
@@ -214,6 +216,23 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
             ChangeState(entity, ref brain, AIState.ReturnHome);
             return;
         }
+
+        // Drop target if it is on another map
+        if (World.TryGet<MapId>(brain.CurrentTarget, out var targetMapId) && targetMapId.Value != mapId.Value)
+        {
+            brain.CurrentTarget = Entity.Null;
+            ChangeState(entity, ref brain, AIState.ReturnHome);
+            return;
+        }
+
+        // Drop target if it's out of vision range (lost sight)
+        float distanceToTarget = CalculateDistance(position, targetPos);
+        if (distanceToTarget > behaviour.VisionRange)
+        {
+            brain.CurrentTarget = Entity.Null;
+            ChangeState(entity, ref brain, AIState.ReturnHome);
+            return;
+        }
         
         // Check leash range
         float distanceFromHome = CalculateDistance(position, GetHomePosition(entity, position));
@@ -225,7 +244,6 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         }
         
         // Check if in attack range
-        float distanceToTarget = CalculateDistance(position, targetPos);
         if (distanceToTarget <= behaviour.AttackRange)
         {
             ChangeState(entity, ref brain, AIState.Combat);
@@ -248,6 +266,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
+        in MapId mapId,
         ref Direction direction,
         ref Speed speed,
         [Data] in float deltaTime)
@@ -274,9 +293,25 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
             ChangeState(entity, ref brain, AIState.ReturnHome);
             return;
         }
+
+        // Drop target if it is on another map
+        if (World.TryGet<MapId>(brain.CurrentTarget, out var targetMapId) && targetMapId.Value != mapId.Value)
+        {
+            brain.CurrentTarget = Entity.Null;
+            ChangeState(entity, ref brain, AIState.ReturnHome);
+            return;
+        }
         
         // Check distance
         float distanceToTarget = CalculateDistance(position, targetPos);
+
+        // Lost sight while in combat -> return home
+        if (distanceToTarget > behaviour.VisionRange)
+        {
+            brain.CurrentTarget = Entity.Null;
+            ChangeState(entity, ref brain, AIState.ReturnHome);
+            return;
+        }
         
         // If too far, chase again
         if (distanceToTarget > behaviour.AttackRange * 1.5f)
@@ -317,11 +352,12 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         ref Brain brain,
         in AIBehaviour behaviour,
         in Position position,
+        in MapId mapId,
         ref Direction direction,
         ref Speed speed,
         [Data] in float deltaTime)
     {
-        var homePos = GetHomePosition(entity, position);
+        var homePos = ClampToMap(mapId.Value, GetHomePosition(entity, position));
         
         // Check if reached home
         if (IsAtPosition(position, homePos))
@@ -416,7 +452,7 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         // Try to get spawn point
         if (World.TryGet<SpawnPoint>(entity, out var spawnPoint))
         {
-            return new Position { X = spawnPoint.X, Y = spawnPoint.Y };
+            return new Position { X = spawnPoint.X, Y = spawnPoint.Y, Z = spawnPoint.Z };
         }
         
         // Fall back to current position
@@ -441,7 +477,14 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         }
     }
     
-    private static bool IsAtPosition(Position a, Position b) => a.X == b.X && a.Y == b.Y;
+    private static bool IsAtPosition(Position a, Position b) => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+
+    private Position ClampToMap(int mapId, Position position)
+    {
+        if (!mapIndex.HasMap(mapId))
+            return position;
+        return mapIndex.GetMapGrid(mapId).ClampToBounds(position);
+    }
     
     private static float CalculateDistance(Position a, Position b)
     {
