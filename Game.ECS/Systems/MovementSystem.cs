@@ -19,6 +19,21 @@ public sealed partial class MovementSystem : GameSystem
         _mapIndex = mapIndex;
         _eventBus = eventBus;
     }
+
+    public override void BeforeUpdate(in float deltaTime)
+    {
+        // Make MovementBlocked visible for one full tick.
+        // We clear previous tick's markers at the start of the next tick.
+        ClearStaleMovementBlockedQuery(World);
+    }
+
+    [Query]
+    [All<MovementBlocked>]
+    [None<MovementIntent>]
+    private void ClearStaleMovementBlocked(in Entity entity)
+    {
+        World.Remove<MovementBlocked>(entity);
+    }
     
     [Query]
     [All<Position, Direction, Speed, Walkable>]
@@ -131,7 +146,7 @@ public sealed partial class MovementSystem : GameSystem
         in Entity entity,
         in MovementBlocked blocked)
     {
-        World.Remove<MovementIntent, MovementBlocked>(entity);
+        World.Remove<MovementIntent>(entity);
     }
     
     private void InvokeMovementEvent(in Entity entity, in Position from, in Position to)

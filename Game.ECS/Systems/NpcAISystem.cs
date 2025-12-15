@@ -150,25 +150,50 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
             }
         }
         
+        // Get current home (spawn) position for patrol center
+        var homePos = GetHomePosition(entity, position);
+
         // Get or set patrol destination
-        if (!World.TryGet<NavigationAgent>(entity, out var nav) || nav.Destination == null)
+        if (!World.TryGet<NavigationAgent>(entity, out var nav))
+            return;
+
+        // If a stale destination exists (e.g. from an interrupted patrol), validate it first.
+        if (nav.Destination != null)
         {
-            // Pick random patrol point
-            var patrolPos = ClampToMap(mapId.Value, GetRandomPatrolPosition(position, (int)behaviour.PatrolRadius));
-            if (World.Has<NavigationAgent>(entity))
+            var dest = ClampToMap(mapId.Value, nav.Destination.Value);
+            if (!dest.Equals(nav.Destination.Value))
             {
                 ref var navRef = ref World.Get<NavigationAgent>(entity);
-                navRef.Destination = patrolPos;
+                navRef.Destination = dest;
+                nav = navRef;
             }
+
+            // If clamping collapses to current position, reset destination to pick a new one.
+            if (IsAtPosition(position, dest))
+            {
+                ref var navRef = ref World.Get<NavigationAgent>(entity);
+                navRef.Destination = null;
+                nav = navRef;
+            }
+        }
+
+        if (nav.Destination == null)
+        {
+            // Pick random patrol point around spawn/home
+            var patrolPos = ClampToMap(mapId.Value, GetRandomPatrolPosition(homePos, (int)behaviour.PatrolRadius));
+            ref var navRef = ref World.Get<NavigationAgent>(entity);
+            navRef.Destination = patrolPos;
+            nav = navRef;
         }
         
         // Move towards destination
-        if (World.TryGet<NavigationAgent>(entity, out nav) && nav.Destination != null)
+        if (nav.Destination != null)
         {
-            MoveTowards(ref direction, ref speed, position, nav.Destination.Value, 2f);
+            var destination = ClampToMap(mapId.Value, nav.Destination.Value);
+            MoveTowards(ref direction, ref speed, position, destination, 2f);
             
             // Check if reached destination
-            if (IsAtPosition(position, nav.Destination.Value))
+            if (IsAtPosition(position, destination))
             {
                 ref var navRef = ref World.Get<NavigationAgent>(entity);
                 navRef.Destination = null;
@@ -385,6 +410,19 @@ public sealed partial class NpcAISystem(World world, MapIndex mapIndex, ILogger<
         var oldState = brain.CurrentState;
         brain.CurrentState = newState;
         brain.StateTimer = 0f;
+
+        // Reset navigation destination when switching contexts.
+        // This avoids carrying a stale/off-bounds patrol destination through ReturnHome -> Idle -> Patrol.
+        if (World.Has<NavigationAgent>(entity))
+        {
+            ref var nav = ref World.Get<NavigationAgent>(entity);
+
+            if (newState is AIState.Patrol or AIState.ReturnHome)
+            {
+                nav.Destination = null;
+                nav.IsPathPending = false;
+            }
+        }
         
         // Fire state change event
         var stateEvent = new NpcStateChangedEvent(entity, oldState, newState);
