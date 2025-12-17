@@ -1,12 +1,12 @@
 using System. Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Arch. System.SourceGenerator;
-using Game.DTOs. Game. Npc;
+using Arch.System.SourceGenerator;
+using Game.DTOs.Game.Npc;
 using Game.ECS.Components;
 using Game.ECS.Helpers;
-using Game.ECS. Services.Map;
-using Microsoft. Extensions.Logging;
+using Game.ECS.Services.Map;
+using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
 
@@ -90,7 +90,7 @@ public sealed partial class AISystem(
         if (!World.IsAlive(brain.CurrentTarget))
         {
             brain.CurrentTarget = Entity.Null;
-            if (brain.CurrentState == AIState.Chase || brain.CurrentState == AIState.Combat)
+            if (brain.CurrentState is AIState.Chase or AIState.Combat)
             {
                 brain.CurrentState = AIState.ReturnHome;
             }
@@ -101,7 +101,7 @@ public sealed partial class AISystem(
         if (World.Has<Dead>(brain.CurrentTarget))
         {
             brain.CurrentTarget = Entity.Null;
-            if (brain.CurrentState == AIState.Chase || brain.CurrentState == AIState.Combat)
+            if (brain.CurrentState is AIState.Chase or AIState.Combat)
             {
                 brain.CurrentState = AIState.ReturnHome;
             }
@@ -136,24 +136,29 @@ public sealed partial class AISystem(
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void HandlePatrol(
-        ref Brain brain, 
+        ref Brain brain,
         ref NavigationAgent navigation,
-        ref Direction dir, 
+        ref Direction dir,
         ref Speed speed,
-        in AIBehaviour behaviour, 
-        in Position pos, 
+        in AIBehaviour behaviour,
+        in Position pos,
         in Walkable walk,
         in SpawnPoint spawn)
     {
         speed.Value = ComputeCellsPerSecond(in walk, isSprinting: false);
         navigation.StoppingDistance = 0f;
         
-        float distToSpawn = Distance(pos, new Position { X = spawn.X, Y = spawn.Y, Z = spawn.Z });
+        float distToSpawn = Distance(pos, new Position
+        {
+            X = spawn.X, 
+            Y = spawn.Y, 
+            Z = spawn.Z
+        });
         
         // Se afastou demais do spawn, volta
         if (distToSpawn > behaviour.PatrolRadius)
         {
-            brain.CurrentState = AIState. ReturnHome;
+            brain.CurrentState = AIState.ReturnHome;
             return;
         }
         
@@ -173,7 +178,7 @@ public sealed partial class AISystem(
                 return;
             }
 
-            var radius = (int)System.Math.Ceiling(behaviour.PatrolRadius);
+            var radius = (int)Math.Ceiling(behaviour.PatrolRadius);
             var dx = _random.Next(-radius, radius + 1);
             var dy = _random.Next(-radius, radius + 1);
             var patrolTarget = new Position { X = spawn.X + dx, Y = spawn.Y + dy, Z = spawn.Z };
@@ -203,7 +208,7 @@ public sealed partial class AISystem(
         in SpawnPoint spawn)
     {
         // Alvo inválido - volta para casa
-        if (brain.CurrentTarget == Entity.Null || ! World.IsAlive(brain. CurrentTarget))
+        if (brain.CurrentTarget == Entity.Null || ! World.IsAlive(brain.CurrentTarget))
         {
             brain.CurrentState = AIState.ReturnHome;
             brain.CurrentTarget = Entity.Null;
@@ -221,7 +226,13 @@ public sealed partial class AISystem(
         var targetPos = World.Get<Position>(brain.CurrentTarget);
         
         float distToTarget = Distance(pos, targetPos);
-        float distToSpawn = Distance(pos, new Position { X = spawn.X, Y = spawn.Y, Z = spawn.Z });
+        float distToSpawn = Distance(pos, 
+            new Position
+            {
+                X = spawn.X, 
+                Y = spawn.Y, 
+                Z = spawn.Z
+            });
 
         // Regra de Leash: Se afastou demais do spawn, desiste
         if (distToSpawn > behaviour.LeashRange)

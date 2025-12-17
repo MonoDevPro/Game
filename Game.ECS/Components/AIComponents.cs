@@ -34,7 +34,7 @@ public struct NavigationAgent
 public struct NavigationPath
 {
     public Position? Target;
-    public Position[]? Steps;
+    public Position[] Steps;
     public int NextIndex;
 }
 
@@ -44,16 +44,6 @@ public struct Brain
     public AIState CurrentState;
     public float StateTimer;
     public Entity CurrentTarget;
-}
-
-/// <summary>
-/// Componente para rastrear quem atacou esta entidade. 
-/// Usado por NPCs Neutros para retaliar.
-/// </summary>
-public struct AggroList
-{
-    public Entity LastAttacker;
-    public float AggroDecayTimer;
 }
 
 public enum AIState : byte

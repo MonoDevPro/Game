@@ -12,8 +12,7 @@ public sealed partial class MovementSystem(
     World world,
     MapIndex mapIndex,
     GameEventBus eventBus,
-    ILogger<MovementSystem>? logger = null)
-    : GameSystem(world, logger)
+    ILogger<MovementSystem>? logger = null) : GameSystem(world, logger)
 {
     [Query]
     [All<Position, Direction, Speed, Walkable>]
@@ -43,7 +42,12 @@ public sealed partial class MovementSystem(
         // Cria intenção de movimento
         var intent = new MovementIntent
         {
-            TargetPosition = new Position { X = pos.X + dir. X, Y = pos.Y + dir. Y, Z = pos.Z },
+            TargetPosition = new Position
+            {
+                X = pos.X + dir. X, 
+                Y = pos.Y + dir. Y, 
+                Z = pos.Z
+            },
         };
 
         World.Add<MovementIntent>(entity, intent);
@@ -58,8 +62,8 @@ public sealed partial class MovementSystem(
         in MovementIntent intent)
     {
         var result = mapIndex.ValidateMove(
-            mapId. Value,
-            intent. TargetPosition,
+            mapId.Value,
+            intent.TargetPosition,
             entity
         );
 
