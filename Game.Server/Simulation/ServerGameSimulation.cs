@@ -64,6 +64,9 @@ public sealed class ServerGameSimulation : GameSimulation
         
         // 3. Spatial sync garante ocupação inicial no grid
         systems.Add(new SpatialSyncSystem(world, MapIndex, _loggerFactory?.CreateLogger<SpatialSyncSystem>()));
+
+        // 3.5 Navigation converts destinations into directions (A*)
+        systems.Add(new NavigationSystem(world, MapIndex, _loggerFactory?.CreateLogger<NavigationSystem>()));
         
         // 4. Movement calcula novas posições
         systems.Add(new MovementSystem(world, MapIndex, EventBus, _loggerFactory?.CreateLogger<MovementSystem>()));

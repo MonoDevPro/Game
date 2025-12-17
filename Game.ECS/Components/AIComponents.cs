@@ -27,6 +27,17 @@ public struct NavigationAgent
     public bool IsPathPending;
 }
 
+/// <summary>
+/// Cached navigation path for an entity.
+/// Steps excludes the current position; NextIndex points to the next step to follow.
+/// </summary>
+public struct NavigationPath
+{
+    public Position? Target;
+    public Position[]? Steps;
+    public int NextIndex;
+}
+
 // 2. Estado Mental (O "Cérebro" Dinâmico)
 public struct Brain
 {

@@ -19,11 +19,12 @@ public sealed partial class AISystem(
     private readonly Random _random = new();
 
     [Query]
-    [All<Brain, AIBehaviour, Position, SpawnPoint, Direction, Speed, MapId, CombatStats, CombatState>]
+    [All<Brain, AIBehaviour, NavigationAgent, Position, SpawnPoint, Direction, Speed, MapId, CombatStats, CombatState, Walkable>]
     [None<Dead>]
     private void UpdateAI(
         in Entity entity,
         ref Brain brain,
+        ref NavigationAgent navigation,
         ref Direction dir,
         ref Speed speed,
         ref CombatState combatState,
@@ -46,23 +47,23 @@ public sealed partial class AISystem(
         switch (brain.CurrentState)
         {
             case AIState. Idle:
-                HandleIdle(ref brain, ref dir, in behaviour);
+                HandleIdle(ref brain, ref navigation, ref dir, ref speed, in behaviour);
                 break;
 
             case AIState. Patrol:
-                HandlePatrol(ref brain, ref dir, ref speed, in behaviour, in pos, in spawn);
+                HandlePatrol(ref brain, ref navigation, ref dir, ref speed, in behaviour, in pos, in walk, in spawn);
                 break;
 
             case AIState. Chase:
-                HandleChase(ref brain, ref dir, ref speed, in behaviour, in pos, in walk, in spawn);
+                HandleChase(ref brain, ref navigation, ref dir, ref speed, in behaviour, in pos, in walk, in spawn);
                 break;
 
             case AIState.ReturnHome:
-                HandleReturnHome(ref brain, ref dir, ref speed, in behaviour, in pos, in walk, in spawn);
+                HandleReturnHome(ref brain, ref navigation, ref dir, ref speed, in behaviour, in pos, in walk, in spawn);
                 break;
                 
             case AIState.Combat:
-                HandleCombat(entity, ref brain, ref dir, ref speed, ref combatState, 
+                HandleCombat(entity, ref brain, ref navigation, ref dir, ref speed, ref combatState, 
                     in behaviour, in pos, in spawn, in combatStats, deltaTime);
                 break;
         }
@@ -108,11 +109,14 @@ public sealed partial class AISystem(
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void HandleIdle(ref Brain brain, ref Direction dir, in AIBehaviour behaviour)
+    private void HandleIdle(ref Brain brain, ref NavigationAgent navigation, ref Direction dir, ref Speed speed, in AIBehaviour behaviour)
     {
         // Para o movimento
         dir. X = 0;
         dir.Y = 0;
+        speed.Value = 0f;
+        navigation.Destination = null;
+        navigation.IsPathPending = false;
 
         // Se o tempo acabou, decide o que fazer
         if (brain.StateTimer <= 0)
@@ -133,13 +137,16 @@ public sealed partial class AISystem(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void HandlePatrol(
         ref Brain brain, 
+        ref NavigationAgent navigation,
         ref Direction dir, 
         ref Speed speed,
         in AIBehaviour behaviour, 
         in Position pos, 
+        in Walkable walk,
         in SpawnPoint spawn)
     {
-        speed.Value = 1.0f; // Velocidade de caminhada
+        speed.Value = ComputeCellsPerSecond(in walk, isSprinting: false);
+        navigation.StoppingDistance = 0f;
         
         float distToSpawn = Distance(pos, new Position { X = spawn.X, Y = spawn.Y, Z = spawn.Z });
         
@@ -160,11 +167,26 @@ public sealed partial class AISystem(
                 brain.StateTimer = RandomRange(behaviour.IdleDurationMin, behaviour.IdleDurationMax);
                 dir.X = 0;
                 dir.Y = 0;
+                speed.Value = 0f;
+                navigation.Destination = null;
+                navigation.IsPathPending = false;
                 return;
             }
 
-            dir.X = (sbyte)_random.Next(-1, 2);
-            dir.Y = (sbyte)_random.Next(-1, 2);
+            var radius = (int)System.Math.Ceiling(behaviour.PatrolRadius);
+            var dx = _random.Next(-radius, radius + 1);
+            var dy = _random.Next(-radius, radius + 1);
+            var patrolTarget = new Position { X = spawn.X + dx, Y = spawn.Y + dy, Z = spawn.Z };
+
+            if (navigation.Destination is null || !navigation.Destination.Value.Equals(patrolTarget))
+            {
+                navigation.Destination = patrolTarget;
+                navigation.IsPathPending = true;
+            }
+
+            // NavigationSystem will compute direction.
+            dir.X = 0;
+            dir.Y = 0;
             brain.StateTimer = RandomRange(1.5f, 3.0f);
         }
     }
@@ -172,6 +194,7 @@ public sealed partial class AISystem(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void HandleChase(
         ref Brain brain, 
+        ref NavigationAgent navigation,
         ref Direction dir, 
         ref Speed speed,
         in AIBehaviour behaviour, 
@@ -225,18 +248,28 @@ public sealed partial class AISystem(
             speed.Value = 0f;
             dir.X = 0;
             dir.Y = 0;
+            navigation.Destination = null;
+            navigation.IsPathPending = false;
             return;
         }
 
         // Persegue
         speed.Value = ComputeCellsPerSecond(in walk, isSprinting: true);
-        SetDirectionTowards(ref dir, pos, targetPos);
+        navigation.StoppingDistance = behaviour.AttackRange;
+        if (navigation.Destination is null || !navigation.Destination.Value.Equals(targetPos))
+        {
+            navigation.Destination = targetPos;
+            navigation.IsPathPending = true;
+        }
+        dir.X = 0;
+        dir.Y = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void HandleCombat(
         in Entity entity,
         ref Brain brain,
+        ref NavigationAgent navigation,
         ref Direction dir,
         ref Speed speed,
         ref CombatState combatState,
@@ -250,6 +283,8 @@ public sealed partial class AISystem(
         dir.X = 0;
         dir.Y = 0;
         speed.Value = 0f;
+        navigation.Destination = null;
+        navigation.IsPathPending = false;
 
         // Valida alvo
         if (brain.CurrentTarget == Entity. Null || !World.IsAlive(brain.CurrentTarget))
@@ -329,6 +364,7 @@ public sealed partial class AISystem(
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     private void HandleReturnHome(
         ref Brain brain, 
+        ref NavigationAgent navigation,
         ref Direction dir, 
         ref Speed speed,
         in AIBehaviour behaviour, 
@@ -346,11 +382,20 @@ public sealed partial class AISystem(
             dir.X = 0;
             dir.Y = 0;
             speed.Value = 0f;
+            navigation.Destination = null;
+            navigation.IsPathPending = false;
             return;
         }
 
         speed.Value = ComputeCellsPerSecond(in walkable, isSprinting: true);
-        SetDirectionTowards(ref dir, pos, spawnPos);
+        navigation.StoppingDistance = 1.0f;
+        if (navigation.Destination is null || !navigation.Destination.Value.Equals(spawnPos))
+        {
+            navigation.Destination = spawnPos;
+            navigation.IsPathPending = true;
+        }
+        dir.X = 0;
+        dir.Y = 0;
     }
 
     private void ScanForTargets(
