@@ -72,7 +72,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             {
                 IsServer = true,
                 ServerAddress = "127.0.0.1",
-                ServerPort = 7777,
+                ServerPort = 8001,
                 ConnectionKey = "default",
                 PingIntervalMs = 2000,
                 DisconnectTimeoutMs = 5000,

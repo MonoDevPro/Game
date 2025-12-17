@@ -2,7 +2,7 @@ namespace Game.ECS.Components;
 
 public enum MovementResult
 {
-    None,           // sem movimento (zero direction / speed)
+    None,
     OutOfBounds,
     BlockedByMap,
     BlockedByEntity,

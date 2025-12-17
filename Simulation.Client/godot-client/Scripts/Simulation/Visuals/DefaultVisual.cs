@@ -4,7 +4,7 @@ using Game.ECS.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
 
-namespace GodotClient.Simulation;
+namespace GodotClient.Simulation.Visuals;
 
 /// <summary>
 /// Representação visual do jogador com predição local e reconciliação de servidor.

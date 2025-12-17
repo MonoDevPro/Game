@@ -6,7 +6,7 @@ using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Server.ECS.Systems;
+using Game.Server.Simulation.Systems;
 
 namespace Game.Server.Simulation;
 
@@ -60,7 +60,7 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new InputSystem(world));
         
         // 2. NPC AI processa comportamento de NPCs
-        systems.Add(new NpcAISystem(world, MapIndex, _loggerFactory?.CreateLogger<NpcAISystem>()));
+        systems.Add(new AISystem(world, MapIndex, _loggerFactory?.CreateLogger<AISystem>()));
         
         // 3. Spatial sync garante ocupação inicial no grid
         systems.Add(new SpatialSyncSystem(world, MapIndex, _loggerFactory?.CreateLogger<SpatialSyncSystem>()));

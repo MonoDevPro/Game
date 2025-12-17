@@ -6,17 +6,17 @@ using Game.ECS;
 using Game.ECS.Entities;
 using Game.Network.Abstractions;
 using Godot;
-using GodotClient.ECS.Systems;
-using GodotClient.Simulation;
+using GodotClient.Simulation.Components;
+using GodotClient.Simulation.Systems;
 
-namespace GodotClient.ECS;
+namespace GodotClient.Simulation;
 
 /// <summary>
 /// Exemplo de uso do ECS como CLIENTE.
 /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
 /// Estado autorizado vem do servidor.
 /// </summary>
-public sealed class ClientGameSimulation : GameSimulation
+public sealed class ClientSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
     private ClientVisualSyncSystem? _visualSyncSystem;
@@ -26,7 +26,7 @@ public sealed class ClientGameSimulation : GameSimulation
     /// O cliente executa uma simulação local parcial: apenas movimento local, renderização e input.
     /// Estado autorizado vem do servidor.
     /// </summary>
-    public ClientGameSimulation(INetworkManager networkManager) 
+    public ClientSimulation(INetworkManager networkManager) 
         : base(null)
     {
         _networkManager = networkManager;
@@ -56,7 +56,7 @@ public sealed class ClientGameSimulation : GameSimulation
     }
     
     // Visual
-    public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual)
+    public bool TryGetPlayerVisual(int networkId, out Visuals.PlayerVisual visual)
     {
         if (_visualSyncSystem != null) 
             return _visualSyncSystem.TryGetPlayerVisual(networkId, out visual);
@@ -64,7 +64,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return false;
     }
 
-    public bool TryGetNpcVisual(int networkId, out NpcVisual visual)
+    public bool TryGetNpcVisual(int networkId, out Visuals.NpcVisual visual)
     {
         if (_visualSyncSystem != null)
             return _visualSyncSystem.TryGetNpcVisual(networkId, out visual);
@@ -72,7 +72,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return false;
     }
     
-    public bool TryGetAnyVisual(int networkId, out DefaultVisual visual)
+    public bool TryGetAnyVisual(int networkId, out Visuals.DefaultVisual visual)
     {
         if (_visualSyncSystem != null)
         {
@@ -103,7 +103,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return false;
     }
 
-    public Entity CreateLocalPlayer(ref PlayerData snapshot, PlayerVisual visual)
+    public Entity CreateLocalPlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
@@ -114,7 +114,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateRemotePlayer(ref PlayerData snapshot, PlayerVisual visual)
+    public Entity CreateRemotePlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
         var entity = CreatePlayer(ref snapshot);
@@ -130,7 +130,7 @@ public sealed class ClientGameSimulation : GameSimulation
         return base.DestroyPlayer(networkId);
     }
 
-    public Entity CreateNpc(ref NpcData snapshot, NpcVisual visual)
+    public Entity CreateNpc(ref NpcData snapshot, Visuals.NpcVisual visual)
     {
         var defaultBehaviour = Behaviour.Default;
         var entity = base.CreateNpc(ref snapshot, ref defaultBehaviour);

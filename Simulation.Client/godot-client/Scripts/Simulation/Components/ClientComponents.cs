@@ -1,4 +1,4 @@
-namespace GodotClient.ECS;
+namespace GodotClient.Simulation.Components;
 
 /// <summary>
 /// Tag para identificar o jogador local (controlado por este cliente).

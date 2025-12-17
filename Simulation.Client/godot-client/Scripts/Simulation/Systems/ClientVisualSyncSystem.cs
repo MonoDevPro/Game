@@ -4,10 +4,9 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
-using GodotClient.Simulation;
 using Godot;
 
-namespace GodotClient.ECS.Systems;
+namespace GodotClient.Simulation.Systems;
 
 /// <summary>
 /// Sistema que sincroniza a renderização visual com os componentes ECS.
@@ -15,10 +14,10 @@ namespace GodotClient.ECS.Systems;
 public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesRoot) 
     : GameSystem(world)
 {
-    private readonly Dictionary<int, PlayerVisual> _playerVisuals = new();
-    private readonly Dictionary<int, NpcVisual> _npcVisuals = new();
+    private readonly Dictionary<int, Visuals.PlayerVisual> _playerVisuals = new();
+    private readonly Dictionary<int, Visuals.NpcVisual> _npcVisuals = new();
 
-    public void RegisterPlayerVisual(int networkId, PlayerVisual visual)
+    public void RegisterPlayerVisual(int networkId, Visuals.PlayerVisual visual)
     {
         UnregisterPlayerVisual(networkId);
         
@@ -27,7 +26,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         entitiesRoot.AddChild(visual);
     }
 
-    public void RegisterNpcVisual(int networkId, NpcVisual visual)
+    public void RegisterNpcVisual(int networkId, Visuals.NpcVisual visual)
     {
         UnregisterNpcVisual(networkId);
         
@@ -54,13 +53,13 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         UnregisterPlayerVisual(networkId);
     }
 
-    public bool TryGetPlayerVisual(int networkId, out PlayerVisual visual) =>
+    public bool TryGetPlayerVisual(int networkId, out Visuals.PlayerVisual visual) =>
         _playerVisuals.TryGetValue(networkId, out visual!);
 
-    public bool TryGetNpcVisual(int networkId, out NpcVisual visual) =>
+    public bool TryGetNpcVisual(int networkId, out Visuals.NpcVisual visual) =>
         _npcVisuals.TryGetValue(networkId, out visual!);
 
-    private bool TryGetAnyVisual(int networkId, out DefaultVisual visual)
+    private bool TryGetAnyVisual(int networkId, out Visuals.DefaultVisual visual)
     {
         if (TryGetPlayerVisual(networkId, out var playerVisual))
         {

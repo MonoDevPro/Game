@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://dv40cnjldwr8a"]
 
-[ext_resource type="Script" uid="uid://y7p0g5bhh5bk" path="res://Scripts/Simulation/PlayerVisual.cs" id="1_f3ihw"]
+[ext_resource type="Script" uid="uid://ctoq8taw5314i" path="res://Scripts/Simulation/Visuals/PlayerVisual.cs" id="1_f3ihw"]
 [ext_resource type="SpriteFrames" uid="uid://u1vc6x2nldgn" path="res://Resources/SpriteSheets/archer_male_frames.tres" id="2_f3ihw"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ctox"]

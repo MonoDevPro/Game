@@ -43,11 +43,11 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
         // Update cooldown timer
         if (state.InCooldown)
         {
-            state.AttackCooldownTimer -= deltaTime;
-            if (state.AttackCooldownTimer <= 0f)
+            state.CooldownTimer -= deltaTime;
+            if (state.CooldownTimer <= 0f)
             {
                 state.InCooldown = false;
-                state.AttackCooldownTimer = 0f;
+                state.CooldownTimer = 0f;
             }
         }
         
@@ -72,7 +72,7 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
         
         // Set cooldown
         state.InCooldown = true;
-        state.AttackCooldownTimer = 1f / stats.AttackSpeed;
+        state.CooldownTimer = 1f / stats.AttackSpeed;
         
         // Create attack command
         World.Add(entity, new AttackCommand
@@ -80,7 +80,7 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
             Target = Entity.Null,
             TargetPosition = targetPosition,
             Style = attackStyle,
-            ConjureDuration = 1f, // TODO: Placeholder, can be adjusted per style
+            ConjureDuration = AttackHelpers.GetBaseConjureTime(attackStyle)
         });
         
         var attackEvent = new AttackEvent(entity, Entity.Null, attackStyle, stats.AttackPower);
@@ -202,6 +202,7 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
     /// </summary>
     private void ApplyDamageToTarget(Entity attacker, Entity target, in CombatStats attackerStats, bool isMagical)
     {
+        
         if (!World.Has<Health>(target))
             return;
         

@@ -28,7 +28,7 @@ public static class FactoryHelper
             new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
             
-            new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
+            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
             new SpatialAnchor
             {
                 MapId = template.MapId,
@@ -45,7 +45,7 @@ public static class FactoryHelper
                 AttackRange = 1.5f,
                 AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
             },
-            new CombatState { AttackCooldownTimer = 0f },
+            new CombatState { CooldownTimer = 0f },
             
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
@@ -90,7 +90,7 @@ public static class FactoryHelper
             new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
 
-            new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
+            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
             new SpatialAnchor
             {
                 MapId = template.MapId,
@@ -107,7 +107,7 @@ public static class FactoryHelper
                 AttackRange = behaviour.AttackRange,
                 AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
             },
-            new CombatState { AttackCooldownTimer = 0f },
+            new CombatState { CooldownTimer = 0f },
 
             new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
             new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },

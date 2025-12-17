@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://bf2ulanb5y27w"]
 
-[ext_resource type="Script" uid="uid://dhs0xkvkeocwu" path="res://Scripts/Simulation/NpcVisual.cs" id="1_i4iwk"]
+[ext_resource type="Script" uid="uid://unqj0yp037ho" path="res://Scripts/Simulation/Visuals/NpcVisual.cs" id="1_i4iwk"]
 [ext_resource type="SpriteFrames" uid="uid://divyovnuyskrc" path="res://Resources/SpriteSheets/archer_female_frames.tres" id="2_s2f2m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ctox"]

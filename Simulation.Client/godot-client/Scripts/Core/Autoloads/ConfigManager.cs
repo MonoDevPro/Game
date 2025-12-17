@@ -70,8 +70,8 @@ public sealed class ClientConfiguration
 
 public sealed class NetworkConfiguration
 {
-    public string ServerAddress { get; set; } = "127.0.0.1";
-    public int ServerPort { get; set; } = 7777;
+    public string ServerAddress { get; set; } = "186.219.220.195";
+    public int ServerPort { get; set; } = 8001;
     public string ConnectionKey { get; set; } = "default";
     public int PingIntervalMs { get; set; } = 2000;
     public int DisconnectTimeoutMs { get; set; } = 5000;

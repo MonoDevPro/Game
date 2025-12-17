@@ -10,7 +10,6 @@ using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Godot;
 using GodotClient.Core.Autoloads;
-using GodotClient.ECS;
 using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
@@ -28,7 +27,7 @@ namespace GodotClient.Simulation;
 public partial class GameClient : Node2D
 {
     public static GameClient Instance { get; private set; } = null!;
-    public ClientGameSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
+    public ClientSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
     public bool IsChatFocused { get; private set; }
 
     private static readonly string[] GameplayActionsToRelease =
@@ -44,7 +43,7 @@ public partial class GameClient : Node2D
     };
 
     private INetworkManager? _network;
-    private ClientGameSimulation? _simulation;
+    private ClientSimulation? _simulation;
 
     private int _localNetworkId = -1;
     private int _localPlayerId = -1;
@@ -69,7 +68,7 @@ public partial class GameClient : Node2D
         _network = NetworkClient.Instance.NetworkManager;
 
         // 2) Boot de simulação (fornece INetworkManager via DI para os sistemas que precisarem)
-        _simulation = new ClientGameSimulation(_network);
+        _simulation = new ClientSimulation(_network);
 
         // 3) Registra handlers de rede apontando para a simulação
         RegisterPacketHandlers();
@@ -214,9 +213,9 @@ public partial class GameClient : Node2D
         }
     }
     
-    private PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
+    private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
     {
-        var playerVisual = PlayerVisual.Create();
+        var playerVisual = Visuals.PlayerVisual.Create();
         
         playerVisual.Name = $"Player_{snapshot.NetworkId}";
         
@@ -379,7 +378,7 @@ public partial class GameClient : Node2D
         command.ConjureDuration = packet.AttackDuration;
 
         ref var state = ref _simulation.World.AddOrGet<CombatState>(attackerEntity);
-        state.AttackCooldownTimer = packet.CooldownRemaining;
+        state.CooldownTimer = packet.CooldownRemaining;
 
         GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
@@ -398,9 +397,9 @@ public partial class GameClient : Node2D
         }
     }
 
-    private NpcVisual SpawnNpcVisual(NpcData npcSnapshot)
+    private Visuals.NpcVisual SpawnNpcVisual(NpcData npcSnapshot)
     {
-        var npcVisual = NpcVisual.Create();
+        var npcVisual = Visuals.NpcVisual.Create();
         npcVisual.Name = $"Npc_{npcSnapshot.NetworkId}";
         return npcVisual;
     }

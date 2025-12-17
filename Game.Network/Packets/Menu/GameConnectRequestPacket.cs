@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Game.Network.Packets.Game;
+namespace Game.Network.Packets.Menu;
 
 /// <summary>
 /// Client -> Server: Conecta ao jogo com token (CONNECTED).

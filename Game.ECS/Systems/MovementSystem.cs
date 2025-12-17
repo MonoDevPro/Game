@@ -8,36 +8,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
 
-public sealed partial class MovementSystem : GameSystem
+public sealed partial class MovementSystem(
+    World world,
+    MapIndex mapIndex,
+    GameEventBus eventBus,
+    ILogger<MovementSystem>? logger = null)
+    : GameSystem(world, logger)
 {
-    private readonly MapIndex _mapIndex;
-    private readonly GameEventBus _eventBus;
-
-    public MovementSystem(World world, MapIndex mapIndex, GameEventBus eventBus, ILogger<MovementSystem>? logger = null)
-        : base(world, logger)
-    {
-        _mapIndex = mapIndex;
-        _eventBus = eventBus;
-    }
-
-    public override void BeforeUpdate(in float deltaTime)
-    {
-        // Make MovementBlocked visible for one full tick.
-        // We clear previous tick's markers at the start of the next tick.
-        ClearStaleMovementBlockedQuery(World);
-    }
-
-    [Query]
-    [All<MovementBlocked>]
-    [None<MovementIntent>]
-    private void ClearStaleMovementBlocked(in Entity entity)
-    {
-        World.Remove<MovementBlocked>(entity);
-    }
-    
     [Query]
     [All<Position, Direction, Speed, Walkable>]
-    [None<Dead, MovementIntent>] // Não processa se já tem intent pendente
+    [None<Dead, MovementIntent>]
     private void GenerateIntent(
         in Entity entity,
         in Position pos,
@@ -63,12 +43,7 @@ public sealed partial class MovementSystem : GameSystem
         // Cria intenção de movimento
         var intent = new MovementIntent
         {
-            TargetPosition = new Position
-            {
-                X = pos.X + dir. X, 
-                Y = pos.Y + dir. Y, 
-                Z = pos.Z
-            },
+            TargetPosition = new Position { X = pos.X + dir. X, Y = pos.Y + dir. Y, Z = pos.Z },
         };
 
         World.Add<MovementIntent>(entity, intent);
@@ -82,7 +57,7 @@ public sealed partial class MovementSystem : GameSystem
         in MapId mapId,
         in MovementIntent intent)
     {
-        var result = _mapIndex.ValidateMove(
+        var result = mapIndex.ValidateMove(
             mapId. Value,
             intent. TargetPosition,
             entity
@@ -113,7 +88,7 @@ public sealed partial class MovementSystem : GameSystem
         in MovementIntent intent,
         ref Position pos)
     {
-        var spatial = _mapIndex.GetMapSpatial(mapId.Value);
+        var spatial = mapIndex.GetMapSpatial(mapId.Value);
         if (!spatial.TryMove(pos, intent.TargetPosition, entity))
         {
             LogWarning(
@@ -146,12 +121,12 @@ public sealed partial class MovementSystem : GameSystem
         in Entity entity,
         in MovementBlocked blocked)
     {
-        World.Remove<MovementIntent>(entity);
+        World.Remove<MovementIntent, MovementBlocked>(entity);
     }
     
     private void InvokeMovementEvent(in Entity entity, in Position from, in Position to)
     {
         var moveEvent = new MovementEvent(entity, from, to);
-        _eventBus.Send(ref moveEvent);
+        eventBus.Send(ref moveEvent);
     }
 }

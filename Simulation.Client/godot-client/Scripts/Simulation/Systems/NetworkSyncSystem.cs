@@ -7,9 +7,10 @@ using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
+using GodotClient.Simulation.Components;
 using Input = Game.ECS.Components.Input;
 
-namespace GodotClient.ECS.Systems;
+namespace GodotClient.Simulation.Systems;
 
 /// <summary>
 /// Sistema responsável por coletar componentes marcados como dirty e emitir atualizações de estado.

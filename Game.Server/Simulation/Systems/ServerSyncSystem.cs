@@ -7,9 +7,8 @@ using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Network.Packets.Game;
 
-namespace Game.Server.ECS.Systems;
+namespace Game.Server.Simulation.Systems;
 
 /// <summary>
 /// Sistema responsável por sincronizar o estado das entidades com os clientes conectados.

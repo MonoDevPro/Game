@@ -22,9 +22,9 @@ public struct AIBehaviour
 // O BehaviorSystem define o Destination, o MovementSystem decide como chegar lá.
 public struct NavigationAgent
 {
-    public Position? Destination; 
+    public Position? Destination;
     public float StoppingDistance;
-    public bool IsPathPending; // Flag para pedir recalculo de path
+    public bool IsPathPending;
 }
 
 // 2. Estado Mental (O "Cérebro" Dinâmico)
@@ -33,6 +33,16 @@ public struct Brain
     public AIState CurrentState;
     public float StateTimer;
     public Entity CurrentTarget;
+}
+
+/// <summary>
+/// Componente para rastrear quem atacou esta entidade. 
+/// Usado por NPCs Neutros para retaliar.
+/// </summary>
+public struct AggroList
+{
+    public Entity LastAttacker;
+    public float AggroDecayTimer;
 }
 
 public enum AIState : byte

@@ -114,7 +114,7 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         {
             ref var state = ref World.Get<CombatState>(entity);
             state.InCooldown = false;
-            state.AttackCooldownTimer = 0f;
+            state.CooldownTimer = 0f;
         }
 
         if (World.Has<AttackCommand>(entity))

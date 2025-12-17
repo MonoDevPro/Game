@@ -13,16 +13,17 @@ public struct CombatStats
     public int MagicPower;      // Magical Attack
     public int Defense;         // Physical Defense
     public int MagicDefense;    // Magical Defense
-    public float AttackRange;   // Range físico ou mágico
     public float AttackSpeed;   // Ataques por segundo
+    public float AttackRange;   // Alcance do ataque
 }
 
 // Gerencia o estado temporal do combate (Cooldowns)
 public struct CombatState
 {
     // New fields
-    public float AttackCooldownTimer;   // Tempo até poder atacar de novo
-    public bool InCooldown;             // Se está em cooldown de ataque
+    public float CooldownTimer;   // Tempo até poder atacar de novo
+    public bool InCooldown;       // Se está em cooldown de ataque
+    public float LastAttackTime;  // Timestamp do último ataque
 }
 
 // O "Evento" ou "Intenção". 
