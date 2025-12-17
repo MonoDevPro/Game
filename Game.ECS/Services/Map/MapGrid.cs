@@ -150,7 +150,7 @@ public class MapGrid : IMapGrid
         for (int i = 0; i < directions.Length && count < neighbors.Length; i++)
         {
             var (dx, dy) = directions[i];
-            var neighborPos = new Position { X = center.X + dx, Y = center.Y + dy };
+            var neighborPos = new Position { X = center.X + dx, Y = center.Y + dy, Z = center.Z };
             
             if (InBounds(neighborPos) && !IsBlocked(neighborPos))
             {
