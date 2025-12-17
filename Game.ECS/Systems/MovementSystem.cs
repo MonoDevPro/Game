@@ -26,18 +26,18 @@ public sealed partial class MovementSystem(
         [Data] float deltaTime)
     {
         // Sem movimento
-        if (speed. Value <= 0f || dir is { X: 0, Y: 0 })
+        if (speed.Value <= 0f || dir is { X: 0, Y: 0 })
             return;
 
         // Acumula
-        walk. Accumulator += speed.Value * deltaTime;
+        walk.Accumulator += speed.Value * deltaTime;
 
         // Ainda não acumulou o suficiente
-        if (walk. Accumulator < SimulationConfig.CellSize)
+        if (walk.Accumulator < SimulationConfig.CellSize)
             return;
 
         // Consome o acumulador
-        walk. Accumulator -= SimulationConfig.CellSize;
+        walk.Accumulator -= SimulationConfig.CellSize;
 
         // Cria intenção de movimento
         var intent = new MovementIntent
