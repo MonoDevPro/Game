@@ -18,28 +18,6 @@ public struct AIBehaviour
     public float IdleDurationMax;
 }
 
-// 3. Intenção de Navegação (Desacopla "Querer ir" de "Como ir")
-// O BehaviorSystem define o Destination, o MovementSystem decide como chegar lá.
-public struct NavigationAgent
-{
-    public Position TargetPosition;
-    public Position CurrentPosition;
-    public float Speed;
-    public float StoppingDistance;
-    public bool IsPathPending;
-}
-
-/// <summary>
-/// Cached navigation path for an entity.
-/// Steps excludes the current position; NextIndex points to the next step to follow.
-/// </summary>
-public struct NavigationPath
-{
-    public Position? TargetPosition;
-    public Position[] Waypoints;
-    public int CurrentWaypointIndex;
-}
-
 // 2. Estado Mental (O "Cérebro" Dinâmico)
 public struct Brain
 {

@@ -1,6 +1,7 @@
 using System;
 using Game.Domain.Enums;
 using Game.ECS.Components;
+using Game.ECS.Navigation.Shared.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
 
@@ -132,11 +133,11 @@ public abstract partial class DefaultVisual : Node2D
         Sprite.SpriteFrames = spriteFrames;
     }
 
-    public void UpdateAnimationState(Direction direction, bool isMoving = false, bool isAttacking = false, bool isDead = false)
+    public void UpdateAnimationState(MovementDirection direction, bool isMoving = false, bool isAttacking = false, bool isDead = false)
     {
         if (Sprite is null) return;
         
-        var nextDir = ConvertToFacingEnum(direction.X, direction.Y);
+        var nextDir = ConvertToFacingEnum(direction);
         _currentDirection = nextDir is DirectionEnum.None ? _currentDirection : nextDir;
         
         UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
@@ -171,18 +172,18 @@ public abstract partial class DefaultVisual : Node2D
         RefreshAnimationSpeeds();
     }
     
-    private DirectionEnum ConvertToFacingEnum(sbyte facingX, sbyte facingY)
+    private DirectionEnum ConvertToFacingEnum(MovementDirection direction)
     {
-        return (facingX, facingY) switch
+        return direction switch
         {
-            (0, -1) => DirectionEnum.North,
-            (1, -1) => DirectionEnum.NorthEast,
-            (-1, -1) => DirectionEnum.NorthWest,
-            (0, 1) => DirectionEnum.South,
-            (1, 1) => DirectionEnum.SouthEast,
-            (-1, 1) => DirectionEnum.SouthWest,
-            (1, 0) => DirectionEnum.East,
-            (-1, 0) => DirectionEnum.West,
+            MovementDirection.North => DirectionEnum.North,
+            MovementDirection.NorthEast => DirectionEnum.NorthEast,
+            MovementDirection.East => DirectionEnum.East,
+            MovementDirection.SouthEast => DirectionEnum.SouthEast,
+            MovementDirection.South => DirectionEnum.South,
+            MovementDirection.SouthWest => DirectionEnum.SouthWest,
+            MovementDirection.West => DirectionEnum.West,
+            MovementDirection.NorthWest => DirectionEnum.NorthWest,
             _ => DirectionEnum.None
         };
     }

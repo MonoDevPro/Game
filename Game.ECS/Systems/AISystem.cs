@@ -5,20 +5,18 @@ using Arch.System.SourceGenerator;
 using Game.DTOs.Game.Npc;
 using Game.ECS.Components;
 using Game.ECS.Helpers;
-using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
 
 public sealed partial class AISystem(
     World world,
-    MapIndex mapIndex,
     ILogger<AISystem>? logger = null)
     : GameSystem(world, logger)
 {
     private readonly Random _random = new();
 
-    [Query]
+    /*[Query]
     [All<Brain, AIBehaviour, NavigationAgent, Position, SpawnPoint, Direction, Speed, MapId, CombatStats, CombatState, Walkable>]
     [None<Dead>]
     private void UpdateAI(
@@ -537,5 +535,5 @@ public sealed partial class AISystem(
         if (isSprinting)
             speed *= 1.5f;
         return speed;
-    }
+    }*/
 }

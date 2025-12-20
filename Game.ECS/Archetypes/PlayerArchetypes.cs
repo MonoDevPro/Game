@@ -21,7 +21,6 @@ public static class PlayerArchetypes
         // Set from systems
         Component<NetworkId>.ComponentType, // Assigned by the networking system
         Component<MapId>.ComponentType,     // Assigned by the map management system
-        Component<Position>.ComponentType,  // Assigned by the spawn system
         
         // Identity
         Component<PlayerControlled>.ComponentType,
@@ -29,16 +28,8 @@ public static class PlayerArchetypes
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
         
-        // Input
-        Component<Input>.ComponentType,
-        
         // Transform
-        Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
-        
-        // Movement
-        Component<Walkable>.ComponentType,
-        Component<SpatialAnchor>.ComponentType,
         
         // Combat
         Component<CombatStats>.ComponentType,

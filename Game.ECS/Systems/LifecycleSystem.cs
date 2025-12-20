@@ -22,13 +22,9 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         in Entity entity,
         in SpawnPoint spawnPoint,
         ref SpawnRequest _,
-        ref MapId mapId,
-        ref Position position)
+        ref MapId mapId)
     {
         mapId.Value = spawnPoint.MapId;
-        position.X = spawnPoint.X;
-        position.Y = spawnPoint.Y;
-        position.Z = spawnPoint.Z;
         
         var spawnEvent = new SpawnEvent(entity, spawnPoint, World.Get<NetworkId>(entity).Value);
         EventBus.Send(ref spawnEvent);
@@ -46,7 +42,6 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         in SpawnPoint spawnPoint,
         ref Respawning respawning,
         ref MapId mapId,
-        ref Position position,
         [Data] float deltaTime)
     {
         respawning.TimeRemaining -= deltaTime;
@@ -58,9 +53,6 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
         CleanupTransientState(entity);
 
         mapId.Value = spawnPoint.MapId;
-        position.X = spawnPoint.X;
-        position.Y = spawnPoint.Y;
-        position.Z = spawnPoint.Z;
         
         World.Remove<Dead, Respawning>(entity);
 
@@ -96,7 +88,7 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
             TotalTime = SimulationConfig.DefaultRespawnTime
         });
         
-        var deathEvent = new DeathEvent(entity, Entity.Null, World.Get<Position>(entity));
+        var deathEvent = new DeathEvent(entity, Entity.Null);
         EventBus.Send(ref deathEvent);
         
         logger?.LogInformation("[DeathSystem] Entity {Entity} has died.", entity);
@@ -119,15 +111,6 @@ public sealed partial class LifecycleSystem(World world, ILogger<LifecycleSystem
 
         if (World.Has<AttackCommand>(entity))
             World.Remove<AttackCommand>(entity);
-
-        if (World.Has<MovementIntent>(entity))
-            World.Remove<MovementIntent>(entity);
-
-        if (World.Has<MovementApproved>(entity))
-            World.Remove<MovementApproved>(entity);
-
-        if (World.Has<MovementBlocked>(entity))
-            World.Remove<MovementBlocked>(entity);
     }
 
     private void RestoreVitalsOnRespawn(in Entity entity)

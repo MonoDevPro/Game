@@ -3,10 +3,14 @@ using Arch.System;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
 using Game.ECS;
+using Game.ECS.Components;
 using Game.ECS.Entities;
+using Game.ECS.Navigation.Client;
+using Game.ECS.Navigation.Client.Systems;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.Simulation.Components;
+using GodotClient.Simulation.Contracts;
 using GodotClient.Simulation.Systems;
 
 namespace GodotClient.Simulation;
@@ -19,7 +23,21 @@ namespace GodotClient.Simulation;
 public sealed class ClientSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
+    
+    // Modules
+    public ClientNavigationModule? NavigationModule;
+    
+    // Systems
     private ClientVisualSyncSystem? _visualSyncSystem;
+    private ClientSyncSystem? _clientSyncSystem;
+    
+    public override void Update(in float deltaTime)
+    {
+        base.Update(in deltaTime);
+        
+        // Atualiza o módulo de navegação do cliente
+        NavigationModule?.Update(deltaTime);
+    }
     
     /// <summary>
     /// Exemplo de uso do ECS como CLIENTE.
@@ -45,14 +63,27 @@ public sealed class ClientSimulation : GameSimulation
     protected override void ConfigureSystems(World world, Group<float> systems)
     {
         // Sistemas de entrada do jogador
-        systems.Add(new GodotInputSystem(world));
+        var inputProvider = new GodotInputProvider();
+        var networkSender = new ClientNetworkSender(_networkManager);
+        NavigationModule = new ClientNavigationModule(
+            world,
+            cellSize: 32f,
+            tickRate: 60f,
+            inputProvider: inputProvider,
+            networkSender: networkSender);
         
         // Sync de nós visuais (interpolação e animação)
         _visualSyncSystem = new ClientVisualSyncSystem(world, GameClient.Instance.EntitiesRoot);
-        systems.Add(_visualSyncSystem);
         
-        // Sincronização com o servidor (envia input)
-        systems.Add(new NetworkSyncSystem(world, _networkManager));
+        // Sistemas de rede (recebe estado do servidor)
+        _clientSyncSystem = new ClientSyncSystem(
+            world: world,
+            tickRate: 60f,
+            cellSize: 32f);
+        
+        systems.Add(_visualSyncSystem);
+        systems.Add(_clientSyncSystem);
+        
     }
     
     // Visual
@@ -106,22 +137,28 @@ public sealed class ClientSimulation : GameSimulation
     public Entity CreateLocalPlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
-        var entity = CreatePlayer(ref snapshot);
-        World.Add<LocalPlayerTag, DirtyFlags>(entity);
+        var entity = NavigationModule?.CreateEntity(
+            serverId: snapshot.NetworkId,
+            gridX: snapshot.X,
+            gridY: snapshot.Y,
+            isLocalPlayer: true);
         _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(in snapshot);
         visual.MakeCamera();
-        return entity;
+        return entity ?? default;
     }
     
     public Entity CreateRemotePlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
-        var entity = CreatePlayer(ref snapshot);
-        World.Add<RemotePlayerTag>(entity);
+        var entity = NavigationModule?.CreateEntity(
+            serverId: snapshot.NetworkId,
+            gridX: snapshot.X,
+            gridY: snapshot.Y,
+            isLocalPlayer: false);
         _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
-        return entity;
+        return entity ?? default;
     }
     
     public override bool DestroyPlayer(int networkId)
@@ -157,17 +194,6 @@ public sealed class ClientSimulation : GameSimulation
         }
     }
     
-    public void ApplyState(ref StateData stateSnapshot)
-    {
-        if (!TryGetAnyEntity(stateSnapshot.NetworkId, out Entity entity))
-        {
-            GD.PrintErr($"[GameClient] Cannot apply state: entity with NetworkId {stateSnapshot.NetworkId} not found.");
-            return;
-        }
-        
-        World.UpdateState(entity, ref stateSnapshot);
-    }
-    
     public void ApplyVitals(ref VitalsData vitalsSnapshot)
     {
         if (!TryGetPlayerEntity(vitalsSnapshot.NetworkId, out var entity) &&
@@ -176,7 +202,11 @@ public sealed class ClientSimulation : GameSimulation
             GD.PrintErr($"[GameClient] Cannot apply vitals: entity with NetworkId {vitalsSnapshot.NetworkId} not found.");
             return;
         }
-        World.UpdateVitals(entity, ref vitalsSnapshot);
+        
+        World.Set<Health, Mana>(entity,
+            new Health { Current = vitalsSnapshot.CurrentHp, Max = vitalsSnapshot.MaxHp },
+            new Mana { Current = vitalsSnapshot.CurrentMp, Max = vitalsSnapshot.MaxMp });
+        
     }
     
 }

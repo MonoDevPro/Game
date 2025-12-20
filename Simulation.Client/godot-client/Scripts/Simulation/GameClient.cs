@@ -5,7 +5,7 @@ using Game.DTOs.Game;
 using Game.DTOs.Game.Npc;
 using Game.DTOs.Game.Player;
 using Game.ECS.Components;
-using Game.ECS.Services.Map;
+using Game.ECS.Navigation.Shared.Data;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Godot;
@@ -95,7 +95,7 @@ public partial class GameClient : Node2D
             
             _network.UnregisterPacketHandler<PlayerSpawnPacket>();
             _network.UnregisterPacketHandler<LeftPacket>();
-            _network.UnregisterPacketHandler<StatePacket>();
+            _network.UnregisterPacketHandler<MovementSnapshot>();
             _network.UnregisterPacketHandler<VitalsPacket>();
             _network.UnregisterPacketHandler<AttackPacket>();
             _network.UnregisterPacketHandler<NpcSpawnPacket>();
@@ -145,26 +145,6 @@ public partial class GameClient : Node2D
             return;
         }
 
-        var width = mapSnap.Value.Width;
-        var height = mapSnap.Value.Height;
-        var layers = mapSnap.Value.Layers;
-        bool[,,] collisionMasks = new bool[width, height, layers];
-        
-        for (var z = 0; z < layers; z++)
-        {
-            var collisionLayer = mapSnap.Value.LoadCollisionLayer(z);
-            for (var x = 0; x < width; x++)
-            for (var y = 0; y < height; y++)
-                collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
-        }
-        // Registra logs dos mapas
-        GD.Print($"[GameClient] Loaded map '{mapSnap.Value.MapId}' ({width}x{height}x{layers})");
-        GD.Print($"[GameClient] Collision cells: {collisionMasks.Cast<bool>().Count(b => b)}/{width * height * layers}");
-        
-        var mapGrid = new MapGrid(width, height, layers, collisionMasks);
-        var spatial = new MapSpatial();
-        
-        _simulation?.RegisterMap(mapSnap.Value.MapId, mapGrid, spatial);
         UpdateStatus($"Playing (NetID: {_localNetworkId})");
         
         // Carrega visuais dos jogadores
@@ -236,7 +216,7 @@ public partial class GameClient : Node2D
         
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<LeftPacket>(HandleDespawn);
-        _network.RegisterPacketHandler<StatePacket>(HandleState);
+        _network.RegisterPacketHandler<MovementSnapshot>(HandleMovement);
         _network.RegisterPacketHandler<VitalsPacket>(HandleVitals);
         _network.RegisterPacketHandler<AttackPacket>(HandleCombatState);
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawn);
@@ -245,16 +225,9 @@ public partial class GameClient : Node2D
         GD.Print("[GameClient] Packet handlers registered (ECS)");
     }
 
-    private void HandleState(INetPeerAdapter peer, ref StatePacket packet)
+    private void HandleMovement(INetPeerAdapter peer, ref MovementSnapshot packet)
     {
-        if (_simulation is null)
-            return;
-        
-        foreach (var singlePacket in packet.States)
-        {
-            var stateSnapshot = singlePacket;
-            _simulation?.ApplyState(ref stateSnapshot);
-        }
+        _simulation?.NavigationModule?.OnMovementSnapshot(packet);
     }
 
     private void HandleVitals(INetPeerAdapter peer, ref VitalsPacket packet)

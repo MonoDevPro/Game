@@ -7,7 +7,6 @@ using Game.ECS.Archetypes;
 using Game.ECS.Components;
 using Game.ECS.Events;
 using Game.ECS.Helpers;
-using Game.ECS.Services.Map;
 using Microsoft.Extensions.Logging;
 
 namespace Game.ECS.Systems;
@@ -16,7 +15,7 @@ namespace Game.ECS.Systems;
 /// Sistema responsável por processar comandos de ataque e aplicar dano.
 /// Suporta ataques melee, ranged e mágicos baseados na vocação/estilo.
 /// </summary>
-public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger<CombatSystem>? logger = null)
+public sealed partial class CombatSystem(World world, ILogger<CombatSystem>? logger = null)
     : GameSystem(world, logger)
 {
     // Projectile settings
@@ -27,7 +26,7 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
     /// Processes attack input for player-controlled entities.
     /// When BasicAttack flag is set, creates an attack command.
     /// </summary>
-    [Query]
+    /*[Query]
     [All<PlayerControlled, Input, Position, Direction, CombatStats, CombatState, VocationId, MapId>]
     [None<Dead, AttackCommand>]
     private void ProcessPlayerAttackInput(
@@ -225,5 +224,5 @@ public sealed partial class CombatSystem(World world, MapIndex mapIndex, ILogger
         DamageSystem.ApplyDeferredDamage(World, target, finalDamage, false, attacker);
         
         logger?.LogDebug("[Combat] {Attacker} dealt {Damage} damage to {Target}", attacker, finalDamage, target);
-    }
+    }*/
 }

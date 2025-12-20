@@ -1,6 +1,8 @@
 using Game.Domain.Enums;
 using Game.DTOs.Game.Npc;
 using Game.ECS.Components;
+using Game.ECS.Helpers;
+using Game.ECS.Navigation.Shared.Components;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;
@@ -19,7 +21,7 @@ public sealed partial class NpcVisual : DefaultVisual
     {
         LoadSprite(VocationType.Warrior, Gender.Male); // TODO: Default sprite for NPCs, need load prefabs based on NPC type
         UpdateName(snapshot.Name);
-        UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
+        UpdateAnimationState(MovementDirection.South, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
         if (Sprite is not null) UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);

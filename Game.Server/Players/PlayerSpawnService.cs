@@ -45,7 +45,7 @@ public sealed class PlayerSpawnService(
             MagicDefense: character.Stats.MagicDefense
         );
 
-        var entity = simulation.CreatePlayer(ref playerSnapshot);
+        var entity = simulation.CreatePlayerEntity(ref playerSnapshot);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
@@ -77,10 +77,12 @@ public sealed class PlayerSpawnService(
         
         if (simulation.World.IsAlive(entity))
         {
-            return simulation.World
-                .BuildPlayerSnapshot(
-                    entity,
-                    character.Name);
+            if (simulation.World.TryGet<Health>(entity, out var health) &&
+                simulation.World.TryGet<Mana>(entity, out var mana))
+            {
+                character.Stats.CurrentHp = health.Current;
+                character.Stats.CurrentMp = mana.Current;
+            }
         }
         
         return new PlayerData(

@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
+      <ProjectReference Include="..\Game.ECS.Navigation\Game.ECS.Navigation.csproj" />
       <ProjectReference Include="..\Game.ECS\Game.ECS.csproj" />
     </ItemGroup>
 

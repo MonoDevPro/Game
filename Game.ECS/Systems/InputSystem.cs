@@ -15,7 +15,7 @@ namespace Game.ECS.Systems;
 public sealed partial class InputSystem(World world)
     : GameSystem(world)
 {
-    [Query]
+    /*[Query]
     [All<Input, Walkable, Direction, Speed>]
     [None<Dead>]
     private void ProcessInput(in Entity entity, in Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
@@ -59,5 +59,5 @@ public sealed partial class InputSystem(World world)
         sbyte nx = inputX switch { < 0 => -1, > 0 => 1, _ => 0 };
         sbyte ny = inputY switch { < 0 => -1, > 0 => 1, _ => 0 };
         return (nx, ny);
-    }
+    }*/
 }

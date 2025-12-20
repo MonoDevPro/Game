@@ -6,12 +6,6 @@ using MemoryPack;
 namespace Game.DTOs.Game;
 
 [MemoryPackable]
-public readonly partial record struct InputPacket(InputData Input);
-
-[MemoryPackable]
-public readonly partial record struct StatePacket(StateData[] States);
-
-[MemoryPackable]
 public readonly partial record struct VitalsPacket(VitalsData[] Vitals);
 
 [MemoryPackable]

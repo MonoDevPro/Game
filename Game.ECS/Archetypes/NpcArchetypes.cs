@@ -14,7 +14,6 @@ public static class NpcArchetypes
         // Set from systems
         Component<NetworkId>.ComponentType, // Assigned by the networking system
         Component<MapId>.ComponentType,     // Assigned by the map management system
-        Component<Position>.ComponentType,  // Assigned by the spawn system
         
         // Identity
         Component<AIControlled>.ComponentType,
@@ -25,15 +24,9 @@ public static class NpcArchetypes
         // AI
         Component<Brain>.ComponentType,
         Component<AIBehaviour>.ComponentType,
-        Component<NavigationAgent>.ComponentType,
         
         // Transform
-        Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
-        
-        // Movement
-        Component<Walkable>.ComponentType,
-        Component<SpatialAnchor>.ComponentType,
         
         // Combat
         Component<CombatStats>.ComponentType,

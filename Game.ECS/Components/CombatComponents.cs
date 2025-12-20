@@ -31,7 +31,7 @@ public struct CombatState
 public struct AttackCommand
 {
     public Entity Target;
-    public Position TargetPosition; // Posição alvo (para ataques à distância)
+    //public Position TargetPosition; // Posição alvo (para ataques à distância)
     public AttackStyle Style; // Estilo de ataque (Melee, Ranged, Magic)
     public float ConjureDuration; // Duração do ataque (para animações)
 }
@@ -42,7 +42,7 @@ public struct AttackCommand
 public struct Projectile
 {
     public Entity Source;
-    public Position TargetPosition;
+    //public Position TargetPosition;
     public float CurrentX;
     public float CurrentY;
     public float Speed;

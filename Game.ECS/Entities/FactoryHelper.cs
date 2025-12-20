@@ -16,25 +16,13 @@ public static class FactoryHelper
         {
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
-            new Position { X = template.X, Y = template.Y, Z =  template.Z },
             
             new PlayerControlled { },
             new UniqueID { Value = template.PlayerId },
             new GenderId { Value = template.Gender },
             new VocationId { Value = template.Vocation },
             
-            new Input { },
-            
-            new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
-            
-            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
-            new SpatialAnchor
-            {
-                MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
-                IsTracked = false
-            },
             
             new CombatStats
             { 
@@ -67,7 +55,6 @@ public static class FactoryHelper
             // Set from systems
             new NetworkId { Value = template.NetworkId },
             new MapId { Value = template.MapId },
-            new Position { X = template.X, Y = template.Y, Z =  template.Z },
 
             // Identity
             new AIControlled { },
@@ -85,18 +72,8 @@ public static class FactoryHelper
                 IdleDurationMin = behaviour.IdleDurationMin,
                 IdleDurationMax = behaviour.IdleDurationMax
             },
-            new NavigationAgent { TargetPosition = default, StoppingDistance = 0f, IsPathPending = false },
 
-            new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
-
-            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
-            new SpatialAnchor
-            {
-                MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
-                IsTracked = false
-            },
 
             new CombatStats
             {

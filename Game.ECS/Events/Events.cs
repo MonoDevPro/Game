@@ -19,7 +19,7 @@ public readonly record struct DamageEvent(Entity Source, Entity Target, int Amou
 /// <param name="Entity">The entity that died.</param>
 /// <param name="Killer">The entity that killed it (may be Entity.Null for environmental deaths).</param>
 /// <param name="Position">The position where death occurred.</param>
-public readonly record struct DeathEvent(Entity Entity, Entity Killer, Position Position);
+public readonly record struct DeathEvent(Entity Entity, Entity Killer);
 
 /// <summary>
 /// Event fired when an entity spawns.
@@ -69,7 +69,7 @@ public readonly record struct ManaChangedEvent(Entity Entity, int OldValue, int 
 /// <param name="Entity">The entity that moved.</param>
 /// <param name="OldPosition">The previous position.</param>
 /// <param name="NewPosition">The new position.</param>
-public readonly record struct MovementEvent(Entity Entity, Position OldPosition, Position NewPosition);
+public readonly record struct MovementEvent(Entity Entity);
 
 /// <summary>
 /// Event fired when an Entity changes its direction/state.
@@ -77,7 +77,7 @@ public readonly record struct MovementEvent(Entity Entity, Position OldPosition,
 /// <param name="Entity">The entity whose state changed.</param>
 /// <param name="OldDirection">The previous direction.</param>
 /// <param name="NewDirection">The new direction.</param>
-public readonly record struct DirectionChangedEvent(Entity Entity, Direction OldDirection, Direction NewDirection);
+public readonly record struct DirectionChangedEvent(Entity Entity);
 
 /// <summary>
 /// Event fired when an NPC changes its AI state.

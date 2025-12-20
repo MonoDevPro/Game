@@ -18,8 +18,6 @@ public static class VisualArchetypes
     [
         Component<NetworkId>.ComponentType,
         Component<MapId>.ComponentType,
-        Component<Position>.ComponentType,
-        Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
         Component<Health>.ComponentType,
         Component<Mana>.ComponentType,

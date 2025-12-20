@@ -24,7 +24,8 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
 
         var spawnedAny = false;
 
-        foreach (var mapId in simulation.GetRegisteredMapIds())
+        // TODO: Implementar spawn baseado em configuração externa
+        /*foreach (var mapId in simulation.RegisteredMaps)
         {
             var spawnedOnMap = false;
 
@@ -39,7 +40,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
             {
                 logger.LogInformation("[NPC] No spawn points configured for map {MapId}", mapId);
             }
-        }
+        }*/
 
         if (!spawnedAny)
         {
@@ -111,7 +112,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
     {
         foreach (var networkId in _activeNetworkIds)
             if (simulation.TryGetNpcEntity(networkId.Key, out var entity))
-                yield return simulation.World.BuildNpcSnapshot(entity, networkId.Value.Name);
+                yield return new NpcData(); // TODO: Preencher snapshot a partir da entidade
     }
 
     public bool TryDespawnNpc(int networkId)

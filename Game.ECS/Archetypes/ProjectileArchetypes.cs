@@ -12,8 +12,6 @@ public static class ProjectileArchetypes
     public static readonly ComponentType[] Projectile =
     [
         // Transform
-        Component<Position>.ComponentType,
-        Component<Direction>.ComponentType,
         Component<Speed>.ComponentType,
         
         // Projectile

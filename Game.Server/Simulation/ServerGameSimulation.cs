@@ -1,9 +1,12 @@
 using Arch.Core;
 using Arch.System;
 using Game.Domain.Entities;
+using Game.DTOs.Game.Player;
 using Game.ECS;
-using Game.ECS.Components;
-using Game.ECS.Services.Map;
+using Game.ECS.Navigation.Client;
+using Game.ECS.Navigation.Server;
+using Game.ECS.Navigation.Shared.Components;
+using Game.ECS.Navigation.Shared.Data;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Game.Server.Simulation.Systems;
@@ -18,7 +21,17 @@ public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
     private readonly ILoggerFactory? _loggerFactory;
-    
+    private readonly ServerNavigationModule? _navigationModule;
+
+    public override void Update(in float deltaTime)
+    {
+        base.Update(in deltaTime);
+        
+        // Atualiza o módulo de navegação do servidor
+        _navigationModule?.Tick(serverTick: Environment.TickCount);
+    }
+
+
     public ServerGameSimulation(
         INetworkManager network, 
         IEnumerable<Map> maps,
@@ -27,15 +40,16 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         _networkManager = network;
         _loggerFactory = factory;
+        _navigationModule = new ServerNavigationModule(
+            world: World,
+            width: 100,   // Exemplo, deve ser baseado no mapa real
+            height: 100   // Exemplo, deve ser baseado no mapa real
+        );
         
         // Registra os mapas fornecidos
         foreach (var map in maps)
         {
-            MapIndex.RegisterMap(
-                map.Id,
-                new MapGrid(map.Width, map.Height, map.Layers, map.GetCollisionGrid()),
-                new MapSpatial()
-            );
+            // TODO: armazenar mapas em um gerenciador de mapas
         }
         
         // Configura os sistemas
@@ -60,19 +74,10 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new InputSystem(world));
         
         // 2. NPC AI processa comportamento de NPCs
-        systems.Add(new AISystem(world, MapIndex, _loggerFactory?.CreateLogger<AISystem>()));
-        
-        // 3. Spatial sync garante ocupação inicial no grid
-        systems.Add(new SpatialSyncSystem(world, MapIndex, _loggerFactory?.CreateLogger<SpatialSyncSystem>()));
-
-        // 4. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, MapIndex, EventBus, _loggerFactory?.CreateLogger<MovementSystem>()));
+        systems.Add(new AISystem(world, _loggerFactory?.CreateLogger<AISystem>()));
         
         // 5. Combat processa comandos de ataque
-        systems.Add(new CombatSystem(world, MapIndex, _loggerFactory?.CreateLogger<CombatSystem>()));
-        
-        // 6. Projectile move projéteis e aplica dano
-        systems.Add(new ProjectileSystem(world, MapIndex, _loggerFactory?.CreateLogger<ProjectileSystem>()));
+        systems.Add(new CombatSystem(world, _loggerFactory?.CreateLogger<CombatSystem>()));
         
         // 7. Damage processa dano periódico (DoT) e dano adiado
         systems.Add(new DamageSystem(world, _loggerFactory?.CreateLogger<DamageSystem>()));
@@ -87,14 +92,24 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     
-    public bool ApplyPlayerInput(int networkId, Input data)
+    public Entity CreatePlayerEntity(ref PlayerData playerSnapshot)
+    {
+        return _navigationModule?.CreateAgent(new GridPosition(playerSnapshot.X, playerSnapshot.Y))
+            ?? throw new InvalidOperationException("Navigation module is not initialized.");
+    }
+    
+    public bool ApplyPlayerInput(int networkId, MoveInput data)
     {
         if (!TryGetPlayerEntity(networkId, out var entity))
             return false;
-        ref var input = ref World.Get<Input>(entity);
-        input.InputX = data.InputX;
-        input.InputY = data.InputY;
-        input.Flags = data.Flags;
+        
+        World.Add<PathRequest>(entity, new PathRequest
+        {
+            TargetX = data.TargetX,
+            TargetY = data.TargetY,
+            Flags = PathRequestFlags.None,
+            Priority = PathPriority.Normal
+        });
         return true;
     }
 }

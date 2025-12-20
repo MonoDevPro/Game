@@ -6,6 +6,7 @@ using Game.DTOs.Game;
 using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
+using Game.ECS.Navigation.Shared.Data;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -93,7 +94,7 @@ public sealed class GameServer : IDisposable
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
-        RegisterAndValidate<InputPacket>(HandlePlayerInput);
+        RegisterAndValidate<MoveInput>(HandlePlayerInput);
         RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
     }
 
@@ -264,10 +265,7 @@ public sealed class GameServer : IDisposable
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
-                var snapshot = _simulation.World
-                    .BuildPlayerSnapshot(
-                        session.Entity, 
-                        session.SelectedCharacter.Name);
+                var snapshot = _spawnService.BuildSnapshot(session);
                 
                 characterPersistData = characterPersistData with
                 {
@@ -787,22 +785,15 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler CONNECTED de input de jogador.
     /// </summary>
-    private void HandlePlayerInput(INetPeerAdapter peer, ref InputPacket input)
+    private void HandlePlayerInput(INetPeerAdapter peer, ref MoveInput input)
     {
-        if (_simulation.ApplyPlayerInput(peer.Id, 
-                new Input
-                {
-                    InputX = input.Input.InputX, 
-                    InputY = input.Input.InputY, 
-                    Flags = input.Input.Flags
-                } ))
+        if (_simulation.ApplyPlayerInput(peer.Id, input))
         {
             _logger.LogDebug(
-                "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
+                "Applied input from peer {PeerId}: Input=({InputX}, {InputY})",
                 peer.Id, 
-                input.Input.InputX,
-                input.Input.InputY,
-                input.Input.Flags
+                input.TargetX, 
+                input.TargetY
             );
         }
     }
@@ -899,7 +890,7 @@ public sealed class GameServer : IDisposable
     
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
-        _networkManager.UnregisterPacketHandler<InputPacket>();
+        _networkManager.UnregisterPacketHandler<MoveInput>();
         _networkManager.UnregisterPacketHandler<ChatMessagePacket>();
     }
 }
