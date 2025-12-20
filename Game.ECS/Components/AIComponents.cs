@@ -22,7 +22,9 @@ public struct AIBehaviour
 // O BehaviorSystem define o Destination, o MovementSystem decide como chegar lá.
 public struct NavigationAgent
 {
-    public Position? Destination;
+    public Position TargetPosition;
+    public Position CurrentPosition;
+    public float Speed;
     public float StoppingDistance;
     public bool IsPathPending;
 }
@@ -33,9 +35,9 @@ public struct NavigationAgent
 /// </summary>
 public struct NavigationPath
 {
-    public Position? Target;
-    public Position[] Steps;
-    public int NextIndex;
+    public Position? TargetPosition;
+    public Position[] Waypoints;
+    public int CurrentWaypointIndex;
 }
 
 // 2. Estado Mental (O "Cérebro" Dinâmico)

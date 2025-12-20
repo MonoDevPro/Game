@@ -115,14 +115,14 @@ public sealed partial class AISystem(
         dir. X = 0;
         dir.Y = 0;
         speed.Value = 0f;
-        navigation.Destination = null;
+        navigation.TargetPosition = default;
         navigation.IsPathPending = false;
 
         // Se o tempo acabou, decide o que fazer
         if (brain.StateTimer <= 0)
         {
             // 50% chance de patrulhar
-            if (_random. NextDouble() > 0.5)
+            if (_random.NextDouble() > 0.5)
             {
                 brain.CurrentState = AIState.Patrol;
                 brain.StateTimer = 2.0f; // Tempo inicial de patrulha
@@ -147,21 +147,21 @@ public sealed partial class AISystem(
     {
         speed.Value = ComputeCellsPerSecond(in walk, isSprinting: false);
         navigation.StoppingDistance = 0f;
-        
+
         float distToSpawn = Distance(pos, new Position
         {
-            X = spawn.X, 
-            Y = spawn.Y, 
+            X = spawn.X,
+            Y = spawn.Y,
             Z = spawn.Z
         });
-        
+
         // Se afastou demais do spawn, volta
         if (distToSpawn > behaviour.PatrolRadius)
         {
             brain.CurrentState = AIState.ReturnHome;
             return;
         }
-        
+
         // Muda de direção aleatoriamente se o timer zerar
         if (brain.StateTimer <= 0)
         {
@@ -173,7 +173,7 @@ public sealed partial class AISystem(
                 dir.X = 0;
                 dir.Y = 0;
                 speed.Value = 0f;
-                navigation.Destination = null;
+                navigation.TargetPosition = default;
                 navigation.IsPathPending = false;
                 return;
             }
@@ -183,9 +183,9 @@ public sealed partial class AISystem(
             var dy = _random.Next(-radius, radius + 1);
             var patrolTarget = new Position { X = spawn.X + dx, Y = spawn.Y + dy, Z = spawn.Z };
 
-            if (navigation.Destination is null || !navigation.Destination.Value.Equals(patrolTarget))
+            if (navigation.TargetPosition.Equals(default(Position)) || !navigation.TargetPosition.Equals(patrolTarget))
             {
-                navigation.Destination = patrolTarget;
+                navigation.TargetPosition = patrolTarget;
                 navigation.IsPathPending = true;
             }
 
@@ -259,7 +259,7 @@ public sealed partial class AISystem(
             speed.Value = 0f;
             dir.X = 0;
             dir.Y = 0;
-            navigation.Destination = null;
+            navigation.TargetPosition = default;
             navigation.IsPathPending = false;
             return;
         }
@@ -267,9 +267,9 @@ public sealed partial class AISystem(
         // Persegue
         speed.Value = ComputeCellsPerSecond(in walk, isSprinting: true);
         navigation.StoppingDistance = behaviour.AttackRange;
-        if (navigation.Destination is null || !navigation.Destination.Value.Equals(targetPos))
+        if (navigation.TargetPosition.Equals(default(Position)) || !navigation.TargetPosition.Equals(targetPos))
         {
-            navigation.Destination = targetPos;
+            navigation.TargetPosition = targetPos;
             navigation.IsPathPending = true;
         }
         dir.X = 0;
@@ -294,7 +294,7 @@ public sealed partial class AISystem(
         dir.X = 0;
         dir.Y = 0;
         speed.Value = 0f;
-        navigation.Destination = null;
+        navigation.TargetPosition = default;
         navigation.IsPathPending = false;
 
         // Valida alvo
@@ -393,16 +393,16 @@ public sealed partial class AISystem(
             dir.X = 0;
             dir.Y = 0;
             speed.Value = 0f;
-            navigation.Destination = null;
+            navigation.TargetPosition = default;
             navigation.IsPathPending = false;
             return;
         }
 
         speed.Value = ComputeCellsPerSecond(in walkable, isSprinting: true);
         navigation.StoppingDistance = 1.0f;
-        if (navigation.Destination is null || !navigation.Destination.Value.Equals(spawnPos))
+        if (navigation.TargetPosition.Equals(default(Position)) || !navigation.TargetPosition.Equals(spawnPos))
         {
-            navigation.Destination = spawnPos;
+            navigation.TargetPosition = spawnPos;
             navigation.IsPathPending = true;
         }
         dir.X = 0;

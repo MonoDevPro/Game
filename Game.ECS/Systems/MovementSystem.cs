@@ -15,6 +15,49 @@ public sealed partial class MovementSystem(
     ILogger<MovementSystem>? logger = null) : GameSystem(world, logger)
 {
     [Query]
+    [All<NavigationAgent, NavigationPath>]
+    private void ProcessNavigationAgents(
+        in Entity entity,
+        ref NavigationAgent agent,
+        ref NavigationPath path,
+        [Data] float deltaTime)
+    {
+        // Se não há caminho, nada a fazer
+        if (path.Waypoints.Length == 0 || path.CurrentWaypointIndex >= path.Waypoints.Length)
+            return;
+
+        // Obtém a posição alvo atual
+        var targetPos = path.Waypoints[path.CurrentWaypointIndex];
+
+        // Move o agente em direção ao waypoint
+        var direction = new Direction
+        {
+            X = (sbyte)(targetPos.X - agent.CurrentPosition.X),
+            Y = (sbyte)(targetPos.Y - agent.CurrentPosition.Y)
+        };
+
+        // Normaliza a direção
+        var length = MathF.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
+        if (length > 0f)
+        {
+            direction.X /= (sbyte)length;
+            direction.Y /= (sbyte)length;
+        }
+
+        // Atualiza a posição atual do agente
+        agent.CurrentPosition.X += (int)(direction.X * agent.Speed * deltaTime);
+        agent.CurrentPosition.Y += (int)(direction.Y * agent.Speed * deltaTime);
+
+        // Verifica se alcançou o waypoint
+        if (MathF.Abs(agent.CurrentPosition.X - targetPos.X) < 0.1f &&
+            MathF.Abs(agent.CurrentPosition.Y - targetPos.Y) < 0.1f)
+        {
+            // Move para o próximo waypoint
+            path.CurrentWaypointIndex++;
+        }
+    }
+    
+    [Query]
     [All<Position, Direction, Speed, Walkable>]
     [None<Dead, MovementIntent>]
     private void GenerateIntent(

@@ -85,7 +85,7 @@ public static class FactoryHelper
                 IdleDurationMin = behaviour.IdleDurationMin,
                 IdleDurationMax = behaviour.IdleDurationMax
             },
-            new NavigationAgent { Destination = null, StoppingDistance = 0f, IsPathPending = false },
+            new NavigationAgent { TargetPosition = default, StoppingDistance = 0f, IsPathPending = false },
 
             new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
