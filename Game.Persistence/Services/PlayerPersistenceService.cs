@@ -58,8 +58,6 @@ internal sealed class PlayerPersistenceService(
         character.PositionX = position.PositionX;
         character.PositionY = position.PositionY;
         character.PositionZ = position.PositionZ;
-        character.FacingX = position.DirX;
-        character.FacingY = position.DirY;
 
         if (updateTimestamp)
             character.LastUpdatedAt = DateTime.UtcNow;

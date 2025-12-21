@@ -21,8 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Tests", "Game.Tests\Game.Tests.csproj", "{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.DTOs", "Game.DTOs\Game.DTOs.csproj", "{D921CF2B-3E39-4923-BA04-481CB6E4B006}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Client", "Game.ECS.Client\Game.ECS.Client.csproj", "{59353BB2-143C-4F09-8E91-C7993D26A003}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Navigation.Tests", "Game.ECS.Navigation.Tests\Game.ECS.Navigation.Tests.csproj", "{D4997B79-A56A-4C44-9E1B-C8D695A76FCA}"
@@ -63,10 +61,6 @@ Global
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Release|Any CPU.Build.0 = Release|Any CPU
 		{59353BB2-143C-4F09-8E91-C7993D26A003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{59353BB2-143C-4F09-8E91-C7993D26A003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59353BB2-143C-4F09-8E91-C7993D26A003}.Release|Any CPU.ActiveCfg = Release|Any CPU

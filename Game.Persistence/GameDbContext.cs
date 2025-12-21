@@ -136,12 +136,9 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
-            entity.Property(e => e.FacingX)
-                .HasDefaultValue(0);
-            
-            entity.Property(e => e.FacingY)
+            entity.Property(e => e.Direction)
                 .HasDefaultValue(1);
-
+            
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 

@@ -29,7 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Game.DTOs\Game.DTOs.csproj" />
     <ProjectReference Include="..\..\Game.ECS.Client\Game.ECS.Client.csproj" />
     <ProjectReference Include="..\..\Game.Network\Game.Network.csproj" />
   </ItemGroup>

@@ -2,14 +2,12 @@ using System.Collections.Concurrent;
 using System.Net;
 using Game.Domain.Entities;
 using Game.DTOs.Chat;
-using Game.DTOs.Game;
 using Game.DTOs.Menu;
 using Game.DTOs.Persistence;
-using Game.ECS.Components;
-using Game.ECS.Entities;
-using Game.ECS.Navigation.Shared.Data;
+using Game.ECS.Server;
+using Game.ECS.Shared.Data.Entities;
+using Game.ECS.Shared.Data.Navigation;
 using Game.ECS.Shared.Services.Network;
-using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
@@ -18,7 +16,6 @@ using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
-using Game.Server.Simulation;
 
 namespace Game.Server;
 
@@ -259,8 +256,7 @@ public sealed class GameServer : IDisposable
                     PositionX = session.SelectedCharacter.PositionX,
                     PositionY = session.SelectedCharacter.PositionY,
                     PositionZ = session.SelectedCharacter.PositionZ,
-                    DirX = session.SelectedCharacter.FacingX,
-                    DirY = session.SelectedCharacter.FacingY,
+                    Dir = session.SelectedCharacter.Direction,
                     CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
                     CurrentMp = session.SelectedCharacter.Stats.CurrentMp
                 };
@@ -273,8 +269,7 @@ public sealed class GameServer : IDisposable
                     PositionX = snapshot.X,
                     PositionY = snapshot.Y,
                     PositionZ = snapshot.Z,
-                    DirX = snapshot.DirX,
-                    DirY = snapshot.DirY,
+                    Dir = (byte)snapshot.Direction,
                     CurrentHp = snapshot.Hp,
                     CurrentMp = snapshot.Mp
                 };
