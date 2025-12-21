@@ -127,7 +127,9 @@ public sealed class ServerGameSimulation : GameSimulation
     
     public void DestroyNpc(int networkId)
     {
-        DestroyPlayer(networkId); // Same logic for now
+        // NPCs and players share the same entity registry and destruction logic.
+        // If NPC-specific cleanup is needed in the future, implement it here.
+        DestroyPlayer(networkId);
     }
     
     public bool TryGetNpcEntity(int networkId, out Entity entity)

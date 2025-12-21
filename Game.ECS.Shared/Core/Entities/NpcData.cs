@@ -3,6 +3,11 @@ using MemoryPack;
 
 namespace Game.ECS.Shared.Core.Entities;
 
+/// <summary>
+/// NPC data structure for network serialization.
+/// Note: Using mutable struct instead of readonly record struct to allow object initializer syntax
+/// which is used in NpcSpawnService. MemoryPack supports both patterns.
+/// </summary>
 [MemoryPackable]
 public partial struct NpcData
 {
