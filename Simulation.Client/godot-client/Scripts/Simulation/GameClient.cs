@@ -242,19 +242,32 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
 
-        var heathCurrent = _simulation.World.Get<Health>(entity).Current;
+        if (!_simulation.TryGetAnyEntity(packet.Id, out var entity))
+        {
+            GD.PushWarning($"[GameClient] HandleSingleVitals: Could not find entity {packet.Id}");
+            return;
+        }
+
+        if (!_simulation.World.TryGet<Health>(entity, out var health))
+        {
+            GD.PushWarning($"[GameClient] HandleSingleVitals: Entity {packet.Id} has no Health component");
+            return;
+        }
+
+        var heathCurrent = health.Current;
         if (packet.CurrentHp < heathCurrent)
         {
             var damageAmount = heathCurrent - packet.CurrentHp;
-            // Exemplo simples: troca cor rápida
-            visual.ChangeTempColor(Colors.Red, 0.2f);
-            visual.CreateFloatingDamageLabel(damageAmount, critical: false);
+            // TODO: Implementar visual feedback quando visual estiver disponível
+            // visual.ChangeTempColor(Colors.Red, 0.2f);
+            // visual.CreateFloatingDamageLabel(damageAmount, critical: false);
         }
 
         if (packet.CurrentHp > heathCurrent)
         {
             var healAmount = packet.CurrentHp - heathCurrent;
-            visual.CreateFloatingHealLabel(healAmount);
+            // TODO: Implementar visual feedback quando visual estiver disponível
+            // visual.CreateFloatingHealLabel(healAmount);
         }
 
         if (packet.CurrentHp <= 0)
@@ -271,7 +284,8 @@ public partial class GameClient : Node2D
         var vitalsSnapshot = packet;
         _simulation.ApplyVitals(ref vitalsSnapshot);
         
-        visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
+        // TODO: Implementar visual feedback quando visual estiver disponível
+        // visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
         
         GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.Id}");
     }

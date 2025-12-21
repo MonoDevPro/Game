@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Game.DTOs.Chat;
-using Game.Network.Packets.Game;
 using Godot;
 
 namespace GodotClient.UI.Chat;

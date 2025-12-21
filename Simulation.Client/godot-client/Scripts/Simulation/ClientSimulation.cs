@@ -86,13 +86,13 @@ public sealed class ClientSimulation : GameSimulation
     
     public Entity CreateLocalPlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
-        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.Id}, Local: {true})");
+        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = NavigationModule?.CreateEntity(
-            serverId: snapshot.Id,
+            serverId: snapshot.NetworkId,
             gridX: snapshot.X,
             gridY: snapshot.Y,
             isLocalPlayer: true);
-        _visualSyncSystem?.RegisterPlayerVisual(snapshot.Id, visual);
+        _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(in snapshot);
         visual.MakeCamera();
         return entity ?? default;
@@ -100,13 +100,13 @@ public sealed class ClientSimulation : GameSimulation
     
     public Entity CreateRemotePlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
-        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.Id}, Local: {false})");
+        GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
         var entity = NavigationModule?.CreateEntity(
-            serverId: snapshot.Id,
+            serverId: snapshot.NetworkId,
             gridX: snapshot.X,
             gridY: snapshot.Y,
             isLocalPlayer: false);
-        _visualSyncSystem?.RegisterPlayerVisual(snapshot.Id, visual);
+        _visualSyncSystem?.RegisterPlayerVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
         return entity ?? default;
     }
@@ -115,7 +115,7 @@ public sealed class ClientSimulation : GameSimulation
     {
         var defaultBehaviour = AIBehaviour.Default;
         var entity = NavigationModule?.CreateEntity(
-            serverId: snapshot.Id,
+            serverId: snapshot.NetworkId,
             gridX: snapshot.X,
             gridY: snapshot.Y,
             isLocalPlayer: false,
@@ -126,7 +126,7 @@ public sealed class ClientSimulation : GameSimulation
                 SmoothMovement = true,
                 Easing = EasingType.QuadInOut
             });
-        _visualSyncSystem?.RegisterNpcVisual(snapshot.Id, visual);
+        _visualSyncSystem?.RegisterNpcVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
         return entity ?? default;
     }
@@ -135,5 +135,31 @@ public sealed class ClientSimulation : GameSimulation
     {
         _visualSyncSystem?.UnregisterAnyVisual(id);
         NavigationModule?.DestroyEntity(id);
+    }
+    
+    public bool TryGetAnyEntity(int networkId, out Entity entity)
+    {
+        entity = default;
+        if (NavigationModule is null)
+            return false;
+            
+        return NavigationModule.TryGetEntity(networkId, out entity);
+    }
+    
+    public void ApplyVitals(ref VitalsData vitals)
+    {
+        if (!TryGetAnyEntity(vitals.Id, out var entity))
+            return;
+            
+        if (!World.IsAlive(entity))
+            return;
+            
+        ref var health = ref World.Get<Health>(entity);
+        health.Current = vitals.CurrentHp;
+        health.Max = vitals.MaxHp;
+        
+        ref var mana = ref World.Get<Mana>(entity);
+        mana.Current = vitals.CurrentMp;
+        mana.Max = vitals.MaxMp;
     }
 }

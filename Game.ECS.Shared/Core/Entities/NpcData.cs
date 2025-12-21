@@ -4,11 +4,22 @@ using MemoryPack;
 namespace Game.ECS.Shared.Core.Entities;
 
 [MemoryPackable]
-public readonly partial record struct NpcData(
-    int Id, string Name, 
-    int X, int Y, int Z, MovementDirection Direction,
-    int Hp, int MaxHp, int Mp, int MaxMp,
-    float MovementSpeed, float AttackSpeed,
-    int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense
-);
+public partial struct NpcData
+{
+    public int NetworkId { get; set; }
+    public string Name { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int Z { get; set; }
+    public MovementDirection Direction { get; set; }
+    public int Hp { get; set; }
+    public int MaxHp { get; set; }
+    public int Mp { get; set; }
+    public int MaxMp { get; set; }
+    public float MovementSpeed { get; set; }
+    public float AttackSpeed { get; set; }
+    public int PhysicalAttack { get; set; }
+    public int MagicAttack { get; set; }
+    public int PhysicalDefense { get; set; }
+    public int MagicDefense { get; set; }
+}

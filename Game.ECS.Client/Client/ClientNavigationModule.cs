@@ -177,6 +177,14 @@ public sealed class ClientNavigationModule : IDisposable
     {
         return _serverEntityMap.TryGetValue(serverId, out var entity) ? entity : null;
     }
+    
+    /// <summary>
+    /// Tenta obter entidade local pelo ID do servidor.
+    /// </summary>
+    public bool TryGetEntity(int serverId, out Entity entity)
+    {
+        return _serverEntityMap.TryGetValue(serverId, out entity);
+    }
 
     public void Dispose()
     {
