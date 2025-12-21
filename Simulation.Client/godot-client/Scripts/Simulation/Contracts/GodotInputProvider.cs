@@ -1,5 +1,5 @@
 
-using Game.ECS.Client.Client.Contracts;
+using GameECS.Modules.Navigation.Client.Systems;
 
 namespace GodotClient.Simulation.Contracts;
 

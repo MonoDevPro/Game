@@ -1,4 +1,4 @@
-using Game.ECS.Shared.Services.Network;
+using Game.Network.Abstractions;
 using Game.Network.Adapters;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;

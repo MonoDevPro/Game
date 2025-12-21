@@ -1,8 +1,9 @@
 using System;
-using Game.ECS.Shared.Components.Entities;
-using Game.ECS.Shared.Components.Navigation;
+using Game.Domain.Enums;
+using GameECS.Modules.Navigation.Shared.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
+using VocationType = GameECS.Modules.Combat.Shared.Data.VocationType;
 
 namespace GodotClient.Simulation.Visuals;
 

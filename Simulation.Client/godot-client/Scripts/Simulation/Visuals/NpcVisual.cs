@@ -1,6 +1,4 @@
-using Game.ECS.Shared.Components.Entities;
-using Game.ECS.Shared.Components.Navigation;
-using Game.ECS.Shared.Core.Entities;
+using Game.Domain.Enums;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;

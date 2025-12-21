@@ -12,7 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Game.ECS.Server\Game.ECS.Server.csproj" />
+      <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
+      <ProjectReference Include="..\GameECS\GameECS.csproj" />
     </ItemGroup>
 
 </Project>

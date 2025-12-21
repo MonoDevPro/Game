@@ -24,13 +24,14 @@
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
     <Folder Include="Scripts\Services\" />
+    <Folder Include="Scripts\Simulation\Systems\" />
     <Folder Include="Scripts\UI\HUD\" />
     <Folder Include="Scripts\UI\Chat\" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Game.ECS.Client\Game.ECS.Client.csproj" />
     <ProjectReference Include="..\..\Game.Network\Game.Network.csproj" />
+    <ProjectReference Include="..\..\GameECS\GameECS.csproj" />
   </ItemGroup>
 
 </Project>

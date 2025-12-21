@@ -1,10 +1,7 @@
 using Arch.Core;
-using Game.ECS.Server;
-using Game.ECS.Shared.Components.Combat;
-using Game.ECS.Shared.Components.Entities;
-using Game.ECS.Shared.Components.Navigation;
-using Game.ECS.Shared.Core.Entities;
 using Game.Server.Sessions;
+using GameECS.Modules.Combat.Shared.Components;
+using GameECS.Modules.Entities.Server.Persistence;
 
 namespace Game.Server.Players;
 

@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Game.ECS.Shared.Components.Entities;
+using Game.Domain.Enums;
 using MemoryPack;
 
 namespace Game.DTOs.Menu;

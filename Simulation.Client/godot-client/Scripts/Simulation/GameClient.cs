@@ -237,7 +237,7 @@ public partial class GameClient : Node2D
             HandleSingleVitals(singlePacket);
     }
 
-    private void HandleSingleVitals(in VitalsData packet)
+    private void HandleSingleVitals(in VitalsSnapshot packet)
     {
         if (_simulation is null)
             return;
@@ -336,7 +336,7 @@ public partial class GameClient : Node2D
             HandleSingleCombatState(singlePacket);
     }
     
-    private void HandleSingleCombatState(in AttackData packet)
+    private void HandleSingleCombatState(in AttackSnapshot packet)
     {
         GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerId}");
         
