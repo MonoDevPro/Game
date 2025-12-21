@@ -58,6 +58,7 @@ internal sealed class PlayerPersistenceService(
         character.PositionX = position.PositionX;
         character.PositionY = position.PositionY;
         character.PositionZ = position.PositionZ;
+        character.Direction = position.Direction;
 
         if (updateTimestamp)
             character.LastUpdatedAt = DateTime.UtcNow;
@@ -94,8 +95,7 @@ internal sealed class PlayerPersistenceService(
                         dto.PositionX,
                         dto.PositionY, 
                         dto.PositionZ,
-                        dto.DirX,
-                        dto.DirY), updateTimestamp: true);
+                        dto.Dir), updateTimestamp: true);
                 character.Stats.CurrentHp = dto.CurrentHp;
                 character.Stats.CurrentMp = dto.CurrentMp;
                 return true;

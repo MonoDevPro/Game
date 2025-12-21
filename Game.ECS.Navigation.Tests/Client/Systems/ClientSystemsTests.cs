@@ -4,6 +4,8 @@ using Game.ECS.Client.Client.Contracts;
 using Game.ECS.Client.Client.Systems;
 using Game.ECS.Shared.Components.Navigation;
 using Game.ECS.Shared.Data.Navigation;
+using Game.ECS.Shared.Services.Network;
+using System.Net;
 
 namespace Game.ECS.Navigation.Tests.Client.Systems;
 
@@ -31,14 +33,39 @@ public class MockInputProvider : IInputProvider
     }
 }
 
-public class MockNetworkSender : INetworkSender
+public class MockNetworkManager : INetworkManager
 {
     public List<MoveInput> SentInputs { get; } = new();
-
-    public void SendMoveInput(MoveInput input)
+    
+    public event Action<INetPeerAdapter>? OnPeerConnected;
+    public event Action<INetPeerAdapter>? OnPeerDisconnected;
+    
+    public bool IsRunning => true;
+    public IPeerRepository Peers => null!;
+    
+    public void Initialize() { }
+    public void ConnectToServer() { }
+    public void Stop() { }
+    public void PollEvents() { }
+    
+    public void RegisterPacketHandler<T>(PacketHandler<T> handler) { }
+    public bool UnregisterPacketHandler<T>() => true;
+    
+    public void RegisterUnconnectedPacketHandler<T>(UnconnectedPacketHandler<T> handler) { }
+    public bool UnregisterUnconnectedPacketHandler<T>() => true;
+    
+    public void SendToServer<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod)
     {
-        SentInputs.Add(input);
+        if (packet is MoveInput input)
+            SentInputs.Add(input);
     }
+    
+    public void SendToPeer<T>(INetPeerAdapter peer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) { }
+    public void SendToPeerId<T>(int peerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) { }
+    public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) { }
+    public void SendToAllExcept<T>(INetPeerAdapter excludePeer, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) { }
+    public void SendToAllExcept<T>(int excludePeerId, T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) { }
+    public void SendUnconnected<T>(IPEndPoint endPoint, T packet) { }
 }
 
 #endregion
@@ -247,7 +274,7 @@ public class ClientInputSystemTests : IDisposable
 {
     private readonly World _world;
     private readonly MockInputProvider _inputProvider;
-    private readonly MockNetworkSender _networkSender;
+    private readonly MockNetworkManager _networkSender;
     private readonly ClientInputSystem _system;
     private const float CellSize = 32f;
 
@@ -255,7 +282,7 @@ public class ClientInputSystemTests : IDisposable
     {
         _world = World.Create();
         _inputProvider = new MockInputProvider();
-        _networkSender = new MockNetworkSender();
+        _networkSender = new MockNetworkManager();
         _system = new ClientInputSystem(_world, _inputProvider, _networkSender, CellSize);
     }
 

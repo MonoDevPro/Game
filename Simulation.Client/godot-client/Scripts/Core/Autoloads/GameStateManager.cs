@@ -57,7 +57,7 @@ public partial class GameStateManager : Node
     public void StorePlayerSnapshots(IEnumerable<PlayerData> snapshots)
     {
         foreach (var snapshot in snapshots)
-            _pendingPlayerSpawns[snapshot.Id] = snapshot;
+            _pendingPlayerSpawns[snapshot.NetworkId] = snapshot;
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public partial class GameStateManager : Node
     public void StoreNpcSnapshots(IEnumerable<NpcData> snapshots)
     {
         foreach (var snapshot in snapshots)
-            _pendingNpcSpawns[snapshot.Id] = snapshot;
+            _pendingNpcSpawns[snapshot.NetworkId] = snapshot;
     }
 
     /// <summary>

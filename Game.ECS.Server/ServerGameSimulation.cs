@@ -100,4 +100,40 @@ public sealed class ServerGameSimulation : GameSimulation
         });
         return true;
     }
+    
+    public bool ApplyPlayerInput(Entity entity, MoveInput data)
+    {
+        return ApplyPlayerMoveInput(entity, data);
+    }
+    
+    public bool ApplyPlayerInput(int networkId, MoveInput data)
+    {
+        if (!_entityRegistry.TryGetEntity(networkId, out var entity))
+            return false;
+        return ApplyPlayerMoveInput(entity, data);
+    }
+    
+    public void DestroyPlayer(int networkId)
+    {
+        if (!_entityRegistry.TryGetEntity(networkId, out var entity))
+            return;
+            
+        _navigationModule?.RemoveAgent(entity);
+        _entityRegistry.Unregister(entity);
+        
+        if (World.IsAlive(entity))
+            World.Destroy(entity);
+    }
+    
+    public void DestroyNpc(int networkId)
+    {
+        // NPCs and players share the same entity registry and destruction logic.
+        // If NPC-specific cleanup is needed in the future, implement it here.
+        DestroyPlayer(networkId);
+    }
+    
+    public bool TryGetNpcEntity(int networkId, out Entity entity)
+    {
+        return _entityRegistry.TryGetEntity(networkId, out entity);
+    }
 }

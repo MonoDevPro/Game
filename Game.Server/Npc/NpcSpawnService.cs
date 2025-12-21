@@ -58,7 +58,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         // Cria um template atualizado com a localização de spawn e networkId
         var npcSnapshot = new ECS.Shared.Core.Entities.NpcData
         {
-            Id = networkId,
+            NetworkId = networkId,
             Name = template.Name,
             Direction = MovementDirection.South,
             X = x,
@@ -116,8 +116,7 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         if (!_activeNetworkIds.ContainsKey(networkId))
             return false;
 
-        if (!simulation.DestroyNpc(networkId))
-            return false;
+        simulation.DestroyNpc(networkId);
 
         _activeNetworkIds.Remove(networkId);
         logger.LogInformation("[NPC] Despawned NPC NetID={NetworkId}", networkId);

@@ -86,5 +86,6 @@ public struct CombatState
 {
     public bool InCombat;                   // Se está em combate
     public float LastAttackTime;            // Timestamp do último ataque
+    public float CooldownTimer;             // Timer de cooldown do ataque
     public AttackStyle LastAttackStyle;     // Estilo do último ataque
 }

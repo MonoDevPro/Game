@@ -1,4 +1,5 @@
 using Game.ECS.Shared.Components.Entities;
+using Game.ECS.Shared.Components.Navigation;
 using Game.ECS.Shared.Core.Entities;
 using Godot;
 
@@ -22,7 +23,7 @@ public sealed partial class PlayerVisual : DefaultVisual
     {
         LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
         UpdateName(snapshot.Name);
-        UpdateAnimationState(snapshot.Direction, false, false, false);
+        UpdateAnimationState((MovementDirection)snapshot.Direction, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
         UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
