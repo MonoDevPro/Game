@@ -1,13 +1,11 @@
 using System;
-using System.Linq;
-using Game.Core.Extensions;
-using Game.DTOs.Game;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
-using Game.ECS.Components;
-using Game.ECS.Navigation.Shared.Data;
-using Game.Network.Abstractions;
-using Game.Network.Packets.Game;
+using Game.DTOs.Chat;
+using Game.ECS.Shared.Components.Combat;
+using Game.ECS.Shared.Core.Entities;
+using Game.ECS.Shared.Data.Combat;
+using Game.ECS.Shared.Data.Entities;
+using Game.ECS.Shared.Data.Navigation;
+using Game.ECS.Shared.Services.Network;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.UI.Actions;
@@ -244,11 +242,6 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
 
-        if (!_simulation.TryGetAnyEntity(packet.NetworkId, out var entity))
-            return;
-        if (!_simulation.TryGetAnyVisual(packet.NetworkId, out var visual))
-            return;
-
         var heathCurrent = _simulation.World.Get<Health>(entity).Current;
         if (packet.CurrentHp < heathCurrent)
         {
@@ -280,7 +273,7 @@ public partial class GameClient : Node2D
         
         visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
         
-        GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
+        GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.Id}");
     }
     
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSpawnPacket packet)
@@ -309,7 +302,7 @@ public partial class GameClient : Node2D
     
     private void HandleDespawn(INetPeerAdapter peer, ref LeftPacket packet)
     {
-        foreach (var networkId in packet.NetworkIds)
+        foreach (var networkId in packet.Ids)
         {
             _simulation?.DestroyAny(networkId);
             GD.Print($"[GameClient] Despawned player (NetID: {networkId})");
@@ -331,7 +324,7 @@ public partial class GameClient : Node2D
     
     private void HandleSingleCombatState(in AttackData packet)
     {
-        GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerNetworkId}");
+        GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerId}");
         
         if (_simulation is null)
         {
@@ -340,9 +333,9 @@ public partial class GameClient : Node2D
         }
 
         // Localiza entidade do atacante
-        if (!_simulation.TryGetAnyEntity(packet.AttackerNetworkId, out var attackerEntity))
+        if (!_simulation.TryGetAnyEntity(packet.AttackerId, out var attackerEntity))
         {
-            GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
+            GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerId}");
             return;
         }
         
@@ -353,7 +346,7 @@ public partial class GameClient : Node2D
         ref var state = ref _simulation.World.AddOrGet<CombatState>(attackerEntity);
         state.CooldownTimer = packet.CooldownRemaining;
 
-        GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerNetworkId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
+        GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
 
     private void HandleNpcSpawn(INetPeerAdapter peer, ref NpcSpawnPacket packet)
@@ -370,10 +363,10 @@ public partial class GameClient : Node2D
         }
     }
 
-    private Visuals.NpcVisual SpawnNpcVisual(NpcData npcSnapshot)
+    private Visuals.NpcVisual SpawnNpcVisual(NpcData npcDataSnapshot)
     {
         var npcVisual = Visuals.NpcVisual.Create();
-        npcVisual.Name = $"Npc_{npcSnapshot.NetworkId}";
+        npcVisual.Name = $"Npc_{npcDataSnapshot.NetworkId}";
         return npcVisual;
     }
     

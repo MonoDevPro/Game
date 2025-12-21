@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.DTOs.Game;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.ECS.Shared.Core.Entities;
+using Game.ECS.Shared.Data.Entities;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;
@@ -58,7 +57,7 @@ public partial class GameStateManager : Node
     public void StorePlayerSnapshots(IEnumerable<PlayerData> snapshots)
     {
         foreach (var snapshot in snapshots)
-            _pendingPlayerSpawns[snapshot.NetworkId] = snapshot;
+            _pendingPlayerSpawns[snapshot.Id] = snapshot;
     }
 
     /// <summary>
@@ -69,7 +68,7 @@ public partial class GameStateManager : Node
     public void StoreNpcSnapshots(IEnumerable<NpcData> snapshots)
     {
         foreach (var snapshot in snapshots)
-            _pendingNpcSpawns[snapshot.NetworkId] = snapshot;
+            _pendingNpcSpawns[snapshot.Id] = snapshot;
     }
 
     /// <summary>

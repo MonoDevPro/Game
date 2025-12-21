@@ -1,9 +1,10 @@
 using Arch.Core;
-using Game.DTOs.Game.Player;
-using Game.ECS.Components;
-using Game.ECS.Entities;
+using Game.ECS.Server;
+using Game.ECS.Shared.Components.Combat;
+using Game.ECS.Shared.Components.Entities;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Core.Entities;
 using Game.Server.Sessions;
-using Game.Server.Simulation;
 
 namespace Game.Server.Players;
 
@@ -20,23 +21,18 @@ public sealed class PlayerSpawnService(
                         ?? throw new InvalidOperationException("No character selected for session.");
         
         var playerSnapshot = new PlayerData(
-            PlayerId: session.Account.Id,
-            NetworkId: session.Peer.Id,
-            MapId: 0,
+            Id: session.Peer.Id,
             Name: character.Name,
             Gender: (byte)character.Gender,
             Vocation: (byte)character.Vocation,
             X: character.PositionX,
             Y: character.PositionY,
             Z: character.PositionZ,
-            DirX: character.FacingX,
-            DirY: character.FacingY,
+            Direction: (MovementDirection)character.Direction,
             Hp: character.Stats.CurrentHp,
             MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
             Mp: character.Stats.CurrentMp,
             MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
             MovementSpeed: (float)character.Stats.MovementSpeed,
             AttackSpeed: (float)character.Stats.AttackSpeed,
             PhysicalAttack: character.Stats.PhysicalAttack,

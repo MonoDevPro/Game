@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.DTOs.Game;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 
 namespace Game.Tests;
 

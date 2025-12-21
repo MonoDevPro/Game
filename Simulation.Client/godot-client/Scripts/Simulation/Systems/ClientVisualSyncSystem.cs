@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.ECS.Components;
-using Game.ECS.Navigation.Client.Components;
-using Game.ECS.Systems;
+using Game.ECS.Client.Client.Components;
+using Game.ECS.Shared.Components.Entities;
+using Game.ECS.Shared.Systems;
 using Godot;
 
 namespace GodotClient.Simulation.Systems;

@@ -1,13 +1,14 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Core.Extensions;
 using Game.Domain.Entities;
+using Game.DTOs.Chat;
 using Game.DTOs.Game;
+using Game.DTOs.Menu;
 using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Navigation.Shared.Data;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
 using Game.Persistence.Interfaces;

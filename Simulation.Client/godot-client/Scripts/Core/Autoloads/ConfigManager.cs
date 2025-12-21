@@ -1,5 +1,5 @@
 using System;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 using Godot;
 using Microsoft.Extensions.Configuration;
 

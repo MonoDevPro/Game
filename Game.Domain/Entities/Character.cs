@@ -15,8 +15,7 @@ public sealed class Character : BaseEntity
     public VocationType Vocation { get; set; } = VocationType.Unknown;
     
     // Posição no mundo
-    public sbyte FacingX { get; set; }
-    public sbyte FacingY { get; set; }
+    public byte Direction { get; set; }
     public int PositionX { get; set; }
     public int PositionY { get; set; }
     public int PositionZ { get; set; }

@@ -1,5 +1,5 @@
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Core;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Core.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Core;
 
@@ -30,13 +30,9 @@ public class NavigationGridTests
         var grid = new NavigationGrid(10, 10);
 
         // Assert
-        for (int y = 0; y < 10; y++)
-        {
-            for (int x = 0; x < 10; x++)
-            {
-                Assert.True(grid.IsWalkable(x, y));
-            }
-        }
+        for (var y = 0; y < 10; y++)
+        for (var x = 0; x < 10; x++)
+            Assert.True(grid.IsWalkable(x, y));
     }
 
     #endregion
@@ -384,13 +380,10 @@ public class NavigationGridTests
         grid.SetRectangle(5, 5, 3, 3, walkable: false);
 
         // Assert
-        for (int y = 5; y < 8; y++)
-        {
-            for (int x = 5; x < 8; x++)
-            {
-                Assert.False(grid.IsWalkable(x, y), $"Cell ({x},{y}) should be blocked");
-            }
-        }
+        for (var y = 5; y < 8; y++)
+        for (var x = 5; x < 8; x++)
+            Assert.False(grid.IsWalkable(x, y), $"Cell ({x},{y}) should be blocked");
+
         Assert.True(grid.IsWalkable(4, 5));
         Assert.True(grid.IsWalkable(8, 5));
     }
@@ -406,9 +399,9 @@ public class NavigationGridTests
 
         // Assert
         Assert.False(grid.IsWalkable(10, 10)); // Center
-        Assert.False(grid.IsWalkable(10, 8));  // Top
+        Assert.False(grid.IsWalkable(10, 8)); // Top
         Assert.False(grid.IsWalkable(10, 12)); // Bottom
-        Assert.False(grid.IsWalkable(8, 10));  // Left
+        Assert.False(grid.IsWalkable(8, 10)); // Left
         Assert.False(grid.IsWalkable(12, 10)); // Right
     }
 
@@ -436,7 +429,7 @@ public class NavigationGridTests
     {
         // Arrange
         var grid = new NavigationGrid(10, 10);
-        byte[] wrongSizeData = new byte[50]; // Wrong size
+        var wrongSizeData = new byte[50]; // Wrong size
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => grid.LoadFromBytes(wrongSizeData));
@@ -459,17 +452,11 @@ public class NavigationGridTests
     public void DirectionCosts_DiagonalsShouldBeSqrt2()
     {
         // Assert
-        for (int i = 0; i < 8; i++)
-        {
+        for (var i = 0; i < 8; i++)
             if (NavigationGrid.IsDiagonal[i])
-            {
                 Assert.InRange(NavigationGrid.DirCost[i], 1.41f, 1.42f);
-            }
             else
-            {
                 Assert.Equal(1f, NavigationGrid.DirCost[i]);
-            }
-        }
     }
 
     #endregion

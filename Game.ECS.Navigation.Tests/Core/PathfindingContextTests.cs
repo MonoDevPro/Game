@@ -1,4 +1,4 @@
-using Game.ECS.Navigation.Shared.Core;
+using Game.ECS.Shared.Core.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Core;
 
@@ -140,15 +140,15 @@ public class PathfindingContextTests
         // Arrange
         var ctx = new PathfindingContext(100);
         float[] costs = { 5f, 1f, 3f, 2f, 4f };
-        
-        for (int i = 0; i < costs.Length; i++)
+
+        for (var i = 0; i < costs.Length; i++)
         {
             SetupNode(ctx, i, costs[i]);
             BinaryHeap.Push(ctx, i);
         }
 
         // Act & Assert - Should pop in ascending order
-        float previousCost = 0f;
+        var previousCost = 0f;
         while (!BinaryHeap.IsEmpty(ctx))
         {
             int nodeIdx = BinaryHeap.Pop(ctx);
@@ -164,15 +164,15 @@ public class PathfindingContextTests
         // Arrange
         var ctx = new PathfindingContext(1000);
         var random = new Random(42);
-        
-        for (int i = 0; i < 500; i++)
+
+        for (var i = 0; i < 500; i++)
         {
             SetupNode(ctx, i, (float)random.NextDouble() * 100);
             BinaryHeap.Push(ctx, i);
         }
 
         // Act & Assert
-        float previousCost = float.MinValue;
+        var previousCost = float.MinValue;
         while (!BinaryHeap.IsEmpty(ctx))
         {
             int nodeIdx = BinaryHeap.Pop(ctx);
@@ -211,10 +211,7 @@ public class PathfindingPoolTests
 
         // Assert - Should be able to rent 4 without creating new
         var contexts = new List<PathfindingContext>();
-        for (int i = 0; i < 4; i++)
-        {
-            contexts.Add(pool.Rent());
-        }
+        for (var i = 0; i < 4; i++) contexts.Add(pool.Rent());
 
         Assert.Equal(4, contexts.Count);
     }
@@ -280,7 +277,7 @@ public class PathfindingPoolTests
         {
             try
             {
-                for (int i = 0; i < 100; i++)
+                for (var i = 0; i < 100; i++)
                 {
                     var ctx = pool.Rent();
                     contexts.Add(ctx);

@@ -1,5 +1,5 @@
 using System.Net;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 using LiteNetLib;
 
 namespace Game.Network.Adapters;

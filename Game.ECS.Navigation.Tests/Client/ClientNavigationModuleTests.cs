@@ -1,10 +1,10 @@
 using Arch.Core;
-using Game.ECS.Navigation.Client;
-using Game.ECS.Navigation.Client.Components;
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Data;
+using Game.ECS.Client.Client;
+using Game.ECS.Client.Client.Components;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Data.Navigation;
 
-namespace GameECS.Tests.Navigation.Client;
+namespace Game.ECS.Navigation.Tests.Client;
 
 /// <summary>
 /// Testes para ClientNavigationModule e componentes do cliente.
@@ -17,7 +17,7 @@ public class ClientNavigationModuleTests : IDisposable
     public ClientNavigationModuleTests()
     {
         _world = World.Create();
-        _module = new ClientNavigationModule(_world, cellSize: 32f, tickRate: 60f);
+        _module = new ClientNavigationModule(_world, 32f, 60f);
     }
 
     public void Dispose()
@@ -39,7 +39,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void Constructor_WithCustomValues_ShouldUseValues()
     {
         using var world = World.Create();
-        using var module = new ClientNavigationModule(world, cellSize: 64f, tickRate: 30f);
+        using var module = new ClientNavigationModule(world, 64f, 30f);
 
         Assert.Equal(64f, module.CellSize);
         Assert.Equal(30f, module.TickRate);
@@ -53,7 +53,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void CreateEntity_ShouldCreateWithAllComponents()
     {
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 10, gridY: 15);
+        var entity = _module.CreateEntity(1, 10, 15);
 
         // Assert
         Assert.True(_world.IsAlive(entity));
@@ -70,7 +70,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void CreateEntity_ShouldSetCorrectPosition()
     {
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 10, gridY: 15);
+        var entity = _module.CreateEntity(1, 10, 15);
 
         // Assert
         var syncedPos = _world.Get<SyncedGridPosition>(entity);
@@ -82,7 +82,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void CreateEntity_ShouldSetVisualPosition()
     {
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 10, gridY: 15);
+        var entity = _module.CreateEntity(1, 10, 15);
 
         // Assert
         var visualPos = _world.Get<VisualPosition>(entity);
@@ -95,7 +95,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void CreateEntity_LocalPlayer_ShouldHaveTag()
     {
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5, isLocalPlayer: true);
+        var entity = _module.CreateEntity(1, 5, 5, true);
 
         // Assert
         Assert.True(_world.Has<LocalPlayer>(entity));
@@ -105,7 +105,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void CreateEntity_NotLocalPlayer_ShouldNotHaveTag()
     {
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5, isLocalPlayer: false);
+        var entity = _module.CreateEntity(1, 5, 5, false);
 
         // Assert
         Assert.False(_world.Has<LocalPlayer>(entity));
@@ -118,7 +118,7 @@ public class ClientNavigationModuleTests : IDisposable
         var config = ClientVisualConfig.Instant;
 
         // Act
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5, settings: config);
+        var entity = _module.CreateEntity(1, 5, 5, settings: config);
 
         // Assert
         var actualConfig = _world.Get<ClientVisualConfig>(entity);
@@ -133,10 +133,10 @@ public class ClientNavigationModuleTests : IDisposable
     public void DestroyEntity_ShouldRemoveEntity()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        var entity = _module.CreateEntity(1, 5, 5);
 
         // Act
-        _module.DestroyEntity(serverId: 1);
+        _module.DestroyEntity(1);
 
         // Assert
         Assert.False(_world.IsAlive(entity));
@@ -146,7 +146,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void DestroyEntity_InvalidId_ShouldNotThrow()
     {
         // Act & Assert - Should not throw
-        _module.DestroyEntity(serverId: 999);
+        _module.DestroyEntity(999);
     }
 
     #endregion
@@ -157,7 +157,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void OnMovementSnapshot_ShouldUpdatePosition()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        var entity = _module.CreateEntity(1, 5, 5);
         var snapshot = new MovementSnapshot
         {
             EntityId = 1,
@@ -181,7 +181,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void OnMovementSnapshot_WithMovement_ShouldStartInterpolation()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        var entity = _module.CreateEntity(1, 5, 5);
         var snapshot = new MovementSnapshot
         {
             EntityId = 1,
@@ -208,8 +208,8 @@ public class ClientNavigationModuleTests : IDisposable
     public void OnBatchUpdate_ShouldProcessAll()
     {
         // Arrange
-        _module.CreateEntity(serverId: 1, gridX: 0, gridY: 0);
-        _module.CreateEntity(serverId: 2, gridX: 5, gridY: 5);
+        _module.CreateEntity(1, 0, 0);
+        _module.CreateEntity(2, 5, 5);
 
         var batch = new BatchMovementUpdate
         {
@@ -240,7 +240,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void OnTeleport_ShouldUpdatePositionInstantly()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        var entity = _module.CreateEntity(1, 5, 5);
         var teleport = new TeleportMessage
         {
             EntityId = 1,
@@ -256,7 +256,7 @@ public class ClientNavigationModuleTests : IDisposable
         // Assert
         var syncedPos = _world.Get<SyncedGridPosition>(entity);
         var visualPos = _world.Get<VisualPosition>(entity);
-        
+
         Assert.Equal(20, syncedPos.X);
         Assert.Equal(20, syncedPos.Y);
         Assert.Equal((20 + 0.5f) * 32f, visualPos.X);
@@ -267,8 +267,8 @@ public class ClientNavigationModuleTests : IDisposable
     public void OnTeleport_ShouldStopInterpolation()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
-        
+        var entity = _module.CreateEntity(1, 5, 5);
+
         // Start interpolation
         var snapshot = new MovementSnapshot
         {
@@ -308,10 +308,10 @@ public class ClientNavigationModuleTests : IDisposable
     public void GetVisualPosition_ShouldReturnCorrectPosition()
     {
         // Arrange
-        _module.CreateEntity(serverId: 1, gridX: 10, gridY: 15);
+        _module.CreateEntity(1, 10, 15);
 
         // Act
-        var visualPos = _module.GetVisualPosition(serverId: 1);
+        var visualPos = _module.GetVisualPosition(1);
 
         // Assert
         Assert.Equal((10 + 0.5f) * 32f, visualPos.X);
@@ -322,7 +322,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void GetVisualPosition_InvalidId_ShouldReturnDefault()
     {
         // Act
-        var visualPos = _module.GetVisualPosition(serverId: 999);
+        var visualPos = _module.GetVisualPosition(999);
 
         // Assert
         Assert.Equal(0f, visualPos.X);
@@ -333,10 +333,10 @@ public class ClientNavigationModuleTests : IDisposable
     public void GetAnimationState_ShouldReturnState()
     {
         // Arrange
-        _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        _module.CreateEntity(1, 5, 5);
 
         // Act
-        var animState = _module.GetAnimationState(serverId: 1);
+        var animState = _module.GetAnimationState(1);
 
         // Assert
         Assert.Equal(MovementDirection.South, animState.Facing);
@@ -347,10 +347,10 @@ public class ClientNavigationModuleTests : IDisposable
     public void GetEntity_ShouldReturnEntity()
     {
         // Arrange
-        var created = _module.CreateEntity(serverId: 1, gridX: 5, gridY: 5);
+        var created = _module.CreateEntity(1, 5, 5);
 
         // Act
-        var retrieved = _module.GetEntity(serverId: 1);
+        var retrieved = _module.GetEntity(1);
 
         // Assert
         Assert.NotNull(retrieved);
@@ -361,7 +361,7 @@ public class ClientNavigationModuleTests : IDisposable
     public void GetEntity_InvalidId_ShouldReturnNull()
     {
         // Act
-        var retrieved = _module.GetEntity(serverId: 999);
+        var retrieved = _module.GetEntity(999);
 
         // Assert
         Assert.Null(retrieved);
@@ -375,8 +375,8 @@ public class ClientNavigationModuleTests : IDisposable
     public void Update_ShouldProcessInterpolation()
     {
         // Arrange
-        var entity = _module.CreateEntity(serverId: 1, gridX: 0, gridY: 0);
-        
+        var entity = _module.CreateEntity(1, 0, 0);
+
         // Start movement
         var snapshot = new MovementSnapshot
         {
@@ -416,7 +416,7 @@ public class ClientComponentsTests
     [Fact]
     public void VisualPosition_FromGrid_ShouldCenterInCell()
     {
-        var pos = VisualPosition.FromGrid(5, 10, cellSize: 32f);
+        var pos = VisualPosition.FromGrid(5, 10, 32f);
 
         Assert.Equal((5 + 0.5f) * 32f, pos.X);
         Assert.Equal((10 + 0.5f) * 32f, pos.Y);
@@ -426,7 +426,7 @@ public class ClientComponentsTests
     public void VisualPosition_FromGridPosition_ShouldCenterInCell()
     {
         var gridPos = new GridPosition(5, 10);
-        var pos = VisualPosition.FromGrid(gridPos, cellSize: 32f);
+        var pos = VisualPosition.FromGrid(gridPos, 32f);
 
         Assert.Equal((5 + 0.5f) * 32f, pos.X);
         Assert.Equal((10 + 0.5f) * 32f, pos.Y);
@@ -469,7 +469,7 @@ public class ClientComponentsTests
     [Fact]
     public void SyncedGridPosition_ToGridPosition_ShouldConvert()
     {
-        var synced = new SyncedGridPosition(10, 20, tick: 100);
+        var synced = new SyncedGridPosition(10, 20, 100);
         var gridPos = synced.ToGridPosition();
 
         Assert.Equal(10, gridPos.X);
@@ -487,7 +487,7 @@ public class ClientComponentsTests
         var from = new VisualPosition(0, 0);
         var to = new VisualPosition(100, 0);
 
-        interp.Start(from, to, duration: 0.5f, dir: MovementDirection.East);
+        interp.Start(from, to, 0.5f, MovementDirection.East);
 
         Assert.True(interp.IsActive);
         Assert.Equal(0f, interp.Progress);
@@ -565,7 +565,7 @@ public class ClientComponentsTests
         var queue = new MovementQueue();
         queue.Enqueue(10, 20, 0.5f, MovementDirection.North);
 
-        bool success = queue.TryDequeue(out int x, out int y, out float duration, out var dir);
+        var success = queue.TryDequeue(out var x, out var y, out var duration, out var dir);
 
         Assert.True(success);
         Assert.Equal(10, x);
@@ -580,7 +580,7 @@ public class ClientComponentsTests
     {
         var queue = new MovementQueue();
 
-        bool success = queue.TryDequeue(out _, out _, out _, out _);
+        var success = queue.TryDequeue(out _, out _, out _, out _);
 
         Assert.False(success);
     }
@@ -604,10 +604,7 @@ public class ClientComponentsTests
         var queue = new MovementQueue();
 
         // Fill the queue
-        for (int i = 0; i < MovementQueue.Capacity; i++)
-        {
-            queue.Enqueue(i, i, 0.1f, MovementDirection.None);
-        }
+        for (var i = 0; i < MovementQueue.Capacity; i++) queue.Enqueue(i, i, 0.1f, MovementDirection.None);
 
         Assert.True(queue.IsFull);
     }
@@ -618,13 +615,10 @@ public class ClientComponentsTests
         var queue = new MovementQueue();
 
         // Fill and overflow
-        for (int i = 0; i < MovementQueue.Capacity + 1; i++)
-        {
-            queue.Enqueue(i, i, 0.1f, MovementDirection.None);
-        }
+        for (var i = 0; i < MovementQueue.Capacity + 1; i++) queue.Enqueue(i, i, 0.1f, MovementDirection.None);
 
         // First dequeue should be item 1, not item 0
-        queue.TryDequeue(out int x, out _, out _, out _);
+        queue.TryDequeue(out var x, out _, out _, out _);
         Assert.Equal(1, x);
     }
 

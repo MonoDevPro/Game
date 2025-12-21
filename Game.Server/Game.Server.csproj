@@ -23,12 +23,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Game.Core\Game.Core.csproj" />
+        <ProjectReference Include="..\Game.ECS.Server\Game.ECS.Server.csproj" />
         <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Simulation\Systems\" />
     </ItemGroup>
 </Project>

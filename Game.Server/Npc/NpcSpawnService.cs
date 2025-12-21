@@ -1,6 +1,6 @@
-using Game.DTOs.Game.Npc;
-using Game.ECS.Entities;
-using Game.Server.Simulation;
+using Game.ECS.Server;
+using Game.ECS.Shared.Components.Entities;
+using Game.ECS.Shared.Components.Navigation;
 
 namespace Game.Server.Npc;
 
@@ -56,14 +56,11 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         var networkId = GenerateNetworkId();
 
         // Cria um template atualizado com a localização de spawn e networkId
-        var npcSnapshot = new NpcData
+        var npcSnapshot = new ECS.Shared.Core.Entities.NpcData
         {
-            NpcId = template.Id,
-            NetworkId = networkId,
+            Id = networkId,
             Name = template.Name,
-            DirX = 0,
-            DirY = 1,
-            MapId = mapId,
+            Direction = MovementDirection.South,
             X = x,
             Y = y,
             Z = floor,
@@ -77,22 +74,21 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
             MaxHp = template.MaxHp,
             Mp = template.CurrentMp,
             MaxMp = template.MaxMp,
-            HpRegen = template.HpRegen,
-            MpRegen = template.MpRegen,
         };
-        
-        var behavior = new Behaviour(
-            BehaviorType: template.BehaviorType,
-            VisionRange: template.VisionRange,
-            AttackRange: template.AttackRange,
-            LeashRange: template.LeashRange,
-            PatrolRadius: template.PatrolRadius,
-            IdleDurationMin: template.IdleDurationMin,
-            IdleDurationMax: template.IdleDurationMax
-        );
+
+        var behavior = new AIBehaviour
+        {
+            Type = template.BehaviorType,
+            VisionRange = template.VisionRange,
+            AttackRange = template.AttackRange,
+            LeashRange = template.LeashRange,
+            PatrolRadius = template.PatrolRadius,
+            IdleDurationMin = template.IdleDurationMin,
+            IdleDurationMax = template.IdleDurationMax
+        };
 
         // Transforma Template em Entidade ECS
-        var entity = simulation.CreateNpc(ref npcSnapshot, ref behavior);
+        var entity = simulation.CreateNpcEntity(ref npcSnapshot);
 
         if (entity != Arch.Core.Entity.Null)
         {
@@ -108,11 +104,11 @@ public sealed class NpcSpawnService(ServerGameSimulation simulation, INpcReposit
         }
     }
 
-    public IEnumerable<NpcData> BuildSnapshots()
+    public IEnumerable<ECS.Shared.Core.Entities.NpcData> BuildSnapshots()
     {
         foreach (var networkId in _activeNetworkIds)
             if (simulation.TryGetNpcEntity(networkId.Key, out var entity))
-                yield return new NpcData(); // TODO: Preencher snapshot a partir da entidade
+                yield return new ECS.Shared.Core.Entities.NpcData(); // TODO: Preencher snapshot a partir da entidade
     }
 
     public bool TryDespawnNpc(int networkId)

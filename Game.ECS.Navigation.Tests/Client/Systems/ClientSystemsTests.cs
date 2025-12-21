@@ -1,9 +1,9 @@
 using Arch.Core;
-using Game.ECS.Navigation.Client.Components;
-using Game.ECS.Navigation.Client.Contracts;
-using Game.ECS.Navigation.Client.Systems;
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Data;
+using Game.ECS.Client.Client.Components;
+using Game.ECS.Client.Client.Contracts;
+using Game.ECS.Client.Client.Systems;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Data.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Client.Systems;
 
@@ -15,15 +15,26 @@ public class MockInputProvider : IInputProvider
     public (float X, float Y) ClickPosition { get; set; }
     public (float X, float Y) MovementAxis { get; set; }
 
-    public bool IsClickPressed() => ClickPressed;
-    public (float X, float Y) GetClickWorldPosition() => ClickPosition;
-    public (float X, float Y) GetMovementAxis() => MovementAxis;
+    public bool IsClickPressed()
+    {
+        return ClickPressed;
+    }
+
+    public (float X, float Y) GetClickWorldPosition()
+    {
+        return ClickPosition;
+    }
+
+    public (float X, float Y) GetMovementAxis()
+    {
+        return MovementAxis;
+    }
 }
 
 public class MockNetworkSender : INetworkSender
 {
     public List<MoveInput> SentInputs { get; } = new();
-    
+
     public void SendMoveInput(MoveInput input)
     {
         SentInputs.Add(input);
@@ -125,7 +136,7 @@ public class ClientInterpolationSystemTests : IDisposable
         var entity = CreateInterpolatingEntity();
         ref var config = ref _world.Get<ClientVisualConfig>(entity);
         config.SmoothMovement = false;
-        
+
         ref var movement = ref _world.Get<VisualInterpolation>(entity);
         var from = new VisualPosition { X = 0, Y = 0 };
         var to = new VisualPosition { X = 32f, Y = 0 };
@@ -188,7 +199,7 @@ public class ClientInterpolationSystemTests : IDisposable
         var entity = CreateInterpolatingEntity();
         ref var config = ref _world.Get<ClientVisualConfig>(entity);
         config.Easing = easing;
-        
+
         ref var movement = ref _world.Get<VisualInterpolation>(entity);
         var from = new VisualPosition { X = 0, Y = 0 };
         var to = new VisualPosition { X = 100f, Y = 0 };
@@ -210,10 +221,12 @@ public class ClientInterpolationSystemTests : IDisposable
         var entity2 = CreateInterpolatingEntity();
 
         ref var movement1 = ref _world.Get<VisualInterpolation>(entity1);
-        movement1.Start(new VisualPosition { X = 0, Y = 0 }, new VisualPosition { X = 32f, Y = 0 }, 1f, MovementDirection.East);
+        movement1.Start(new VisualPosition { X = 0, Y = 0 }, new VisualPosition { X = 32f, Y = 0 }, 1f,
+            MovementDirection.East);
 
         ref var movement2 = ref _world.Get<VisualInterpolation>(entity2);
-        movement2.Start(new VisualPosition { X = 0, Y = 0 }, new VisualPosition { X = 0, Y = 32f }, 1f, MovementDirection.South);
+        movement2.Start(new VisualPosition { X = 0, Y = 0 }, new VisualPosition { X = 0, Y = 32f }, 1f,
+            MovementDirection.South);
 
         // Act
         _system.Update(0.5f);
@@ -317,7 +330,7 @@ public class ClientInputSystemTests : IDisposable
 
         // Act - Primeiro input
         _system.Update(0.016f);
-        
+
         // Muda destino e tenta novamente imediatamente
         _inputProvider.ClickPosition = (320f, 320f);
         _system.Update(0.016f);
@@ -336,10 +349,10 @@ public class ClientInputSystemTests : IDisposable
 
         // Act - Primeiro input
         _system.Update(0.016f);
-        
+
         // Espera cooldown passar (0.1s)
         _system.Update(0.11f);
-        
+
         // Muda destino
         _inputProvider.ClickPosition = (320f, 320f);
         _system.Update(0.016f);
@@ -435,7 +448,7 @@ public class ClientSyncSystemTests : IDisposable
             new ClientVisualConfig { SmoothMovement = true, InterpolationSpeed = 1f },
             new SpriteAnimation()
         );
-        
+
         _system.RegisterEntity(serverId, entity);
         return entity;
     }
@@ -445,10 +458,10 @@ public class ClientSyncSystemTests : IDisposable
     {
         // Arrange
         var entity = _world.Create(new ClientNavigationEntity());
-        
+
         // Act
         _system.RegisterEntity(123, entity);
-        
+
         // Assert - Verificar através de snapshot
         var snapshot = new MovementSnapshot
         {
@@ -457,7 +470,7 @@ public class ClientSyncSystemTests : IDisposable
             CurrentY = 5,
             IsMoving = false
         };
-        
+
         // Adiciona componentes necessários
         _world.Add(entity, new SyncedGridPosition());
         _world.Add(entity, new VisualPosition());
@@ -465,10 +478,10 @@ public class ClientSyncSystemTests : IDisposable
         _world.Add(entity, new MovementQueue());
         _world.Add(entity, new ClientVisualConfig { SmoothMovement = true });
         _world.Add(entity, new SpriteAnimation());
-        
+
         _system.EnqueueSnapshot(snapshot);
         _system.Update(0.016f);
-        
+
         var syncedPos = _world.Get<SyncedGridPosition>(entity);
         Assert.Equal(5, syncedPos.X);
         Assert.Equal(5, syncedPos.Y);
@@ -479,10 +492,10 @@ public class ClientSyncSystemTests : IDisposable
     {
         // Arrange
         var entity = CreateSyncedEntity(123, 0, 0);
-        
+
         // Act
         _system.UnregisterEntity(123);
-        
+
         // Enqueue snapshot para entidade não mapeada
         var snapshot = new MovementSnapshot
         {
@@ -492,7 +505,7 @@ public class ClientSyncSystemTests : IDisposable
         };
         _system.EnqueueSnapshot(snapshot);
         _system.Update(0.016f);
-        
+
         // Assert - Posição não deve mudar pois não está mapeada
         var syncedPos = _world.Get<SyncedGridPosition>(entity);
         Assert.Equal(0, syncedPos.X);
@@ -520,7 +533,7 @@ public class ClientSyncSystemTests : IDisposable
         // Arrange
         CreateSyncedEntity(1, 0, 0);
         CreateSyncedEntity(2, 0, 0);
-        
+
         var batch = new BatchMovementUpdate
         {
             Snapshots = new[]
@@ -613,7 +626,7 @@ public class ClientSyncSystemTests : IDisposable
 
         var visualPos = _world.Get<VisualPosition>(entity);
         // VisualPosition.FromGrid centraliza na célula: (x + 0.5) * cellSize
-        float expectedPos = (100 + 0.5f) * CellSize;
+        var expectedPos = (100 + 0.5f) * CellSize;
         Assert.Equal(expectedPos, visualPos.X, 0.01f);
         Assert.Equal(expectedPos, visualPos.Y, 0.01f);
 
@@ -626,7 +639,7 @@ public class ClientSyncSystemTests : IDisposable
     {
         // Arrange
         var entity = CreateSyncedEntity(1, 0, 0);
-        
+
         // Inicia interpolação
         ref var movement = ref _world.Get<VisualInterpolation>(entity);
         movement.Start(
@@ -696,21 +709,17 @@ public class ClientSyncSystemTests : IDisposable
         var tasks = new List<Task>();
 
         // Act - Enqueue de múltiplas threads
-        for (int i = 0; i < 10; i++)
-        {
+        for (var i = 0; i < 10; i++)
             tasks.Add(Task.Run(() =>
             {
-                for (int j = 0; j < 100; j++)
-                {
+                for (var j = 0; j < 100; j++)
                     _system.EnqueueSnapshot(new MovementSnapshot
                     {
                         EntityId = 1,
                         CurrentX = (short)j,
                         CurrentY = (short)j
                     });
-                }
             }));
-        }
 
         // Assert
         var exception = await Record.ExceptionAsync(async () => await Task.WhenAll(tasks));
@@ -730,7 +739,7 @@ public class ClientAnimationSystemTests : IDisposable
     public ClientAnimationSystemTests()
     {
         _world = World.Create();
-        _system = new ClientAnimationSystem(_world, walkThreshold: 0.01f);
+        _system = new ClientAnimationSystem(_world, 0.01f);
     }
 
     public void Dispose()
@@ -828,7 +837,7 @@ public class ClientAnimationSystemTests : IDisposable
         ref var anim = ref _world.Get<SpriteAnimation>(entity);
         anim.Time = 0f;
         anim.SetClip(AnimationClip.Walk);
-        
+
         ref var movement = ref _world.Get<VisualInterpolation>(entity);
         movement.Start(
             new VisualPosition { X = 0, Y = 0 },

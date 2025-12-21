@@ -1,9 +1,9 @@
 using Arch.Core;
-using Game.ECS.Navigation.Server.Components;
-using Game.ECS.Navigation.Server.Systems;
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Core;
-using Game.ECS.Navigation.Shared.Systems;
+using Game.ECS.Server.Modules.Navigation.Components;
+using Game.ECS.Server.Modules.Navigation.Systems;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Core.Navigation;
+using Game.ECS.Shared.Services.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Server.Systems;
 
@@ -35,9 +35,9 @@ public class ServerMovementSystemTests : IDisposable
             new ServerMovement(),
             new GridPathBuffer(),
             new PathState(),
-            new ServerAgentConfig 
-            { 
-                CardinalMoveTicks = 6, 
+            new ServerAgentConfig
+            {
+                CardinalMoveTicks = 6,
                 DiagonalMoveTicks = 9,
                 AllowDiagonal = true,
                 MaxRetries = 3
@@ -108,7 +108,7 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity = CreateMovingAgent(5, 5);
         _grid.TryOccupy(new GridPosition(5, 5), entity.Id);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         // Adiciona caminho: (5,5) -> (6,5) -> (7,5)
@@ -135,7 +135,7 @@ public class ServerMovementSystemTests : IDisposable
     {
         // Arrange
         var entity = CreateMovingAgent(5, 5);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         // Path já percorrido
@@ -160,10 +160,10 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity1 = CreateMovingAgent(5, 5);
         var entity2 = CreateMovingAgent(6, 5);
-        
+
         _grid.TryOccupy(new GridPosition(5, 5), entity1.Id);
         _grid.TryOccupy(new GridPosition(6, 5), entity2.Id); // Bloqueador
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity1);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100);
@@ -189,10 +189,10 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity = CreateMovingAgent(5, 5);
         _grid.TryOccupy(new GridPosition(5, 5), entity.Id);
-        
+
         // Adiciona componente de espera
         _world.Add(entity, new WaitingForPath { StartTick = 1, BlockerId = 999 });
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100);
@@ -216,7 +216,7 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity = CreateMovingAgent(5, 5);
         _grid.TryOccupy(new GridPosition(5, 5), entity.Id);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100);
@@ -239,7 +239,7 @@ public class ServerMovementSystemTests : IDisposable
     {
         // Arrange
         var entity = CreateMovingAgent(5, 5);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         // Path vazio/completo
@@ -260,7 +260,7 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity = CreateMovingAgent(5, 5);
         _grid.TryOccupy(new GridPosition(5, 5), entity.Id);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100); // (5,5)
@@ -288,10 +288,10 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity1 = CreateMovingAgent(5, 5);
         var entity2 = CreateMovingAgent(10, 10);
-        
+
         ref var movement1 = ref _world.Get<ServerMovement>(entity1);
         movement1.Start(new GridPosition(5, 5), new GridPosition(6, 5), 1, 6);
-        
+
         ref var movement2 = ref _world.Get<ServerMovement>(entity2);
         movement2.Start(new GridPosition(10, 10), new GridPosition(11, 10), 1, 6);
 
@@ -309,7 +309,7 @@ public class ServerMovementSystemTests : IDisposable
         // Arrange
         var entity = CreateMovingAgent(5, 5);
         _grid.TryOccupy(new GridPosition(5, 5), entity.Id);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100);
@@ -333,7 +333,7 @@ public class ServerMovementSystemTests : IDisposable
     {
         // Arrange
         var entity = CreateMovingAgent(5, 5);
-        
+
         ref var pathBuffer = ref _world.Get<GridPathBuffer>(entity);
         pathBuffer.Clear();
         pathBuffer.SetWaypoint(0, 5 + 5 * 100);
@@ -459,18 +459,15 @@ public class ServerPathRequestSystemTests : IDisposable
     {
         // Arrange - Cria mais requisições que o limite
         var entities = new Entity[60];
-        for (int i = 0; i < 60; i++)
-        {
-            entities[i] = CreateAgentWithRequest(i % 10, i / 10, 50, 50);
-        }
+        for (var i = 0; i < 60; i++) entities[i] = CreateAgentWithRequest(i % 10, i / 10, 50, 50);
 
         // Act
         _system.BeforeUpdate(1);
         _system.Update(1);
 
         // Assert - Apenas 50 devem ter sido processados
-        int processed = 0;
-        int pending = 0;
+        var processed = 0;
+        var pending = 0;
         foreach (var entity in entities)
         {
             var state = _world.Get<PathState>(entity);
@@ -573,11 +570,11 @@ public class ServerPathRequestSystemTests : IDisposable
         var entity = _world.Create(
             new NavigationAgent(),
             new GridPosition(0, 0),
-            new PathRequest 
-            { 
-                TargetX = 5, 
+            new PathRequest
+            {
+                TargetX = 5,
                 TargetY = 5,
-                Flags = PathRequestFlags.CardinalOnly 
+                Flags = PathRequestFlags.CardinalOnly
             },
             new PathState { Status = PathStatus.Pending },
             new GridPathBuffer()
@@ -590,7 +587,7 @@ public class ServerPathRequestSystemTests : IDisposable
         // Assert
         var state = _world.Get<PathState>(entity);
         Assert.Equal(PathStatus.Ready, state.Status);
-        
+
         // Path deve existir (cardinal-only ainda deve encontrar)
         var buffer = _world.Get<GridPathBuffer>(entity);
         Assert.True(buffer.IsValid);
@@ -600,22 +597,19 @@ public class ServerPathRequestSystemTests : IDisposable
     public void BeforeUpdate_ShouldResetProcessedCount()
     {
         // Arrange - Cria 60 requisições
-        for (int i = 0; i < 60; i++)
-        {
-            CreateAgentWithRequest(i % 10, i / 10, 50, 50);
-        }
+        for (var i = 0; i < 60; i++) CreateAgentWithRequest(i % 10, i / 10, 50, 50);
 
         // Act - Primeiro tick
         _system.BeforeUpdate(1);
         _system.Update(1);
-        
+
         // Segundo tick - deve processar mais 10
         _system.BeforeUpdate(2);
         _system.Update(2);
 
         // Assert - Todos devem estar processados agora
         var query = new QueryDescription().WithAll<PathState, NavigationAgent>();
-        int allProcessed = 0;
+        var allProcessed = 0;
         _world.Query(in query, (ref PathState state) =>
         {
             if (state.Status == PathStatus.Ready || state.Status == PathStatus.Failed)
@@ -692,12 +686,12 @@ public class ServerSystemsIntegrationTests : IDisposable
             new ServerMovement(),
             new GridPathBuffer(),
             new PathState(),
-            new ServerAgentConfig 
-            { 
-                CardinalMoveTicks = 6, 
+            new ServerAgentConfig
+            {
+                CardinalMoveTicks = 6,
                 DiagonalMoveTicks = 9,
                 AllowDiagonal = true,
-                MaxRetries = 3 
+                MaxRetries = 3
             }
         );
         _grid.TryOccupy(new GridPosition(x, y), entity.Id);
@@ -709,7 +703,7 @@ public class ServerSystemsIntegrationTests : IDisposable
     {
         // Arrange
         var entity = CreateAgent(5, 5);
-        
+
         // Adiciona requisição de path
         _world.Add(entity, new PathRequest { TargetX = 10, TargetY = 5 });
         _world.Get<PathState>(entity).Status = PathStatus.Pending;
@@ -723,10 +717,7 @@ public class ServerSystemsIntegrationTests : IDisposable
         Assert.Equal(PathStatus.Ready, state.Status);
 
         // Act - Simula múltiplos ticks de movimento
-        for (long tick = 1; tick <= 50; tick++)
-        {
-            _movementSystem.Update(tick);
-        }
+        for (long tick = 1; tick <= 50; tick++) _movementSystem.Update(tick);
 
         // Assert - Deve ter chegado ao destino
         var pos = _world.Get<GridPosition>(entity);
@@ -745,7 +736,7 @@ public class ServerSystemsIntegrationTests : IDisposable
         // Adiciona requisições
         _world.Add(agent1, new PathRequest { TargetX = 10, TargetY = 0 });
         _world.Get<PathState>(agent1).Status = PathStatus.Pending;
-        
+
         _world.Add(agent2, new PathRequest { TargetX = 10, TargetY = 50 });
         _world.Get<PathState>(agent2).Status = PathStatus.Pending;
 
@@ -754,10 +745,7 @@ public class ServerSystemsIntegrationTests : IDisposable
         _pathRequestSystem.Update(1);
 
         // Simula movimento
-        for (long tick = 1; tick <= 100; tick++)
-        {
-            _movementSystem.Update(tick);
-        }
+        for (long tick = 1; tick <= 100; tick++) _movementSystem.Update(tick);
 
         // Assert
         Assert.Equal(10, _world.Get<GridPosition>(agent1).X);

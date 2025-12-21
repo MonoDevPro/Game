@@ -1,7 +1,6 @@
 using System;
-using Game.Domain.Enums;
-using Game.ECS.Components;
-using Game.ECS.Navigation.Shared.Components;
+using Game.ECS.Shared.Components.Entities;
+using Game.ECS.Shared.Components.Navigation;
 using Godot;
 using GodotClient.Core.Autoloads;
 
@@ -18,7 +17,7 @@ public abstract partial class DefaultVisual : Node2D
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
-    private DirectionEnum _currentDirection = DirectionEnum.South;
+    private MovementDirection _currentDirection = MovementDirection.South;
     
     private float _movementAnimationDuration = 1f;
     private float _attackAnimationDuration = 1f;
@@ -122,13 +121,6 @@ public abstract partial class DefaultVisual : Node2D
     {
         if (Sprite is null) return;
         
-        vocation = vocation is VocationType.Unknown 
-            ? VocationType.Warrior 
-            : vocation;
-        gender = gender is Gender.Unknown
-            ? Gender.Male
-            : gender;
-        
         var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
         Sprite.SpriteFrames = spriteFrames;
     }
@@ -137,8 +129,7 @@ public abstract partial class DefaultVisual : Node2D
     {
         if (Sprite is null) return;
         
-        var nextDir = ConvertToFacingEnum(direction);
-        _currentDirection = nextDir is DirectionEnum.None ? _currentDirection : nextDir;
+        _currentDirection = direction is MovementDirection.None ? _currentDirection : direction;
         
         UpdateAnimationState(Sprite, isMoving, isAttacking, isDead);
     }
@@ -153,15 +144,15 @@ public abstract partial class DefaultVisual : Node2D
         
         string animName = _currentDirection switch
         {
-            DirectionEnum.South or DirectionEnum.SouthEast or DirectionEnum.SouthWest => $"{animation}_south",
-            DirectionEnum.North or DirectionEnum.NorthEast or DirectionEnum.NorthWest => $"{animation}_north",
-            DirectionEnum.East or DirectionEnum.West => $"{animation}_side",
+            MovementDirection.South or MovementDirection.SouthEast or MovementDirection.SouthWest => $"{animation}_south",
+            MovementDirection.North or MovementDirection.NorthEast or MovementDirection.NorthWest => $"{animation}_north",
+            MovementDirection.East or MovementDirection.West => $"{animation}_side",
             _ => $"{animation}",
         };
         
         animName = isDead ? "dead" : animName;
 
-        Sprite.FlipH = _currentDirection is DirectionEnum.West;
+        Sprite.FlipH = _currentDirection is MovementDirection.West;
         
         if (sprite.Animation == animName) 
             return;
@@ -172,22 +163,6 @@ public abstract partial class DefaultVisual : Node2D
         RefreshAnimationSpeeds();
     }
     
-    private DirectionEnum ConvertToFacingEnum(MovementDirection direction)
-    {
-        return direction switch
-        {
-            MovementDirection.North => DirectionEnum.North,
-            MovementDirection.NorthEast => DirectionEnum.NorthEast,
-            MovementDirection.East => DirectionEnum.East,
-            MovementDirection.SouthEast => DirectionEnum.SouthEast,
-            MovementDirection.South => DirectionEnum.South,
-            MovementDirection.SouthWest => DirectionEnum.SouthWest,
-            MovementDirection.West => DirectionEnum.West,
-            MovementDirection.NorthWest => DirectionEnum.NorthWest,
-            _ => DirectionEnum.None
-        };
-    }
-
     public void UpdateVitals(int currentHp, int maxHp, int currentMp, int maxMp)
     {
         if (HealthBar is null) return;

@@ -1,8 +1,8 @@
 using Arch.Core;
-using Game.ECS.Navigation.Server;
-using Game.ECS.Navigation.Server.Components;
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Data;
+using Game.ECS.Server.Modules.Navigation;
+using Game.ECS.Server.Modules.Navigation.Components;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Data.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Server;
 
@@ -242,7 +242,7 @@ public class ServerNavigationModuleTests : IDisposable
         var entity = _module.CreateAgent(new GridPosition(10, 15));
 
         // Act
-        var snapshot = _module.GetSnapshot(entity, currentTick: 100);
+        var snapshot = _module.GetSnapshot(entity, 100);
 
         // Assert
         Assert.Equal(entity.Id, snapshot.EntityId);
@@ -262,7 +262,7 @@ public class ServerNavigationModuleTests : IDisposable
         _module.Tick(2); // Start movement
 
         // Act
-        var snapshot = _module.GetSnapshot(entity, currentTick: 3);
+        var snapshot = _module.GetSnapshot(entity, 3);
 
         // Assert
         Assert.True(snapshot.IsMoving);
@@ -286,7 +286,7 @@ public class ServerNavigationModuleTests : IDisposable
         // Assert
         var state = _world.Get<PathState>(entity);
         // After processing, should be Ready, Following, or Failed (never Pending or Computing)
-        Assert.True(state.Status == PathStatus.Ready || 
+        Assert.True(state.Status == PathStatus.Ready ||
                     state.Status == PathStatus.Failed ||
                     state.Status == PathStatus.Following);
         Assert.False(_world.Has<PathRequest>(entity));
@@ -318,12 +318,9 @@ public class ServerNavigationModuleTests : IDisposable
         _module.Tick(2); // Start movement
 
         var config = _world.Get<ServerAgentConfig>(entity);
-        
+
         // Act - Tick enough times to complete movement
-        for (int i = 3; i <= 3 + config.CardinalMoveTicks; i++)
-        {
-            _module.Tick(i);
-        }
+        for (var i = 3; i <= 3 + config.CardinalMoveTicks; i++) _module.Tick(i);
 
         // Assert
         var pos = _world.Get<GridPosition>(entity);
@@ -339,10 +336,7 @@ public class ServerNavigationModuleTests : IDisposable
         _module.RequestMoveTo(entity, new GridPosition(8, 5)); // 3 cells away
 
         // Act - Tick many times
-        for (int i = 1; i <= 100; i++)
-        {
-            _module.Tick(i);
-        }
+        for (var i = 1; i <= 100; i++) _module.Tick(i);
 
         // Assert
         var state = _world.Get<PathState>(entity);
@@ -362,11 +356,8 @@ public class ServerNavigationModuleTests : IDisposable
     {
         // Arrange
         // Create wall between agent and target
-        for (int y = 0; y < 50; y++)
-        {
-            _module.Grid.SetWalkable(10, y, false);
-        }
-        
+        for (var y = 0; y < 50; y++) _module.Grid.SetWalkable(10, y, false);
+
         var entity = _module.CreateAgent(new GridPosition(5, 5));
         _module.RequestMoveTo(entity, new GridPosition(15, 5));
 
@@ -385,7 +376,7 @@ public class ServerNavigationModuleTests : IDisposable
         // Arrange
         var agent1 = _module.CreateAgent(new GridPosition(5, 5));
         var agent2 = _module.CreateAgent(new GridPosition(6, 5));
-        
+
         // Agent 1 tries to move to where Agent 2 is
         _module.RequestMoveTo(agent1, new GridPosition(6, 5));
         _module.Tick(1); // Process path
@@ -423,8 +414,8 @@ public class ServerAgentConfigTests
     {
         var config = ServerAgentConfig.Default;
 
-        Assert.Equal(config.CardinalMoveTicks, config.GetMoveTicks(diagonal: false));
-        Assert.Equal(config.DiagonalMoveTicks, config.GetMoveTicks(diagonal: true));
+        Assert.Equal(config.CardinalMoveTicks, config.GetMoveTicks(false));
+        Assert.Equal(config.DiagonalMoveTicks, config.GetMoveTicks(true));
     }
 
     [Fact]

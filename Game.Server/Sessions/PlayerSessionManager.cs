@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Server.Sessions;

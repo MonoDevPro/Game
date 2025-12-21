@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotClient", "Simulation.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Domain", "Game.Domain\Game.Domain.csproj", "{D7284F42-833A-4145-BCD2-7D694EFC69DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS", "Game.ECS\Game.ECS.csproj", "{75E2F7F4-3EB4-4FC0-B258-600D3BF9CBA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Server", "Game.ECS.Server\Game.ECS.Server.csproj", "{75E2F7F4-3EB4-4FC0-B258-600D3BF9CBA6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Network", "Game.Network\Game.Network.csproj", "{109488A0-63AE-4DDA-A773-D86AD9918D48}"
 EndProject
@@ -21,13 +21,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Tests", "Game.Tests\Game.Tests.csproj", "{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Core", "Game.Core\Game.Core.csproj", "{9C662232-BB2F-4BD4-958A-69AE5268C128}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.DTOs", "Game.DTOs\Game.DTOs.csproj", "{D921CF2B-3E39-4923-BA04-481CB6E4B006}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Navigation", "Game.ECS.Navigation\Game.ECS.Navigation.csproj", "{59353BB2-143C-4F09-8E91-C7993D26A003}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Client", "Game.ECS.Client\Game.ECS.Client.csproj", "{59353BB2-143C-4F09-8E91-C7993D26A003}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Navigation.Tests", "Game.ECS.Navigation.Tests\Game.ECS.Navigation.Tests.csproj", "{D4997B79-A56A-4C44-9E1B-C8D695A76FCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.ECS.Shared", "Game.ECS.Shared\Game.ECS.Shared.csproj", "{85913F6B-545C-4AB6-8760-6934F3DDFE17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,10 +63,6 @@ Global
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5B188A3-2099-4BE1-A03D-6D4F3A0C3512}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C662232-BB2F-4BD4-958A-69AE5268C128}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D921CF2B-3E39-4923-BA04-481CB6E4B006}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -79,6 +75,10 @@ Global
 		{D4997B79-A56A-4C44-9E1B-C8D695A76FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4997B79-A56A-4C44-9E1B-C8D695A76FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4997B79-A56A-4C44-9E1B-C8D695A76FCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85913F6B-545C-4AB6-8760-6934F3DDFE17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85913F6B-545C-4AB6-8760-6934F3DDFE17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85913F6B-545C-4AB6-8760-6934F3DDFE17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85913F6B-545C-4AB6-8760-6934F3DDFE17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

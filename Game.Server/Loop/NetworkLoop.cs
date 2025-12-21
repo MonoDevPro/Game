@@ -1,4 +1,4 @@
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 
 namespace Game.Server.Loop;
 

@@ -1,5 +1,5 @@
 using Game.Domain.Enums;
-using Game.DTOs.Game.Npc;
+using Game.ECS.Shared.Components.Entities;
 
 namespace Game.Server.Npc;
 

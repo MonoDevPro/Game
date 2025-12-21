@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.Enums;
+using Game.ECS.Shared.Components.Entities;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;
@@ -123,13 +123,7 @@ public partial class AssetManager : Node
         foreach (var vocation in Enum.GetValues<VocationType>())
             // Carrega ambos os gêneros
             foreach (var gender in Enum.GetValues<Gender>())
-                GetSpriteFrames(
-                    vocation is VocationType.Unknown 
-                        ? VocationType.Warrior 
-                        : vocation,
-                    gender is Gender.Unknown 
-                        ? Gender.Male 
-                        : gender);
+                GetSpriteFrames(vocation, gender);
     }
 
     private void PreloadUIAssets()

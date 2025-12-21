@@ -1,7 +1,7 @@
 using System;
 using Arch.Core;
 using Game.Domain.Entities;
-using Game.Network.Abstractions;
+using Game.ECS.Shared.Services.Network;
 
 namespace Game.Server.Sessions;
 

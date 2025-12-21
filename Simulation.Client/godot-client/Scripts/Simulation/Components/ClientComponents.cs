@@ -1,2 +1,0 @@
-namespace GodotClient.Simulation.Components;
-

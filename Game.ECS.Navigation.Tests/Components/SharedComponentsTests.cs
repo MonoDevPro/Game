@@ -1,7 +1,6 @@
+using Game.ECS.Shared.Components.Navigation;
 
-using Game.ECS.Navigation.Shared.Components;
-
-namespace GameECS.Tests.Navigation.Components;
+namespace Game.ECS.Navigation.Tests.Components;
 
 /// <summary>
 /// Testes para componentes compartilhados.
@@ -204,8 +203,8 @@ public class SharedComponentsTests
     [Fact]
     public void PathRequest_Create_WithOptions_ShouldSetValues()
     {
-        var request = PathRequest.Create(10, 20, 
-            PathPriority.High, 
+        var request = PathRequest.Create(10, 20,
+            PathPriority.High,
             PathRequestFlags.AllowPartialPath | PathRequestFlags.CardinalOnly);
 
         Assert.Equal(PathPriority.High, request.Priority);
@@ -317,7 +316,7 @@ public class SharedComponentsTests
     public void GridPathBuffer_SetAndGetWaypoint_ShouldWork()
     {
         var buffer = new GridPathBuffer { WaypointCount = 5 };
-        
+
         buffer.SetWaypoint(0, 100);
         buffer.SetWaypoint(1, 200);
 

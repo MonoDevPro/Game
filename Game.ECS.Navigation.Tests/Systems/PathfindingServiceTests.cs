@@ -1,7 +1,7 @@
-using Game.ECS.Navigation.Shared.Components;
-using Game.ECS.Navigation.Shared.Core;
-using Game.ECS.Navigation.Shared.Data;
-using Game.ECS.Navigation.Shared.Systems;
+using Game.ECS.Shared.Components.Navigation;
+using Game.ECS.Shared.Core.Navigation;
+using Game.ECS.Shared.Data.Navigation;
+using Game.ECS.Shared.Services.Navigation;
 
 namespace Game.ECS.Navigation.Tests.Systems;
 
@@ -79,10 +79,7 @@ public class PathfindingServiceTests
         // Arrange
         var grid = CreateTestGrid();
         // Create a wall
-        for (int y = 0; y < 15; y++)
-        {
-            grid.SetWalkable(10, y, false);
-        }
+        for (var y = 0; y < 15; y++) grid.SetWalkable(10, y, false);
         var service = CreateService(grid);
         var buffer = new GridPathBuffer();
 
@@ -100,10 +97,7 @@ public class PathfindingServiceTests
         // Arrange
         var grid = CreateTestGrid();
         // Create complete wall
-        for (int y = 0; y < 20; y++)
-        {
-            grid.SetWalkable(10, y, false);
-        }
+        for (var y = 0; y < 20; y++) grid.SetWalkable(10, y, false);
         var service = CreateService(grid);
         var buffer = new GridPathBuffer();
 
@@ -199,7 +193,7 @@ public class PathfindingServiceTests
         var buffer = new GridPathBuffer();
 
         // Act
-        var result = service.FindPath(5, 5, 10, 10, ref buffer, 
+        var result = service.FindPath(5, 5, 10, 10, ref buffer,
             PathRequestFlags.AllowPartialPath);
 
         // Assert
@@ -213,10 +207,7 @@ public class PathfindingServiceTests
         // Arrange
         var grid = CreateTestGrid();
         // Complete wall
-        for (int y = 0; y < 20; y++)
-        {
-            grid.SetWalkable(10, y, false);
-        }
+        for (var y = 0; y < 20; y++) grid.SetWalkable(10, y, false);
         var service = CreateService(grid);
         var buffer = new GridPathBuffer();
 
@@ -256,7 +247,7 @@ public class PathfindingServiceTests
         // Arrange
         var grid = CreateTestGrid();
         var service = CreateService(grid);
-        
+
         var bufferCardinal = new GridPathBuffer();
         var bufferDiagonal = new GridPathBuffer();
 
@@ -313,7 +304,7 @@ public class PathfindingServiceTests
         var buffer = new GridPathBuffer();
 
         // Act & Assert - Multiple calls should all work
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var result = service.FindPath(0, 0, 10, 10, ref buffer);
             Assert.True(result.Success);
@@ -402,7 +393,9 @@ public class PathfindingServiceTests
         service.FindPath(0, 0, 2, 0, ref buffer);
 
         // Act - Advance through all waypoints
-        while (buffer.TryAdvance()) { }
+        while (buffer.TryAdvance())
+        {
+        }
 
         // Assert
         Assert.True(buffer.IsComplete);
@@ -418,7 +411,7 @@ public class PathfindingServiceTests
         // Arrange
         var grid = CreateTestGrid();
         grid.SetWalkable(5, 5, false);
-        
+
         var config = new NavigationConfig { PreventCornerCutting = true };
         var service = CreateService(grid, config);
         var buffer = new GridPathBuffer();
