@@ -801,6 +801,13 @@ public sealed class GameServer : IDisposable
                 input.TargetX, 
                 input.TargetY
             );
+            
+            // ✅ Envia snapshot de movimento de volta ao cliente para sincronização
+            if (_simulation.TryGetEntity(peer.Id, out var entity))
+            {
+                var snapshot = _simulation.GetMovementSnapshot(entity);
+                _networkManager.SendToPeer(peer, snapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+            }
         }
     }
 
