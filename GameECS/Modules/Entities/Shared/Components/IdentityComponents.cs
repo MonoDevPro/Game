@@ -5,6 +5,19 @@ using GameECS.Modules.Entities.Shared.Data;
 namespace GameECS.Modules.Entities.Shared.Components;
 
 /// <summary>
+/// Identificador de rede para sincronização cliente-servidor.
+/// </summary>
+public struct NetworkId
+{
+    public int Value;
+
+    public NetworkId(int value) => Value = value;
+
+    public static implicit operator int(NetworkId id) => id.Value;
+    public static implicit operator NetworkId(int value) => new(value);
+}
+
+/// <summary>
 /// Identidade única da entidade.
 /// </summary>
 public struct EntityIdentity

@@ -1,9 +1,12 @@
+using MemoryPack;
+
 namespace GameECS.Modules.Combat.Shared.Data;
 
 /// <summary>
 /// Informações detalhadas sobre um dano aplicado.
 /// </summary>
-public readonly struct DamageInfo
+[MemoryPackable]
+public readonly partial struct DamageInfo
 {
     public int RawDamage { get; init; }
     public int FinalDamage { get; init; }
@@ -40,7 +43,8 @@ public readonly struct DamageInfo
 /// <summary>
 /// Mensagem de rede para sincronizar dano.
 /// </summary>
-public readonly struct DamageNetworkMessage
+[MemoryPackable]
+public readonly partial struct DamageNetworkMessage
 {
     public int AttackerId { get; init; }
     public int TargetId { get; init; }
@@ -54,7 +58,8 @@ public readonly struct DamageNetworkMessage
 /// <summary>
 /// Mensagem de rede para sincronizar morte.
 /// </summary>
-public readonly struct DeathNetworkMessage
+[MemoryPackable]
+public readonly partial struct DeathNetworkMessage
 {
     public int EntityId { get; init; }
     public int KillerId { get; init; }

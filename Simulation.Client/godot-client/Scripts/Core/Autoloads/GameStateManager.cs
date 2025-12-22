@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.ECS.Shared.Core.Entities;
-using Game.ECS.Shared.Data.Entities;
+using GameECS.Modules.Entities.Shared.Data;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;

@@ -1,7 +1,9 @@
 using Arch.Core;
+using GameECS.Modules.Entities.Shared.Data;
 using Game.Server.Sessions;
 using GameECS.Modules.Combat.Shared.Components;
-using GameECS.Modules.Entities.Server.Persistence;
+using GameECS.Modules.Entities.Shared.Components;
+using GameECS.Server;
 
 namespace Game.Server.Players;
 
@@ -17,32 +19,20 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var playerSnapshot = new PlayerData(
-            PlayerId: session.Account.Id,
+        var spawnData = new PlayerSpawnData(
+            AccountId: session.Account.Id,
+            CharacterId: character.Id,
             NetworkId: session.Peer.Id,
-            MapId: 0,
             Name: character.Name,
-            Gender: (byte)character.Gender,
-            Vocation: (byte)character.Vocation,
             X: character.PositionX,
             Y: character.PositionY,
-            Z: character.PositionZ,
-            Direction: character.Direction,
-            Hp: character.Stats.CurrentHp,
-            MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
-            Mp: character.Stats.CurrentMp,
-            MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
-            MovementSpeed: (float)character.Stats.MovementSpeed,
-            AttackSpeed: (float)character.Stats.AttackSpeed,
-            PhysicalAttack: character.Stats.PhysicalAttack,
-            MagicAttack: character.Stats.MagicAttack,
-            PhysicalDefense: character.Stats.PhysicalDefense,
-            MagicDefense: character.Stats.MagicDefense
+            Level: character.Stats.Level,
+            Vocation: (byte)character.Vocation,
+            Health: character.Stats.CurrentHp,
+            Mana: character.Stats.CurrentMp
         );
 
-        var entity = simulation.CreatePlayerEntity(ref playerSnapshot);
+        var entity = simulation.CreatePlayerEntity(spawnData);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);

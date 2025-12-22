@@ -1,8 +1,7 @@
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.ECS.Server;
-using Game.ECS.Shared.Services.Network;
 using Game.Network;
+using Game.Network.Abstractions;
 using Game.Persistence;
 using Game.Server;
 using Game.Server.Authentication;
@@ -12,6 +11,7 @@ using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
+using GameECS.Server;
 
 var builder = CreateHostBuilder(args);
 

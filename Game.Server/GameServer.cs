@@ -4,10 +4,7 @@ using Game.Domain.Entities;
 using Game.DTOs.Chat;
 using Game.DTOs.Menu;
 using Game.DTOs.Persistence;
-using Game.ECS.Server;
-using Game.ECS.Shared.Data.Entities;
-using Game.ECS.Shared.Data.Navigation;
-using Game.ECS.Shared.Services.Network;
+using Game.Network.Abstractions;
 using Game.Network.Packets.Menu;
 using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
@@ -16,8 +13,10 @@ using Game.Server.Players;
 using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
-using EcsGender = Game.ECS.Shared.Components.Entities.Gender;
-using EcsVocationType = Game.ECS.Shared.Components.Entities.VocationType;
+using GameECS.Server;
+using GameECS.Modules.Entities.Shared.Components;
+using GameECS.Modules.Entities.Shared.Data;
+using GameECS.Modules.Navigation.Shared.Data;
 
 namespace Game.Server;
 
@@ -387,8 +386,8 @@ public sealed class GameServer : IDisposable
                 Id = c.Id,
                 Name = c.Name,
                 Level = c.Stats.Level,
-                Vocation = (EcsVocationType)c.Vocation,
-                Gender = (EcsGender)c.Gender
+                Vocation = c.Vocation,
+                Gender = c.Gender
             }).ToArray();
         
             var successResponse = UnconnectedLoginResponsePacket.SuccessResponse(sessionToken, playerCharacters);
@@ -447,8 +446,8 @@ public sealed class GameServer : IDisposable
                 Id = c.Id,
                 Name = c.Name,
                 Level = c.Stats.Level,
-                Vocation = (EcsVocationType)c.Vocation,
-                Gender = (EcsGender)c.Gender
+                Vocation = c.Vocation,
+                Gender = c.Gender
             }).ToArray();
         
             var successResponse = UnconnectedLoginResponsePacket.SuccessResponse(sessionToken, playerCharacters);
@@ -506,8 +505,8 @@ public sealed class GameServer : IDisposable
                 Id = creationResult.Character.Id,
                 Name = creationResult.Character.Name,
                 Level = creationResult.Character.Stats.Level,
-                Vocation = (EcsVocationType)creationResult.Character.Vocation,
-                Gender = (EcsGender)creationResult.Character.Gender
+                Vocation = creationResult.Character.Vocation,
+                Gender = creationResult.Character.Gender
             };
         
             var successResponse = UnconnectedCharacterCreationResponsePacket.Ok(charData);
@@ -739,7 +738,7 @@ public sealed class GameServer : IDisposable
             var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
-            var mapData = new Game.ECS.Shared.Core.Navigation.MapData
+            var mapData = new MapData
             {
                 Id = currentMap.Id.ToString(),
                 Name = currentMap.Name,
@@ -795,7 +794,14 @@ public sealed class GameServer : IDisposable
     /// </summary>
     private void HandlePlayerInput(INetPeerAdapter peer, ref MoveInput input)
     {
-        if (_simulation.ApplyPlayerInput(peer.Id, input))
+        var moveData = new MoveInputData(
+            input.SequenceId,
+            input.TargetX,
+            input.TargetY,
+            input.ClientTimestamp
+        );
+        
+        if (_simulation.ApplyPlayerInput(peer.Id, moveData))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY})",

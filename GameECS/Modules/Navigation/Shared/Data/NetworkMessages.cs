@@ -1,4 +1,5 @@
 using GameECS.Modules.Navigation.Shared.Components;
+using MemoryPack;
 
 namespace GameECS.Modules.Navigation.Shared.Data;
 
@@ -6,7 +7,8 @@ namespace GameECS.Modules.Navigation.Shared.Data;
 /// Snapshot de movimento para sincronização.
 /// Enviado do servidor para o cliente.
 /// </summary>
-public struct MovementSnapshot
+[MemoryPackable]
+public partial struct MovementSnapshot
 {
     public int EntityId;
     public short CurrentX;
@@ -20,14 +22,17 @@ public struct MovementSnapshot
     public readonly float GetDurationSeconds(float tickRate)
         => TicksRemaining / tickRate;
 
+    [MemoryPackIgnore]
     public readonly GridPosition CurrentPosition => new(CurrentX, CurrentY);
+    [MemoryPackIgnore]
     public readonly GridPosition TargetPosition => new(TargetX, TargetY);
 }
 
 /// <summary>
 /// Atualização em lote de múltiplas entidades.
 /// </summary>
-public struct BatchMovementUpdate
+[MemoryPackable]
+public partial struct BatchMovementUpdate
 {
     public long ServerTick;
     public MovementSnapshot[] Snapshots;
@@ -36,33 +41,38 @@ public struct BatchMovementUpdate
 /// <summary>
 /// Mensagem de teleporte instantâneo.
 /// </summary>
-public struct TeleportMessage
+[MemoryPackable]
+public partial struct TeleportMessage
 {
     public int EntityId;
     public short X;
     public short Y;
     public MovementDirection FacingDirection;
 
+    [MemoryPackIgnore]
     public readonly GridPosition Position => new(X, Y);
 }
 
 /// <summary>
 /// Input de movimento do jogador.
 /// </summary>
-public struct MoveInput
+[MemoryPackable]
+public partial struct MoveInput
 {
     public int SequenceId;
     public short TargetX;
     public short TargetY;
     public long ClientTimestamp;
 
+    [MemoryPackIgnore]
     public readonly GridPosition Target => new(TargetX, TargetY);
 }
 
 /// <summary>
 /// Confirmação de movimento do servidor.
 /// </summary>
-public struct MoveConfirmation
+[MemoryPackable]
+public partial struct MoveConfirmation
 {
     public int SequenceId;
     public bool Success;

@@ -122,7 +122,7 @@ public abstract partial class DefaultVisual : Node2D
     {
         if (Sprite is null) return;
         
-        var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
+        var spriteFrames = AssetManager.Instance.GetSpriteFrames((Game.Domain.Enums.VocationType)vocation, gender);
         Sprite.SpriteFrames = spriteFrames;
     }
 

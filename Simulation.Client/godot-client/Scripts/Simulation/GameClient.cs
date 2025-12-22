@@ -1,11 +1,10 @@
 using System;
 using Game.DTOs.Chat;
-using Game.ECS.Shared.Components.Combat;
-using Game.ECS.Shared.Core.Entities;
-using Game.ECS.Shared.Data.Combat;
-using Game.ECS.Shared.Data.Entities;
-using Game.ECS.Shared.Data.Navigation;
-using Game.ECS.Shared.Services.Network;
+using Game.Network.Abstractions;
+using GameECS.Client;
+using GameECS.Modules.Combat.Shared.Components;
+using GameECS.Modules.Entities.Shared.Data;
+using GameECS.Modules.Navigation.Shared.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.UI.Actions;
@@ -17,7 +16,7 @@ namespace GodotClient.Simulation;
 
 /// <summary>
 /// Cliente principal do jogo orientado a ECS:
-/// - Bootstrapa a ClientSimulation (ECS + sistemas)
+/// - Bootstrapa a ClientGameSimulation (ECS + sistemas)
 /// - Carrega dados iniciais (mapa, ids) do GameStateManager
 /// - Registra handlers de rede e encaminha snapshots para a simulação
 /// - Roda o loop de simulação (fixed-timestep) em _Process
@@ -25,7 +24,7 @@ namespace GodotClient.Simulation;
 public partial class GameClient : Node2D
 {
     public static GameClient Instance { get; private set; } = null!;
-    public ClientSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
+    public ClientGameSimulation Simulation => _simulation ?? throw new InvalidOperationException("Simulation not initialized");
     public bool IsChatFocused { get; private set; }
 
     private static readonly string[] GameplayActionsToRelease =
@@ -41,7 +40,7 @@ public partial class GameClient : Node2D
     };
 
     private INetworkManager? _network;
-    private ClientSimulation? _simulation;
+    private ClientGameSimulation? _simulation;
 
     private int _localNetworkId = -1;
     private int _localPlayerId = -1;
@@ -65,8 +64,8 @@ public partial class GameClient : Node2D
         // 1) Network vinda do Autoload (menu já inicializou)
         _network = NetworkClient.Instance.NetworkManager;
 
-        // 2) Boot de simulação (fornece INetworkManager via DI para os sistemas que precisarem)
-        _simulation = new ClientSimulation(_network);
+        // 2) Boot de simulação
+        _simulation = new ClientGameSimulation();
 
         // 3) Registra handlers de rede apontando para a simulação
         RegisterPacketHandlers();
@@ -159,11 +158,7 @@ public partial class GameClient : Node2D
         
         var localPlayer = gameState.CurrentGameData.Value.LocalPlayer;
 
-        var localPlayerSnapshot = localPlayer;
-
-        _simulation?.CreateLocalPlayer(
-            ref localPlayerSnapshot,
-            SpawnPlayerVisual(localPlayer));
+        _simulation?.CreateLocalPlayer(localPlayer, SpawnPlayerVisual(localPlayer));
 
         var bufferedPlayers = gameState.ConsumePlayerSnapshots();
 
@@ -171,10 +166,7 @@ public partial class GameClient : Node2D
 
         foreach (var snapshot in bufferedPlayers)
         {
-            var playerData = snapshot;
-            _simulation?.CreateRemotePlayer(
-                ref playerData,
-                SpawnPlayerVisual(playerData));
+            _simulation?.CreateRemotePlayer(snapshot, SpawnPlayerVisual(snapshot));
         }
     }
 
@@ -186,8 +178,7 @@ public partial class GameClient : Node2D
         
         foreach (var snapshot in bufferedNpcs)
         {
-            var npcData = snapshot;
-            _simulation?.CreateNpc(ref npcData, SpawnNpcVisual(npcData));
+            _simulation?.CreateNpc(snapshot, SpawnNpcVisual(snapshot));
         }
     }
     
@@ -242,15 +233,15 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
 
-        if (!_simulation.TryGetAnyEntity(packet.Id, out var entity))
+        if (!_simulation.TryGetAnyEntity(packet.NetworkId, out var entity))
         {
-            GD.PushWarning($"[GameClient] HandleSingleVitals: Could not find entity {packet.Id}");
+            GD.PushWarning($"[GameClient] HandleSingleVitals: Could not find entity {packet.NetworkId}");
             return;
         }
 
         if (!_simulation.World.TryGet<Health>(entity, out var health))
         {
-            GD.PushWarning($"[GameClient] HandleSingleVitals: Entity {packet.Id} has no Health component");
+            GD.PushWarning($"[GameClient] HandleSingleVitals: Entity {packet.NetworkId} has no Health component");
             return;
         }
 
@@ -281,13 +272,12 @@ public partial class GameClient : Node2D
                 _simulation.World.Remove<Dead>(entity);
         }
 
-        var vitalsSnapshot = packet;
-        _simulation.ApplyVitals(ref vitalsSnapshot);
+        _simulation.ApplyVitals(packet);
         
         // TODO: Implementar visual feedback quando visual estiver disponível
         // visual.UpdateVitals(packet.CurrentHp, packet.MaxHp, packet.CurrentMp, packet.MaxMp);
         
-        GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.Id}");
+        GD.Print($"[GameClient] Received PlayerVitalsPacket for NetworkId {packet.NetworkId}");
     }
     
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSpawnPacket packet)
@@ -301,15 +291,14 @@ public partial class GameClient : Node2D
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
     {
         var isLocal = dataPacket.NetworkId == _localNetworkId;
-        var playerData = dataPacket;
 
         if (isLocal)
-            _simulation?.CreateLocalPlayer(ref playerData, SpawnPlayerVisual(playerData));
+            _simulation?.CreateLocalPlayer(dataPacket, SpawnPlayerVisual(dataPacket));
         else
-            _simulation?.CreateRemotePlayer(ref playerData, SpawnPlayerVisual(playerData));
+            _simulation?.CreateRemotePlayer(dataPacket, SpawnPlayerVisual(dataPacket));
         
         if (!isLocal) 
-            UpdateStatus($"{playerData.Name} joined");
+            UpdateStatus($"{dataPacket.Name} joined");
         
         GD.Print($"[GameClient] Spawned player '{dataPacket.Name}' (NetID: {dataPacket.NetworkId})");
     }
@@ -353,12 +342,13 @@ public partial class GameClient : Node2D
             return;
         }
         
-        ref var command = ref _simulation.World.AddOrGet<AttackCommand>(attackerEntity);
-        command.Style = packet.Style;
-        command.ConjureDuration = packet.AttackDuration;
+        // TODO: Implementar AttackCommand e CombatState quando componentes estiverem disponíveis
+        // ref var command = ref _simulation.World.AddOrGet<AttackCommand>(attackerEntity);
+        // command.Style = packet.Style;
+        // command.ConjureDuration = packet.AttackDuration;
 
-        ref var state = ref _simulation.World.AddOrGet<CombatState>(attackerEntity);
-        state.CooldownTimer = packet.CooldownRemaining;
+        // ref var state = ref _simulation.World.AddOrGet<CombatState>(attackerEntity);
+        // state.CooldownTimer = packet.CooldownRemaining;
 
         GD.Print($"[GameClient] CombatStatePacket processed: Attacker={packet.AttackerId}, Type={packet.Style}, Duration={packet.AttackDuration}, Cooldown={packet.CooldownRemaining}");
     }
@@ -372,12 +362,11 @@ public partial class GameClient : Node2D
 
         foreach (var npc in packet.Npcs)
         {
-            var npcData = npc;
-            _simulation.CreateNpc(ref npcData, SpawnNpcVisual(npcData));
+            _simulation.CreateNpc(npc, SpawnNpcVisual(npc));
         }
     }
 
-    private Visuals.NpcVisual SpawnNpcVisual(NpcData npcDataSnapshot)
+    private Visuals.NpcVisual SpawnNpcVisual(in NpcData npcDataSnapshot)
     {
         var npcVisual = Visuals.NpcVisual.Create();
         npcVisual.Name = $"Npc_{npcDataSnapshot.NetworkId}";

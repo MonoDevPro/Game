@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Game.Domain.Enums;
 using Game.DTOs.Menu;
-using Game.ECS.Shared.Components.Entities;
-using Game.ECS.Shared.Data.Entities;
-using Game.ECS.Shared.Services.Network;
+using Game.Network.Abstractions;
 using Game.Network.Packets.Menu;
+using GameECS.Modules.Entities.Shared.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
 

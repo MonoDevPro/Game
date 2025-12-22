@@ -25,6 +25,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Game.Network\Game.Network.csproj" />
         <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
+        <ProjectReference Include="..\GameECS\GameECS.csproj" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     </ItemGroup>
 </Project>
