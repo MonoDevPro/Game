@@ -7,6 +7,7 @@ using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Modules.Navigation.Shared.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
+using GodotClient.Simulation.Contracts;
 using GodotClient.UI.Actions;
 using GodotClient.UI.Chat;
 using GodotClient.UI.Joystick;
@@ -65,7 +66,7 @@ public partial class GameClient : Node2D
         _network = NetworkClient.Instance.NetworkManager;
 
         // 2) Boot de simulação
-        _simulation = new ClientGameSimulation();
+        _simulation = new ClientGameSimulation(inputProvider: new GodotInputProvider());
 
         // 3) Registra handlers de rede apontando para a simulação
         RegisterPacketHandlers();
