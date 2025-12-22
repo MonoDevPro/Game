@@ -66,8 +66,10 @@ public partial class GameClient : Node2D
         _network = NetworkClient.Instance.NetworkManager;
 
         // 2) Boot de simulação
-        _simulation = new ClientGameSimulation(inputProvider: new GodotInputProvider());
-
+        _simulation = new ClientGameSimulation(
+            inputProvider: new GodotInputProvider(),
+            networkSender: new NetworkSender(_network));
+        
         // 3) Registra handlers de rede apontando para a simulação
         RegisterPacketHandlers();
 
@@ -158,18 +160,31 @@ public partial class GameClient : Node2D
         if (gameState.CurrentGameData is null) return;
         
         var localPlayer = gameState.CurrentGameData.Value.LocalPlayer;
-
-        _simulation?.CreateLocalPlayer(localPlayer, SpawnPlayerVisual(localPlayer));
-
+        
+        // Visual
+        var playerVisual = SpawnPlayerVisual(localPlayer);
+        _simulation?.CreateLocalPlayer(localPlayer, playerVisual);
+        EntitiesRoot.AddChild(playerVisual);
+        playerVisual.MakeCamera();
+        
         var bufferedPlayers = gameState.ConsumePlayerSnapshots();
 
         GD.Print($"[GameClient] Spawning {bufferedPlayers.Length} buffered players");
 
         foreach (var snapshot in bufferedPlayers)
         {
-            _simulation?.CreateRemotePlayer(snapshot, SpawnPlayerVisual(snapshot));
+            var visual = SpawnPlayerVisual(snapshot);
+            _simulation?.CreateRemotePlayer(snapshot, visual);
+            EntitiesRoot.AddChild(visual);
         }
     }
+    
+    /*
+    bool isMoving = animation.Clip is AnimationClip.Walk or AnimationClip.Run;
+    bool isAttacking = animation.Clip == AnimationClip.Attack;
+    var isDead = animation.Clip == AnimationClip.Death;
+    visual.UpdateAnimationState(animation.Facing, isMoving, isAttacking, isDead);
+    */
 
     private void LoadNpcVisuals()
     {
@@ -179,16 +194,17 @@ public partial class GameClient : Node2D
         
         foreach (var snapshot in bufferedNpcs)
         {
-            _simulation?.CreateNpc(snapshot, SpawnNpcVisual(snapshot));
+            // Visual
+            var npcVisual = SpawnNpcVisual(snapshot);
+            _simulation?.CreateNpc(snapshot, npcVisual);
+            EntitiesRoot.AddChild(npcVisual);
         }
     }
     
     private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
     {
         var playerVisual = Visuals.PlayerVisual.Create();
-        
         playerVisual.Name = $"Player_{snapshot.NetworkId}";
-        
         return playerVisual;
     }
 
@@ -292,11 +308,17 @@ public partial class GameClient : Node2D
     private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
     {
         var isLocal = dataPacket.NetworkId == _localNetworkId;
+        var visual = SpawnPlayerVisual(dataPacket);
 
         if (isLocal)
-            _simulation?.CreateLocalPlayer(dataPacket, SpawnPlayerVisual(dataPacket));
+            _simulation?.CreateLocalPlayer(dataPacket, visual);
         else
-            _simulation?.CreateRemotePlayer(dataPacket, SpawnPlayerVisual(dataPacket));
+            _simulation?.CreateRemotePlayer(dataPacket, visual);
+        
+        EntitiesRoot.AddChild(visual);
+        
+        if (isLocal)
+            visual.MakeCamera();
         
         if (!isLocal) 
             UpdateStatus($"{dataPacket.Name} joined");
@@ -363,7 +385,9 @@ public partial class GameClient : Node2D
 
         foreach (var npc in packet.Npcs)
         {
+            var npcVisual = SpawnNpcVisual(npc);
             _simulation.CreateNpc(npc, SpawnNpcVisual(npc));
+            EntitiesRoot.AddChild(npcVisual);
         }
     }
 

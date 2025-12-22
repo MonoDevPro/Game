@@ -3,7 +3,6 @@ using GameECS.Modules.Navigation.Client.Components;
 using GameECS.Modules.Navigation.Client.Systems;
 using GameECS.Modules.Navigation.Shared.Components;
 using GameECS.Modules.Navigation.Shared.Data;
-using Xunit;
 
 namespace GameECS.Tests.Navigation.Client.Systems;
 
@@ -22,9 +21,9 @@ public class MockInputProvider : IInputProvider
 
 public class MockNetworkSender : INetworkSender
 {
-    public List<MoveInput> SentInputs { get; } = new();
+    public List<MoveInputData> SentInputs { get; } = new();
     
-    public void SendMoveInput(MoveInput input)
+    public void SendMoveInput(ref MoveInputData input)
     {
         SentInputs.Add(input);
     }
@@ -349,25 +348,6 @@ public class ClientInputSystemTests : IDisposable
     }
 
     [Fact]
-    public void Update_SequenceId_ShouldIncrement()
-    {
-        // Arrange
-        CreateLocalPlayer(0, 0);
-        _inputProvider.ClickPressed = true;
-        _inputProvider.ClickPosition = (160f, 160f);
-
-        // Act
-        _system.Update(0.016f);
-        _system.Update(0.2f); // Espera cooldown
-        _inputProvider.ClickPosition = (320f, 320f);
-        _system.Update(0.016f);
-
-        // Assert
-        Assert.Equal(1, _networkSender.SentInputs[0].SequenceId);
-        Assert.Equal(2, _networkSender.SentInputs[1].SequenceId);
-    }
-
-    [Fact]
     public void Update_NoLocalPlayer_ShouldNotSendInput()
     {
         // Arrange - Não cria local player
@@ -379,26 +359,6 @@ public class ClientInputSystemTests : IDisposable
 
         // Assert
         Assert.Empty(_networkSender.SentInputs);
-    }
-
-    [Fact]
-    public void Update_ClientTimestamp_ShouldBeSet()
-    {
-        // Arrange
-        CreateLocalPlayer(0, 0);
-        _inputProvider.ClickPressed = true;
-        _inputProvider.ClickPosition = (160f, 160f);
-
-        var beforeTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        // Act
-        _system.Update(0.016f);
-
-        var afterTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        // Assert
-        var input = _networkSender.SentInputs[0];
-        Assert.True(input.ClientTimestamp >= beforeTimestamp && input.ClientTimestamp <= afterTimestamp);
     }
 }
 

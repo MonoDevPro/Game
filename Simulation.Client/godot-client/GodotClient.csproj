@@ -24,7 +24,6 @@
     <Folder Include="Assets\" />
     <Folder Include="Resources\" />
     <Folder Include="Scripts\Services\" />
-    <Folder Include="Scripts\Simulation\Systems\" />
     <Folder Include="Scripts\UI\HUD\" />
     <Folder Include="Scripts\UI\Chat\" />
   </ItemGroup>

@@ -14,7 +14,6 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using GameECS.Server;
-using GameECS.Modules.Entities.Shared.Components;
 using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Modules.Navigation.Shared.Data;
 
@@ -93,7 +92,7 @@ public sealed class GameServer : IDisposable
         
         // ✅ CONNECTED PACKETS (In-game)
         RegisterAndValidate<GameConnectRequestPacket>(HandleGameConnect);
-        RegisterAndValidate<MoveInput>(HandlePlayerInput);
+        RegisterAndValidate<MoveInputData>(HandlePlayerInput);
         RegisterAndValidate<ChatMessagePacket>(HandleChatMessage);
     }
 
@@ -792,16 +791,9 @@ public sealed class GameServer : IDisposable
     /// <summary>
     /// ✅ Handler CONNECTED de input de jogador.
     /// </summary>
-    private void HandlePlayerInput(INetPeerAdapter peer, ref MoveInput input)
+    private void HandlePlayerInput(INetPeerAdapter peer, ref MoveInputData input)
     {
-        var moveData = new MoveInputData(
-            input.SequenceId,
-            input.TargetX,
-            input.TargetY,
-            input.ClientTimestamp
-        );
-        
-        if (_simulation.ApplyPlayerInput(peer.Id, moveData))
+        if (_simulation.ApplyPlayerInput(peer.Id, input))
         {
             _logger.LogDebug(
                 "Applied input from peer {PeerId}: Input=({InputX}, {InputY})",
@@ -904,7 +896,7 @@ public sealed class GameServer : IDisposable
     
         // ✅ Desregistra handlers connected
         _networkManager.UnregisterPacketHandler<GameConnectRequestPacket>();
-        _networkManager.UnregisterPacketHandler<MoveInput>();
+        _networkManager.UnregisterPacketHandler<MoveInputData>();
         _networkManager.UnregisterPacketHandler<ChatMessagePacket>();
     }
 }

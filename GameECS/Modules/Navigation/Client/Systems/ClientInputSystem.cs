@@ -15,7 +15,6 @@ public sealed partial class ClientInputSystem : BaseSystem<World, float>
     private readonly INetworkSender _networkSender;
     private readonly float _cellSize;
     
-    private int _sequenceId;
     private float _inputCooldown;
     private const float InputCooldownTime = 0.1f; // 100ms entre inputs
     private int _targetX;
@@ -31,7 +30,6 @@ public sealed partial class ClientInputSystem : BaseSystem<World, float>
         _inputProvider = inputProvider;
         _networkSender = networkSender;
         _cellSize = cellSize;
-        _sequenceId = 0;
     }
 
     public override void Update(in float deltaTime)
@@ -68,15 +66,13 @@ public sealed partial class ClientInputSystem : BaseSystem<World, float>
             return;
 
         // Envia requisição ao servidor
-        var input = new MoveInput
+        var input = new MoveInputData
         {
-            SequenceId = ++_sequenceId,
             TargetX = (short)_targetX,
-            TargetY = (short)_targetY,
-            ClientTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            TargetY = (short)_targetY
         };
 
-        _networkSender.SendMoveInput(input);
+        _networkSender.SendMoveInput(ref input);
         _inputCooldown = InputCooldownTime;
         _shouldProcess = false;
     }
@@ -97,5 +93,5 @@ public interface IInputProvider
 /// </summary>
 public interface INetworkSender
 {
-    void SendMoveInput(MoveInput input);
+    void SendMoveInput(ref MoveInputData input);
 }

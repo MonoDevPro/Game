@@ -4,6 +4,7 @@ using Game.Server.Sessions;
 using GameECS.Modules.Combat.Shared.Components;
 using GameECS.Modules.Entities.Shared.Components;
 using GameECS.Server;
+using PlayerData = GameECS.Server.PlayerData;
 
 namespace Game.Server.Players;
 
@@ -19,7 +20,7 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var spawnData = new PlayerSpawnData(
+        var spawnData = new PlayerData(
             AccountId: session.Account.Id,
             CharacterId: character.Id,
             NetworkId: session.Peer.Id,
@@ -55,7 +56,7 @@ public sealed class PlayerSpawnService(
         session.Entity = Entity.Null;
     }
 
-    public PlayerData BuildSnapshot(PlayerSession session)
+    public GameECS.Modules.Entities.Shared.Data.PlayerData BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
@@ -72,7 +73,7 @@ public sealed class PlayerSpawnService(
             }
         }
         
-        return new PlayerData(
+        return new GameECS.Modules.Entities.Shared.Data.PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: 0,

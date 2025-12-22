@@ -8,7 +8,6 @@ using GameECS.Modules.Navigation.Client;
 using GameECS.Modules.Navigation.Client.Systems;
 using GameECS.Modules.Navigation.Client.Components;
 using GameECS.Modules.Navigation.Shared.Data;
-using GameECS.Modules.Navigation.Shared.Components;
 
 namespace GameECS.Client;
 

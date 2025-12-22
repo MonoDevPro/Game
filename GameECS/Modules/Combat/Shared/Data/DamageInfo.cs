@@ -6,17 +6,16 @@ namespace GameECS.Modules.Combat.Shared.Data;
 /// Informações detalhadas sobre um dano aplicado.
 /// </summary>
 [MemoryPackable]
-public readonly partial struct DamageInfo
+public readonly partial record struct DamageInfo(
+    int RawDamage,
+    int FinalDamage,
+    int MitigatedDamage,
+    DamageType Type,
+    bool IsCritical,
+    int AttackerId,
+    int TargetId,
+    long Tick)
 {
-    public int RawDamage { get; init; }
-    public int FinalDamage { get; init; }
-    public int MitigatedDamage { get; init; }
-    public DamageType Type { get; init; }
-    public bool IsCritical { get; init; }
-    public int AttackerId { get; init; }
-    public int TargetId { get; init; }
-    public long Tick { get; init; }
-
     public static DamageInfo Create(
         int rawDamage,
         int finalDamage,
@@ -44,24 +43,20 @@ public readonly partial struct DamageInfo
 /// Mensagem de rede para sincronizar dano.
 /// </summary>
 [MemoryPackable]
-public readonly partial struct DamageNetworkMessage
-{
-    public int AttackerId { get; init; }
-    public int TargetId { get; init; }
-    public int Damage { get; init; }
-    public DamageType Type { get; init; }
-    public bool IsCritical { get; init; }
-    public AttackResult Result { get; init; }
-    public long ServerTick { get; init; }
-}
+public readonly partial record struct DamageNetworkMessage(
+    int AttackerId,
+    int TargetId,
+    int Damage,
+    DamageType Type,
+    bool IsCritical,
+    AttackResult Result,
+    long ServerTick);
 
 /// <summary>
 /// Mensagem de rede para sincronizar morte.
 /// </summary>
 [MemoryPackable]
-public readonly partial struct DeathNetworkMessage
-{
-    public int EntityId { get; init; }
-    public int KillerId { get; init; }
-    public long ServerTick { get; init; }
-}
+public readonly partial record struct DeathNetworkMessage(
+    int EntityId,
+    int KillerId,
+    long ServerTick);

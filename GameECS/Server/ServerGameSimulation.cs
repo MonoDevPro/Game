@@ -11,13 +11,15 @@ using GameECS.Modules.Navigation.Server.Components;
 using GameECS.Modules.Navigation.Shared.Components;
 using GameECS.Modules.Navigation.Shared.Data;
 using System.Collections.Concurrent;
+using MemoryPack;
 
 namespace GameECS.Server;
 
 /// <summary>
 /// Dados para criação de jogador.
 /// </summary>
-public record struct PlayerSpawnData(
+[MemoryPackable]
+public readonly partial record struct PlayerData(
     int AccountId,
     int CharacterId,
     int NetworkId,
@@ -33,22 +35,13 @@ public record struct PlayerSpawnData(
 /// <summary>
 /// Dados de vitais para eventos.
 /// </summary>
-public record struct VitalsData(
+[MemoryPackable]
+public readonly partial record struct VitalsData(
     int EntityId,
     int CurrentHp,
     int MaxHp,
     int CurrentMp,
     int MaxMp
-);
-
-/// <summary>
-/// Dados de input de movimento.
-/// </summary>
-public record struct MoveInputData(
-    int SequenceId,
-    short TargetX,
-    short TargetY,
-    long ClientTimestamp
 );
 
 /// <summary>
@@ -118,7 +111,7 @@ public sealed class ServerGameSimulation : IDisposable
     /// <summary>
     /// Cria uma entidade de jogador.
     /// </summary>
-    public Entity CreatePlayerEntity(PlayerSpawnData data)
+    public Entity CreatePlayerEntity(PlayerData data)
     {
         // Cria entidade base via módulo de entidades
         var entity = _entities.CreatePlayer(
