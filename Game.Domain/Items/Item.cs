@@ -1,7 +1,7 @@
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
 using Game.Domain.Enums;
-using Game.Domain.Player;
+using Game.Domain.Entities;
 
 namespace Game.Domain.Items;
 

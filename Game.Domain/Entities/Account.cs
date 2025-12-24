@@ -1,6 +1,6 @@
 using Game.Domain.Commons;
 
-namespace Game.Domain.Player;
+namespace Game.Domain.Entities;
 
 /// <summary>
 /// Conta de login do jogador

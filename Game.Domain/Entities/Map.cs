@@ -1,6 +1,6 @@
 using Game.Domain.Commons;
 
-namespace Game.Domain.Maps;
+namespace Game.Domain.Entities;
 
 public enum TileType : byte
 {

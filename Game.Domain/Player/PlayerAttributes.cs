@@ -1,4 +1,4 @@
-using Game.Domain.Attributes;
+using Game.Domain.DomainServices;
 using Game.Domain.ValueObjects.Character;
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.ValueObjects.Vitals;

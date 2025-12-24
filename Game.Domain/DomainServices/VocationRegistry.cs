@@ -2,7 +2,7 @@ using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Attributes.Vocation.ValueObjects;
 using Game.Domain.Enums;
 
-namespace Game.Domain.Attributes.Vocation;
+namespace Game.Domain.DomainServices;
 
 /// <summary>
 /// Registro centralizado de todas as vocações com seus metadados.

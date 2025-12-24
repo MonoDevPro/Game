@@ -1,7 +1,7 @@
 using Game.Domain.Commons;
 using Game.Domain.Items;
 
-namespace Game.Domain.Player;
+namespace Game.Domain.Entities;
 
 /// <summary>
 /// Inventário do personagem.

@@ -3,9 +3,10 @@ using Game.Domain.ValueObjects.Character;
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
 using Game.Domain.Enums;
-using Game.Domain.Commons.Extensions;
+using Game.Domain.Extensions;
+using Game.Domain.Player;
 
-namespace Game.Domain.Player;
+namespace Game.Domain.Entities;
 
 /// <summary>
 /// Personagem jogável.

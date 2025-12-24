@@ -1,9 +1,9 @@
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.ValueObjects.Vitals;
 using Game.Domain.ValueObjects.Character;
-using Game.Domain.Player;
+using Game.Domain.Entities;
 
-namespace Game.Domain.Attributes;
+namespace Game.Domain.DomainServices;
 
 /// <summary>
 /// Calculador de atributos do personagem.

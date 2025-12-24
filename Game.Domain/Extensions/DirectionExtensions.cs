@@ -1,7 +1,7 @@
 using Game.Domain.Enums;
-using Game.Domain.Commons.ValueObjects;
+using Game.Domain.ValueObjects.Map;
 
-namespace Game.Domain.Commons.Extensions;
+namespace Game.Domain.Extensions;
 
 /// <summary>
 /// Extensões para MovementDirection. 

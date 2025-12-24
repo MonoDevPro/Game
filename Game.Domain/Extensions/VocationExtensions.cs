@@ -2,9 +2,10 @@ using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Attributes.Vocation;
 using Game.Domain.Attributes.Vocation.ValueObjects;
 using Game.Domain.Enums;
-using Game.Domain.Player;
+using Game.Domain.Entities;
+using Game.Domain.DomainServices;
 
-namespace Game.Domain.Commons.Extensions;
+namespace Game.Domain.Extensions;
 
 /// <summary>
 /// Extensões úteis para VocationType.

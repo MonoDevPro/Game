@@ -1,7 +1,7 @@
 using Game.Domain.Enums;
 using Game.Domain.ValueObjects.Combat;
 
-namespace Game.Domain.Combat;
+namespace Game.Domain.DomainServices;
 
 /// <summary>
 /// Centraliza todas as fórmulas de cálculo de combate do domínio.
