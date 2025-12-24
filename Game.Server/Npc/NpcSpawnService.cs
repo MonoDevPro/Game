@@ -1,6 +1,7 @@
 using Arch.Core;
 using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Server;
+using GameECS.Shared.Entities.Data;
 
 namespace Game.Server.Npc;
 

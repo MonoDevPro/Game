@@ -1,5 +1,7 @@
-using GameECS.Modules.Combat.Shared.Components;
 using GameECS.Modules.Combat.Shared.Data;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Data;
 using Xunit;
 
 namespace GameECS.Tests.Combat.Components;
@@ -205,10 +207,10 @@ public class CombatComponentsTests
         var stats = CombatStats.FromVocation(VocationType.Knight);
 
         // Assert
-        Assert.Equal(VocationStats.Knight.BasePhysicalDamage, stats.PhysicalDamage);
-        Assert.Equal(VocationStats.Knight.BaseMagicDamage, stats.MagicDamage);
-        Assert.Equal(VocationStats.Knight.BasePhysicalDefense, stats.PhysicalDefense);
-        Assert.Equal(VocationStats.Knight.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Warrior.BasePhysicalDamage, stats.PhysicalDamage);
+        Assert.Equal(Stats.Warrior.BaseMagicDamage, stats.MagicDamage);
+        Assert.Equal(Stats.Warrior.BasePhysicalDefense, stats.PhysicalDefense);
+        Assert.Equal(Stats.Warrior.BaseAttackRange, stats.AttackRange);
     }
 
     [Fact]
@@ -218,9 +220,9 @@ public class CombatComponentsTests
         var stats = CombatStats.FromVocation(VocationType.Mage);
 
         // Assert
-        Assert.Equal(VocationStats.Mage.BaseMagicDamage, stats.MagicDamage);
-        Assert.Equal(VocationStats.Mage.BaseMagicDefense, stats.MagicDefense);
-        Assert.Equal(VocationStats.Mage.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Mage.BaseMagicDamage, stats.MagicDamage);
+        Assert.Equal(Stats.Mage.BaseMagicDefense, stats.MagicDefense);
+        Assert.Equal(Stats.Mage.BaseAttackRange, stats.AttackRange);
     }
 
     [Fact]
@@ -230,10 +232,10 @@ public class CombatComponentsTests
         var stats = CombatStats.FromVocation(VocationType.Archer);
 
         // Assert
-        Assert.Equal(VocationStats.Archer.BasePhysicalDamage, stats.PhysicalDamage);
-        Assert.Equal(VocationStats.Archer.BaseAttackRange, stats.AttackRange);
-        Assert.Equal(VocationStats.Archer.BaseAttackSpeed, stats.AttackSpeed);
-        Assert.Equal(VocationStats.Archer.BaseCriticalChance, stats.CriticalChance);
+        Assert.Equal(Stats.Archer.BasePhysicalDamage, stats.PhysicalDamage);
+        Assert.Equal(Stats.Archer.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Archer.BaseAttackSpeed, stats.AttackSpeed);
+        Assert.Equal(Stats.Archer.BaseCriticalChance, stats.CriticalChance);
     }
 
     #endregion
@@ -247,7 +249,7 @@ public class CombatComponentsTests
     public void Vocation_GetPrimaryDamageType_ShouldReturnCorrectType(VocationType vocation, DamageType expectedType)
     {
         // Arrange
-        var voc = new Vocation(vocation);
+        var voc = new PlayerVocation(vocation);
 
         // Act
         var damageType = voc.GetPrimaryDamageType();

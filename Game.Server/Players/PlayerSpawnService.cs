@@ -1,10 +1,9 @@
 using Arch.Core;
 using GameECS.Modules.Entities.Shared.Data;
 using Game.Server.Sessions;
-using GameECS.Modules.Combat.Shared.Components;
-using GameECS.Modules.Entities.Shared.Components;
 using GameECS.Server;
-using PlayerData = GameECS.Server.PlayerData;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Entities.Components;
 
 namespace Game.Server.Players;
 
@@ -20,7 +19,7 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var spawnData = new PlayerData(
+        var spawnData = new PlayerSpawnData(
             AccountId: session.Account.Id,
             CharacterId: character.Id,
             NetworkId: session.Peer.Id,
@@ -56,7 +55,7 @@ public sealed class PlayerSpawnService(
         session.Entity = Entity.Null;
     }
 
-    public GameECS.Modules.Entities.Shared.Data.PlayerData BuildSnapshot(PlayerSession session)
+    public GameECS.Shared.Entities.Data.PlayerDto BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
@@ -73,13 +72,13 @@ public sealed class PlayerSpawnService(
             }
         }
         
-        return new GameECS.Modules.Entities.Shared.Data.PlayerData(
+        return new GameECS.Shared.Entities.Data.PlayerDto(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: 0,
             Name: character.Name,
-            Gender: (byte)character.Gender,
-            Vocation: (byte)character.Vocation,
+            Gender: character.Gender,
+            Vocation: character.Vocation,
             X: character.PositionX,
             Y: character.PositionY,
             Z: character.PositionZ,

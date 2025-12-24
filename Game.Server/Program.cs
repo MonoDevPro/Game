@@ -1,5 +1,4 @@
-using Game.Domain.Entities;
-using Game.Domain.Enums;
+using Game.Domain.Maps;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;

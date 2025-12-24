@@ -1,8 +1,10 @@
 using Arch.Core;
 using GameECS.Modules.Navigation.Server;
-using GameECS.Modules.Navigation.Server.Components;
-using GameECS.Modules.Navigation.Shared.Components;
 using GameECS.Modules.Navigation.Shared.Data;
+using GameECS.Server.Navigation;
+using GameECS.Server.Navigation.Components;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Data;
 
 namespace GameECS.Tests.Navigation.Server;
 

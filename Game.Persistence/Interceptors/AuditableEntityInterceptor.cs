@@ -1,4 +1,4 @@
-using Game.Domain.Entities;
+using Game.Domain.Commons;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;

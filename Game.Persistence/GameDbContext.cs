@@ -1,6 +1,7 @@
+using Game.Domain.Items;
+using Game.Domain.Maps;
+using Game.Domain.Player;
 using Microsoft.EntityFrameworkCore;
-using Game.Domain.Entities;
-using Game.Domain.Enums;
 
 namespace Game.Persistence;
 
@@ -15,7 +16,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Character> Characters { get; set; }
-    public DbSet<Stats> Stats { get; set; }
+    public DbSet<Attributes> Stats { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<ItemStats> ItemStats { get; set; }
     public DbSet<Inventory> Inventories { get; set; }
@@ -146,7 +147,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             // Deletar Character = Deletar Stats automaticamente
             entity.HasOne(e => e.Stats)
                 .WithOne(s => s.Character)
-                .HasForeignKey<Stats>(s => s.CharacterId)
+                .HasForeignKey<Attributes>(s => s.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Stats_Character");
 
@@ -173,7 +174,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     /// </summary>
     private void ConfigureStats(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Stats>(entity =>
+        modelBuilder.Entity<Attributes>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.ToTable("Stats");
@@ -338,7 +339,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             // ✅ Relacionamento: Inventory (1) -> InventorySlots (N) com CASCADE DELETE
             // Deletar Inventory = Deletar todos os InventorySlots automaticamente
             entity.HasMany(e => e.Slots)
-                .WithOne(s => s.Inventory)
+                .WithOne(s => s.PlayerInventory)
                 .HasForeignKey(s => s.InventoryId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_InventorySlots_Inventory");

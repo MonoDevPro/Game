@@ -1,7 +1,10 @@
 using Arch.Core;
+using GameECS.Client.Combat;
+using GameECS.Client.Combat.Components;
 using GameECS.Modules.Combat.Client;
-using GameECS.Modules.Combat.Client.Components;
 using GameECS.Modules.Combat.Shared.Data;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Data;
 using Xunit;
 
 namespace GameECS.Tests.Combat.Client;
@@ -177,7 +180,7 @@ public class ClientCombatModuleTests : IDisposable
         _module.CreateEntity(serverId, VocationType.Knight, 100, 100, 50, 50);
 
         // Act
-        _module.OnDeathReceived(new DeathNetworkMessage
+        _module.OnDeathReceived(new DeathMessage
         {
             EntityId = serverId,
             KillerId = 2,

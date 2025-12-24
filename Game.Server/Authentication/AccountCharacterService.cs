@@ -1,5 +1,4 @@
-using Game.Domain.Entities;
-using Game.Domain.Enums;
+using Game.Domain.Player;
 using Game.Persistence.Interfaces;
 
 namespace Game.Server.Authentication;
@@ -26,7 +25,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         string Name, 
         int Level, 
         VocationType Vocation, 
-        Gender Gender);
+        GenderType Gender);
     
     public record CharacterListResult(bool Success, string Message, Character[] Characters)
     {
@@ -237,7 +236,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         return (true, null);
     }
     
-    private static Stats CreateInitialStats(Character character, int level, VocationType vocation)
+    private static Attributes CreateInitialStats(Character character, int level, VocationType vocation)
     {
         // Stats base variam por vocação
         var (strength, dexterity, intelligence, constitution, spirit) = vocation switch

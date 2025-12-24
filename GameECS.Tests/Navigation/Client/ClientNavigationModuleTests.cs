@@ -1,8 +1,10 @@
 using Arch.Core;
+using GameECS.Client.Navigation;
+using GameECS.Client.Navigation.Components;
 using GameECS.Modules.Navigation.Client;
-using GameECS.Modules.Navigation.Client.Components;
-using GameECS.Modules.Navigation.Shared.Components;
 using GameECS.Modules.Navigation.Shared.Data;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Data;
 
 namespace GameECS.Tests.Navigation.Client;
 

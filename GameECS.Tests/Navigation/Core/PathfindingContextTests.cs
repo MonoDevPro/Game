@@ -1,4 +1,4 @@
-using GameECS.Modules.Navigation.Shared.Core;
+using GameECS.Shared.Navigation.Core;
 
 namespace GameECS.Tests.Navigation.Core;
 

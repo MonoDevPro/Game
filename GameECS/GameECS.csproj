@@ -8,7 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Modules\" />
+      <Folder Include="Shared\Combat\" />
+      <Folder Include="Shared\Entities\" />
+      <Folder Include="Shared\Navigation\" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Game.Domain.Entities;
+using Game.Domain.Player;
 
 namespace Game.Server.Sessions;
 

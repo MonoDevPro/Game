@@ -1,6 +1,8 @@
-using GameECS.Modules.Combat.Shared.Components;
-using GameECS.Modules.Combat.Shared.Core;
 using GameECS.Modules.Combat.Shared.Data;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Combat.Core;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Data;
 using Xunit;
 
 namespace GameECS.Tests.Combat.Core;

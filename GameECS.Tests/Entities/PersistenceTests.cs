@@ -1,8 +1,8 @@
 using Arch.Core;
-using GameECS.Modules.Entities.Server.Core;
-using GameECS.Modules.Entities.Server.Persistence;
-using GameECS.Modules.Entities.Shared.Components;
-using GameECS.Modules.Navigation.Shared.Components;
+using GameECS.Server.Entities.Core;
+using GameECS.Server.Entities.Persistence;
+using GameECS.Shared.Entities.Components;
+using GameECS.Shared.Navigation.Components;
 using Xunit;
 
 namespace GameECS.Tests.Entities;
@@ -66,7 +66,7 @@ public class PlayerPersistenceTests : IDisposable
         // Assert
         Assert.NotNull(entity);
         Assert.True(_world.IsAlive(entity.Value));
-        Assert.True(_world.Has<EntityIdentity>(entity.Value));
+        Assert.True(_world.Has<Identity>(entity.Value));
         Assert.True(_world.Has<GridPosition>(entity.Value));
     }
 

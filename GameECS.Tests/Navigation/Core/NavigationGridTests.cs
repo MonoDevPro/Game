@@ -1,5 +1,5 @@
-using GameECS.Modules.Navigation.Shared.Core;
-using GameECS.Modules.Navigation.Shared.Components;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Core;
 
 namespace GameECS.Tests.Navigation.Core;
 

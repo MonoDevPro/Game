@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.Domain.Entities;
+using Game.Domain.Player;
 using Game.Network.Abstractions;
 
 namespace Game.Server.Sessions;

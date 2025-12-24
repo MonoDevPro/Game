@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Domain.Entities;
+using Game.Domain.Maps;
+using Game.Domain.Player;
 using Game.DTOs.Chat;
 using Game.DTOs.Menu;
 using Game.DTOs.Persistence;
@@ -14,8 +15,8 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using GameECS.Server;
-using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Modules.Navigation.Shared.Data;
+using GameECS.Shared.Entities.Data;
+using GameECS.Shared.Navigation.Data;
 
 namespace Game.Server;
 
@@ -485,8 +486,8 @@ public sealed class GameServer : IDisposable
                     accountId,
                     packet.Name,
                     1,
-                    (Game.Domain.Enums.VocationType)packet.Vocation,
-                    (Game.Domain.Enums.Gender)packet.Gender
+                    (VocationType)packet.Vocation,
+                    (Game.Domain.Enums.GenderType)packet.Gender
                 ), CancellationToken.None);
 
             if (!creationResult.Success || creationResult.Character is null)

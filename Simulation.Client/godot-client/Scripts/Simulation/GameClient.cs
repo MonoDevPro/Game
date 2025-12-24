@@ -2,9 +2,11 @@ using System;
 using Game.DTOs.Chat;
 using Game.Network.Abstractions;
 using GameECS.Client;
-using GameECS.Modules.Combat.Shared.Components;
 using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Modules.Navigation.Shared.Data;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Entities.Data;
+using GameECS.Shared.Navigation.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.Simulation.Contracts;
@@ -201,7 +203,7 @@ public partial class GameClient : Node2D
         }
     }
     
-    private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
+    private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerDto snapshot)
     {
         var playerVisual = Visuals.PlayerVisual.Create();
         playerVisual.Name = $"Player_{snapshot.NetworkId}";
@@ -301,19 +303,19 @@ public partial class GameClient : Node2D
     {
         foreach (var singlePacket in packet.PlayerData)
         {
-            PlayerData dataPacket = singlePacket;
-            HandlePlayerSpawn(peer, ref dataPacket);
+            PlayerDto dtoPacket = singlePacket;
+            HandlePlayerSpawn(peer, ref dtoPacket);
         }
     }
-    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
+    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerDto dtoPacket)
     {
-        var isLocal = dataPacket.NetworkId == _localNetworkId;
-        var visual = SpawnPlayerVisual(dataPacket);
+        var isLocal = dtoPacket.NetworkId == _localNetworkId;
+        var visual = SpawnPlayerVisual(dtoPacket);
 
         if (isLocal)
-            _simulation?.CreateLocalPlayer(dataPacket, visual);
+            _simulation?.CreateLocalPlayer(dtoPacket, visual);
         else
-            _simulation?.CreateRemotePlayer(dataPacket, visual);
+            _simulation?.CreateRemotePlayer(dtoPacket, visual);
         
         EntitiesRoot.AddChild(visual);
         
@@ -321,9 +323,9 @@ public partial class GameClient : Node2D
             visual.MakeCamera();
         
         if (!isLocal) 
-            UpdateStatus($"{dataPacket.Name} joined");
+            UpdateStatus($"{dtoPacket.Name} joined");
         
-        GD.Print($"[GameClient] Spawned player '{dataPacket.Name}' (NetID: {dataPacket.NetworkId})");
+        GD.Print($"[GameClient] Spawned player '{dtoPacket.Name}' (NetID: {dtoPacket.NetworkId})");
     }
     
     private void HandleDespawn(INetPeerAdapter peer, ref LeftPacket packet)

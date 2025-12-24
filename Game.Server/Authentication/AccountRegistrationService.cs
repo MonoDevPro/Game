@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using Game.Domain.Entities;
+using Game.Domain.Player;
 using Game.Persistence.Interfaces;
 using Game.Server.Security;
 

@@ -1,9 +1,9 @@
 using System;
-using Game.Domain.Enums;
-using GameECS.Modules.Navigation.Shared.Components;
+using GameECS.Shared.Navigation.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
-using VocationType = GameECS.Modules.Combat.Shared.Data.VocationType;
+using Player_VocationType = Game.Domain.Player.VocationType;
+using VocationType = GameECS.Shared.Entities.Data.VocationType;
 
 namespace GodotClient.Simulation.Visuals;
 
@@ -118,11 +118,11 @@ public abstract partial class DefaultVisual : Node2D
         ZIndex = gridPos.Z;
     }
 
-    public void LoadSprite(VocationType vocation, Gender gender)
+    public void LoadSprite(VocationType vocation, GenderType gender)
     {
         if (Sprite is null) return;
         
-        var spriteFrames = AssetManager.Instance.GetSpriteFrames((Game.Domain.Enums.VocationType)vocation, gender);
+        var spriteFrames = AssetManager.Instance.GetSpriteFrames((Player_VocationType)vocation, gender);
         Sprite.SpriteFrames = spriteFrames;
     }
 

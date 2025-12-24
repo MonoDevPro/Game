@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Game.Domain.Enums;
+using Game.Domain.Player;
 using Game.DTOs.Menu;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Menu;
 using GameECS.Modules.Entities.Shared.Data;
+using GameECS.Shared.Entities.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
 
@@ -589,7 +590,7 @@ public partial class MenuScript : Control
     {
         // Gender
         _genderOptionButton.Clear();
-        foreach (var gender in Enum.GetValues<Gender>())
+        foreach (var gender in Enum.GetValues<GenderType>())
         {
             _genderOptionButton.AddItem(gender.ToString(), (int)gender);
         }
@@ -860,7 +861,7 @@ public partial class MenuScript : Control
             return;
         }
         
-        if (genderIndex <= 0 || genderIndex >= Enum.GetValues<Gender>().Length)
+        if (genderIndex <= 0 || genderIndex >= Enum.GetValues<GenderType>().Length)
         {
             UpdateStatus("Character creation failed: invalid gender");
             return;
@@ -872,7 +873,7 @@ public partial class MenuScript : Control
             return;
         }
         
-        var gender = (Gender)genderIndex;
+        var gender = (GenderType)genderIndex;
         var vocation = (VocationType)vocationIndex;
         
         var packet = new UnconnectedCharacterCreationRequestPacket(_sessionToken, name, gender, vocation);

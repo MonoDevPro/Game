@@ -1,5 +1,4 @@
-using Game.Domain.Entities;
-using Game.Domain.Enums;
+using Game.Domain.Maps;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

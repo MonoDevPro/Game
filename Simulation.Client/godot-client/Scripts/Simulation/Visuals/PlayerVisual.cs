@@ -1,7 +1,8 @@
 using GameECS.Client;
-using GameECS.Modules.Entities.Shared.Components;
 using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Modules.Navigation.Shared.Components;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Data;
+using GameECS.Shared.Navigation.Components;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;
@@ -30,11 +31,11 @@ public sealed partial class PlayerVisual : DefaultVisual, IEntityVisual
         QueueFree();
     }
 
-    public void UpdateFromSnapshot(in PlayerData snapshot)
+    public void UpdateFromSnapshot(in PlayerDto snapshot)
     {
-        LoadSprite((GameECS.Modules.Combat.Shared.Data.VocationType)snapshot.Vocation, (Game.Domain.Enums.Gender)snapshot.Gender);
+        LoadSprite((VocationType)snapshot.Vocation, (Game.Domain.Enums.GenderType)snapshot.Gender);
         UpdateName(snapshot.Name);
-        UpdateAnimationState((GameECS.Modules.Navigation.Shared.Components.MovementDirection)snapshot.Direction, false, false, false);
+        UpdateAnimationState((MovementDirection)snapshot.Direction, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
         UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);

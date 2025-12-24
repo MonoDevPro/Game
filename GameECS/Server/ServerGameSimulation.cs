@@ -1,16 +1,16 @@
 using Arch.Core;
-using GameECS.Modules.Combat.Server;
-using GameECS.Modules.Combat.Shared.Components;
-using GameECS.Modules.Combat.Shared.Data;
-using GameECS.Modules.Entities.Server;
-using GameECS.Modules.Entities.Server.Persistence;
-using GameECS.Modules.Entities.Shared.Components;
-using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Modules.Navigation.Server;
-using GameECS.Modules.Navigation.Server.Components;
-using GameECS.Modules.Navigation.Shared.Components;
-using GameECS.Modules.Navigation.Shared.Data;
 using System.Collections.Concurrent;
+using GameECS.Server.Combat;
+using GameECS.Server.Entities;
+using GameECS.Server.Entities.Persistence;
+using GameECS.Server.Navigation;
+using GameECS.Server.Navigation.Components;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Components;
+using GameECS.Shared.Entities.Data;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Data;
 using MemoryPack;
 
 namespace GameECS.Server;
@@ -19,7 +19,7 @@ namespace GameECS.Server;
 /// Dados para criação de jogador.
 /// </summary>
 [MemoryPackable]
-public readonly partial record struct PlayerData(
+public readonly partial record struct PlayerSpawnData(
     int AccountId,
     int CharacterId,
     int NetworkId,
@@ -111,20 +111,20 @@ public sealed class ServerGameSimulation : IDisposable
     /// <summary>
     /// Cria uma entidade de jogador.
     /// </summary>
-    public Entity CreatePlayerEntity(PlayerData data)
+    public Entity CreatePlayerEntity(PlayerSpawnData spawnData)
     {
         // Cria entidade base via módulo de entidades
         var entity = _entities.CreatePlayer(
-            data.AccountId,
-            data.CharacterId,
-            data.Name,
-            data.Level,
-            data.X,
-            data.Y);
+            spawnData.AccountId,
+            spawnData.CharacterId,
+            spawnData.Name,
+            spawnData.Level,
+            spawnData.X,
+            spawnData.Y);
         
         // Adiciona componentes de navegação
         _world.Add(entity, 
-            new GridPosition(data.X, data.Y),
+            new GridPosition(spawnData.X, spawnData.Y),
             new ServerMovement(),
             new GridPathBuffer(),
             new PathState(),
@@ -132,29 +132,29 @@ public sealed class ServerGameSimulation : IDisposable
             new NavigationAgent());
         
         // Adiciona componentes de combate
-        var vocation = (GameECS.Modules.Combat.Shared.Data.VocationType)data.Vocation;
-        _combat.AddCombatComponents(entity, vocation, data.Level);
+        var vocation = (VocationType)spawnData.Vocation;
+        _combat.AddCombatComponents(entity, vocation, spawnData.Level);
         
         // Sobrescreve HP/MP se necessário
         if (_world.TryGet<Health>(entity, out var health))
         {
-            health = new Health(data.Health);
+            health = new Health(spawnData.Health);
             _world.Set(entity, health);
         }
         if (_world.TryGet<Mana>(entity, out var mana))
         {
-            mana = new Mana(data.Mana);
+            mana = new Mana(spawnData.Mana);
             _world.Set(entity, mana);
         }
         
         // Adiciona NetworkId para mapeamento
-        _world.Add(entity, new NetworkId { Value = data.NetworkId });
+        _world.Add(entity, new NetworkId { Value = spawnData.NetworkId });
         
         // Registra mapeamentos
-        _networkIdToEntity[data.NetworkId] = entity;
+        _networkIdToEntity[spawnData.NetworkId] = entity;
         
         // Ocupa célula no grid
-        _navigation.Grid.TryOccupy(new GridPosition(data.X, data.Y), entity.Id);
+        _navigation.Grid.TryOccupy(new GridPosition(spawnData.X, spawnData.Y), entity.Id);
         
         return entity;
     }
@@ -252,7 +252,7 @@ public sealed class ServerGameSimulation : IDisposable
         return null;
     }
 
-    private void HandleDamageDealt(DamageNetworkMessage msg)
+    private void HandleDamageDealt(DamageMessage msg)
     {
         // Dispara evento de vitais se necessário
         if (_networkIdToEntity.TryGetValue(msg.TargetId, out var entity))
@@ -272,7 +272,7 @@ public sealed class ServerGameSimulation : IDisposable
         }
     }
 
-    private void HandleEntityDeath(DeathNetworkMessage msg)
+    private void HandleEntityDeath(DeathMessage msg)
     {
         // Lógica de morte pode ser implementada aqui
     }

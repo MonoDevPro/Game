@@ -1,4 +1,4 @@
-using Game.Domain.Entities;
+using Game.Domain.Player;
 
 namespace Game.Persistence.Interfaces.Repositories;
 

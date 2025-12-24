@@ -1,4 +1,4 @@
-using Game.Domain.Entities;
+using Game.Domain.Player;
 using Game.DTOs.Persistence;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
@@ -211,7 +211,7 @@ internal sealed class PlayerPersistenceService(
                             Quantity = slotDto.Quantity,
                             ItemId = slotDto.ItemId,
                             InventoryId = character.Inventory.Id,
-                            Inventory = character.Inventory,
+                            PlayerInventory = character.Inventory,
                             IsActive = slotDto.IsActive
                         };
                         character.Inventory.Slots.Add(newSlot);
@@ -228,7 +228,7 @@ internal sealed class PlayerPersistenceService(
                         Quantity = slotDto.Quantity,
                         ItemId = slotDto.ItemId,
                         InventoryId = character.Inventory.Id,
-                        Inventory = character.Inventory,
+                        PlayerInventory = character.Inventory,
                         IsActive = slotDto.IsActive
                     };
                     character.Inventory.Slots.Add(newSlot);

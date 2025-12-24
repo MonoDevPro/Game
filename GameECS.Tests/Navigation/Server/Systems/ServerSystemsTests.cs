@@ -1,9 +1,10 @@
 using Arch.Core;
-using GameECS.Modules.Navigation.Server.Components;
 using GameECS.Modules.Navigation.Server.Systems;
-using GameECS.Modules.Navigation.Shared.Components;
-using GameECS.Modules.Navigation.Shared.Core;
-using GameECS.Modules.Navigation.Shared.Systems;
+using GameECS.Server.Navigation.Components;
+using GameECS.Server.Navigation.Systems;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Core;
+using GameECS.Shared.Navigation.Systems;
 using Xunit;
 
 namespace GameECS.Tests.Navigation.Server.Systems;

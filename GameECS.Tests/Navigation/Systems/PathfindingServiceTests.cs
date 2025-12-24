@@ -1,7 +1,8 @@
-using GameECS.Modules.Navigation.Shared.Core;
-using GameECS.Modules.Navigation.Shared.Components;
 using GameECS.Modules.Navigation.Shared.Data;
-using GameECS.Modules.Navigation.Shared.Systems;
+using GameECS.Shared.Navigation.Components;
+using GameECS.Shared.Navigation.Core;
+using GameECS.Shared.Navigation.Data;
+using GameECS.Shared.Navigation.Systems;
 
 namespace GameECS.Tests.Navigation.Systems;
 

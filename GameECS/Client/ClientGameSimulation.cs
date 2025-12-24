@@ -1,13 +1,11 @@
 using Arch.Core;
-using GameECS.Modules.Combat.Client;
-using GameECS.Modules.Combat.Shared.Components;
-using GameECS.Modules.Entities.Client;
-using GameECS.Modules.Entities.Shared.Components;
-using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Modules.Navigation.Client;
-using GameECS.Modules.Navigation.Client.Systems;
-using GameECS.Modules.Navigation.Client.Components;
-using GameECS.Modules.Navigation.Shared.Data;
+using GameECS.Client.Combat;
+using GameECS.Client.Entities;
+using GameECS.Client.Navigation;
+using GameECS.Client.Navigation.Components;
+using GameECS.Client.Navigation.Systems;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Entities.Components;
 
 namespace GameECS.Client;
 

@@ -1,9 +1,9 @@
 using Arch.Core;
-using GameECS.Modules.Entities.Server;
-using GameECS.Modules.Entities.Server.Core;
-using GameECS.Modules.Entities.Shared.Components;
 using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Modules.Navigation.Shared.Components;
+using GameECS.Server.Entities.Core;
+using GameECS.Shared.Entities.Components;
+using GameECS.Shared.Entities.Data;
+using GameECS.Shared.Navigation.Components;
 using Xunit;
 
 namespace GameECS.Tests.Entities;
@@ -38,13 +38,13 @@ public class EntityFactoryTests : IDisposable
 
         // Assert
         Assert.True(_world.IsAlive(entity));
-        Assert.True(_world.Has<EntityIdentity>(entity));
-        Assert.True(_world.Has<EntityName>(entity));
-        Assert.True(_world.Has<EntityLevel>(entity));
+        Assert.True(_world.Has<Identity>(entity));
+        Assert.True(_world.Has<Name>(entity));
+        Assert.True(_world.Has<Level>(entity));
         Assert.True(_world.Has<PlayerOwnership>(entity));
         Assert.True(_world.Has<GridPosition>(entity));
 
-        ref var identity = ref _world.Get<EntityIdentity>(entity);
+        ref var identity = ref _world.Get<Identity>(entity);
         Assert.Equal(EntityType.Player, identity.Type);
         Assert.Equal(1, identity.UniqueId);
 
@@ -52,8 +52,8 @@ public class EntityFactoryTests : IDisposable
         Assert.Equal(100, ownership.AccountId);
         Assert.Equal(1, ownership.CharacterId);
 
-        ref var level = ref _world.Get<EntityLevel>(entity);
-        Assert.Equal(10, level.Level);
+        ref var level = ref _world.Get<Level>(entity);
+        Assert.Equal(10, level.Lvl);
 
         ref var position = ref _world.Get<GridPosition>(entity);
         Assert.Equal(50, position.X);
@@ -68,12 +68,12 @@ public class EntityFactoryTests : IDisposable
 
         // Assert
         Assert.True(_world.IsAlive(entity));
-        Assert.True(_world.Has<EntityIdentity>(entity));
+        Assert.True(_world.Has<Identity>(entity));
         Assert.True(_world.Has<NpcBehavior>(entity));
         Assert.True(_world.Has<NpcAI>(entity));
         Assert.True(_world.Has<SpawnInfo>(entity));
 
-        ref var identity = ref _world.Get<EntityIdentity>(entity);
+        ref var identity = ref _world.Get<Identity>(entity);
         Assert.Equal(EntityType.Npc, identity.Type);
 
         ref var behavior = ref _world.Get<NpcBehavior>(entity);
@@ -96,7 +96,7 @@ public class EntityFactoryTests : IDisposable
     {
         // Arrange
         var owner = _factory.CreatePlayer(1, 1, "Owner", 1, 0, 0);
-        ref var ownerId = ref _world.Get<EntityIdentity>(owner);
+        ref var ownerId = ref _world.Get<Identity>(owner);
 
         // Act
         var pet = _factory.CreatePet("wolf_pet", ownerId.UniqueId, x: 5, y: 5);
@@ -121,9 +121,9 @@ public class EntityFactoryTests : IDisposable
         var npc = _factory.CreateNpc("wolf", 20, 20);
 
         // Assert
-        ref var id1 = ref _world.Get<EntityIdentity>(player1);
-        ref var id2 = ref _world.Get<EntityIdentity>(player2);
-        ref var id3 = ref _world.Get<EntityIdentity>(npc);
+        ref var id1 = ref _world.Get<Identity>(player1);
+        ref var id2 = ref _world.Get<Identity>(player2);
+        ref var id3 = ref _world.Get<Identity>(npc);
 
         Assert.NotEqual(id1.UniqueId, id2.UniqueId);
         Assert.NotEqual(id2.UniqueId, id3.UniqueId);

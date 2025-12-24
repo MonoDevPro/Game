@@ -1,5 +1,3 @@
-using Game.Domain.Entities;
-
 namespace Game.Persistence.Interfaces.Repositories;
 
 public interface ICharacterRepository : IRepository<Character>

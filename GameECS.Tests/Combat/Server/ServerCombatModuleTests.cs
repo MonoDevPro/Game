@@ -1,7 +1,10 @@
 using Arch.Core;
 using GameECS.Modules.Combat.Server;
-using GameECS.Modules.Combat.Shared.Components;
 using GameECS.Modules.Combat.Shared.Data;
+using GameECS.Server.Combat;
+using GameECS.Shared.Combat.Components;
+using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Data;
 using Xunit;
 
 namespace GameECS.Tests.Combat.Server;
@@ -33,13 +36,13 @@ public class ServerCombatModuleTests : IDisposable
         var entity = _module.CreateCombatant(vocation);
 
         // Assert
-        Assert.True(_world.Has<Vocation>(entity));
+        Assert.True(_world.Has<PlayerVocation>(entity));
         Assert.True(_world.Has<Health>(entity));
         Assert.True(_world.Has<CombatStats>(entity));
         Assert.True(_world.Has<CanAttack>(entity));
         Assert.True(_world.Has<CombatEntity>(entity));
 
-        var actualVocation = _world.Get<Vocation>(entity);
+        var actualVocation = _world.Get<PlayerVocation>(entity);
         Assert.Equal(vocation, actualVocation.Type);
     }
 
@@ -53,10 +56,10 @@ public class ServerCombatModuleTests : IDisposable
         var health = _world.Get<Health>(entity);
         var stats = _world.Get<CombatStats>(entity);
 
-        Assert.Equal(VocationStats.Knight.BaseHealth, health.Maximum);
-        Assert.Equal(VocationStats.Knight.BasePhysicalDamage, stats.PhysicalDamage);
-        Assert.Equal(VocationStats.Knight.BasePhysicalDefense, stats.PhysicalDefense);
-        Assert.Equal(VocationStats.Knight.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Warrior.BaseHealth, health.Maximum);
+        Assert.Equal(Stats.Warrior.BasePhysicalDamage, stats.PhysicalDamage);
+        Assert.Equal(Stats.Warrior.BasePhysicalDefense, stats.PhysicalDefense);
+        Assert.Equal(Stats.Warrior.BaseAttackRange, stats.AttackRange);
     }
 
     [Fact]
@@ -70,10 +73,10 @@ public class ServerCombatModuleTests : IDisposable
         var mana = _world.Get<Mana>(entity);
         var stats = _world.Get<CombatStats>(entity);
 
-        Assert.Equal(VocationStats.Mage.BaseHealth, health.Maximum);
-        Assert.Equal(VocationStats.Mage.BaseMana, mana.Maximum);
-        Assert.Equal(VocationStats.Mage.BaseMagicDamage, stats.MagicDamage);
-        Assert.Equal(VocationStats.Mage.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Mage.BaseHealth, health.Maximum);
+        Assert.Equal(Stats.Mage.BaseMana, mana.Maximum);
+        Assert.Equal(Stats.Mage.BaseMagicDamage, stats.MagicDamage);
+        Assert.Equal(Stats.Mage.BaseAttackRange, stats.AttackRange);
     }
 
     [Fact]
@@ -86,10 +89,10 @@ public class ServerCombatModuleTests : IDisposable
         var health = _world.Get<Health>(entity);
         var stats = _world.Get<CombatStats>(entity);
 
-        Assert.Equal(VocationStats.Archer.BaseHealth, health.Maximum);
-        Assert.Equal(VocationStats.Archer.BasePhysicalDamage, stats.PhysicalDamage);
-        Assert.Equal(VocationStats.Archer.BaseAttackRange, stats.AttackRange);
-        Assert.Equal(VocationStats.Archer.BaseAttackSpeed, stats.AttackSpeed);
+        Assert.Equal(Stats.Archer.BaseHealth, health.Maximum);
+        Assert.Equal(Stats.Archer.BasePhysicalDamage, stats.PhysicalDamage);
+        Assert.Equal(Stats.Archer.BaseAttackRange, stats.AttackRange);
+        Assert.Equal(Stats.Archer.BaseAttackSpeed, stats.AttackSpeed);
     }
 
     [Fact]
@@ -103,7 +106,7 @@ public class ServerCombatModuleTests : IDisposable
 
         // Assert
         var health = _world.Get<Health>(entity);
-        var expectedHealth = VocationStats.Knight.BaseHealth + (level - 1) * 10;
+        var expectedHealth = Stats.Warrior.BaseHealth + (level - 1) * 10;
         Assert.Equal(expectedHealth, health.Maximum);
     }
 

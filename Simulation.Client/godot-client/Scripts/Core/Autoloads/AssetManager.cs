@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.Enums;
+using Game.Domain.Player;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;
@@ -51,10 +51,10 @@ public partial class AssetManager : Node
     /// <summary>
     /// Carrega SpriteFrames baseado em vocação e gênero.
     /// </summary>
-    public SpriteFrames GetSpriteFrames(VocationType vocation, Gender gender)
+    public SpriteFrames GetSpriteFrames(VocationType vocation, GenderType gender)
     {
         var vocationName = vocation.ToString().ToLower();
-        var genderSuffix = gender == Gender.Female ? "_female" : "_male";
+        var genderSuffix = gender == GenderType.Female ? "_female" : "_male";
         var path = $"res://Resources/SpriteSheets/{vocationName}{genderSuffix}_frames.tres";
 
         return GetSpriteFrames(path);
@@ -122,7 +122,7 @@ public partial class AssetManager : Node
         // Carrega animações de cada vocação
         foreach (var vocation in Enum.GetValues<VocationType>())
             // Carrega ambos os gêneros
-            foreach (var gender in Enum.GetValues<Gender>())
+            foreach (var gender in Enum.GetValues<GenderType>())
                 GetSpriteFrames(vocation, gender);
     }
 

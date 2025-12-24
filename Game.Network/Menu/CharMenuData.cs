@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Game.Domain.Enums;
+using Game.Domain.Player;
 using MemoryPack;
 
 namespace Game.DTOs.Menu;
@@ -11,4 +11,4 @@ public readonly partial record struct CharMenuData(
     string Name,
     int Level,
     VocationType Vocation,
-    Gender Gender);
+    GenderType Gender);
