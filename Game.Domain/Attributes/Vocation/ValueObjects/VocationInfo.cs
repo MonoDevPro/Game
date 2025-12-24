@@ -1,5 +1,5 @@
 using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
 using Game.Domain.Player;
 
 namespace Game.Domain.Attributes.Vocation.ValueObjects;

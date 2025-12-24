@@ -1,4 +1,4 @@
-namespace Game.Domain.Commons.Enums;
+namespace Game.Domain.Enums;
 
 /// <summary>
 /// Vocações base do jogo.

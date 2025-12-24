@@ -1,4 +1,4 @@
-namespace Game.Domain.Commons.Enums;
+namespace Game.Domain.Enums;
 
 /// <summary>
 /// Direção de movimento em 8 direções.

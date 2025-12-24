@@ -1,4 +1,4 @@
-namespace Game.Domain.Commons.Enums;
+namespace Game.Domain.Enums;
 
 /// <summary>
 /// Tipo de dano primário.

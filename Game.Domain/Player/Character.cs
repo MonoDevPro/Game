@@ -2,7 +2,7 @@ using Game.Domain.Attributes.Equipments.ValueObjects;
 using Game.Domain.Attributes.Progress.ValueObjects;
 using Game.Domain.Attributes.Stats.ValueObjects;
 using Game.Domain.Commons;
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
 using Game.Domain.Commons.Extensions;
 
 namespace Game.Domain.Player;

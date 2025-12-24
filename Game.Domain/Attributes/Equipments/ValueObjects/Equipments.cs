@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
 
 namespace Game.Domain.Attributes.Equipments.ValueObjects;
 

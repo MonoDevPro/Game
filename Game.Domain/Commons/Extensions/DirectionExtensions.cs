@@ -1,4 +1,4 @@
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
 using Game.Domain.Commons.ValueObjects;
 
 namespace Game.Domain.Commons.Extensions;

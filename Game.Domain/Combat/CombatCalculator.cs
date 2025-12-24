@@ -1,4 +1,5 @@
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
+using Game.Domain.ValueObjects.Combat;
 
 namespace Game.Domain.Combat;
 
@@ -121,31 +122,5 @@ public static class CombatCalculator
     {
         // Base: 4 tiles/segundo
         return 4f * baseSpeed * (1f + speedModifier);
-    }
-}
-
-/// <summary>
-/// Resultado de um cálculo de dano.
-/// </summary>
-public readonly record struct DamageResult(
-    int Damage,
-    DamageType Type,
-    bool IsCritical)
-{
-    /// <summary>
-    /// Aplica o dano aos vitais e retorna os novos vitais.
-    /// </summary>
-    public (int NewHp, int NewMp) ApplyToVitals(int currentHp, int currentMp)
-    {
-        int newHp = currentHp;
-        int newMp = currentMp;
-        
-        if (Type is DamageType.Physical or DamageType.Magical or DamageType.True)
-        {
-            newHp = Math.Max(0, currentHp - Damage);
-        }
-        // Futuramente, poderíamos ter danos que afetam MP
-        
-        return (newHp, newMp);
     }
 }
