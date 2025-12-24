@@ -1,5 +1,6 @@
-using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Attributes.Vitals.ValueObjects;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.ValueObjects.Character;
 using Game.Domain.Player;
 
 namespace Game.Domain.Attributes;
@@ -20,7 +21,7 @@ public static class AttributeCalculator
     private const float AttackSpeedDivisor = 100.0f;
     private const float MovementSpeedDivisor = 200.0f;
 
-    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, Progress.ValueObjects.Progress progress, StatsModifier modifiers, int currentHp = -1, int currentMp = -1)
+    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, ValueObjects.Character.Progress progress, StatsModifier modifiers, int currentHp = -1, int currentMp = -1)
     {
         var maxHp = (int)modifiers.ApplyConstitution(HpPerConstitution * total.Constitution + progress.Level * HpPerLevel);
         var maxMp = (int)modifiers.ApplyIntelligence(MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel);
@@ -40,7 +41,7 @@ public static class AttributeCalculator
         Math.Max(MinRegenPerTick, total.Constitution / RegenDivisor),
         Math.Max(MinRegenPerTick, total.Spirit / RegenDivisor));
     
-    public static Stats.ValueObjects.Stats CalculateDerived(BaseStats total, Progress.ValueObjects.Progress progress, StatsModifier modifiers) => new(
+    public static ValueObjects.Attributes.Stats CalculateDerived(BaseStats total, ValueObjects.Character.Progress progress, StatsModifier modifiers) => new(
         BaseHealth: (int)modifiers.ApplyConstitution(HpPerConstitution * total.Constitution + progress.Level * HpPerLevel),
         BaseMana: (int)modifiers.ApplyIntelligence(MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel),
         PhysicalDamage: (int)modifiers.ApplyStrength(2 * total.Strength + progress.Level),

@@ -1,7 +1,7 @@
 using Game.Domain.Attributes;
-using Game.Domain.Attributes.Progress.ValueObjects;
-using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Attributes.Vitals.ValueObjects;
+using Game.Domain.ValueObjects.Character;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.ValueObjects.Vitals;
 
 namespace Game.Domain.Player;
 

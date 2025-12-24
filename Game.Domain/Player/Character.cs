@@ -1,6 +1,6 @@
-using Game.Domain.Attributes.Equipments.ValueObjects;
-using Game.Domain.Attributes.Progress.ValueObjects;
-using Game.Domain.Attributes.Stats.ValueObjects;
+using Game.Domain.ValueObjects.Equipment;
+using Game.Domain.ValueObjects.Character;
+using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
 using Game.Domain.Enums;
 using Game.Domain.Commons.Extensions;

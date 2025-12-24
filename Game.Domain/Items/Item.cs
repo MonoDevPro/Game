@@ -1,4 +1,4 @@
-using Game.Domain.Attributes.Stats.ValueObjects;
+using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
 using Game.Domain.Enums;
 using Game.Domain.Player;
