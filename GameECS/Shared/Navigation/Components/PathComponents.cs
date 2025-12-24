@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Game.Domain.Commons.ValueObjects;
 
 namespace GameECS.Shared.Navigation.Components;
 

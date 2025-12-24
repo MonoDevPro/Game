@@ -3,6 +3,7 @@ using Arch.System;
 using GameECS.Client.Combat.Components;
 using GameECS.Client.Combat.Systems;
 using GameECS.Shared.Combat.Data;
+using GameECS.Shared.Entities.Components;
 using GameECS.Shared.Entities.Data;
 
 namespace GameECS.Client.Combat;

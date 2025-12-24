@@ -236,7 +236,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         return (true, null);
     }
     
-    private static Attributes CreateInitialStats(Character character, int level, VocationType vocation)
+    private static PlayerAttributes CreateInitialStats(Character character, int level, VocationType vocation)
     {
         // Stats base variam por vocação
         var (strength, dexterity, intelligence, constitution, spirit) = vocation switch

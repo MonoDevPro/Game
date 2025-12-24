@@ -1,8 +1,11 @@
 using Arch.Core;
+using Game.Domain.Attributes.Stats.ValueObjects;
+using Game.Domain.Commons.Enums;
 using GameECS.Client.Combat;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Components;
 using GameECS.Shared.Entities.Data;
+using DamageType = GameECS.Shared.Combat.Data.DamageType;
 
 namespace GameECS.Server.Combat.Examples;
 
@@ -36,7 +39,7 @@ public static class CombatModuleExample
         // Registra eventos
         combatModule.OnDamageDealt += msg =>
         {
-            Console.WriteLine($"[SERVER] Dano: {msg.Damage} de #{msg.AttackerId} em #{msg.TargetId}");
+            Console.WriteLine($"[SERVER] Dano: {msg.FinalDamage} de #{msg.AttackerId} em #{msg.TargetId}");
             if (msg.IsCritical) Console.WriteLine("  -> CRÍTICO!");
         };
 
@@ -108,7 +111,7 @@ public static class CombatModuleExample
         // Cria entidades visuais (sincronizadas do servidor)
         var playerEntity = clientCombat.CreateEntity(
             serverId: 1,
-            vocation: VocationType.Knight,
+            vocation: VocationType.Warrior,
             health: 150,
             maxHealth: 150,
             mana: 30,
@@ -131,11 +134,10 @@ public static class CombatModuleExample
         {
             AttackerId = 1,
             TargetId = 2,
-            Damage = 25,
+            FinalDamage = 25,
             Type = DamageType.Physical,
             IsCritical = false,
-            Result = AttackResult.Hit,
-            ServerTick = 100
+            Result = AttackResult.Hit
         });
 
         // Atualiza health sincronizado
@@ -151,7 +153,7 @@ public static class CombatModuleExample
         clientCombat.AddFloatingDamage(2, 50, true, DamageType.Magic, 100f, 100f);
 
         // Inicia animação de ataque
-        clientCombat.StartAttackAnimation(1, 2, VocationType.Knight, 0.5f);
+        clientCombat.StartAttackAnimation(1, 2, VocationType.Warrior, 0.5f);
 
         Console.WriteLine("\nSimulação de cliente completada!");
 
@@ -168,7 +170,7 @@ public static class CombatModuleExample
 
         foreach (VocationType vocation in Enum.GetValues<VocationType>())
         {
-            if (vocation == VocationType.None) continue;
+            if (vocation == VocationType.Unknown) continue;
 
             var stats = Stats.GetForVocation(vocation);
             

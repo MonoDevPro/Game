@@ -90,7 +90,7 @@ public sealed class CombatService(CombatConfig config, CombatLog? log = null)
         ref var attackerVocation = ref world.Get<Vocation>(attacker);
 
         // Calcula dano
-        var damageMessage = DamageCalculator.CalculateFullDamage(
+        DamageMessage damageMessage = DamageCalculator.CalculateFullDamage(
             in attackerStats,
             in targetStats,
             attackerVocation.Type,

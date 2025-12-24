@@ -1,21 +1,15 @@
 using System.Runtime.CompilerServices;
 
-namespace GameECS.Shared.Navigation.Components;
+namespace Game.Domain.Commons.ValueObjects;
 
 /// <summary>
 /// Posição no grid (coordenadas inteiras).
 /// Usado tanto no servidor quanto no cliente. 
 /// </summary>
-public struct GridPosition :  IEquatable<GridPosition>
+public struct GridPosition(int x, int y) : IEquatable<GridPosition>
 {
-    public int X;
-    public int Y;
-
-    public GridPosition(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
+    public int X = x;
+    public int Y = y;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int ManhattanDistanceTo(GridPosition other)

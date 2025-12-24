@@ -1,12 +1,11 @@
+using Game.Domain.Attributes.Equipments.ValueObjects;
+using Game.Domain.Attributes.Progress.ValueObjects;
+using Game.Domain.Attributes.Stats.ValueObjects;
 using Game.Domain.Commons;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.Extensions;
 
 namespace Game.Domain.Player;
-
-public sealed class PlayerCharacters : BaseEntity
-{
-    public int AccountId { get; init; }
-    public ICollection<Character> Characters { get; init; } = new List<Character>();
-}
 
 /// <summary>
 /// Personagem jogável.
@@ -19,7 +18,6 @@ public class Character : BaseEntity
     public VocationType Vocation { get; set; }
     public int PositionX { get; set; }
     public int PositionY { get; set; }
-    public int PositionZ { get; set; }
     public DirectionType Direction { get; set; }
     
     // Progressão
@@ -37,15 +35,15 @@ public class Character : BaseEntity
     public Inventory Inventory { get; set; } = null!;
     
     // Um personagem tem equipamentos (1:1)
-    public Equipments Equipments { get; set; } = null!;
+    public Equipments Equipments { get; set; }
     
     /// <summary>
     /// Calcula os atributos completos do personagem baseado na vocação e progressão.
     /// </summary>
-    public Attributes CalculateAttributes(Stats equipmentBonus = default)
+    public PlayerAttributes CalculateAttributes(BaseStats equipmentBonus = default)
     {
         var vocationInfo = Vocation.GetInfo();
-        return Attributes.Create(
+        return PlayerAttributes.Create(
             Progress,
             vocationInfo.BaseStats,
             equipmentBonus,
@@ -71,24 +69,4 @@ public class Character : BaseEntity
         Vocation = targetVocation;
         return true;
     }
-}
-
-public enum GenderType : byte
-{
-    Unknown = 0,
-    Male = 1,
-    Female = 2,
-}
-
-public enum DirectionType : byte
-{
-    None,
-    North,
-    NorthEast,
-    East,
-    SouthEast,
-    South,
-    SouthWest,
-    West,
-    NorthWest
 }

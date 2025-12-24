@@ -5,6 +5,7 @@ using GameECS.Server.Combat.Components;
 using GameECS.Shared.Combat.Components;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Combat.Systems;
+using GameECS.Shared.Entities.Components;
 
 namespace GameECS.Server.Combat.Systems;
 
@@ -38,7 +39,7 @@ public sealed partial class ServerAttackRequestSystem : BaseSystem<World, long>
     }
 
     [Query]
-    [All<AttackRequest, CombatStats, PlayerVocation, Health, CanAttack>]
+    [All<AttackRequest, CombatStats, Vocation, Health, CanAttack>]
     private void ProcessAttackRequestQuery(
         [Data] in long serverTick,
         Entity entity,
@@ -81,16 +82,7 @@ public sealed partial class ServerAttackRequestSystem : BaseSystem<World, long>
         // Notifica via callback
         if (damageInfo.HasValue)
         {
-            _onDamageDealt?.Invoke(new DamageMessage
-            {
-                AttackerId = attacker.Id,
-                TargetId = target.Id,
-                Damage = damageInfo.Value.FinalDamage,
-                Type = damageInfo.Value.Type,
-                IsCritical = damageInfo.Value.IsCritical,
-                Result = result,
-                ServerTick = serverTick
-            });
+            _onDamageDealt?.Invoke(damageInfo.Value);
 
             // Verifica morte
             if (World.Has<Dead>(target))
@@ -98,8 +90,7 @@ public sealed partial class ServerAttackRequestSystem : BaseSystem<World, long>
                 _onEntityDeath?.Invoke(new DeathMessage
                 {
                     EntityId = target.Id,
-                    KillerId = attacker.Id,
-                    ServerTick = serverTick
+                    KillerId = attacker.Id
                 });
             }
 

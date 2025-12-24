@@ -1,6 +1,6 @@
-namespace Game.Domain.Combat;
+using Game.Domain.Commons.Enums;
 
-using Game.Domain.Player;
+namespace Game.Domain.Combat;
 
 /// <summary>
 /// Centraliza todas as fórmulas de cálculo de combate do domínio.
@@ -135,8 +135,17 @@ public readonly record struct DamageResult(
     /// <summary>
     /// Aplica o dano aos vitais e retorna os novos vitais.
     /// </summary>
-    public Vitals ApplyTo(Vitals vitals)
+    public (int NewHp, int NewMp) ApplyToVitals(int currentHp, int currentMp)
     {
-        return vitals.WithDamage(Damage);
+        int newHp = currentHp;
+        int newMp = currentMp;
+        
+        if (Type is DamageType.Physical or DamageType.Magical or DamageType.True)
+        {
+            newHp = Math.Max(0, currentHp - Damage);
+        }
+        // Futuramente, poderíamos ter danos que afetam MP
+        
+        return (newHp, newMp);
     }
 }

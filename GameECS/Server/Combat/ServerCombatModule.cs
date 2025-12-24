@@ -1,5 +1,10 @@
 using Arch.Core;
 using Arch.System;
+using Game.Domain.Attributes.Stats.ValueObjects;
+using Game.Domain.Attributes.Vitals.ValueObjects;
+using Game.Domain.Attributes.Vocation.ValueObjects;
+using Game.Domain.Combat.ValueObjects;
+using Game.Domain.Commons.Enums;
 using GameECS.Server.Combat.Components;
 using GameECS.Server.Combat.Systems;
 using GameECS.Shared.Combat.Components;
@@ -8,6 +13,8 @@ using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Combat.Systems;
 using GameECS.Shared.Entities.Components;
 using GameECS.Shared.Entities.Data;
+using CombatConfig = GameECS.Server.Combat.Components.CombatConfig;
+using DamageType = GameECS.Shared.Combat.Data.DamageType;
 
 namespace GameECS.Server.Combat;
 
@@ -17,7 +24,7 @@ namespace GameECS.Server.Combat;
 /// </summary>
 public sealed class ServerCombatModule : IDisposable
 {
-    public CombatConfig Config { get; }
+    public Shared.Combat.Data.CombatConfig Config { get; }
     public CombatService CombatService { get; }
     public CombatLog CombatLog { get; }
 
@@ -35,10 +42,10 @@ public sealed class ServerCombatModule : IDisposable
     /// </summary>
     public event Action<DeathMessage>? OnEntityDeath;
 
-    public ServerCombatModule(World world, CombatConfig? config = null)
+    public ServerCombatModule(World world, Shared.Combat.Data.CombatConfig? config = null)
     {
         _world = world;
-        Config = config ?? CombatConfig.Default;
+        Config = config ?? Shared.Combat.Data.CombatConfig.Default;
         CombatLog = new CombatLog();
         CombatService = new CombatService(Config, CombatLog);
 
@@ -71,8 +78,8 @@ public sealed class ServerCombatModule : IDisposable
     /// </summary>
     public Entity CreateCombatant(VocationType vocation, int level = 1)
     {
-        var vocationStats = Stats.GetForVocation(vocation);
-        var combatStats = CombatStats.FromVocation(vocation);
+        var vocationStats = VocationStats.GetForVocation(vocation);
+        var stats = Stats.FromVocation(vocation);
         var serverConfig = GetServerConfigForVocation(vocation);
 
         // Aplica scaling de level
@@ -82,7 +89,7 @@ public sealed class ServerCombatModule : IDisposable
         var entity = _world.Create(
             new Health(vocationStats.BaseHealth + healthBonus),
             new Mana(vocationStats.BaseMana + manaBonus),
-            combatStats,
+            stats,
             new Vocation { } (vocation, level),
             new AttackCooldown(),
             serverConfig,
@@ -228,14 +235,14 @@ public sealed class ServerCombatModule : IDisposable
         return _world.Has<InCombat>(entity);
     }
 
-    private ServerCombatConfig GetServerConfigForVocation(VocationType vocation)
+    private CombatConfig GetServerConfigForVocation(VocationType vocation)
     {
         return vocation switch
         {
-            VocationType.Knight => ServerCombatConfig.Knight,
-            VocationType.Mage => ServerCombatConfig.Mage,
-            VocationType.Archer => ServerCombatConfig.Archer,
-            _ => ServerCombatConfig.Default
+            VocationType.Knight => Shared.Combat.Data.CombatConfig.Knight,
+            VocationType.Mage => Shared.Combat.Data.CombatConfig.Mage,
+            VocationType.Archer => Shared.Combat.Data.CombatConfig.Archer,
+            _ => Shared.Combat.Data.CombatConfig.Default
         };
     }
 

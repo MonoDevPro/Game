@@ -1,116 +1,14 @@
 using System.Runtime.CompilerServices;
+using Game.Domain.Commons.Enums;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Components;
 using GameECS.Shared.Entities.Data;
+using DamageType = GameECS.Shared.Combat.Data.DamageType;
 
 namespace GameECS.Shared.Combat.Components;
 
 #region Core Stats Components
 
-/// <summary>
-/// Componente de vida da entidade.
-/// </summary>
-public struct Health(int max)
-{
-    public int Current = max;
-    public int Maximum = max;
-
-    public readonly bool IsDead => Current <= 0;
-    public readonly bool IsFullHealth => Current >= Maximum;
-    public readonly float Percentage => Maximum > 0 ? (float)Current / Maximum : 0f;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int TakeDamage(int damage)
-    {
-        int actualDamage = Math.Min(Current, Math.Max(0, damage));
-        Current -= actualDamage;
-        return actualDamage;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int Heal(int amount)
-    {
-        int actualHeal = Math.Min(Maximum - Current, Math.Max(0, amount));
-        Current += actualHeal;
-        return actualHeal;
-    }
-
-    public void SetMax(int newMax)
-    {
-        Maximum = Math.Max(1, newMax);
-        Current = Math.Min(Current, Maximum);
-    }
-
-    public void Reset()
-    {
-        Current = Maximum;
-    }
-}
-
-/// <summary>
-/// Componente de mana da entidade.
-/// </summary>
-public struct Mana(int max, int regenPerTick = 1)
-{
-    public int Current = max;
-    public int Maximum = max;
-    public int RegenPerTick = regenPerTick;
-
-    public readonly bool IsEmpty => Current <= 0;
-    public readonly bool IsFull => Current >= Maximum;
-    public readonly float Percentage => Maximum > 0 ? (float)Current / Maximum : 0f;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryConsume(int amount)
-    {
-        if (Current >= amount)
-        {
-            Current -= amount;
-            return true;
-        }
-        return false;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Regenerate()
-    {
-        Current = Math.Min(Maximum, Current + RegenPerTick);
-    }
-
-    public void Reset()
-    {
-        Current = Maximum;
-    }
-}
-
-/// <summary>
-/// Stats de combate da entidade.
-/// </summary>
-public struct CombatStats
-{
-    public int PhysicalDamage;
-    public int MagicDamage;
-    public int PhysicalDefense;
-    public int MagicDefense;
-    public int AttackRange;
-    public float AttackSpeed;       // Multiplicador de velocidade de ataque
-    public float CriticalChance;    // 0-100
-
-    public static CombatStats FromVocation(VocationType vocation)
-    {
-        var stats = Stats.GetForVocation(vocation);
-        return new CombatStats
-        {
-            PhysicalDamage = stats.BasePhysicalDamage,
-            MagicDamage = stats.BaseMagicDamage,
-            PhysicalDefense = stats.BasePhysicalDefense,
-            MagicDefense = stats.BaseMagicDefense,
-            AttackRange = stats.BaseAttackRange,
-            AttackSpeed = stats.BaseAttackSpeed,
-            CriticalChance = stats.BaseCriticalChance
-        };
-    }
-}
 
 #endregion
 

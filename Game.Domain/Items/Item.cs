@@ -1,4 +1,6 @@
+using Game.Domain.Attributes.Stats.ValueObjects;
 using Game.Domain.Commons;
+using Game.Domain.Commons.Enums;
 using Game.Domain.Player;
 
 namespace Game.Domain.Items;
@@ -87,9 +89,9 @@ public class ItemStats : BaseEntity
     /// <summary>
     /// Converte para Stats do domínio (apenas atributos base).
     /// </summary>
-    public Stats ToStats()
+    public BaseStats ToStats()
     {
-        return new Stats(
+        return new BaseStats(
             BonusStrength,
             BonusDexterity,
             BonusIntelligence,
@@ -128,7 +130,7 @@ public readonly record struct ItemStatsSnapshot(
 {
     public static ItemStatsSnapshot Zero => default;
     
-    public Stats ToStats() => new(
+    public BaseStats ToStats() => new(
         BonusStrength, BonusDexterity, BonusIntelligence, BonusConstitution, BonusSpirit);
     
     public static ItemStatsSnapshot operator +(ItemStatsSnapshot a, ItemStatsSnapshot b) => new(

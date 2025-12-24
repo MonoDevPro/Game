@@ -1,4 +1,4 @@
-namespace Game.Domain.Items;
+namespace Game.Domain.Commons.Enums;
 
 public enum ItemType
 {

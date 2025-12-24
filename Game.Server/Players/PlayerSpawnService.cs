@@ -1,8 +1,6 @@
 using Arch.Core;
-using GameECS.Modules.Entities.Shared.Data;
 using Game.Server.Sessions;
 using GameECS.Server;
-using GameECS.Shared.Combat.Components;
 using GameECS.Shared.Entities.Components;
 
 namespace Game.Server.Players;
