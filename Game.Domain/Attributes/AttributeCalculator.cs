@@ -41,14 +41,16 @@ public static class AttributeCalculator
         Math.Max(MinRegenPerTick, total.Spirit / RegenDivisor));
     
     public static Stats.ValueObjects.Stats CalculateDerived(BaseStats total, Progress.ValueObjects.Progress progress, StatsModifier modifiers) => new(
+        BaseHealth: (int)modifiers.ApplyConstitution(HpPerConstitution * total.Constitution + progress.Level * HpPerLevel),
+        BaseMana: (int)modifiers.ApplyIntelligence(MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel),
         PhysicalDamage: (int)modifiers.ApplyStrength(2 * total.Strength + progress.Level),
         MagicDamage: (int)modifiers.ApplyIntelligence(3 * total.Intelligence + total.Spirit / 2),
         PhysicalDefense: (int)modifiers.ApplyConstitution(total.Constitution + total.Strength / 2),
         MagicDefense: (int)modifiers.ApplySpirit(total.Spirit + total.Intelligence / 2),
-        AttackSpeed: BaseSpeed + modifiers.ApplyAttackSpeed(total.Dexterity / AttackSpeedDivisor),
-        MovementSpeed: BaseSpeed + modifiers.ApplyMovementSpeed(total.Dexterity / MovementSpeedDivisor),
         ManaCostPerAttack: 0,
         CriticalChance: 0f,
-        AttackRange: 0f);
+        AttackRange: 0f,
+        AttackSpeed: BaseSpeed + modifiers.ApplyAttackSpeed(total.Dexterity / AttackSpeedDivisor),
+        MovementSpeed: BaseSpeed + modifiers.ApplyMovementSpeed(total.Dexterity / MovementSpeedDivisor));
     
 }

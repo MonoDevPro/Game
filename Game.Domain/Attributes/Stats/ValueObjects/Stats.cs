@@ -52,6 +52,8 @@ public readonly record struct Stats(
         float attackSpeed = vocationStats.BaseAttackSpeed + (@base.Dexterity * 0.01f);
     
         return new(
+            BaseHealth: vocationStats.BaseHealth,
+            BaseMana: vocationStats.BaseMana,
             PhysicalDamage: (int)modifiers.ApplyStrength(2 * @base.Strength + progress.Level),
             MagicDamage: (int)modifiers.ApplyIntelligence(3 * @base.Intelligence + @base.Spirit / 2),
             PhysicalDefense: (int)modifiers.ApplyConstitution(@base.Constitution + @base.Strength / 2),

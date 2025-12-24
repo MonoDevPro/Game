@@ -9,7 +9,7 @@ public struct Health(int max, int regenPerTick = 1)
 {
     public int Current = max;
     public int Maximum = max;
-    public int RegenPerTick = 0;
+    public int RegenPerTick = regenPerTick;
 
     public readonly bool IsDead => Current <= 0;
     public readonly bool IsFullHealth => Current >= Maximum;
