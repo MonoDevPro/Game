@@ -1,3 +1,4 @@
+using Game.Domain.Entities;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
