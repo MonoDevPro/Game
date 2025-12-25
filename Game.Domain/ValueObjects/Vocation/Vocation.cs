@@ -1,6 +1,6 @@
 using Game.Domain.Enums;
 
-namespace Game.Domain.Attributes.Vocation.ValueObjects;
+namespace Game.Domain.ValueObjects.Vocation;
 
 /// <summary>
 /// Componente de vocação do jogador.

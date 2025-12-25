@@ -1,5 +1,4 @@
 using Game.Domain.ValueObjects.Attributes;
-using Game.Domain.Attributes.Vocation.ValueObjects;
 using Game.Domain.Enums;
 using Game.Domain.ValueObjects.Vocation;
 

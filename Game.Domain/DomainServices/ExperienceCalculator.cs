@@ -1,4 +1,4 @@
-namespace Game.Domain.Attributes.Progress;
+namespace Game.Domain.DomainServices;
 
 /// <summary>
 /// Calculador de experiência para diferentes fontes.
