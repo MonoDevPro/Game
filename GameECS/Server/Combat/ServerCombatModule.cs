@@ -1,10 +1,10 @@
 using Arch.Core;
 using Arch.System;
-using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Attributes.Vitals.ValueObjects;
-using Game.Domain.Attributes.Vocation.ValueObjects;
-using Game.Domain.Combat.ValueObjects;
-using Game.Domain.Commons.Enums;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.ValueObjects.Vocation;
+using Game.Domain.ValueObjects.Combat;
+using Game.Domain.Enums;
 using GameECS.Server.Combat.Components;
 using GameECS.Server.Combat.Systems;
 using GameECS.Shared.Combat.Components;
