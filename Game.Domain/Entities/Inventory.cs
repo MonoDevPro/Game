@@ -8,11 +8,8 @@ namespace Game.Domain.Entities;
 /// </summary>
 public class Inventory
 {
-    public const int DefaultCapacity = 30;
-    public const int MaxCapacity = 100;
-    
     public int CharacterId { get; init; }
-    public int Capacity { get; private set; } = DefaultCapacity;
+    public int Capacity { get; private set; }
     
     private readonly List<InventorySlot> _slots = new();
     public IReadOnlyList<InventorySlot> Slots => _slots;
@@ -155,7 +152,8 @@ public class Inventory
     public bool TryExpandCapacity(int additionalSlots)
     {
         if (additionalSlots <= 0) return false;
-        if (Capacity + additionalSlots > MaxCapacity) return false;
+        if (Capacity + additionalSlots > GameConstants.Inventory.MaxCapacity)
+            return false;
         
         Capacity += additionalSlots;
         return true;

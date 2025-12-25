@@ -99,6 +99,4 @@ public unsafe struct Equipments : IEquatable<Equipments>
             p[i] = itemIds[i];
         return equipments;
     }
-    
-    
 }
