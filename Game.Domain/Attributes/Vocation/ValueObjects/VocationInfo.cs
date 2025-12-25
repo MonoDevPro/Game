@@ -1,6 +1,7 @@
-using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Commons.Enums;
-using Game.Domain.Player;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.Enums;
+using Game.Domain.Entities;
+using Game.Domain.DomainServices;
 
 namespace Game.Domain.Attributes.Vocation.ValueObjects;
 

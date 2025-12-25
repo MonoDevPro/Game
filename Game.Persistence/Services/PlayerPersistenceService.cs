@@ -1,4 +1,4 @@
-using Game.Domain.Player;
+using Game.Domain.Entities;
 using Game.DTOs.Persistence;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
