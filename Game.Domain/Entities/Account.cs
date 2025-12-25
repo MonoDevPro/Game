@@ -8,7 +8,7 @@ namespace Game.Domain.Entities;
 /// Autor: MonoDevPro
 /// Data: 2025-10-05 21:10:27
 /// </summary>
-public class Account : BaseEntity
+public class Account : BaseEntity, IAggregateRoot
 {
     public string Username { get; init; } = null!;
     public string Email { get; init; } = null!; // ADICIONADO

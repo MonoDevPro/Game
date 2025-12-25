@@ -1,7 +1,6 @@
 using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Domain.Extensions;
-using Game.Domain.Items;
 using Game.Domain.ValueObjects.Attributes;
 
 namespace Game.Domain.Specifications.Character;

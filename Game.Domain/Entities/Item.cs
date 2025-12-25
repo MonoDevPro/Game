@@ -1,10 +1,8 @@
-using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
 using Game.Domain.Enums;
-using Game.Domain.Entities;
-using Game.Domain.ValueObjects.Equipment;
+using Game.Domain.ValueObjects.Attributes;
 
-namespace Game.Domain.Items;
+namespace Game.Domain.Entities;
 
 /// <summary>
 /// Template de item (dados estáticos de definição).

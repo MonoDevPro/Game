@@ -12,7 +12,7 @@ namespace Game.Domain.Entities;
 /// Personagem jogável.
 /// Entidade raiz do agregado de personagem.
 /// </summary>
-public class Character : BaseEntity
+public class Character : BaseEntity, IAggregateRoot
 {
     public string Name { get; init; } = null!;
     public GenderType Gender { get; set; }

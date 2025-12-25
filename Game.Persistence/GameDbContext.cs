@@ -1,6 +1,5 @@
 using Game.Domain.Player;
 using Game.Domain.ValueObjects.Equipment;
-using Game.Domain.Items;
 using Game.Domain.Entities;
 using Game.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

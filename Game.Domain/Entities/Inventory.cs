@@ -1,5 +1,4 @@
 using Game.Domain.Commons;
-using Game.Domain.Items;
 
 namespace Game.Domain.Entities;
 
