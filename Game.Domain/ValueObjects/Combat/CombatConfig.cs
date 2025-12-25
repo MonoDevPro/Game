@@ -42,15 +42,15 @@ public readonly record struct CombatConfig
     /// </summary>
     public static CombatConfig ForVocation(VocationType vocation) => vocation switch
     {
-        VocationType.Knight or VocationType.Berserker => Knight,
-        VocationType.Mage or VocationType.Sorcerer or VocationType.Warlock => Mage,
-        VocationType.Archer or VocationType.Ranger or VocationType.Assassin => Archer,
-        VocationType.Cleric or VocationType.Priest or VocationType.Paladin => Cleric,
+        VocationType.Warrior => Warrior,
+        VocationType.Mage => Mage,
+        VocationType.Archer => Archer,
+        VocationType.Cleric => Cleric,
         _ => Default
     };
 
     public static CombatConfig Default => new(20, 10, true);
-    public static CombatConfig Knight => new(25, 15, false);
+    public static CombatConfig Warrior => new(25, 15, false);
     public static CombatConfig Mage => new(35, 25, true);
     public static CombatConfig Archer => new(15, 10, true);
     public static CombatConfig Cleric => new(30, 20, true);

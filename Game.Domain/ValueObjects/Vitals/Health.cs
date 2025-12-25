@@ -8,28 +8,28 @@ namespace Game.Domain.ValueObjects.Vitals;
 /// Component ECS para gerenciar pontos de vida (HP).
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Health(int max, int regenPerTick = 1)
+public struct Health(double max, double regenPerTick = 1)
 {
-    public int Current = max;
-    public int Maximum = max;
-    public int RegenPerTick = regenPerTick;
+    public double Current = max;
+    public double Maximum = max;
+    public double RegenPerTick = regenPerTick;
 
     public readonly bool IsDead => Current <= 0;
     public readonly bool IsFullHealth => Current >= Maximum;
-    public readonly float Percentage => Maximum > 0 ? (float)Current / Maximum : 0f;
+    public readonly double Percentage => Maximum > 0 ? Current / Maximum : 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int TakeDamage(int damage)
+    public double TakeDamage(int damage)
     {
-        int actualDamage = Math.Min(Current, Math.Max(0, damage));
+        double actualDamage = Math.Min(Current, Math.Max(0, damage));
         Current -= actualDamage;
         return actualDamage;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int Heal(int amount)
+    public double Heal(int amount)
     {
-        int actualHeal = Math.Min(Maximum - Current, Math.Max(0, amount));
+        double actualHeal = Math.Min(Maximum - Current, Math.Max(0, amount));
         Current += actualHeal;
         return actualHeal;
     }
@@ -40,7 +40,7 @@ public struct Health(int max, int regenPerTick = 1)
         Current = Math.Min(Maximum, Current + RegenPerTick);
     }
 
-    public void SetMax(int newMax)
+    public void SetMax(double newMax)
     {
         Maximum = Math.Max(1, newMax);
         Current = Math.Min(Current, Maximum);

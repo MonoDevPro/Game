@@ -2,18 +2,19 @@ namespace Game.Domain.Enums;
 
 public enum EquipmentSlotType : byte
 {
-    Head = 0,
-    Chest = 1,
-    Legs = 2,
-    Feet = 3,
-    Hands = 4,
-    MainHand = 5,
-    OffHand = 6,
-    Accessory1 = 7,
-    Accessory2 = 8,
-    Accessory3 = 9,
+    None = 0,
+    Head = 1,
+    Chest = 2,
+    Legs = 3,
+    Feet = 4,
+    Hands = 5,
+    MainHand = 6,
+    OffHand = 7,
+    Accessory1 = 8,
+    Accessory2 = 9,
+    Accessory3 = 10,
     
     // mantenha este COUNT atualizado (necessário para fixed buffers)
-    Count = 10
+    Count = 11
 }
 

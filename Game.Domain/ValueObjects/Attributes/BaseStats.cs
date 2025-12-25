@@ -8,11 +8,11 @@ namespace Game.Domain.ValueObjects.Attributes;
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct BaseStats(
-    int Strength,
-    int Dexterity,
-    int Intelligence,
-    int Constitution,
-    int Spirit)
+    double Strength,
+    double Dexterity,
+    double Intelligence,
+    double Constitution,
+    double Spirit)
 {
     public static BaseStats Zero => default;
 
@@ -29,4 +29,12 @@ public readonly record struct BaseStats(
         (int)(baseStats.Intelligence * factor),
         (int)(baseStats.Constitution * factor),
         (int)(baseStats.Spirit * factor));
+    
+    public static BaseStats operator *(BaseStats baseStats, BaseStats factor) => new(
+        baseStats.Strength * factor.Strength,
+        baseStats.Dexterity * factor.Dexterity,
+        baseStats.Intelligence * factor.Intelligence,
+        baseStats.Constitution * factor.Constitution,
+        baseStats.Spirit * factor.Spirit);
+    
 }

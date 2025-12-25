@@ -8,18 +8,18 @@ namespace Game.Domain.ValueObjects.Vitals;
 /// Component ECS para gerenciar pontos de mana (MP).
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Mana(int max, int regenPerTick = 1)
+public struct Mana(double max, double regenPerTick = 1)
 {
-    public int Current = max;
-    public int Maximum = max;
-    public int RegenPerTick = regenPerTick;
+    public double Current = max;
+    public double Maximum = max;
+    public double RegenPerTick = regenPerTick;
 
     public readonly bool IsEmpty => Current <= 0;
     public readonly bool IsFull => Current >= Maximum;
-    public readonly float Percentage => Maximum > 0 ? (float)Current / Maximum : 0f;
+    public readonly double Percentage => Maximum > 0 ? (float)Current / Maximum : 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryConsume(int amount)
+    public bool TryConsume(double amount)
     {
         if (Current >= amount)
         {

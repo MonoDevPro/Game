@@ -15,8 +15,8 @@ public sealed class PlayerAttributes
     public (Health Hp, Mana Mp) Vitals { get; }
     public BaseStats Base { get; }
     public BaseStats Bonus { get; }
+    public BaseStats Modifiers { get; }
     public BaseStats Total { get; }
-    public StatsModifier Modifiers { get; }
     public Stats Derived { get; }
 
     private PlayerAttributes(
@@ -24,7 +24,7 @@ public sealed class PlayerAttributes
         (Health Hp, Mana Mp) vitals,
         BaseStats baseStats,
         BaseStats bonus,
-        StatsModifier modifiers,
+        BaseStats modifiers,
         Stats derived)
     {
         Progress = progress;
@@ -43,14 +43,14 @@ public sealed class PlayerAttributes
         Progress progress,
         BaseStats baseStats,
         BaseStats bonus = default,
-        StatsModifier? modifiers = null,
-        int? currentHp = null,
-        int? currentMp = null)
+        BaseStats? modifiers = null,
+        double? currentHp = null,
+        double? currentMp = null)
     {
-        var mods = modifiers ?? StatsModifier.Default;
+        var mods = modifiers ?? BaseStats.Zero;
         var total = baseStats;
         var vitals = AttributeCalculator.CalculateVitals(total, progress, mods, currentHp ?? -1, currentMp ?? -1);
-        var derived = AttributeCalculator.CalculateDerived(total, progress, mods);
+        var derived = AttributeCalculator.CalculateStats(total, progress, mods);
 
         return new PlayerAttributes(progress, vitals, baseStats, bonus, mods, derived);
     }
@@ -61,7 +61,7 @@ public sealed class PlayerAttributes
     public PlayerAttributes Recalculate(
         BaseStats? newBase = null,
         BaseStats? newBonus = null,
-        StatsModifier? newModifiers = null,
+        BaseStats? newModifiers = null,
         Progress? newProgress = null)
     {
         return Create(

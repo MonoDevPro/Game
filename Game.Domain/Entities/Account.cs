@@ -1,4 +1,5 @@
 using Game.Domain.Commons;
+using Game.Domain.Enums;
 
 namespace Game.Domain.Entities;
 
@@ -18,6 +19,8 @@ public class Account : BaseEntity
     public bool IsEmailVerified { get; set; } // ADICIONADO
     public bool IsBanned { get; set; } // ADICIONADO
     public DateTime? BannedUntil { get; set; } // ADICIONADO
+
+    public LangType PreferredLanguage { get; set; } = LangType.PT_BR;
     
     // Relacionamentos
     public virtual ICollection<Character> Characters { get; init; } = new List<Character>();

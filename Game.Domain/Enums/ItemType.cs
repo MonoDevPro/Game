@@ -3,9 +3,7 @@ namespace Game.Domain.Enums;
 public enum ItemType
 {
     Consumable = 0,
-    Weapon = 1,
-    Armor = 2,
-    Accessory = 3,
+    Equipment = 1,
     Quest = 4,
     Material = 5
 }

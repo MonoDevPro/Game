@@ -20,8 +20,7 @@ public class Character : BaseEntity
     public int PositionX { get; set; }
     public int PositionY { get; set; }
     public DirectionType Direction { get; set; }
-    
-    // Progressão
+    public BaseStats BaseStats { get; set; }
     public Progress Progress { get; set; } = Progress.Initial;
     
     // Vitais atuais (HP/MP salvos)
@@ -37,37 +36,4 @@ public class Character : BaseEntity
     
     // Um personagem tem equipamentos (1:1)
     public Equipments Equipments { get; set; }
-    
-    /// <summary>
-    /// Calcula os atributos completos do personagem baseado na vocação e progressão.
-    /// </summary>
-    public PlayerAttributes CalculateAttributes(BaseStats equipmentBonus = default)
-    {
-        var vocationInfo = Vocation.GetInfo();
-        return PlayerAttributes.Create(
-            Progress,
-            vocationInfo.BaseStats,
-            equipmentBonus,
-            vocationInfo.GrowthModifiers,
-            CurrentHp > 0 ? CurrentHp : null,
-            CurrentMp > 0 ? CurrentMp : null);
-    }
-    
-    /// <summary>
-    /// Verifica se pode promover para a vocação especificada.
-    /// </summary>
-    public bool CanPromoteTo(VocationType targetVocation)
-    {
-        return Vocation.CanPromote(targetVocation, Progress.Level);
-    }
-    
-    /// <summary>
-    /// Promove o personagem para uma nova vocação.
-    /// </summary>
-    public bool TryPromoteTo(VocationType targetVocation)
-    {
-        if (!CanPromoteTo(targetVocation)) return false;
-        Vocation = targetVocation;
-        return true;
-    }
 }

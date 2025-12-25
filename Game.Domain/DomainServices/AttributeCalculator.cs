@@ -20,13 +20,15 @@ public static class AttributeCalculator
     private const float BaseSpeed = 1.0f;
     private const float AttackSpeedDivisor = 100.0f;
     private const float MovementSpeedDivisor = 200.0f;
-
-    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, ValueObjects.Character.Progress progress, StatsModifier modifiers, int currentHp = -1, int currentMp = -1)
+    private const float BaseCriticalChance = 5.0f;
+    private const float MaxCriticalChance = 75.0f;
+    
+    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, Progress progress, BaseStats modifiers, double currentHp = -1, double currentMp = -1)
     {
-        var maxHp = (int)modifiers.ApplyConstitution(HpPerConstitution * total.Constitution + progress.Level * HpPerLevel);
-        var maxMp = (int)modifiers.ApplyIntelligence(MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel);
-        
-        (int hpRegenPerTick, int mpRegenPerTick) = CalculateRecovery(total);
+        var maxHp = HpPerConstitution * total.Constitution + progress.Level * HpPerLevel;
+        var maxMp = MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel;
+        var hpRegenPerTick = Math.Max(MinRegenPerTick, total.Constitution / RegenDivisor);
+        var mpRegenPerTick= Math.Max(MinRegenPerTick, total.Spirit / RegenDivisor);
 
         return new(
             new Health(
@@ -37,21 +39,20 @@ public static class AttributeCalculator
                 regenPerTick: mpRegenPerTick));
     }
 
-    private static (int HpRegenPerTick, int MpRegenPerTick) CalculateRecovery(BaseStats total) => new(
-        Math.Max(MinRegenPerTick, total.Constitution / RegenDivisor),
-        Math.Max(MinRegenPerTick, total.Spirit / RegenDivisor));
+    public static Stats CalculateStats(BaseStats stats, Progress progress, BaseStats modifiers)
+       => new(
+            PhysicalAttack: stats.Strength * 2 + progress.Level + modifiers.Strength,
+            MagicAttack: stats.Intelligence * 2 + progress.Level + modifiers.Intelligence,
+            PhysicalDefense: stats.Constitution + progress.Level + modifiers.Constitution,
+            MagicDefense: stats.Spirit + progress.Level + modifiers.Spirit,
+            AttackRange: 1 + stats.Dexterity / 10 + modifiers.Dexterity,
+            AttackSpeed: BaseSpeed + (stats.Dexterity + modifiers.Dexterity) / AttackSpeedDivisor,
+            MovementSpeed: BaseSpeed + (stats.Dexterity + modifiers.Dexterity) / MovementSpeedDivisor,
+            CriticalChance: Math.Min(
+                MaxCriticalChance, 
+                BaseCriticalChance + (stats.Dexterity + modifiers.Dexterity) / 5)
+        );
     
-    public static ValueObjects.Attributes.Stats CalculateDerived(BaseStats total, ValueObjects.Character.Progress progress, StatsModifier modifiers) => new(
-        BaseHealth: (int)modifiers.ApplyConstitution(HpPerConstitution * total.Constitution + progress.Level * HpPerLevel),
-        BaseMana: (int)modifiers.ApplyIntelligence(MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel),
-        PhysicalDamage: (int)modifiers.ApplyStrength(2 * total.Strength + progress.Level),
-        MagicDamage: (int)modifiers.ApplyIntelligence(3 * total.Intelligence + total.Spirit / 2),
-        PhysicalDefense: (int)modifiers.ApplyConstitution(total.Constitution + total.Strength / 2),
-        MagicDefense: (int)modifiers.ApplySpirit(total.Spirit + total.Intelligence / 2),
-        ManaCostPerAttack: 0,
-        CriticalChance: 0f,
-        AttackRange: 0f,
-        AttackSpeed: BaseSpeed + modifiers.ApplyAttackSpeed(total.Dexterity / AttackSpeedDivisor),
-        MovementSpeed: BaseSpeed + modifiers.ApplyMovementSpeed(total.Dexterity / MovementSpeedDivisor));
+    
     
 }

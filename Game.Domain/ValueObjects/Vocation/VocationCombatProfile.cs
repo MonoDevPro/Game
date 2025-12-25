@@ -1,6 +1,6 @@
 using Game.Domain.Enums;
 
-namespace Game.Domain.Attributes.Vocation.ValueObjects;
+namespace Game.Domain.ValueObjects.Vocation;
 
 /// <summary>
 /// Perfil de combate específico da vocação.
@@ -11,10 +11,10 @@ public readonly record struct VocationCombatProfile(
     float BaseCriticalChance,
     float BaseCriticalDamage,
     int ManaCostPerAttack,
-    DamageType PrimaryDamageType)
+    DamageType DamageType)
 {
     public static VocationCombatProfile Melee => new(1, 1.0f, 5f, 150f, 0, DamageType.Physical);
     public static VocationCombatProfile Ranged => new(8, 1.2f, 10f, 175f, 0, DamageType.Physical);
     public static VocationCombatProfile Magic => new(6, 0.8f, 8f, 150f, 10, DamageType.Magical);
-    public static VocationCombatProfile Hybrid => new(1, 1.0f, 6f, 150f, 5, DamageType.Physical);
+    public static VocationCombatProfile Hybrid => new(1, 1.0f, 6f, 150f, 5, DamageType.Physical | DamageType.Magical);
 }
