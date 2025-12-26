@@ -35,5 +35,5 @@ public class Character : BaseEntity, IAggregateRoot
     public Inventory Inventory { get; set; } = null!;
     
     // Um personagem tem equipamentos (1:1)
-    public Equipments Equipments { get; set; }
+    public Equipments Equipments { get; set; } = Equipments.Empty();
 }

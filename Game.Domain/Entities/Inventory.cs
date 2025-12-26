@@ -38,6 +38,12 @@ public class Inventory
         if (quantity <= 0)
             return InventoryResult.Fail("Quantidade inválida");
         
+        if (maxStackSize > GameConstants.Inventory.MaxStackSize)
+            return InventoryResult.Fail($"Stack size cannot exceed {GameConstants.Inventory.MaxStackSize}");
+        
+        if (maxStackSize < 1)
+            return InventoryResult.Fail("Stack size must be at least 1");
+        
         int remaining = quantity;
         
         // Se empilhável, tenta empilhar em slots existentes
@@ -113,6 +119,17 @@ public class Inventory
     public int GetItemCount(int itemId)
     {
         return _slots.Where(s => s.ItemId == itemId).Sum(s => s.Quantity);
+    }
+    
+    /// <summary>
+    /// Tenta adicionar um item ao inventário usando a entidade Item.
+    /// </summary>
+    public InventoryResult TryAddItem(Item item, int quantity)
+    {
+        if (item == null)
+            return InventoryResult.Fail("Item cannot be null");
+        
+        return TryAddItem(item.Id, quantity, item.StackSize);
     }
     
     /// <summary>
