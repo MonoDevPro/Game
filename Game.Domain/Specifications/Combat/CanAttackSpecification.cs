@@ -10,6 +10,12 @@ public class CanAttackSpecification
     /// <summary>
     /// Verifica se o atacante pode atacar o alvo.
     /// </summary>
+    /// <param name="attackerPosition">A posição do atacante.</param>
+    /// <param name="targetPosition">A posição do alvo.</param>
+    /// <param name="attackRange">O alcance de ataque.</param>
+    /// <param name="attackerIsAlive">Indica se o atacante está vivo.</param>
+    /// <param name="targetIsAlive">Indica se o alvo está vivo.</param>
+    /// <returns>True se o atacante pode atacar o alvo, false caso contrário.</returns>
     public bool IsSatisfiedBy(
         Position attackerPosition,
         Position targetPosition,
@@ -27,6 +33,12 @@ public class CanAttackSpecification
     /// <summary>
     /// Retorna a razão pela qual o ataque falhou, se aplicável.
     /// </summary>
+    /// <param name="attackerPosition">A posição do atacante.</param>
+    /// <param name="targetPosition">A posição do alvo.</param>
+    /// <param name="attackRange">O alcance de ataque.</param>
+    /// <param name="attackerIsAlive">Indica se o atacante está vivo.</param>
+    /// <param name="targetIsAlive">Indica se o alvo está vivo.</param>
+    /// <returns>Mensagem de erro se houver alguma restrição, ou string vazia se não houver problemas.</returns>
     public string GetFailureReason(
         Position attackerPosition,
         Position targetPosition,

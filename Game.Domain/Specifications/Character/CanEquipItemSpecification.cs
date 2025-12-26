@@ -13,6 +13,10 @@ public class CanEquipItemSpecification
     /// <summary>
     /// Verifica se o personagem pode equipar o item no slot especificado.
     /// </summary>
+    /// <param name="character">O personagem que tentará equipar o item.</param>
+    /// <param name="item">O item a ser equipado.</param>
+    /// <param name="slot">O slot do equipamento onde o item será equipado.</param>
+    /// <returns>Uma tupla contendo um booleano indicando se a especificação foi satisfeita e uma mensagem de erro se não foi.</returns>
     public (bool IsSatisfied, string? ErrorMessage) IsSatisfiedBy(Entities.Character character, Item item, EquipmentSlotType slot)
     {
         // Verificações necessárias:
@@ -73,6 +77,10 @@ public class CanEquipItemSpecification
     /// <summary>
     /// Retorna a razão pela qual o equip falhou, se aplicável.
     /// </summary>
+    /// <param name="character">O personagem que tentará equipar o item.</param>
+    /// <param name="itemId">O ID do item a ser equipado.</param>
+    /// <param name="slot">O slot do equipamento onde o item será equipado.</param>
+    /// <returns>Mensagem de erro se houver alguma restrição, ou string vazia se não houver problemas.</returns>
     public string GetFailureReason(Entities.Character character, int itemId, EquipmentSlotType slot)
     {
         if (!character.IsActive)
@@ -81,7 +89,8 @@ public class CanEquipItemSpecification
         if (itemId <= 0)
             return "Invalid item ID";
         
-        // TODO: Adicionar mais validações quando Item entity estiver disponível
+        if (!character.Inventory.HasItem(itemId, 1))
+            return "Character does not possess the item";
         
         return string.Empty;
     }
