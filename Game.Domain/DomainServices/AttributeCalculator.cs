@@ -1,7 +1,8 @@
+using Game.Domain.Extensions;
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.ValueObjects.Vitals;
 using Game.Domain.ValueObjects.Character;
-using Game.Domain.Entities;
+using Game.Domain.ValueObjects.Combat;
 
 namespace Game.Domain.DomainServices;
 
@@ -11,24 +12,15 @@ namespace Game.Domain.DomainServices;
 /// </summary>
 public static class AttributeCalculator
 {
-    private const int HpPerConstitution = 10;
-    private const int HpPerLevel = 5;
-    private const int MpPerIntelligence = 5;
-    private const int MpPerLevel = 3;
-    private const int MinRegenPerTick = 1;
-    private const int RegenDivisor = 10;
-    private const float BaseSpeed = 1.0f;
     private const float AttackSpeedDivisor = 100.0f;
     private const float MovementSpeedDivisor = 200.0f;
-    private const float BaseCriticalChance = 5.0f;
-    private const float MaxCriticalChance = 75.0f;
     
-    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, Progress progress, BaseStats modifiers, double currentHp = -1, double currentMp = -1)
+    public static (Health Health, Mana Mana) CalculateVitals(BaseStats total, Progress progress)
     {
-        var maxHp = HpPerConstitution * total.Constitution + progress.Level * HpPerLevel;
-        var maxMp = MpPerIntelligence * total.Intelligence + progress.Level * MpPerLevel;
-        var hpRegenPerTick = Math.Max(MinRegenPerTick, total.Constitution / RegenDivisor);
-        var mpRegenPerTick= Math.Max(MinRegenPerTick, total.Spirit / RegenDivisor);
+        var maxHp = CombatConfig.HpPerConstitution * total.Constitution + progress.Level * CombatConfig.HpPerLevel;
+        var maxMp = CombatConfig.MpPerIntelligence * total.Intelligence + progress.Level * CombatConfig.MpPerLevel;
+        var hpRegenPerTick = Math.Max(CombatConfig.MinRegenPerTick, total.Constitution / CombatConfig.RegenDivisor);
+        var mpRegenPerTick= Math.Max(CombatConfig.MinRegenPerTick, total.Spirit / CombatConfig.RegenDivisor);
 
         return new(
             new Health(
@@ -39,20 +31,29 @@ public static class AttributeCalculator
                 regenPerTick: mpRegenPerTick));
     }
 
-    public static Stats CalculateStats(BaseStats stats, Progress progress, BaseStats modifiers)
-       => new(
-            PhysicalAttack: stats.Strength * 2 + progress.Level + modifiers.Strength,
-            MagicAttack: stats.Intelligence * 2 + progress.Level + modifiers.Intelligence,
-            PhysicalDefense: stats.Constitution + progress.Level + modifiers.Constitution,
-            MagicDefense: stats.Spirit + progress.Level + modifiers.Spirit,
-            AttackRange: 1 + stats.Dexterity / 10 + modifiers.Dexterity,
-            AttackSpeed: BaseSpeed + (stats.Dexterity + modifiers.Dexterity) / AttackSpeedDivisor,
-            MovementSpeed: BaseSpeed + (stats.Dexterity + modifiers.Dexterity) / MovementSpeedDivisor,
-            CriticalChance: Math.Min(
-                MaxCriticalChance, 
-                BaseCriticalChance + (stats.Dexterity + modifiers.Dexterity) / 5)
+    public static CombatStats CalculateCombatStats(BaseStats stats, Progress progress, Vocation vocation)
+    {
+        var modifiers = vocation.Type.GetGrowthModifiers();
+        
+        return new CombatStats(
+            PhysicalAttack: stats.Strength * 2 + progress.Level * modifiers.Strength,
+            MagicAttack: stats.Intelligence * 2 + progress.Level * modifiers.Intelligence,
+            PhysicalDefense: stats.Constitution + progress.Level * modifiers.Constitution,
+            MagicDefense: stats.Spirit + progress.Level * modifiers.Spirit
         );
+    }
     
-    
+    public static CombatProfile CalculateCombatProfile(BaseStats stats, Progress progress, Vocation vocation)
+    {
+        var modifiers = vocation.Type.GetGrowthModifiers();
+        var vocationProfile = vocation.Type.GetCombatProfile();
+        return new CombatProfile(
+            AttackRange: vocationProfile.BaseAttackRange,
+            AttackSpeed: vocationProfile.BaseAttackSpeed + (stats.Dexterity / AttackSpeedDivisor) + (progress.Level * modifiers.Dexterity / AttackSpeedDivisor),
+            CriticalChance: vocationProfile.BaseCriticalChance + (stats.Dexterity / 100) + (progress.Level * modifiers.Dexterity / 100),
+            CriticalDamage: vocationProfile.BaseCriticalDamage,
+            ManaCostPerAttack: vocationProfile.ManaCostPerAttack,
+            DamageType: vocationProfile.DamageType);
+    }
     
 }

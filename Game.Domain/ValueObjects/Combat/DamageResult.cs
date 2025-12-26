@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Game.Domain.Enums;
+using Game.Domain.ValueObjects.Vitals;
 
 namespace Game.Domain.ValueObjects.Combat;
 
@@ -40,21 +41,6 @@ public readonly record struct DamageResult
     /// </summary>
     public DamageResult WithCritical(bool critical) => new(Damage, Type, critical);
     
-    /// <summary>
-    /// Aplica o dano aos vitais e retorna os novos valores de HP/MP.
-    /// </summary>
-    public (int NewHp, int NewMp) ApplyToVitals(int currentHp, int currentMp)
-    {
-        int newHp = Type switch
-        {
-            DamageType.Physical or DamageType.Magical or DamageType.True 
-                => Math.Max(0, currentHp - Damage),
-            _ => currentHp
-        };
-        
-        return (newHp, currentMp);
-    }
-
     /// <summary>
     /// Valor zero para inicialização.
     /// </summary>

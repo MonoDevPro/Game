@@ -20,5 +20,4 @@ public static class VocationExtensions
     
     public static VocationCombatProfile GetCombatProfile(this VocationType type) => 
         type.GetInfo().CombatProfile;
-    
 }

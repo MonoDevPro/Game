@@ -11,28 +11,30 @@ namespace Game.Domain.Player;
 /// </summary>
 public sealed class PlayerAttributes
 {
+    public Vocation Vocation { get; }
     public Progress Progress { get; }
-    public (Health Hp, Mana Mp) Vitals { get; }
-    public BaseStats Base { get; }
+    public Health Hp { get; }
+    public Mana Mp { get; }
+    public BaseStats Stats { get; }
     public BaseStats Bonus { get; }
-    public BaseStats Modifiers { get; }
-    public BaseStats Total { get; }
-    public Stats Derived { get; }
+    public CombatStats Derived { get; }
 
     private PlayerAttributes(
+        Vocation vocation,
+        Health hp,
+        Mana mp,
         Progress progress,
-        (Health Hp, Mana Mp) vitals,
         BaseStats baseStats,
         BaseStats bonus,
         BaseStats modifiers,
-        Stats derived)
+        CombatStats derived)
     {
+        Vocation = vocation;
+        Hp = hp;
+        Mp = mp;
         Progress = progress;
-        Vitals = vitals;
-        Base = baseStats;
         Bonus = bonus;
-        Modifiers = modifiers;
-        Total = baseStats + bonus;
+        Stats = baseStats + bonus;
         Derived = derived;
     }
 
@@ -40,19 +42,22 @@ public sealed class PlayerAttributes
     /// Cria um novo CharacterAttributes calculando todos os valores derivados.
     /// </summary>
     public static PlayerAttributes Create(
+        Vocation vocation,
         Progress progress,
-        BaseStats baseStats,
-        BaseStats bonus = default,
-        BaseStats? modifiers = null,
-        double? currentHp = null,
-        double? currentMp = null)
+        BaseStats total)
     {
-        var mods = modifiers ?? BaseStats.Zero;
-        var total = baseStats;
-        var vitals = AttributeCalculator.CalculateVitals(total, progress, mods, currentHp ?? -1, currentMp ?? -1);
-        var derived = AttributeCalculator.CalculateStats(total, progress, mods);
+        var vitals = AttributeCalculator.CalculateVitals(total, progress);
+        var derived = AttributeCalculator.CalculateCombatStats(total, progress, vocation);
 
-        return new PlayerAttributes(progress, vitals, baseStats, bonus, mods, derived);
+        return new PlayerAttributes(
+            vocation,
+            vitals.Health,
+            vitals.Mana,
+            progress,
+            total,
+            BaseStats.Zero,
+            BaseStats.Zero,
+            derived);
     }
 
     /// <summary>
@@ -61,16 +66,28 @@ public sealed class PlayerAttributes
     public PlayerAttributes Recalculate(
         BaseStats? newBase = null,
         BaseStats? newBonus = null,
-        BaseStats? newModifiers = null,
         Progress? newProgress = null)
     {
-        return Create(
-            newProgress ?? Progress,
-            newBase ?? Base,
-            newBonus ?? Bonus,
-            newModifiers ?? Modifiers,
-            Vitals.Hp.Current,
-            Vitals.Mp.Current);
+        var bonusStats = newBonus ?? Bonus;
+        var progress = newProgress ?? Progress;
+        var totalStats = (newBase ?? Stats) + bonusStats;
+
+        var vitals = AttributeCalculator.CalculateVitals(totalStats, progress);
+        var derived = AttributeCalculator.CalculateCombatStats(totalStats, progress, Vocation);
+
+        // Mantém o HP/MP atuais proporcionais ao novo máximo
+        var currentHp = (Hp.Current / Hp.Maximum * vitals.Health.Maximum);
+        var currentMp = (Mp.Current / Mp.Maximum * vitals.Mana.Maximum);
+
+        return new PlayerAttributes(
+            Vocation,
+            vitals.Health.WithCurrent(currentHp),
+            vitals.Mana.WithCurrent(currentMp),
+            progress,
+            
+            bonusStats,
+            modifierStats,
+            derived);
     }
 
     /// <summary>

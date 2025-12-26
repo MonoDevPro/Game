@@ -8,7 +8,7 @@ namespace Game.Domain.ValueObjects.Equipment;
 public unsafe struct Equipments : IEquatable<Equipments>
 {
     // precisa ser const compile-time
-    public const int SlotCount = (int)EquipmentSlotType.Count;
+    private const int SlotCount = (int)EquipmentSlotType.Count;
 
     // itemId == 0 => vazio
     // fixed buffer garante que os ints ficam inline no struct (blittable)

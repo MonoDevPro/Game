@@ -39,4 +39,10 @@ public struct Mana(double max, double regenPerTick = 1)
     {
         Current = Maximum;
     }
+    
+    public Mana WithCurrent(double current)
+    {
+        return new Mana(Maximum, RegenPerTick) { Current = current };
+    }
+    
 }

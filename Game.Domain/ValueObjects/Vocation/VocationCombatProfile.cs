@@ -7,10 +7,10 @@ namespace Game.Domain.ValueObjects.Vocation;
 /// </summary>
 public readonly record struct VocationCombatProfile(
     int BaseAttackRange,
-    float BaseAttackSpeed,
-    float BaseCriticalChance,
-    float BaseCriticalDamage,
-    int ManaCostPerAttack,
+    double BaseAttackSpeed,
+    double BaseCriticalChance,
+    double BaseCriticalDamage,
+    double ManaCostPerAttack,
     DamageType DamageType)
 {
     public static VocationCombatProfile Melee => new(1, 1.0f, 5f, 150f, 0, DamageType.Physical);

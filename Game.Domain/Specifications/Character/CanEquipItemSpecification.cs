@@ -1,7 +1,6 @@
 using Game.Domain.Entities;
 using Game.Domain.Enums;
 using Game.Domain.Extensions;
-using Game.Domain.ValueObjects.Attributes;
 
 namespace Game.Domain.Specifications.Character;
 
@@ -13,7 +12,7 @@ public class CanEquipItemSpecification
     /// <summary>
     /// Verifica se o personagem pode equipar o item no slot especificado.
     /// </summary>
-    public (bool IsSatisfied, string? ErrorMessage) IsSatisfiedBy(Entities.Character character, Item item, EquipmentSlotType slot)
+    public (bool IsSatisfied, string? ErrorMessage) IsSatisfiedBy(Entities.Character character, Item item, EquipmentSlotType slot, LangType langType = LangType.PT_BR)
     {
         // Verificações necessárias:
         
@@ -35,54 +34,30 @@ public class CanEquipItemSpecification
         
         // 3. Item corresponde ao slot
         if (!item.Type.MatchesEquipmentSlot(slot))
-            return (false, "Item does not match equipment slot");
+            return (false, GameErrors.GetEquipmentSlotRequirementError(character.Account.PreferredLanguage));
         
         // 4. Personagem atende aos requisitos do item
-        int playerLevel = character.Progress.Level;
-        int requiredLevel = item.RequiredLevel;
-        VocationType playerVocation = character.Vocation;
-        VocationType requiredVocation = item.RequiredVocation;
-        BaseStats requiredStats = item.RequiredStats;
-        LangType langType = character.Account.PreferredLanguage;
-        BaseStats playerStats = character.BaseStats;
+        if (character.Progress.Level < item.RequiredLevel)
+            return (false, GameErrors.GetLevelRequirementError(item.RequiredLevel, langType));
         
-        if (playerLevel < requiredLevel)
-            return (false, GameErrors.GetLevelRequirementError(requiredLevel, langType));
+        if (item.RequiredVocation != VocationType.None && item.RequiredVocation != character.Vocation)
+            return (false, GameErrors.GetVocationRequirementError(item.RequiredVocation, langType));
         
-        if (requiredVocation != VocationType.None && requiredVocation != playerVocation)
-            return (false, GameErrors.GetVocationRequirementError(requiredVocation, langType));
-        
-        if (playerStats.Strength < requiredStats.Strength)
+        if (character.BaseStats.Strength < item.RequiredStats.Strength)
             return (false, GameErrors.GetStatRequirementError(AttributeType.Strength, langType));
         
-        if (playerStats.Dexterity < requiredStats.Dexterity)
+        if (character.BaseStats.Dexterity < item.RequiredStats.Dexterity)
             return (false, GameErrors.GetStatRequirementError(AttributeType.Dexterity, langType));
         
-        if (playerStats.Intelligence < requiredStats.Intelligence)
+        if (character.BaseStats.Intelligence < item.RequiredStats.Intelligence)
             return (false, GameErrors.GetStatRequirementError(AttributeType.Intelligence, langType));
         
-        if (playerStats.Constitution < requiredStats.Constitution)
+        if (character.BaseStats.Constitution < item.RequiredStats.Constitution)
             return (false, GameErrors.GetStatRequirementError(AttributeType.Constitution, langType));
         
-        if (playerStats.Spirit < requiredStats.Spirit)
+        if (character.BaseStats.Spirit < item.RequiredStats.Spirit)
             return (false, GameErrors.GetStatRequirementError(AttributeType.Spirit, langType));
         
         return (true, null);
-    }
-    
-    /// <summary>
-    /// Retorna a razão pela qual o equip falhou, se aplicável.
-    /// </summary>
-    public string GetFailureReason(Entities.Character character, int itemId, EquipmentSlotType slot)
-    {
-        if (!character.IsActive)
-            return "Character must be active to equip items";
-        
-        if (itemId <= 0)
-            return "Invalid item ID";
-        
-        // TODO: Adicionar mais validações quando Item entity estiver disponível
-        
-        return string.Empty;
     }
 }

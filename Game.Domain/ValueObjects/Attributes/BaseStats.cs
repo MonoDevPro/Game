@@ -24,11 +24,11 @@ public readonly record struct BaseStats(
         a.Spirit + b.Spirit);
 
     public static BaseStats operator *(BaseStats baseStats, double factor) => new(
-        (int)(baseStats.Strength * factor),
-        (int)(baseStats.Dexterity * factor),
-        (int)(baseStats.Intelligence * factor),
-        (int)(baseStats.Constitution * factor),
-        (int)(baseStats.Spirit * factor));
+        baseStats.Strength * factor,
+        baseStats.Dexterity * factor,
+        baseStats.Intelligence * factor,
+        baseStats.Constitution * factor,
+        baseStats.Spirit * factor);
     
     public static BaseStats operator *(BaseStats baseStats, BaseStats factor) => new(
         baseStats.Strength * factor.Strength,

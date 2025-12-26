@@ -19,7 +19,7 @@ public struct Health(double max, double regenPerTick = 1)
     public readonly double Percentage => Maximum > 0 ? Current / Maximum : 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double TakeDamage(int damage)
+    public double TakeDamage(double damage)
     {
         double actualDamage = Math.Min(Current, Math.Max(0, damage));
         Current -= actualDamage;
@@ -27,7 +27,7 @@ public struct Health(double max, double regenPerTick = 1)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double Heal(int amount)
+    public double Heal(double amount)
     {
         double actualHeal = Math.Min(Maximum - Current, Math.Max(0, amount));
         Current += actualHeal;
@@ -50,4 +50,39 @@ public struct Health(double max, double regenPerTick = 1)
     {
         Current = Maximum;
     }
+    
+    public Health WithMax(double newMax)
+    {
+        return new Health(newMax, RegenPerTick)
+        {
+            Current = Math.Min(Current, newMax)
+        };
+    }
+    
+    public Health WithRegen(double newRegen)
+    {
+        return new Health(Maximum, newRegen)
+        {
+            Current = Current
+        };
+    }
+    
+    public Health WithPercentage(double newPercentage)
+    {
+        var clampedPercentage = Math.Clamp(newPercentage, 0.0, 1.0);
+        return new Health(Maximum, RegenPerTick)
+        {
+            Current = Maximum * clampedPercentage
+        };
+    }
+    
+    public Health WithCurrent(double newCurrent)
+    {
+        return new Health(Maximum, RegenPerTick)
+        {
+            Current = Math.Clamp(newCurrent, 0.0, Maximum)
+        };
+    }
+    
+    
 }

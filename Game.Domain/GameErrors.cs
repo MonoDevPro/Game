@@ -86,8 +86,8 @@ public static class GameErrors
 
     private static Dictionary<LangType, string> _equipmentSlotRequirementErrors = new()
     {
-        { LangType.PT_BR, "O item não pode ser equipado neste slot." },
-        { LangType.EN_US, "The item cannot be equipped in this slot." }
+        { LangType.PT_BR, "O item não corresponde ao slot de equipamento." },
+        { LangType.EN_US, "Item does not match equipment slot.." }
     };
 
 
@@ -134,6 +134,6 @@ public static class GameErrors
     public static string GetEquipmentSlotRequirementError(LangType lang)
     {
         return _equipmentSlotRequirementErrors.GetValueOrDefault(lang,
-            "The item cannot be equipped in this slot.");
+            "Item does not match equipment slot.");
     }
 }

@@ -10,6 +10,14 @@ namespace Game.Domain.ValueObjects.Combat;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly record struct CombatConfig
 {
+    // Constantes de Regras de Combate/Atributos
+    public const int HpPerConstitution = 10;
+    public const int HpPerLevel = 5;
+    public const int MpPerIntelligence = 5;
+    public const int MpPerLevel = 3;
+    public const int MinRegenPerTick = 1;
+    public const int RegenDivisor = 10;
+
     /// <summary>
     /// Duração do ataque em ticks (tempo de animação).
     /// </summary>
@@ -36,22 +44,4 @@ public readonly record struct CombatConfig
         DamageApplicationTick = damageApplication;
         CanBeInterrupted = canInterrupt;
     }
-
-    /// <summary>
-    /// Cria uma configuração baseada na vocação.
-    /// </summary>
-    public static CombatConfig ForVocation(VocationType vocation) => vocation switch
-    {
-        VocationType.Warrior => Warrior,
-        VocationType.Mage => Mage,
-        VocationType.Archer => Archer,
-        VocationType.Cleric => Cleric,
-        _ => Default
-    };
-
-    public static CombatConfig Default => new(20, 10, true);
-    public static CombatConfig Warrior => new(25, 15, false);
-    public static CombatConfig Mage => new(35, 25, true);
-    public static CombatConfig Archer => new(15, 10, true);
-    public static CombatConfig Cleric => new(30, 20, true);
 }
