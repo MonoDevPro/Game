@@ -11,6 +11,8 @@ public class CanLevelUpSpecification
     /// <summary>
     /// Verifica se o personagem pode subir de nível.
     /// </summary>
+    /// <param name="character">O personagem a ser verificado.</param>
+    /// <returns>True se o personagem pode subir de nível, false caso contrário.</returns>
     public bool IsSatisfiedBy(Entities.Character character)
     {
         return character.Progress.CanLevelUp && character.IsActive;
@@ -19,6 +21,8 @@ public class CanLevelUpSpecification
     /// <summary>
     /// Retorna a razão pela qual o level up falhou, se aplicável.
     /// </summary>
+    /// <param name="character">O personagem a ser verificado.</param>
+    /// <returns>Mensagem de erro se houver alguma restrição, ou string vazia se não houver problemas.</returns>
     public string GetFailureReason(Entities.Character character)
     {
         if (!character.IsActive)
