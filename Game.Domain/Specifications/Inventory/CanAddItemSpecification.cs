@@ -20,10 +20,6 @@ public class CanAddItemSpecification
         if (item == null) return false;
         if (quantity <= 0) return false;
         
-        // Se inventário está cheio e item não é empilhável
-        if (inventory.IsFull && !item.IsStackable)
-            return false;
-        
         // Se item é empilhável, verificar se pode empilhar em slots existentes
         if (item.IsStackable)
         {
@@ -59,9 +55,6 @@ public class CanAddItemSpecification
         
         if (quantity <= 0)
             return "Quantity must be positive";
-        
-        if (inventory.IsFull && !item.IsStackable)
-            return "Inventory is full";
         
         if (item.IsStackable)
         {
