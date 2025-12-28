@@ -1,18 +1,42 @@
 using Arch.Core;
-using GameECS.Shared.Entities.Data;
+using Game.Domain.Party.Interfaces;
+using Game.Domain.Party.ValueObjects;
+using Game.Domain.ValueObjects.Identitys;
 
-namespace GameECS.Server.Entities.Core;
+namespace GameECS.Core;
 
 /// <summary>
 /// Gerencia parties/grupos de players.
 /// </summary>
-public sealed class PartyManager
+public sealed class PartyManager : IPartyManager
 {
+    private readonly World _world;
     private readonly Dictionary<int, Party> _parties = new();
+    private readonly Dictionary<int, Entity> _entityCache = new();
     private int _nextPartyId;
 
+    public PartyManager(World world)
+    {
+        _world = world;
+    }
+
     /// <summary>
-    /// Cria uma nova party.
+    /// Cria uma nova party a partir do ID de entidade.
+    /// </summary>
+    public int CreateParty(int leaderEntityId)
+    {
+        if (!TryGetEntity(leaderEntityId, out var leader))
+            return 0;
+
+        int partyId = ++_nextPartyId;
+        var party = new Party(partyId, PartyConfig.Default);
+        party.AddMember(leader);
+        _parties[partyId] = party;
+        return partyId;
+    }
+
+    /// <summary>
+    /// Cria uma nova party com configuração customizada.
     /// </summary>
     public int CreateParty(Entity leader, PartyConfig? config = null)
     {
@@ -20,7 +44,22 @@ public sealed class PartyManager
         var party = new Party(partyId, config ?? PartyConfig.Default);
         party.AddMember(leader);
         _parties[partyId] = party;
+        CacheEntity(leader);
         return partyId;
+    }
+
+    /// <summary>
+    /// Adiciona membro à party por ID.
+    /// </summary>
+    public bool AddMember(int partyId, int entityId)
+    {
+        if (!_parties.TryGetValue(partyId, out var party))
+            return false;
+
+        if (!TryGetEntity(entityId, out var entity))
+            return false;
+
+        return party.AddMember(entity);
     }
 
     /// <summary>
@@ -31,7 +70,26 @@ public sealed class PartyManager
         if (!_parties.TryGetValue(partyId, out var party))
             return false;
 
+        CacheEntity(entity);
         return party.AddMember(entity);
+    }
+
+    /// <summary>
+    /// Remove membro da party por ID.
+    /// </summary>
+    public bool RemoveMember(int partyId, int entityId)
+    {
+        if (!_parties.TryGetValue(partyId, out var party))
+            return false;
+
+        if (!TryGetEntity(entityId, out var entity))
+            return false;
+
+        bool removed = party.RemoveMember(entity);
+        if (party.MemberCount == 0)
+            _parties.Remove(partyId);
+
+        return removed;
     }
 
     /// <summary>
@@ -66,6 +124,26 @@ public sealed class PartyManager
             : Array.Empty<Entity>();
 
     /// <summary>
+    /// Obtém IDs dos membros da party.
+    /// </summary>
+    public IReadOnlyList<int> GetMemberIds(int partyId)
+    {
+        if (!_parties.TryGetValue(partyId, out var party))
+            return Array.Empty<int>();
+
+        var ids = new List<int>(party.MemberCount);
+        foreach (var member in party.Members)
+        {
+            if (_world.Has<Identity>(member))
+            {
+                ref var identity = ref _world.Get<Identity>(member);
+                ids.Add(identity.UniqueId);
+            }
+        }
+        return ids;
+    }
+
+    /// <summary>
     /// Dissolve a party.
     /// </summary>
     public bool DissolveParty(int partyId)
@@ -75,54 +153,41 @@ public sealed class PartyManager
     /// Quantidade total de parties ativas.
     /// </summary>
     public int PartyCount => _parties.Count;
-}
 
-/// <summary>
-/// Representa uma party.
-/// </summary>
-public sealed class Party
-{
-    private readonly List<Entity> _members = new();
-    private readonly PartyConfig _config;
-
-    public int Id { get; }
-    public Entity Leader { get; private set; }
-    public PartyConfig Config => _config;
-    public IReadOnlyList<Entity> Members => _members;
-    public int MemberCount => _members.Count;
-    public bool IsFull => _members.Count >= _config.MaxMembers;
-
-    public Party(int id, PartyConfig config)
+    private bool TryGetEntity(int entityId, out Entity entity)
     {
-        Id = id;
-        _config = config;
+        if (_entityCache.TryGetValue(entityId, out entity))
+            return _world.IsAlive(entity);
+
+        // Busca na world
+        var query = new QueryDescription().WithAll<Identity>();
+        bool found = false;
+        Entity foundEntity = default;
+
+        _world.Query(in query, (Entity e, ref Identity id) =>
+        {
+            if (id.UniqueId == entityId)
+            {
+                foundEntity = e;
+                found = true;
+            }
+        });
+
+        if (found)
+        {
+            entity = foundEntity;
+            _entityCache[entityId] = entity;
+        }
+
+        return found;
     }
 
-    public bool AddMember(Entity entity)
+    private void CacheEntity(Entity entity)
     {
-        if (IsFull || _members.Contains(entity))
-            return false;
-
-        if (_members.Count == 0)
-            Leader = entity;
-
-        _members.Add(entity);
-        return true;
-    }
-
-    public bool RemoveMember(Entity entity)
-    {
-        bool removed = _members.Remove(entity);
-        if (removed && entity.Equals(Leader) && _members.Count > 0)
-            Leader = _members[0];
-        return removed;
-    }
-
-    public bool SetLeader(Entity entity)
-    {
-        if (!_members.Contains(entity))
-            return false;
-        Leader = entity;
-        return true;
+        if (_world.Has<Identity>(entity))
+        {
+            ref var identity = ref _world.Get<Identity>(entity);
+            _entityCache[identity.UniqueId] = entity;
+        }
     }
 }

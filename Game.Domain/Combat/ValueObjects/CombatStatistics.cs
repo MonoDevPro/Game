@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Game.Domain.ValueObjects.Combat;
+namespace Game.Domain.Combat.ValueObjects;
 
 /// <summary>
 /// Estatísticas de combate para tracking de performance.

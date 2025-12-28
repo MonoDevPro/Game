@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Game.Domain.ValueObjects.Combat;
+namespace Game.Domain.Combat.ValueObjects;
 
 /// <summary>
 /// Estado de cooldown de ataque.

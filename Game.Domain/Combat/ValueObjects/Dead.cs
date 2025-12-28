@@ -1,4 +1,4 @@
-namespace Game.Domain.ValueObjects.Combat;
+namespace Game.Domain.Combat.ValueObjects;
 
 /// <summary>
 /// Tag: entidade está morta.

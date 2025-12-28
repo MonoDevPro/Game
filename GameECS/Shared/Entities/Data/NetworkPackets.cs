@@ -1,7 +1,7 @@
 using Game.Domain.Enums;
 using MemoryPack;
 
-namespace GameECS.Shared.Entities.Data;
+namespace GameECS.Data;
 
 /// <summary>
 /// Dados de um jogador para sincronização de rede.

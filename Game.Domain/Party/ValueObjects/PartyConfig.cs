@@ -1,7 +1,6 @@
-using Game.Domain.AI.Enums;
 using Game.Domain.Enums;
 
-namespace GameECS.Shared.Entities.Data;
+namespace Game.Domain.Party.ValueObjects;
 
 /// <summary>
 /// Configuração de party.

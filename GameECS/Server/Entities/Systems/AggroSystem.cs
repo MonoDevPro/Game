@@ -1,9 +1,9 @@
 using Arch.Core;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
-using Game.Domain.ValueObjects.Combat;
+using Game.Domain.Combat.ValueObjects;
 
-namespace GameECS.Server.Entities.Systems;
+namespace GameECS.Systems;
 
 /// <summary>
 /// Sistema de aggro.

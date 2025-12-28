@@ -1,4 +1,4 @@
-namespace GameECS.Shared.Combat.Data;
+namespace Game.Domain.Combat.Enums;
 
 /// <summary>
 /// Resultado de um ataque.

@@ -1,13 +1,13 @@
 using Arch.Core;
+using Game.Domain.Combat.Core;
+using Game.Domain.Combat.Enums;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.Enums;
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Combat;
 using Game.Domain.ValueObjects.Vitals;
-using GameECS.Shared.Combat.Core;
-using GameECS.Shared.Combat.Data;
 
-namespace GameECS.Shared.Combat.Systems;
+namespace GameECS.Combat;
 
 /// <summary>
 /// Serviço de combate compartilhado para validações e cálculos.

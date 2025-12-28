@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
+using Game.Domain.Combat.Enums;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.Enums;
 using Game.Domain.ValueObjects.Attributes;
-using Game.Domain.ValueObjects.Combat;
-using GameECS.Shared.Combat.Data;
 
-namespace GameECS.Shared.Combat.Core;
+namespace Game.Domain.Combat.Core;
 
 /// <summary>
 /// Sistema de cálculo de dano e combate.

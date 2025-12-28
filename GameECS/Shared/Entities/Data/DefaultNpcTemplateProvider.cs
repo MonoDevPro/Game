@@ -1,10 +1,9 @@
-using Game.Domain.AI;
 using Game.Domain.AI.Data;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.Interfaces;
 using Game.Domain.Enums;
 
-namespace GameECS.Shared.Entities.Data;
+namespace GameECS.Data;
 
 /// <summary>
 /// Provider padrão com templates em código.

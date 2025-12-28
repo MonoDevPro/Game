@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Combat;
 
 namespace Game.Domain.ValueObjects.Vitals;
 

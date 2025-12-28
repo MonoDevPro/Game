@@ -1,7 +1,7 @@
+using Game.Domain.Combat.Enums;
 using Game.Domain.Enums;
-using GameECS.Shared.Combat.Data;
 
-namespace Game.Domain.ValueObjects.Combat;
+namespace Game.Domain.Combat.ValueObjects;
 
 public readonly record struct DamageMessage(
     int AttackerId,

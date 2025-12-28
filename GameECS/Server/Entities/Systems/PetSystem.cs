@@ -1,10 +1,10 @@
 using Arch.Core;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
-using Game.Domain.ValueObjects.Combat;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.ValueObjects.Map;
 
-namespace GameECS.Server.Entities.Systems;
+namespace GameECS.Systems;
 
 /// <summary>
 /// Sistema de comportamento de Pets.

@@ -1,4 +1,4 @@
-namespace GameECS.Shared.Combat.Data;
+namespace Game.Domain.Combat.Core;
 
 /// <summary>
 /// Configuração global do sistema de combate.

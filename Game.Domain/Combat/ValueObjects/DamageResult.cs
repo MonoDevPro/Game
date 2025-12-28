@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using Game.Domain.Enums;
 using Game.Domain.ValueObjects.Vitals;
 
-namespace Game.Domain.ValueObjects.Combat;
+namespace Game.Domain.Combat.ValueObjects;
 
 /// <summary>
 /// Resultado de um cálculo de dano.

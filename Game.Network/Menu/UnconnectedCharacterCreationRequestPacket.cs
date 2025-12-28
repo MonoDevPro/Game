@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Game.Domain.Player;
+using Game.Domain.Enums;
 using MemoryPack;
 
 namespace Game.Network.Packets.Menu;
@@ -9,5 +9,5 @@ namespace Game.Network.Packets.Menu;
 public readonly partial record struct UnconnectedCharacterCreationRequestPacket(
     string SessionToken,
     string Name,
-    GenderType Gender,
-    VocationType Vocation);
+    [property: MemoryPackAllowSerialize] GenderType Gender,
+    [property: MemoryPackAllowSerialize] VocationType Vocation);

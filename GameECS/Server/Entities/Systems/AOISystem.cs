@@ -1,11 +1,11 @@
 using Arch.Core;
 using Game.Domain.AOI.ValueObjects;
-using Game.Domain.ValueObjects.Combat;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
-using GameECS.Server.Entities.Core;
+using GameECS.Core;
 
-namespace GameECS.Server.Entities.Systems;
+namespace GameECS.Systems;
 
 /// <summary>
 /// Sistema de atualização de Area of Interest.

@@ -1,13 +1,13 @@
 using Arch.Core;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Combat;
 using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
 using Game.Domain.ValueObjects.Vitals;
 
-namespace GameECS.Server.Entities.Systems;
+namespace GameECS.Systems;
 
 /// <summary>
 /// Sistema de IA para NPCs.

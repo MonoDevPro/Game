@@ -1,14 +1,15 @@
 using Arch.Core;
+using Game.Domain.AOI.Interfaces;
 using Game.Domain.AOI.ValueObjects;
 using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
 
-namespace GameECS.Server.Entities.Core;
+namespace GameECS.Core;
 
 /// <summary>
 /// Gerencia Area of Interest - determina visibilidade entre entidades.
 /// </summary>
-public sealed class AOIManager(World world)
+public sealed class AOIManager(World world) : IAOIManager
 {
     private readonly Dictionary<int, HashSet<int>> _visibleEntities = new();
     private readonly QueryDescription _entityQuery = new QueryDescription()

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
+using Game.Domain.Combat.Enums;
+using Game.Domain.Combat.ValueObjects;
 using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Combat;
-using GameECS.Shared.Combat.Data;
 
-namespace GameECS.Shared.Combat.Core;
+namespace Game.Domain.Combat.Core;
 
 /// <summary>
 /// Registro de combate para tracking e estatísticas.

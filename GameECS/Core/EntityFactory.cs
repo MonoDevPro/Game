@@ -3,36 +3,54 @@ using Game.Domain.AI.Enums;
 using Game.Domain.AI.Interfaces;
 using Game.Domain.AI.ValueObjects;
 using Game.Domain.AOI.ValueObjects;
+using Game.Domain.Entities.Interfaces;
 using Game.Domain.Enums;
 using Game.Domain.Player;
 using Game.Domain.ValueObjects.Character;
 using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
-using GameECS.Shared.Entities.Data;
+using GameECS.Data;
 
-namespace GameECS.Server.Entities.Core;
+namespace GameECS.Core;
 
 /// <summary>
-/// Factory para criar entidades no mundo.
+/// Factory para criar entidades no mundo ECS.
 /// </summary>
-public sealed class EntityFactory(
-    World world,
-    INpcTemplateProvider? npcTemplateProvider = null,
-    IPetTemplateProvider? petTemplateProvider = null)
+public sealed class EntityFactory : IEntityFactory
 {
-    private readonly INpcTemplateProvider _npcTemplateProvider = npcTemplateProvider ?? new DefaultNpcTemplateProvider();
-    private readonly IPetTemplateProvider _petTemplateProvider = petTemplateProvider ?? new DefaultPetTemplateProvider();
+    private readonly World _world;
+    private readonly INpcTemplateProvider _npcTemplateProvider;
+    private readonly IPetTemplateProvider _petTemplateProvider;
     private int _nextEntityId;
 
+    public EntityFactory(
+        World world,
+        INpcTemplateProvider? npcTemplateProvider = null,
+        IPetTemplateProvider? petTemplateProvider = null)
+    {
+        _world = world;
+        _npcTemplateProvider = npcTemplateProvider ?? new DefaultNpcTemplateProvider();
+        _petTemplateProvider = petTemplateProvider ?? new DefaultPetTemplateProvider();
+    }
+
     /// <summary>
-    /// Cria um Player.
+    /// Cria um Player e retorna o ID da entidade.
+    /// </summary>
+    int IEntityFactory.CreatePlayer(PlayerSimulationAttributes attributes)
+    {
+        var entity = CreatePlayer(attributes);
+        return _world.Get<Identity>(entity).UniqueId;
+    }
+
+    /// <summary>
+    /// Cria um Player e retorna a Entity.
     /// </summary>
     public Entity CreatePlayer(PlayerSimulationAttributes attributes)
     {
         int entityId = ++_nextEntityId;
 
         // Componentes básicos
-        var entity = world.Create(
+        var entity = _world.Create(
             new Identity
             {
                 UniqueId = entityId,
@@ -60,7 +78,16 @@ public sealed class EntityFactory(
     }
 
     /// <summary>
-    /// Cria um NPC a partir de template.
+    /// Cria um NPC a partir de template e retorna o ID.
+    /// </summary>
+    int IEntityFactory.CreateNpc(string templateId, int x, int y)
+    {
+        var entity = CreateNpc(templateId, x, y);
+        return _world.Get<Identity>(entity).UniqueId;
+    }
+
+    /// <summary>
+    /// Cria um NPC a partir de template e retorna a Entity.
     /// </summary>
     public Entity CreateNpc(string templateId, int x, int y)
     {
@@ -71,7 +98,7 @@ public sealed class EntityFactory(
         int entityId = ++_nextEntityId;
 
         // Criação em etapas para não exceder limite
-        var entity = world.Create(
+        var entity = _world.Create(
             new Identity
             {
                 UniqueId = entityId,
@@ -109,6 +136,15 @@ public sealed class EntityFactory(
     }
 
     /// <summary>
+    /// Cria um Pet para um owner (interface).
+    /// </summary>
+    int IEntityFactory.CreatePet(string templateId, int ownerEntityId, int x, int y)
+    {
+        var entity = CreatePet(templateId, ownerEntityId, x, y);
+        return _world.Get<Identity>(entity).UniqueId;
+    }
+
+    /// <summary>
     /// Cria um Pet para um owner.
     /// </summary>
     public Entity CreatePet(string templateId, int ownerEntityId, int x, int y)
@@ -119,7 +155,7 @@ public sealed class EntityFactory(
 
         int entityId = ++_nextEntityId;
 
-        var entity = world.Create(
+        var entity = _world.Create(
             new Identity
             {
                 UniqueId = entityId,
@@ -147,13 +183,22 @@ public sealed class EntityFactory(
     }
 
     /// <summary>
+    /// Cria um item no chão (interface).
+    /// </summary>
+    int IEntityFactory.CreateDroppedItem(int itemId, int quantity, int x, int y, int? ownerEntityId)
+    {
+        var entity = CreateDroppedItem(itemId, quantity, x, y, ownerEntityId);
+        return _world.Get<Identity>(entity).UniqueId;
+    }
+
+    /// <summary>
     /// Cria um item no chão.
     /// </summary>
     public Entity CreateDroppedItem(int itemId, int quantity, int x, int y, int? ownerEntityId = null)
     {
         int entityId = ++_nextEntityId;
 
-        return world.Create(
+        return _world.Create(
             new Identity
             {
                 UniqueId = entityId,
