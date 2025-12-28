@@ -1,10 +1,4 @@
-using Game.Domain.ValueObjects.Equipment;
-using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Commons;
-using Game.Domain.Enums;
-using Game.Domain.Extensions;
-using Game.Domain.Player;
 
 namespace Game.Domain.Entities;
 
@@ -15,25 +9,37 @@ namespace Game.Domain.Entities;
 public class Character : BaseEntity, IAggregateRoot
 {
     public string Name { get; init; } = null!;
-    public GenderType Gender { get; set; }
-    public VocationType Vocation { get; set; }
-    public int PositionX { get; set; }
-    public int PositionY { get; set; }
-    public DirectionType Direction { get; set; }
-    public BaseStats BaseStats { get; set; }
-    public Progress Progress { get; set; } = Progress.Initial;
+    public int Gender { get; set; }
+    public int Vocation { get; set; }
     
-    // Vitais atuais (HP/MP salvos)
-    public int CurrentHp { get; set; }
-    public int CurrentMp { get; set; }
+    public int Direction { get; set; }
+    public int Map { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    
+    public int Level { get; set; }
+    public int Experience { get; set; }
+    
+    public double Strength { get; set; }
+    public double Dexterity { get; set; }
+    public double Intelligence { get; set; }
+    public double Constitution { get; set; }
+    public double Spirit { get; set; }
+    
+    public int Hp { get; set; }
+    public int MaxHp { get; set; }
+    public int Mp { get; set; }
+    public int MaxMp { get; set; }
+    
+    // Um personagem tem equipamentos (1:1)
+    public int EquipmentsId { get; init; }
+    public Equipments Equipments { get; set; } = null!;
     
     // Relacionamentos
     public int AccountId { get; init; }
     public Account Account { get; set; } = null!;
     
     // Um personagem tem um inventário (1:1)
+    public int InventoryId { get; init; }
     public Inventory Inventory { get; set; } = null!;
-    
-    // Um personagem tem equipamentos (1:1)
-    public Equipments Equipments { get; set; }
 }

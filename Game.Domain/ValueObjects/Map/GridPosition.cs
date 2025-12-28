@@ -10,6 +10,8 @@ public struct GridPosition(int x, int y) : IEquatable<GridPosition>
 {
     public int X = x;
     public int Y = y;
+    
+    public static GridPosition Invalid => new(int.MinValue, int.MinValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int ManhattanDistanceTo(GridPosition other)

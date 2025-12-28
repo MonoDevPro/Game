@@ -1,7 +1,6 @@
 using Arch.Core;
 using Game.Server.Sessions;
 using GameECS.Server;
-using GameECS.Shared.Entities.Components;
 
 namespace Game.Server.Players;
 

@@ -1,7 +1,7 @@
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Enums;
 using Game.Domain.DomainServices;
-using Game.Domain.ValueObjects.Vocation;
+using Game.Domain.ValueObjects.Character;
 
 namespace Game.Domain.Extensions;
 
@@ -17,7 +17,4 @@ public static class VocationExtensions
     
     public static BaseStats GetGrowthModifiers(this VocationType type) => 
         type.GetInfo().GrowthModifiers;
-    
-    public static VocationCombatProfile GetCombatProfile(this VocationType type) => 
-        type.GetInfo().CombatProfile;
 }

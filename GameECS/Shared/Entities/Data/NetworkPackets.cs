@@ -1,4 +1,4 @@
-using GameECS.Shared.Entities.Components;
+using Game.Domain.Enums;
 using MemoryPack;
 
 namespace GameECS.Shared.Entities.Data;

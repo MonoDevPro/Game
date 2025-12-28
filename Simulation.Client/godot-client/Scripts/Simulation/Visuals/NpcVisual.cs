@@ -3,7 +3,6 @@ using GameECS.Modules.Combat.Shared.Data;
 using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Data;
-using GameECS.Shared.Navigation.Components;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;

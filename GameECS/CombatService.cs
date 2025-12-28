@@ -1,0 +1,148 @@
+using Arch.Core;
+using Game.Domain.Enums;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.ValueObjects.Character;
+using Game.Domain.ValueObjects.Combat;
+using Game.Domain.ValueObjects.Vitals;
+using GameECS.Shared.Combat.Core;
+using GameECS.Shared.Combat.Data;
+
+namespace GameECS.Shared.Combat.Systems;
+
+/// <summary>
+/// Serviço de combate compartilhado para validações e cálculos.
+/// </summary>
+public sealed class CombatService(CombatConfig config, CombatLog? log = null)
+{
+    private readonly CombatLog _log = log ?? new CombatLog();
+
+    public CombatLog Log => _log;
+    public CombatConfig Config => config;
+
+    /// <summary>
+    /// Valida se um ataque pode ser executado.
+    /// </summary>
+    public AttackResult ValidateAttack(
+        World world,
+        Entity attacker,
+        Entity target,
+        int attackerX, int attackerY,
+        int targetX, int targetY,
+        long currentTick)
+    {
+        // Verifica se atacante pode atacar
+        if (!world.Has<CanAttack>(attacker))
+            return AttackResult.OnCooldown;
+
+        // Verifica se o alvo está morto
+        if (world.Has<Dead>(target))
+            return AttackResult.TargetDead;
+
+        // Verifica invulnerabilidade
+        if (world.Has<Invulnerable>(target))
+            return AttackResult.Blocked;
+
+        // Verifica cooldown
+        if (world.Has<AttackCooldown>(attacker))
+        {
+            ref var cooldown = ref world.Get<AttackCooldown>(attacker);
+            if (!cooldown.IsReady(currentTick))
+                return AttackResult.OnCooldown;
+        }
+
+        // Verifica range
+        ref var attackerStats = ref world.Get<CombatStats>(attacker);
+        int distance = DamageCalculator.CalculateDistance(attackerX, attackerY, targetX, targetY);
+        if (distance > attackerStats.AttackRange)
+            return AttackResult.OutOfRange;
+
+        // Verifica mana para Mage
+        if (world.Has<Vocation>(attacker))
+        {
+            ref var vocation = ref world.Get<Vocation>(attacker);
+            if (vocation.Type == VocationType.Mage && world.Has<Mana>(attacker))
+            {
+                ref var mana = ref world.Get<Mana>(attacker);
+                if (mana.Current < attackerStats.ManaCostPerAttack)
+                    return AttackResult.InsufficientMana;
+            }
+        }
+
+        return AttackResult.Hit;
+    }
+
+    /// <summary>
+    /// Executa um ataque básico e retorna o resultado.
+    /// </summary>
+    public (AttackResult result, DamageMessage? damage) ExecuteBasicAttack(
+        World world,
+        Entity attacker,
+        Entity target,
+        int attackerX, int attackerY,
+        int targetX, int targetY,
+        long currentTick)
+    {
+        var validation = ValidateAttack(world, attacker, target, attackerX, attackerY, targetX, targetY, currentTick);
+        if (validation != AttackResult.Hit)
+            return (validation, null);
+
+        ref var attackerStats = ref world.Get<CombatStats>(attacker);
+        ref var targetStats = ref world.Get<CombatStats>(target);
+        ref var attackerVocation = ref world.Get<Vocation>(attacker);
+
+        // Calcula dano
+        DamageMessage damageMessage = DamageCalculator.CalculateFullDamage(
+            in attackerStats,
+            in targetStats,
+            config.CriticalDamageMultiplier,
+            attacker.Id,
+            target.Id);
+
+        // Consome mana se for Mage
+        if (attackerVocation.Type == VocationType.Mage && world.Has<Mana>(attacker))
+        {
+            ref var mana = ref world.Get<Mana>(attacker);
+            mana.TryConsume(attackerStats.ManaCostPerAttack);
+        }
+
+        // Aplica dano
+        ref var targetHealth = ref world.Get<Health>(target);
+        targetHealth.TakeDamage(damageMessage.FinalDamage);
+
+        // Atualiza cooldown
+        if (world.Has<AttackCooldown>(attacker))
+        {
+            ref var cooldown = ref world.Get<AttackCooldown>(attacker);
+            int cdTicks = DamageCalculator.CalculateAttackCooldown(
+                config.BaseAttackCooldownTicks, 
+                attackerStats.AttackSpeed);
+            cooldown.TriggerCooldown(currentTick, cdTicks);
+        }
+
+        // Registra no log
+        _log.LogDamage(damageMessage);
+
+        // Marca como em combate
+        if (!world.Has<InCombat>(attacker))
+            world.Add(attacker, new InCombat { LastCombatTick = currentTick });
+        else
+            world.Get<InCombat>(attacker).LastCombatTick = currentTick;
+
+        if (!world.Has<InCombat>(target))
+            world.Add(target, new InCombat { LastCombatTick = currentTick });
+        else
+            world.Get<InCombat>(target).LastCombatTick = currentTick;
+
+        // Verifica morte
+        if (targetHealth.IsDead)
+        {
+            if (!world.Has<Dead>(target))
+                world.Add<Dead>(target);
+
+            _log.LogDeath(target.Id, attacker.Id, currentTick);
+        }
+
+        var result = damageMessage.IsCritical ? AttackResult.Critical : AttackResult.Hit;
+        return (result, damageMessage);
+    }
+}

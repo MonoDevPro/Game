@@ -1,37 +1,29 @@
 using Arch.Core;
+using Game.Domain.AOI.ValueObjects;
+using Game.Domain.ValueObjects.Combat;
+using Game.Domain.ValueObjects.Identitys;
+using Game.Domain.ValueObjects.Map;
 using GameECS.Server.Entities.Core;
-using GameECS.Shared.Combat.Components;
-using GameECS.Shared.Entities.Components;
-using GameECS.Shared.Navigation.Components;
 
 namespace GameECS.Server.Entities.Systems;
 
 /// <summary>
 /// Sistema de atualização de Area of Interest.
 /// </summary>
-public sealed class AOIUpdateSystem : IDisposable
+public sealed class AOIUpdateSystem(World world, AOIManager aoiManager) : IDisposable
 {
-    private readonly World _world;
-    private readonly AOIManager _aoiManager;
-    private readonly QueryDescription _aoiQuery;
-
-    public AOIUpdateSystem(World world, AOIManager aoiManager)
-    {
-        _world = world;
-        _aoiManager = aoiManager;
-        _aoiQuery = new QueryDescription()
-            .WithAll<Identity, GridPosition, VisibilityConfig, AreaOfInterest>()
-            .WithNone<Dead>();
-    }
+    private readonly QueryDescription _aoiQuery = new QueryDescription()
+        .WithAll<Identity, GridPosition, VisibilityConfig, AreaOfInterest>()
+        .WithNone<Dead>();
 
     public void Update(long tick)
     {
-        _world.Query(in _aoiQuery, (Entity entity, ref Identity identity, ref GridPosition position, ref VisibilityConfig config, ref AreaOfInterest aoi) =>
+        world.Query(in _aoiQuery, (Entity entity, ref Identity identity, ref GridPosition position, ref VisibilityConfig config, ref AreaOfInterest aoi) =>
         {
             // Só atualiza no rate configurado
             if (tick - aoi.LastUpdateTick < config.UpdateRate) return;
 
-            var result = _aoiManager.UpdateVisibility(entity, position, config);
+            var result = aoiManager.UpdateVisibility(entity, position, config);
             aoi.LastUpdateTick = tick;
 
             // Aqui você poderia emitir eventos para o cliente

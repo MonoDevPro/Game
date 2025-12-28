@@ -6,7 +6,6 @@ using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Modules.Navigation.Shared.Data;
 using GameECS.Shared.Combat.Components;
 using GameECS.Shared.Entities.Data;
-using GameECS.Shared.Navigation.Data;
 using Godot;
 using GodotClient.Core.Autoloads;
 using GodotClient.Simulation.Contracts;

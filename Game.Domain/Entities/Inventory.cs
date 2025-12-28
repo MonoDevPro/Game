@@ -6,8 +6,10 @@ namespace Game.Domain.Entities;
 /// Inventário do personagem.
 /// Gerencia slots, capacidade e operações de itens.
 /// </summary>
-public class Inventory
+public class Inventory : BaseEntity
 {
+    public const int MaxCapacity = 30;
+    
     public int CharacterId { get; init; }
     public int Capacity { get; private set; }
     
@@ -152,7 +154,7 @@ public class Inventory
     public bool TryExpandCapacity(int additionalSlots)
     {
         if (additionalSlots <= 0) return false;
-        if (Capacity + additionalSlots > GameConstants.Inventory.MaxCapacity)
+        if (Capacity + additionalSlots > MaxCapacity)
             return false;
         
         Capacity += additionalSlots;

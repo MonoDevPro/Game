@@ -1,6 +1,6 @@
 using Game.Domain.ValueObjects.Attributes;
 using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Vocation;
+using Game.Domain.ValueObjects.Character;
 
 namespace Game.Domain.DomainServices;
 
@@ -25,8 +25,7 @@ public static class VocationRegistry
             Description: "Combatente corpo-a-corpo versátil com boa defesa e dano.",
             Archetype: VocationArchetype.Melee,
             BaseStats: new BaseStats(14, 10, 6, 12, 8), // STR, DEX, INT, CON, SPR
-            GrowthModifiers: new BaseStats(1.3, 0.9, 0.6, 1.2, 0.8), // STR, DEX, INT, CON, SPR
-            CombatProfile: VocationCombatProfile.Melee));
+            GrowthModifiers: new BaseStats(1.3, 0.9, 0.6, 1.2, 0.8))); // STR, DEX, INT, CON, SPR
 
         // ARCHER - DPS Ranged
         Register(new VocationInfo(
@@ -35,8 +34,7 @@ public static class VocationRegistry
             Description: "Especialista em combate à distância com alta precisão.",
             Archetype: VocationArchetype.Ranged,
             BaseStats: new BaseStats(10, 14, 8, 10, 8),
-            GrowthModifiers: new BaseStats(0.9, 1.3, 0.7, 0.9, 0.8),
-            CombatProfile: VocationCombatProfile.Ranged));
+            GrowthModifiers: new BaseStats(0.9, 1.3, 0.7, 0.9, 0.8)));
 
         // MAGE - DPS Mágico
         Register(new VocationInfo(
@@ -45,8 +43,7 @@ public static class VocationRegistry
             Description: "Mestre das artes arcanas com poder destrutivo devastador.",
             Archetype: VocationArchetype.Magic,
             BaseStats: new BaseStats(6, 8, 16, 8, 12),
-            GrowthModifiers: new BaseStats(0.5, 0.7, 1.4, 0.7, 1.1),
-            CombatProfile: VocationCombatProfile.Magic));
+            GrowthModifiers: new BaseStats(0.5, 0.7, 1.4, 0.7, 1.1)));
 
         // CLERIC - Suporte/Cura
         Register(new VocationInfo(
@@ -55,8 +52,7 @@ public static class VocationRegistry
             Description: "Devoto sagrado capaz de curar aliados e banir o mal.",
             Archetype: VocationArchetype.Hybrid,
             BaseStats: new BaseStats(8, 8, 12, 10, 14),
-            GrowthModifiers: new BaseStats(0.7, 0.7, 1.0, 0.9, 1.3),
-            CombatProfile: VocationCombatProfile.Hybrid));
+            GrowthModifiers: new BaseStats(0.7, 0.7, 1.0, 0.9, 1.3)));
     }
 
     private static void Register(VocationInfo info) => Vocations[info.Type] = info;

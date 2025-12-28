@@ -3,77 +3,119 @@ using System.Runtime.InteropServices;
 namespace Game.Domain.ValueObjects.Character;
 
 /// <summary>
-/// Representa a progressão de nível do personagem.
-/// Component ECS para tracking de experiência e níveis.
+/// Componente ECS de progressão de nível.
+/// Struct imutável otimizada para cache-friendly iteration.
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public readonly record struct Progress(int Level, long Experience)
+public readonly record struct Progress(int Level, long Experience, long ExperienceToNext)
 {
-    public static Progress Initial => new(1, 0);
-    
     public const int MaxLevel = 500;
+    private const double GrowthRate = 1.15;
+    private const long BaseExperience = 100;
+
+    public static Progress Initial => new(Level: 1, Experience: 0, ExperienceToNext: CalculateExpForLevel(2));
     
+    public static Progress Create(int level, long experience)
+    {
+        return new Progress(
+            Level: Math.Clamp(level, 1, MaxLevel), 
+            Experience: Math.Max(0, experience),
+            ExperienceToNext: CalculateExpForLevel(level + 1));
+    }
+
     /// <summary>
-    /// XP necessário para alcançar um determinado nível.
-    /// Fórmula: 50 * level^2 + 100 * level
+    /// XP total necessário para alcançar um nível específico.
+    /// Fórmula exponencial: 100 * (1.15^(level-1))
     /// </summary>
-    public static long ExperienceForLevel(int level)
+    public static long CalculateExpForLevel(int level)
     {
         if (level <= 1) return 0;
-        return 50L * level * level + 100L * level;
+        return (long)(BaseExperience * Math.Pow(GrowthRate, level - 1));
     }
-    
+
     /// <summary>
-    /// XP necessário para o próximo nível.
+    /// XP acumulado necessário desde o nível 1.
     /// </summary>
-    public long ExperienceToNextLevel => Level >= MaxLevel ? 0 : ExperienceForLevel(Level + 1) - Experience;
-    
+    public static long TotalExpForLevel(int level)
+    {
+        if (level <= 1) return 0;
+        // Soma da série geométrica: a * (r^n - 1) / (r - 1)
+        return (long)(BaseExperience * (Math.Pow(GrowthRate, level - 1) - 1) / (GrowthRate - 1));
+    }
+
     /// <summary>
-    /// Percentual de progresso para o próximo nível (0.0 a 1.0).
+    /// Progresso percentual para o próximo nível (0.0 a 1.0).
     /// </summary>
     public double LevelProgress
     {
         get
         {
             if (Level >= MaxLevel) return 1.0;
-            var currentLevelXp = ExperienceForLevel(Level);
-            var nextLevelXp = ExperienceForLevel(Level + 1);
-            var range = nextLevelXp - currentLevelXp;
-            if (range <= 0) return 1.0;
-            return (double)(Experience - currentLevelXp) / range;
+            var currentLevelExp = TotalExpForLevel(Level);
+            var nextLevelExp = TotalExpForLevel(Level + 1);
+            var range = nextLevelExp - currentLevelExp;
+            return range <= 0 ? 1.0 : (double)(Experience - currentLevelExp) / range;
         }
     }
+
+    public bool CanLevelUp => Level < MaxLevel && Experience >= ExperienceToNext;
     
+    public bool IsMaxLevel => Level >= MaxLevel;
+
     /// <summary>
-    /// Verifica se pode subir de nível.
-    /// </summary>
-    public bool CanLevelUp => Level < MaxLevel && Experience >= ExperienceForLevel(Level + 1);
-    
-    /// <summary>
-    /// Adiciona experiência e retorna novo Progress (possivelmente com level up).
+    /// Adiciona XP e processa level ups automaticamente.
+    /// Retorna novo Progress (imutável).
     /// </summary>
     public Progress AddExperience(long amount)
     {
-        if (amount <= 0 || Level >= MaxLevel) return this;
-        
+        if (amount <= 0 || IsMaxLevel) return this;
+
         var newExp = Experience + amount;
         var newLevel = Level;
-        
+        var newExpToNext = ExperienceToNext;
+
         // Processa múltiplos level ups
-        while (newLevel < MaxLevel && newExp >= ExperienceForLevel(newLevel + 1))
+        while (newLevel < MaxLevel && newExp >= newExpToNext)
         {
+            newExp -= newExpToNext;
             newLevel++;
+            newExpToNext = CalculateExpForLevel(newLevel + 1);
         }
-        
-        return new Progress(newLevel, newExp);
+
+        return new Progress
+        {
+            Level = newLevel,
+            Experience = newExp,
+            ExperienceToNext = newExpToNext
+        };
     }
-    
+
     /// <summary>
-    /// Calcula quantos níveis seriam ganhos com a quantidade de XP.
+    /// Tenta subir apenas um nível.  Útil para sistemas que precisam
+    /// processar efeitos de level up individualmente.
     /// </summary>
-    public int LevelsGainedWith(long experienceAmount)
+    public bool TryLevelUp(out Progress result)
     {
-        var simulated = AddExperience(experienceAmount);
-        return simulated.Level - Level;
+        if (! CanLevelUp)
+        {
+            result = this;
+            return false;
+        }
+
+        result = new Progress
+        {
+            Level = Level + 1,
+            Experience = Experience - ExperienceToNext,
+            ExperienceToNext = CalculateExpForLevel(Level + 2)
+        };
+        return true;
     }
+
+    /// <summary>
+    /// Calcula níveis ganhos com determinada quantidade de XP.
+    /// </summary>
+    public int LevelsGainedWith(long amount) => AddExperience(amount).Level - Level;
+
+    public override string ToString() => 
+        $"Lv. {Level} ({Experience: N0}/{ExperienceToNext:N0} XP)";
 }

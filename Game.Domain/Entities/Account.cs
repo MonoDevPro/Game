@@ -20,7 +20,7 @@ public class Account : BaseEntity, IAggregateRoot
     public bool IsBanned { get; set; } // ADICIONADO
     public DateTime? BannedUntil { get; set; } // ADICIONADO
 
-    public LangType PreferredLanguage { get; set; } = LangType.PT_BR;
+    public int PreferredLanguage { get; set; }
     
     // Relacionamentos
     public virtual ICollection<Character> Characters { get; init; } = new List<Character>();

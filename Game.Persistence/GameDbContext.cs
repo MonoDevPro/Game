@@ -17,7 +17,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Character> Characters { get; set; }
-    public DbSet<PlayerAttributes> Stats { get; set; }
+    public DbSet<PlayerSimulationAttributes> Stats { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<ItemStats> ItemStats { get; set; }
     public DbSet<Inventory> Inventories { get; set; }
@@ -148,7 +148,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             // Deletar Character = Deletar Stats automaticamente
             entity.HasOne(e => e.Stats)
                 .WithOne(s => s.Character)
-                .HasForeignKey<PlayerAttributes>(s => s.CharacterId)
+                .HasForeignKey<PlayerSimulationAttributes>(s => s.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Stats_Character");
 
@@ -175,7 +175,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     /// </summary>
     private void ConfigureStats(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<PlayerAttributes>(entity =>
+        modelBuilder.Entity<PlayerSimulationAttributes>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.ToTable("Stats");

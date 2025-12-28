@@ -1,8 +1,8 @@
 using Arch.Core;
-using GameECS.Shared.Combat.Components;
-using GameECS.Shared.Entities.Components;
-using GameECS.Shared.Entities.Data;
-using GameECS.Shared.Navigation.Components;
+using Game.Domain.AI.Enums;
+using Game.Domain.AI.ValueObjects;
+using Game.Domain.ValueObjects.Combat;
+using Game.Domain.ValueObjects.Map;
 
 namespace GameECS.Server.Entities.Systems;
 

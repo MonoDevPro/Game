@@ -1,5 +1,4 @@
 using System;
-using GameECS.Shared.Navigation.Components;
 using Godot;
 using GodotClient.Core.Autoloads;
 using Player_VocationType = Game.Domain.Player.VocationType;

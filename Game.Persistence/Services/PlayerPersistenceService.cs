@@ -55,8 +55,8 @@ internal sealed class PlayerPersistenceService(
 
     private static void ApplyPosition(Character character, PositionState position, bool updateTimestamp)
     {
-        character.PositionX = position.PositionX;
-        character.PositionY = position.PositionY;
+        character.X = position.PositionX;
+        character.Y = position.PositionY;
         character.PositionZ = position.PositionZ;
         character.Direction = position.Direction;
 

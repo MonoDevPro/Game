@@ -1,8 +1,11 @@
 using Arch.Core;
-using GameECS.Shared.Combat.Components;
-using GameECS.Shared.Entities.Components;
-using GameECS.Shared.Entities.Data;
-using GameECS.Shared.Navigation.Components;
+using Game.Domain.AI.Enums;
+using Game.Domain.AI.ValueObjects;
+using Game.Domain.Enums;
+using Game.Domain.ValueObjects.Combat;
+using Game.Domain.ValueObjects.Identitys;
+using Game.Domain.ValueObjects.Map;
+using Game.Domain.ValueObjects.Vitals;
 
 namespace GameECS.Server.Entities.Systems;
 
@@ -90,25 +93,18 @@ public sealed class NpcAISystem : IDisposable
 /// <summary>
 /// Sistema de respawn de NPCs.
 /// </summary>
-public sealed class NpcRespawnSystem : IDisposable
+public sealed class NpcRespawnSystem(World world) : IDisposable
 {
-    private readonly World _world;
-    private readonly QueryDescription _deadNpcQuery;
+    private readonly QueryDescription _deadNpcQuery = new QueryDescription()
+        .WithAll<Dead, SpawnInfo, Health, NpcAI, GridPosition, Identity>();
     private readonly List<Entity> _toRespawn = new();
-
-    public NpcRespawnSystem(World world)
-    {
-        _world = world;
-        _deadNpcQuery = new QueryDescription()
-            .WithAll<Dead, SpawnInfo, Health, NpcAI, GridPosition, Identity>();
-    }
 
     public void Update(long tick)
     {
         _toRespawn.Clear();
 
         // Coleta entidades para respawn
-        _world.Query(in _deadNpcQuery, (Entity entity, ref Identity identity, ref SpawnInfo spawn) =>
+        world.Query(in _deadNpcQuery, (Entity entity, ref Identity identity, ref SpawnInfo spawn) =>
         {
             if (identity.Type == EntityType.Npc && spawn.ShouldRespawn(tick))
             {
@@ -119,10 +115,10 @@ public sealed class NpcRespawnSystem : IDisposable
         // Processa respawn fora da query
         foreach (var entity in _toRespawn)
         {
-            ref var health = ref _world.Get<Health>(entity);
-            ref var position = ref _world.Get<GridPosition>(entity);
-            ref var ai = ref _world.Get<NpcAI>(entity);
-            ref var spawn = ref _world.Get<SpawnInfo>(entity);
+            ref var health = ref world.Get<Health>(entity);
+            ref var position = ref world.Get<GridPosition>(entity);
+            ref var ai = ref world.Get<NpcAI>(entity);
+            ref var spawn = ref world.Get<SpawnInfo>(entity);
 
             health.Reset();
             position.X = spawn.SpawnX;
@@ -131,39 +127,8 @@ public sealed class NpcRespawnSystem : IDisposable
             ai.TargetEntityId = 0;
             spawn.DeathTick = 0;
 
-            _world.Remove<Dead>(entity);
+            world.Remove<Dead>(entity);
         }
-    }
-
-    public void Dispose() { }
-}
-
-/// <summary>
-/// Sistema de aggro.
-/// </summary>
-public sealed class AggroSystem : IDisposable
-{
-    private readonly World _world;
-    private readonly QueryDescription _aggroQuery;
-
-    public AggroSystem(World world)
-    {
-        _world = world;
-        _aggroQuery = new QueryDescription()
-            .WithAll<AggroTable, NpcAI>()
-            .WithNone<Dead>();
-    }
-
-    public void Update(long tick)
-    {
-        _world.Query(in _aggroQuery, (ref AggroTable aggro, ref NpcAI ai) =>
-        {
-            // Decay de 1% por tick quando fora de combate
-            if (ai.State == NpcAIState.Idle || ai.State == NpcAIState.Returning)
-            {
-                aggro.DecayThreat(0.01f);
-            }
-        });
     }
 
     public void Dispose() { }

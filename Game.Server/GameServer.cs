@@ -16,7 +16,6 @@ using Game.Server.Security;
 using Game.Server.Sessions;
 using GameECS.Server;
 using GameECS.Shared.Entities.Data;
-using GameECS.Shared.Navigation.Data;
 
 namespace Game.Server;
 
