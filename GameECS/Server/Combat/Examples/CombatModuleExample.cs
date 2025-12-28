@@ -1,6 +1,6 @@
 using Arch.Core;
-using Game.Domain.Attributes.Stats.ValueObjects;
-using Game.Domain.Commons.Enums;
+using Game.Domain.ValueObjects.Attributes;
+using Game.Domain.Enums;
 using GameECS.Client.Combat;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Components;

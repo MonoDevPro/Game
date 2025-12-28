@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Game.Domain.Commons.Enums;
+using Game.Domain.Enums;
 using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Components;
 using GameECS.Shared.Entities.Data;
