@@ -224,7 +224,15 @@ public sealed class ServerGameSimulation : IDisposable
     /// </summary>
     public MovementSnapshot GetMovementSnapshot(Entity entity)
     {
-        return _navigation.GetSnapshot(entity, _currentTick);
+        var snapshot = _navigation.GetSnapshot(entity, _currentTick);
+        
+        // Use NetworkId instead of internal entity.Id for client synchronization
+        if (_world.TryGet<NetworkId>(entity, out var networkId))
+        {
+            snapshot = snapshot with { EntityId = networkId.Value };
+        }
+        
+        return snapshot;
     }
 
     /// <summary>
