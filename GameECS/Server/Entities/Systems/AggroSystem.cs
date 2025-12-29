@@ -1,4 +1,6 @@
 using Arch.Core;
+using Arch.System;
+using Arch.System.SourceGenerator;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
 using Game.Domain.Combat.ValueObjects;
@@ -8,23 +10,16 @@ namespace GameECS.Systems;
 /// <summary>
 /// Sistema de aggro.
 /// </summary>
-public sealed class AggroSystem(World world) : IDisposable
+public sealed partial class AggroSystem(World world) : BaseSystem<World,long>(world), IDisposable
 {
-    private readonly QueryDescription _aggroQuery = new QueryDescription()
-        .WithAll<AggroTable, NpcAI>()
-        .WithNone<Dead>();
-
-    public void Update(long tick)
+    [Query]
+    [All<AggroTable, NpcAI>, None<Dead>]
+    private void Update([Data] in long tick, ref AggroTable aggro, ref NpcAI ai)
     {
-        world.Query(in _aggroQuery, (ref AggroTable aggro, ref NpcAI ai) =>
-        {
             // Decay de 1% por tick quando fora de combate
-            if (ai.State == NpcAIState.Idle || ai.State == NpcAIState.Returning)
-            {
-                aggro.DecayThreat(0.01f);
-            }
-        });
+        if (ai.State == NpcAIState.Idle || ai.State == NpcAIState.Returning)
+        {
+            aggro.DecayThreat(0.01f);
+        }
     }
-
-    public void Dispose() { }
 }
