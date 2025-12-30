@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Domain.Maps;
+using Game.Domain.Entities;
+using Game.Domain.Enums;
 using Game.Domain.Player;
 using Game.DTOs.Chat;
 using Game.DTOs.Menu;
@@ -15,6 +16,7 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using GameECS.Server;
+using GameECS.Modules.Navigation.Shared.Data;
 using GameECS.Shared.Entities.Data;
 
 namespace Game.Server;
@@ -485,8 +487,8 @@ public sealed class GameServer : IDisposable
                     accountId,
                     packet.Name,
                     1,
-                    (VocationType)packet.Vocation,
-                    (Game.Domain.Enums.GenderType)packet.Gender
+                    packet.Vocation,
+                    packet.Gender
                 ), CancellationToken.None);
 
             if (!creationResult.Success || creationResult.Character is null)
@@ -625,6 +627,8 @@ public sealed class GameServer : IDisposable
                 _networkManager.SendUnconnected(remoteEndPoint, response);
                 return;
             }
+
+            account!.Characters.Remove(character);
 
             // ✅ 6. Envia resposta de sucesso
             var successResponse = UnconnectedCharacterDeleteResponsePacket.Ok(packet.CharacterId);
@@ -806,7 +810,9 @@ public sealed class GameServer : IDisposable
             if (_simulation.TryGetEntity(peer.Id, out var entity))
             {
                 var snapshot = _simulation.GetMovementSnapshot(entity);
+                snapshot.NetworkId = peer.Id;
                 _networkManager.SendToPeer(peer, snapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+                _networkManager.SendToAllExcept(peer, snapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             }
         }
     }

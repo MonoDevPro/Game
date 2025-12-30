@@ -1,8 +1,9 @@
 using System;
 using Godot;
 using GodotClient.Core.Autoloads;
-using Player_VocationType = Game.Domain.Player.VocationType;
-using VocationType = GameECS.Shared.Entities.Data.VocationType;
+using MovementDirection = Game.Domain.Enums.DirectionType;
+using GenderType = Game.Domain.Enums.GenderType;
+using VocationType = Game.Domain.Enums.VocationType;
 
 namespace GodotClient.Simulation.Visuals;
 
@@ -121,7 +122,7 @@ public abstract partial class DefaultVisual : Node2D
     {
         if (Sprite is null) return;
         
-        var spriteFrames = AssetManager.Instance.GetSpriteFrames((Player_VocationType)vocation, gender);
+        var spriteFrames = AssetManager.Instance.GetSpriteFrames(vocation, gender);
         Sprite.SpriteFrames = spriteFrames;
     }
 

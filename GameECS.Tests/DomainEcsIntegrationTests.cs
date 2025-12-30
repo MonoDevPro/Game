@@ -15,7 +15,7 @@ using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
 using Game.Domain.ValueObjects.Vitals;
 using GameECS.Core;
-using GameECS.Data;
+using GameECS.Shared.Entities.Data;
 using Xunit;
 
 namespace GameECS.Tests;

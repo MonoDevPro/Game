@@ -1,4 +1,5 @@
 using Game.Domain.Player;
+using Game.Domain.Entities;
 using Game.Persistence.Interfaces;
 using Game.Server.Security;
 

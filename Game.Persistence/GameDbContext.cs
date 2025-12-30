@@ -1,7 +1,8 @@
 using Game.Domain.Player;
 using Game.Domain.ValueObjects.Equipment;
 using Game.Domain.Entities;
-using Game.Domain.Entities;
+using EquipmentSlotEntity = Game.Domain.Entities.EquipmentSlot;
+using Game.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Game.Persistence;
@@ -22,7 +23,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     public DbSet<ItemStats> ItemStats { get; set; }
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<InventorySlot> InventorySlots { get; set; }
-    public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
+    public DbSet<EquipmentSlotEntity> EquipmentSlots { get; set; }
     public DbSet<Map> Maps { get; set; }
 
     // ========== MODEL CONFIGURATION ==========
@@ -390,7 +391,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
     /// </summary>
     private void ConfigureEquipmentSlot(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<EquipmentSlot>(entity =>
+        modelBuilder.Entity<EquipmentSlotEntity>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.ToTable("EquipmentSlots");
@@ -446,7 +447,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 Weight = 1,
                 IconPath = "icons/health_potion.png",
                 RequiredLevel = 1,
-                RequiredVocation = null,
+                RequiredVocation = VocationType.None,
                 IsActive = true
             },
             new Item
@@ -454,7 +455,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 Id = 2,
                 Name = "Iron Sword",
                 Description = "Uma espada de ferro básica",
-                Type = ItemType.Weapon,
+                Type = ItemType.MainHand,
                 StackSize = 1,
                 Weight = 10,
                 IconPath = "icons/iron_sword.png",
@@ -467,12 +468,12 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 Id = 3,
                 Name = "Leather Armor",
                 Description = "Armadura leve de couro",
-                Type = ItemType.Armor,
+                Type = ItemType.Chest,
                 StackSize = 1,
                 Weight = 15,
                 IconPath = "icons/leather_armor.png",
                 RequiredLevel = 3,
-                RequiredVocation = null,
+                RequiredVocation = VocationType.None,
                 IsActive = true
             },
             new Item
@@ -480,7 +481,7 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
                 Id = 4,
                 Name = "Magic Staff",
                 Description = "Cajado mágico para magos",
-                Type = ItemType.Weapon,
+                Type = ItemType.MainHand,
                 StackSize = 1,
                 Weight = 8,
                 IconPath = "icons/magic_staff.png",

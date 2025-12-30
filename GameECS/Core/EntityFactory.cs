@@ -9,7 +9,7 @@ using Game.Domain.Player;
 using Game.Domain.ValueObjects.Character;
 using Game.Domain.ValueObjects.Identitys;
 using Game.Domain.ValueObjects.Map;
-using GameECS.Data;
+using GameECS.Shared.Entities.Data;
 
 namespace GameECS.Core;
 

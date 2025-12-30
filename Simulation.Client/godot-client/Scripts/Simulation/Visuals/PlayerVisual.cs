@@ -1,8 +1,8 @@
+using Game.Domain.Enums;
 using GameECS.Client;
-using GameECS.Modules.Entities.Shared.Data;
-using GameECS.Shared.Combat.Data;
 using GameECS.Shared.Entities.Data;
 using Godot;
+using MovementDirection = Game.Domain.Enums.DirectionType;
 
 namespace GodotClient.Simulation.Visuals;
 
@@ -37,6 +37,5 @@ public sealed partial class PlayerVisual : DefaultVisual, IEntityVisual
         UpdateAnimationState((MovementDirection)snapshot.Direction, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
-        UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
     }
 }

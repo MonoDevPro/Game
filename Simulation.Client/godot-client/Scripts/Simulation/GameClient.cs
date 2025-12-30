@@ -1,10 +1,10 @@
 using System;
 using Game.DTOs.Chat;
 using Game.Network.Abstractions;
+using Game.Domain.Combat.ValueObjects;
+using Game.Domain.ValueObjects.Vitals;
 using GameECS.Client;
-using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Modules.Navigation.Shared.Data;
-using GameECS.Shared.Combat.Components;
 using GameECS.Shared.Entities.Data;
 using Godot;
 using GodotClient.Core.Autoloads;

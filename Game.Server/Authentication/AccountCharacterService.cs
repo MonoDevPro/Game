@@ -1,3 +1,5 @@
+using Game.Domain.Entities;
+using Game.Domain.Enums;
 using Game.Domain.Player;
 using Game.Persistence.Interfaces;
 
@@ -109,6 +111,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
             // ✅ Verificar nome duplicado
             if (await unitOfWork.Characters.ExistsByNameAsync(characterInfo.Name, cancellationToken))
             {
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return CharacterCreationResult.Failure("Nome do personagem já está em uso.");
             }
 
@@ -139,6 +142,7 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         }
         catch (Exception ex)
         {
+            await unitOfWork.RollbackTransactionAsync(cancellationToken);
             logger.LogError(ex, "Error creating character: {CharacterName}", characterInfo.Name);
             return CharacterCreationResult.Failure("Erro ao criar personagem.");
         }
@@ -247,23 +251,15 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
             _ => (10, 10, 10, 10, 10)
         };
         
-        var maxHp = CalculateMaxHp(constitution, level);
-        var maxMp = CalculateMaxMp(spirit, intelligence, 1);
-        
-        return new Stats
-        {
-            CharacterId = character.Id,
-            Character = character,
-            Level = level,
-            Experience = 0,
-            BaseStrength = strength,
-            BaseDexterity = dexterity,
-            BaseIntelligence = intelligence,
-            BaseConstitution = constitution,
-            BaseSpirit = spirit,
-            CurrentHp = maxHp,
-            CurrentMp = maxMp
-        };
+        character.Level = level;
+        character.Experience = 0;
+        character.Strength = strength;
+        character.Dexterity = dexterity;
+        character.Intelligence = intelligence;
+        character.Constitution = constitution;
+        character.Spirit = spirit;
+
+        return PlayerSimulationAttributes.Create(character);
     }
     
     private static Inventory CreateInitialInventory(Character character)
@@ -274,17 +270,5 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
             Character = character,
             Capacity = DefaultInventoryCapacity
         };
-    }
-    
-    private static int CalculateMaxHp(int constitution, int level)
-    {
-        // HP = (Constitution * 10) + (Level * 5)
-        return (constitution * 10) + (level * 5);
-    }
-    
-    private static int CalculateMaxMp(int spirit, int intelligence, int level)
-    {
-        // MP = ((Spirit + Intelligence) * 5) + (Level * 3)
-        return ((spirit + intelligence) * 5) + (level * 3);
     }
 }

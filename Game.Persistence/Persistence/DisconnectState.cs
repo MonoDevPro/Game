@@ -11,7 +11,7 @@ public sealed record DisconnectPersistenceDto
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
     public required int PositionZ { get; init; }
-    public required byte Dir { get; init; }
+    public required int Dir { get; init; }
     public int CurrentHp { get; init; }
     public int CurrentMp { get; init; }
     

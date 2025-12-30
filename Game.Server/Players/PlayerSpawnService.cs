@@ -1,4 +1,8 @@
 using Arch.Core;
+using Game.Domain.Enums;
+using Game.Domain.Player.ValueObjects;
+using Game.Domain.ValueObjects.Map;
+using Game.Domain.ValueObjects.Vitals;
 using Game.Server.Sessions;
 using GameECS.Server;
 
@@ -61,11 +65,20 @@ public sealed class PlayerSpawnService(
         
         if (simulation.World.IsAlive(entity))
         {
+            if (simulation.World.TryGet<GridPosition>(entity, out var position))
+            {
+                character.PositionX = position.X;
+                character.PositionY = position.Y;
+                character.PositionZ = 0;
+            }
+
             if (simulation.World.TryGet<Health>(entity, out var health) &&
                 simulation.World.TryGet<Mana>(entity, out var mana))
             {
-                character.Stats.CurrentHp = health.Current;
-                character.Stats.CurrentMp = mana.Current;
+                character.Stats.CurrentHp = (int)health.Current;
+                character.Stats.CurrentMp = (int)mana.Current;
+                character.Stats.MaxHp = (int)health.Maximum;
+                character.Stats.MaxMp = (int)mana.Maximum;
             }
         }
         
@@ -82,16 +95,13 @@ public sealed class PlayerSpawnService(
             Direction: character.Direction,
             Hp: character.Stats.CurrentHp,
             MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
             Mp: character.Stats.CurrentMp,
             MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
-            MovementSpeed: (float)character.Stats.MovementSpeed,
-            AttackSpeed: (float)character.Stats.AttackSpeed,
-            PhysicalAttack: character.Stats.PhysicalAttack,
-            MagicAttack: character.Stats.MagicAttack,
-            PhysicalDefense: character.Stats.PhysicalDefense,
-            MagicDefense: character.Stats.MagicDefense
+            Strength: (int)character.Strength,
+            Dexterity: (int)character.Dexterity,
+            Intelligence: (int)character.Intelligence,
+            Constitution: (int)character.Constitution,
+            Spirit: (int)character.Spirit
         );
     }
 }

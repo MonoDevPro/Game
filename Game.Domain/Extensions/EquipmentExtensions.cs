@@ -6,10 +6,28 @@ namespace Game.Domain.Extensions;
 public static class EquipmentExtensions
 {
     public static bool IsEquipment(this ItemType itemType)
-        => itemType == ItemType.Equipment;
+        => itemType == ItemType.Head ||
+           itemType == ItemType.Chest ||
+           itemType == ItemType.Legs ||
+           itemType == ItemType.Feet ||
+           itemType == ItemType.Hands ||
+           itemType == ItemType.MainHand ||
+           itemType == ItemType.OffHand ||
+           itemType == ItemType.Accessory1 ||
+           itemType == ItemType.Accessory2 ||
+           itemType == ItemType.Accessory3;
     
     public static bool MatchesEquipmentSlot(this ItemType itemType, EquipmentSlotType slotType)
-        => itemType == ItemType.Equipment && slotType != EquipmentSlotType.None;
+        => (itemType == ItemType.Head && slotType == EquipmentSlotType.Head) ||
+           (itemType == ItemType.Chest && slotType == EquipmentSlotType.Chest) ||
+           (itemType == ItemType.Legs && slotType == EquipmentSlotType.Legs) ||
+           (itemType == ItemType.Feet && slotType == EquipmentSlotType.Feet) ||
+           (itemType == ItemType.Hands && slotType == EquipmentSlotType.Hands) ||
+           (itemType == ItemType.MainHand && slotType == EquipmentSlotType.MainHand) ||
+           (itemType == ItemType.OffHand && slotType == EquipmentSlotType.OffHand) ||
+           (itemType == ItemType.Accessory1 && slotType == EquipmentSlotType.Accessory1) ||
+           (itemType == ItemType.Accessory2 && slotType == EquipmentSlotType.Accessory2) ||
+           (itemType == ItemType.Accessory3 && slotType == EquipmentSlotType.Accessory3);
     
         /// <summary>
     /// Verifica se o personagem pode equipar o item no slot especificado.

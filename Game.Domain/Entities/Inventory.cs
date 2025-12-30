@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Game.Domain.Commons;
 
 namespace Game.Domain.Entities;
@@ -11,15 +13,15 @@ public class Inventory : BaseEntity
     public const int MaxCapacity = 30;
     
     public int CharacterId { get; init; }
-    public int Capacity { get; private set; }
+    public Character? Character { get; set; }
+    public int Capacity { get; set; }
     
-    private readonly List<InventorySlot> _slots = new();
-    public IReadOnlyList<InventorySlot> Slots => _slots;
+    public List<InventorySlot> Slots { get; set; } = new();
     
     /// <summary>
     /// Número de slots ocupados.
     /// </summary>
-    public int UsedSlots => _slots.Count;
+    public int UsedSlots => Slots.Count;
     
     /// <summary>
     /// Slots livres disponíveis.
@@ -45,9 +47,9 @@ public class Inventory : BaseEntity
         // Se empilhável, tenta empilhar em slots existentes
         if (maxStackSize > 1)
         {
-            for (int i = 0; i < _slots.Count && remaining > 0; i++)
+            for (int i = 0; i < Slots.Count && remaining > 0; i++)
             {
-                var slot = _slots[i];
+                var slot = Slots[i];
                 if (slot.ItemId == itemId && slot.Quantity < maxStackSize)
                 {
                     int canAdd = Math.Min(remaining, maxStackSize - slot.Quantity);
@@ -67,7 +69,7 @@ public class Inventory : BaseEntity
             
             int toAdd = Math.Min(remaining, maxStackSize);
             int newIndex = FindNextFreeSlotIndex();
-            _slots.Add(InventorySlot.Create(newIndex, itemId, toAdd));
+            Slots.Add(InventorySlot.Create(newIndex, itemId, toAdd));
             remaining -= toAdd;
         }
         
@@ -89,15 +91,15 @@ public class Inventory : BaseEntity
         int remaining = quantity;
         
         // Remove dos slots (do último para o primeiro para preservar índices)
-        for (int i = _slots.Count - 1; i >= 0 && remaining > 0; i--)
+        for (int i = Slots.Count - 1; i >= 0 && remaining > 0; i--)
         {
-            var slot = _slots[i];
+            var slot = Slots[i];
             if (slot.ItemId != itemId) continue;
             
             if (slot.Quantity <= remaining)
             {
                 remaining -= slot.Quantity;
-                _slots.RemoveAt(i);
+                Slots.RemoveAt(i);
             }
             else
             {
@@ -114,7 +116,7 @@ public class Inventory : BaseEntity
     /// </summary>
     public int GetItemCount(int itemId)
     {
-        return _slots.Where(s => s.ItemId == itemId).Sum(s => s.Quantity);
+        return Slots.Where(s => s.ItemId == itemId).Sum(s => s.Quantity);
     }
     
     /// <summary>
@@ -130,7 +132,7 @@ public class Inventory : BaseEntity
     /// </summary>
     public InventorySlot? GetSlot(int slotIndex)
     {
-        return _slots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+        return Slots.FirstOrDefault(s => s.SlotIndex == slotIndex);
     }
     
     /// <summary>
@@ -141,7 +143,7 @@ public class Inventory : BaseEntity
         if (toSlotIndex < 0 || toSlotIndex >= Capacity)
             return false;
         
-        var slot = _slots.FirstOrDefault(s => s.SlotIndex == fromSlotIndex);
+        var slot = Slots.FirstOrDefault(s => s.SlotIndex == fromSlotIndex);
         if (slot == null) return false;
         
         slot.SlotIndex = toSlotIndex;
@@ -166,18 +168,18 @@ public class Inventory : BaseEntity
     /// </summary>
     public void Clear()
     {
-        _slots.Clear();
+        Slots.Clear();
     }
     
     private int FindNextFreeSlotIndex()
     {
-        var usedIndices = _slots.Select(s => s.SlotIndex).ToHashSet();
+        var usedIndices = Slots.Select(s => s.SlotIndex).ToHashSet();
         for (int i = 0; i < Capacity; i++)
         {
             if (!usedIndices.Contains(i))
                 return i;
         }
-        return _slots.Count;
+        return Slots.Count;
     }
 }
 
@@ -188,9 +190,14 @@ public class InventorySlot
 {
     public int Id { get; set; }
     public int InventoryId { get; set; }
+    public Inventory? PlayerInventory { get; set; }
     public int SlotIndex { get; set; }
     public int ItemId { get; set; }
+    public Item? Item { get; set; }
     public int Quantity { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset LastUpdatedAt { get; set; }
     
     public bool IsEmpty => ItemId <= 0 || Quantity <= 0;
     

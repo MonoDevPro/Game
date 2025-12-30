@@ -1,4 +1,7 @@
 using Game.Domain.Commons;
+using Game.Domain.Enums;
+using Game.Domain.Player;
+using System.Collections.Generic;
 
 namespace Game.Domain.Entities;
 
@@ -9,13 +12,16 @@ namespace Game.Domain.Entities;
 public class Character : BaseEntity, IAggregateRoot
 {
     public string Name { get; init; } = null!;
-    public int Gender { get; set; }
-    public int Vocation { get; set; }
+    public GenderType Gender { get; set; }
+    public VocationType Vocation { get; set; }
     
     public int Direction { get; set; }
     public int Map { get; set; }
-    public int X { get; set; }
-    public int Y { get; set; }
+    public int PositionX { get; set; }
+    public int PositionY { get; set; }
+    public int PositionZ { get; set; }
+    public int X { get => PositionX; set => PositionX = value; }
+    public int Y { get => PositionY; set => PositionY = value; }
     
     public int Level { get; set; }
     public int Experience { get; set; }
@@ -25,11 +31,6 @@ public class Character : BaseEntity, IAggregateRoot
     public double Intelligence { get; set; }
     public double Constitution { get; set; }
     public double Spirit { get; set; }
-    
-    public int Hp { get; set; }
-    public int MaxHp { get; set; }
-    public int Mp { get; set; }
-    public int MaxMp { get; set; }
     
     // Um personagem tem equipamentos (1:1)
     public int EquipmentsId { get; init; }
@@ -42,4 +43,10 @@ public class Character : BaseEntity, IAggregateRoot
     // Um personagem tem um inventário (1:1)
     public int InventoryId { get; init; }
     public Inventory Inventory { get; set; } = null!;
+
+    // Stats persistidos (1:1)
+    public PlayerSimulationAttributes Stats { get; set; } = null!;
+
+    // Slots de equipamento persistidos
+    public ICollection<EquipmentSlot> Equipment { get; set; } = new List<EquipmentSlot>();
 }

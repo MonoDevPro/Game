@@ -1,5 +1,4 @@
 using Game.Network.Abstractions;
-using GameECS.Client.Navigation.Systems;
 using GameECS.Modules.Navigation.Client.Systems;
 using GameECS.Modules.Navigation.Shared.Data;
 

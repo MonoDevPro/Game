@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using GameECS.Modules.Entities.Shared.Data;
 using GameECS.Shared.Entities.Data;
 using Godot;
 

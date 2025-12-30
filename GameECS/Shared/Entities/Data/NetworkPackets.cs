@@ -1,7 +1,7 @@
 using Game.Domain.Enums;
 using MemoryPack;
 
-namespace GameECS.Data;
+namespace GameECS.Shared.Entities.Data;
 
 /// <summary>
 /// Dados de um jogador para sincronização de rede.
@@ -17,19 +17,16 @@ public partial record struct PlayerDto(
     int X,
     int Y,
     int Z,
-    byte Direction,
+    int Direction,
     int Hp,
     int MaxHp,
-    int HpRegen,
     int Mp,
     int MaxMp,
-    int MpRegen,
-    float MovementSpeed,
-    float AttackSpeed,
-    int PhysicalAttack,
-    int MagicAttack,
-    int PhysicalDefense,
-    int MagicDefense
+    int Strength,
+    int Dexterity,
+    int Intelligence,
+    int Constitution,
+    int Spirit
 );
 
 /// <summary>

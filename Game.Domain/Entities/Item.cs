@@ -25,6 +25,7 @@ public class Item : BaseEntity
     
     // Bônus concedidos ao equipar o item
     public virtual BaseStats BonusStats { get; init; }
+    public ItemStats? Stats { get; set; }
     
     /// <summary>
     /// Verifica se o item é empilhável.
