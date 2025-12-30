@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Game.Domain.Commons.ValueObjects.Map;
 using Game.Domain.Navigation.Core;
 using Game.Domain.Navigation.Data;
 using Game.Domain.Navigation.Enums;
 using Game.Domain.Navigation.ValueObjects;
-using Game.Domain.ValueObjects.Map;
 
 namespace Game.Domain.Navigation;
 

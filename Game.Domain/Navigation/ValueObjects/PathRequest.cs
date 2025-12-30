@@ -1,5 +1,5 @@
+using Game.Domain.Commons.ValueObjects.Map;
 using Game.Domain.Navigation.Enums;
-using Game.Domain.ValueObjects.Map;
 
 namespace Game.Domain.Navigation.ValueObjects;
 

@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Game.Domain.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Map;
 
 namespace Game.Domain.Navigation.ValueObjects;
 

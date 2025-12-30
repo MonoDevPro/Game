@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
-using Game.Domain.Enums;
-using Game.Domain.Extensions;
-using Game.Domain.ValueObjects.Map;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.ValueObjects.Map;
 
 namespace Game.Domain.Navigation.ValueObjects;
 

@@ -1,5 +1,5 @@
 using Game.Domain.Combat.Enums;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 
 namespace Game.Domain.Combat.ValueObjects;
 

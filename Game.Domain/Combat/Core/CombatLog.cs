@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Game.Domain.Combat.Enums;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 
 namespace Game.Domain.Combat.Core;
 

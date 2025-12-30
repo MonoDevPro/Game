@@ -1,5 +1,5 @@
 using Game.Domain.AI.Enums;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 
 namespace Game.Domain.AI.Data;
 

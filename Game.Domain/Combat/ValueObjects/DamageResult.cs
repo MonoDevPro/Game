@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
-using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.Commons.Enums;
 
 namespace Game.Domain.Combat.ValueObjects;
 

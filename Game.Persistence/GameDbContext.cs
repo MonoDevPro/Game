@@ -1,8 +1,7 @@
+using Game.Domain.Commons.Entities;
+using Game.Domain.Commons.Enums;
 using Game.Domain.Player;
-using Game.Domain.ValueObjects.Equipment;
-using Game.Domain.Entities;
-using EquipmentSlotEntity = Game.Domain.Entities.EquipmentSlot;
-using Game.Domain.Enums;
+using EquipmentSlotEntity = Game.Domain.Commons.Entities.EquipmentSlot;
 using Microsoft.EntityFrameworkCore;
 
 namespace Game.Persistence;
@@ -202,24 +201,25 @@ internal class GameDbContext(DbContextOptions<GameDbContext> options) : DbContex
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
             // Ignorar propriedades calculadas (NotMapped)
-            entity.Ignore(e => e.TotalStrength);
-            entity.Ignore(e => e.TotalDexterity);
-            entity.Ignore(e => e.TotalIntelligence);
-            entity.Ignore(e => e.TotalConstitution);
-            entity.Ignore(e => e.TotalSpirit);
-            entity.Ignore(e => e.BonusStrength);
-            entity.Ignore(e => e.BonusDexterity);
-            entity.Ignore(e => e.BonusIntelligence);
-            entity.Ignore(e => e.BonusConstitution);
-            entity.Ignore(e => e.BonusSpirit);
             entity.Ignore(e => e.MaxHp);
             entity.Ignore(e => e.MaxMp);
             entity.Ignore(e => e.PhysicalAttack);
             entity.Ignore(e => e.MagicAttack);
             entity.Ignore(e => e.PhysicalDefense);
             entity.Ignore(e => e.MagicDefense);
-            entity.Ignore(e => e.AttackSpeed);
-            entity.Ignore(e => e.MovementSpeed);
+
+            // Ignorar objetos de domínio complexos que não são entidades mapeáveis
+            entity.Ignore(e => e.Name);
+            entity.Ignore(e => e.Vocation);
+            entity.Ignore(e => e.Progress);
+            entity.Ignore(e => e.Equipment);
+            entity.Ignore(e => e.Stats);
+            entity.Ignore(e => e.CombatStats);
+            entity.Ignore(e => e.Hp);
+            entity.Ignore(e => e.Mp);
+            entity.Ignore(e => e.Position);
+            entity.Ignore(e => e.Ownership);
+            entity.Ignore(e => e.VisibilityConfig);
         });
     }
 
