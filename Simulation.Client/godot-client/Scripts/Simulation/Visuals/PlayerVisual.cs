@@ -1,5 +1,5 @@
 using Game.Domain.Enums;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Godot;
 

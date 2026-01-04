@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Game.Domain.Enums;
-using Game.DTOs.Game;
+using Game.DTOs;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;

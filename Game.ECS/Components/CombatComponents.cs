@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Player;
 
 namespace Game.ECS.Components;
 

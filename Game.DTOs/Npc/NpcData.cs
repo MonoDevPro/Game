@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Game.DTOs.Game.Npc;
+namespace Game.DTOs.Npc;
 
 [MemoryPackable]
 public readonly partial record struct NpcData(

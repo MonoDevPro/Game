@@ -1,5 +1,4 @@
 using Game.Domain.Entities;
-using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,25 +10,16 @@ internal class CharacterRepository(GameDbContext context) : Repository<Character
     {
         return await DbSet
             .AsTracking()
-            .Include(c => c.Stats)
             .Include(c => c.Inventory)
             .Where(c => c.AccountId == accountId)
             .OrderBy(c => c.Id)
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<Character?> GetByIdWithStatsAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await DbSet
-            .Include(c => c.Stats)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-    }
-
-    public async Task<Character?> GetByIdWithStatsAndInventoryAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Character?> GetByIdWithInventoryAsync(int id, CancellationToken cancellationToken = default)
     {
         return await DbSet
             .AsTracking()
-            .Include(c => c.Stats)
             .Include(c => c.Inventory)
             .ThenInclude(i => i.Slots)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -50,7 +40,6 @@ internal class CharacterRepository(GameDbContext context) : Repository<Character
     public async Task<Character?> GetByIdWithRelationsForDeletionAsync(int characterId, CancellationToken cancellationToken = default)
     {
         return await DbSet
-            .Include(c => c.Stats)
             .Include(c => c.Inventory)
             .ThenInclude(i => i.Slots) // Incluir slots para deleção em cascata
             .FirstOrDefaultAsync(c => c.Id == characterId, cancellationToken);

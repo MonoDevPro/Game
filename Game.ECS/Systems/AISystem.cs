@@ -2,7 +2,7 @@ using System. Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.DTOs.Game.Npc;
+using Game.DTOs.Npc;
 using Game.ECS.Components;
 using Game.ECS.Helpers;
 using Game.ECS.Services.Map;

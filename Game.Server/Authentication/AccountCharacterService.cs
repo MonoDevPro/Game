@@ -11,14 +11,6 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
     private const int MinCharacterNameLength = 3;
     private const int MaxCharacterNameLength = 20;
     private const int MaxCharactersPerAccount = 5;
-    private const int DefaultInventoryCapacity = 30;
-    
-    // Posição inicial padrão
-    private const int DefaultSpawnX = 5;
-    private const int DefaultSpawnY = 5;
-    private const int DefaultSpawnZ = 0;
-    private const int DefaultFacingX = 0;
-    private const int DefaultFacingY = 1;
     
     // ========== RECORDS ==========
     
@@ -120,16 +112,9 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
                 AccountId = characterInfo.AccountId,
                 Name = characterInfo.Name,
                 Gender = characterInfo.Gender,
-                Vocation = characterInfo.Vocation,
-                PositionX = DefaultSpawnX,
-                PositionY = DefaultSpawnY,
-                PositionZ = DefaultSpawnZ,
-                FacingX = DefaultFacingX,
-                FacingY = DefaultFacingY
             };
-
-            character.Stats = CreateInitialStats(character, 1, characterInfo.Vocation);
-            character.Inventory = CreateInitialInventory(character);
+            
+            character.CreateInitial(characterInfo.Vocation);
 
             // ✅ Adicionar via repositório
             await unitOfWork.Characters.AddAsync(character, cancellationToken);
@@ -237,57 +222,5 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         }
         
         return (true, null);
-    }
-    
-    private static Stats CreateInitialStats(Character character, int level, VocationType vocation)
-    {
-        // Stats base variam por vocação
-        var (strength, dexterity, intelligence, constitution, spirit) = vocation switch
-        {
-            VocationType.Warrior => (15, 10, 5, 12, 8),
-            VocationType.Archer => (10, 15, 7, 10, 10),
-            VocationType.Mage => (5, 8, 15, 8, 12),
-            _ => (10, 10, 10, 10, 10)
-        };
-        
-        var maxHp = CalculateMaxHp(constitution, level);
-        var maxMp = CalculateMaxMp(spirit, intelligence, 1);
-        
-        return new Stats
-        {
-            CharacterId = character.Id,
-            Character = character,
-            Level = level,
-            Experience = 0,
-            BaseStrength = strength,
-            BaseDexterity = dexterity,
-            BaseIntelligence = intelligence,
-            BaseConstitution = constitution,
-            BaseSpirit = spirit,
-            CurrentHp = maxHp,
-            CurrentMp = maxMp
-        };
-    }
-    
-    private static Inventory CreateInitialInventory(Character character)
-    {
-        return new Inventory
-        {
-            CharacterId = character.Id,
-            Character = character,
-            Capacity = DefaultInventoryCapacity
-        };
-    }
-    
-    private static int CalculateMaxHp(int constitution, int level)
-    {
-        // HP = (Constitution * 10) + (Level * 5)
-        return (constitution * 10) + (level * 5);
-    }
-    
-    private static int CalculateMaxMp(int spirit, int intelligence, int level)
-    {
-        // MP = ((Spirit + Intelligence) * 5) + (Level * 3)
-        return ((spirit + intelligence) * 5) + (level * 3);
     }
 }

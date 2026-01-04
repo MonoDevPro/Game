@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.DTOs.Game;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;

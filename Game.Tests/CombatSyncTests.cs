@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.DTOs.Game;
+using Game.DTOs;
 using Game.Network.Abstractions;
 
 namespace Game.Tests;

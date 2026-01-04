@@ -1,4 +1,4 @@
-namespace Game.DTOs.Game.Npc;
+namespace Game.DTOs.Npc;
 
 public readonly record struct Behaviour(
     BehaviorType BehaviorType,

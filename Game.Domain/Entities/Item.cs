@@ -11,11 +11,11 @@ namespace Game.Domain.Entities;
 public class Item : BaseEntity
 {
     public string Name { get; init; } = null!;
-    public string Description { get; init; } = string.Empty; // ADICIONADO
+    public string Description { get; init; } = string.Empty;
     public ItemType Type { get; init; }
     public int StackSize { get; init; } = 1;
     public int Weight { get; init; }
-    public string IconPath { get; init; } = string.Empty; // ADICIONADO
+    public string IconPath { get; init; } = string.Empty;
     
     // Stats de Equipamento (aplicam-se apenas se Type for Weapon ou Armor)
     public virtual ItemStats? Stats { get; init; }

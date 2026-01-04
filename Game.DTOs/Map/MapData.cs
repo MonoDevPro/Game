@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Game.DTOs.Game.Map;
+namespace Game.DTOs.Map;
 
 [MemoryPackable]
 public readonly partial record struct MapData(

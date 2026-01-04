@@ -1,11 +1,10 @@
 using FluentAssertions;
 using Game.Domain.Entities;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Player;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 

@@ -1,6 +1,6 @@
 using Arch.Core;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 
 namespace Game.ECS.Entities;

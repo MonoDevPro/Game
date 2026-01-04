@@ -2,7 +2,7 @@ using System.IO.Compression;
 using Game.Domain;
 using Game.Domain.Entities;
 using Game.Domain.Enums;
-using Game.DTOs.Game.Map;
+using Game.DTOs.Map;
 
 namespace Game.Core.Extensions;
 

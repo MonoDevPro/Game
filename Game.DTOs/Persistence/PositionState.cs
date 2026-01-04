@@ -4,6 +4,7 @@ namespace Game.DTOs.Persistence;
 /// Snapshot reutilizável de posição/direção para evitar duplicação de campos.
 /// </summary>
 public readonly record struct PositionState(
+    int MapId,
     int PositionX,
     int PositionY,
     int PositionZ,

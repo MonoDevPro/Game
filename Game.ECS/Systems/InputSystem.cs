@@ -2,7 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Events;
 

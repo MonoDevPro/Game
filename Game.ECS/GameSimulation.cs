@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;

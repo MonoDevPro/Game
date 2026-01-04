@@ -11,8 +11,6 @@ internal class AccountRepository(GameDbContext context) : Repository<Account>(co
         return await DbSet
             .AsTracking()
             .Include(a => a.Characters)
-            .ThenInclude(c => c.Stats)
-            .Include(a => a.Characters)
             .ThenInclude(c => c.Inventory)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
@@ -46,8 +44,6 @@ internal class AccountRepository(GameDbContext context) : Repository<Account>(co
     {
         return await DbSet
             .AsTracking()
-            .Include(a => a.Characters)
-            .ThenInclude(c => c.Stats)
             .Include(a => a.Characters)
             .ThenInclude(c => c.Inventory)
             .FirstOrDefaultAsync(a => a.Username == username, cancellationToken);

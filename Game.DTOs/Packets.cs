@@ -1,9 +1,9 @@
-using Game.DTOs.Game.Map;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Map;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using MemoryPack;
 
-namespace Game.DTOs.Game;
+namespace Game.DTOs;
 
 [MemoryPackable]
 public readonly partial record struct InputPacket(InputData Input);

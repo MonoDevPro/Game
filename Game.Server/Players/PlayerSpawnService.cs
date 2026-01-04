@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.Server.Sessions;
@@ -22,33 +22,33 @@ public sealed class PlayerSpawnService(
         var playerSnapshot = new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
-            MapId: 0,
+            MapId: character.MapId,
             Name: character.Name,
             Gender: (byte)character.Gender,
             Vocation: (byte)character.Vocation,
-            X: character.PositionX,
-            Y: character.PositionY,
-            Z: character.PositionZ,
-            DirX: character.FacingX,
-            DirY: character.FacingY,
-            Hp: character.Stats.CurrentHp,
-            MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
-            Mp: character.Stats.CurrentMp,
-            MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
-            MovementSpeed: (float)character.Stats.MovementSpeed,
-            AttackSpeed: (float)character.Stats.AttackSpeed,
-            PhysicalAttack: character.Stats.PhysicalAttack,
-            MagicAttack: character.Stats.MagicAttack,
-            PhysicalDefense: character.Stats.PhysicalDefense,
-            MagicDefense: character.Stats.MagicDefense
+            X: character.PosX,
+            Y: character.PosY,
+            Z: character.PosZ,
+            DirX: character.DirX,
+            DirY: character.DirY,
+            Hp: character.CurrentHp,
+            MaxHp: character.MaxHp,
+            HpRegen: character.HpRegenPerTick(),
+            Mp: character.CurrentMp,
+            MaxMp: character.MaxMp,
+            MpRegen: character.MpRegenPerTick(),
+            MovementSpeed: (float)character.MovementSpeed,
+            AttackSpeed: (float)character.AttackSpeed,
+            PhysicalAttack: character.PhysicalAttack,
+            MagicAttack: character.MagicAttack,
+            PhysicalDefense: character.PhysicalDefense,
+            MagicDefense: character.MagicDefense
         );
 
         var entity = simulation.CreatePlayer(ref playerSnapshot);
         session.Entity = entity;
 
-        logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PositionX, character.PositionY);
+        logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PosX, character.PosY);
         return entity;
     }
 
@@ -86,27 +86,27 @@ public sealed class PlayerSpawnService(
         return new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
-            MapId: 0,
+            MapId: character.MapId,
             Name: character.Name,
             Gender: (byte)character.Gender,
             Vocation: (byte)character.Vocation,
-            X: character.PositionX,
-            Y: character.PositionY,
-            Z: character.PositionZ,
-            DirX: character.FacingX,
-            DirY: character.FacingY,
-            Hp: character.Stats.CurrentHp,
-            MaxHp: character.Stats.MaxHp,
-            HpRegen: character.Stats.HpRegenPerTick(),
-            Mp: character.Stats.CurrentMp,
-            MaxMp: character.Stats.MaxMp,
-            MpRegen: character.Stats.MpRegenPerTick(),
-            MovementSpeed: (float)character.Stats.MovementSpeed,
-            AttackSpeed: (float)character.Stats.AttackSpeed,
-            PhysicalAttack: character.Stats.PhysicalAttack,
-            MagicAttack: character.Stats.MagicAttack,
-            PhysicalDefense: character.Stats.PhysicalDefense,
-            MagicDefense: character.Stats.MagicDefense
+            X: character.PosX,
+            Y: character.PosY,
+            Z: character.PosZ,
+            DirX: character.DirX,
+            DirY: character.DirY,
+            Hp: character.CurrentHp,
+            MaxHp: character.MaxHp,
+            HpRegen: character.HpRegenPerTick(),
+            Mp: character.CurrentMp,
+            MaxMp: character.MaxMp,
+            MpRegen: character.MpRegenPerTick(),
+            MovementSpeed: (float)character.MovementSpeed,
+            AttackSpeed: (float)character.AttackSpeed,
+            PhysicalAttack: character.PhysicalAttack,
+            MagicAttack: character.MagicAttack,
+            PhysicalDefense: character.PhysicalDefense,
+            MagicDefense: character.MagicDefense
         );
     }
 }

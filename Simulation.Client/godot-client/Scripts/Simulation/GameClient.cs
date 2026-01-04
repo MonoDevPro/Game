@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using Game.Core.Extensions;
-using Game.DTOs.Game;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.Network.Abstractions;

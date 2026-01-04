@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using Game.Core.Extensions;
 using Game.Domain.Entities;
-using Game.DTOs.Game;
+using Game.DTOs;
 using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
@@ -254,13 +254,14 @@ public sealed class GameServer : IDisposable
                 var characterPersistData = new DisconnectPersistenceDto
                 {
                     CharacterId = session.SelectedCharacter.Id,
-                    PositionX = session.SelectedCharacter.PositionX,
-                    PositionY = session.SelectedCharacter.PositionY,
-                    PositionZ = session.SelectedCharacter.PositionZ,
-                    DirX = session.SelectedCharacter.FacingX,
-                    DirY = session.SelectedCharacter.FacingY,
-                    CurrentHp = session.SelectedCharacter.Stats.CurrentHp,
-                    CurrentMp = session.SelectedCharacter.Stats.CurrentMp
+                    MapId = session.SelectedCharacter.MapId,
+                    PositionX = session.SelectedCharacter.PosX,
+                    PositionY = session.SelectedCharacter.PosY,
+                    PositionZ = session.SelectedCharacter.PosZ,
+                    DirX = session.SelectedCharacter.DirX,
+                    DirY = session.SelectedCharacter.DirY,
+                    CurrentHp = session.SelectedCharacter.CurrentHp,
+                    CurrentMp = session.SelectedCharacter.CurrentMp
                 };
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
@@ -271,6 +272,7 @@ public sealed class GameServer : IDisposable
                 
                 characterPersistData = characterPersistData with
                 {
+                    MapId = snapshot.MapId,
                     PositionX = snapshot.X,
                     PositionY = snapshot.Y,
                     PositionZ = snapshot.Z,
@@ -390,7 +392,7 @@ public sealed class GameServer : IDisposable
             {
                 Id = c.Id,
                 Name = c.Name,
-                Level = c.Stats.Level,
+                Level = c.Level,
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
@@ -450,7 +452,7 @@ public sealed class GameServer : IDisposable
             {
                 Id = c.Id,
                 Name = c.Name,
-                Level = c.Stats.Level,
+                Level = c.Level,
                 Vocation = c.Vocation,
                 Gender = c.Gender
             }).ToArray();
@@ -509,7 +511,7 @@ public sealed class GameServer : IDisposable
             {
                 Id = creationResult.Character.Id,
                 Name = creationResult.Character.Name,
-                Level = creationResult.Character.Stats.Level,
+                Level = creationResult.Character.Level,
                 Vocation = creationResult.Character.Vocation,
                 Gender = creationResult.Character.Gender
             };

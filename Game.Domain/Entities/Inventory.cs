@@ -7,7 +7,7 @@ namespace Game.Domain.Entities;
 /// </summary>
 public class Inventory : BaseEntity
 {
-    public int Capacity { get; set; } = 30; // Capacidade padrão
+    public int Capacity { get; set; } = 30;
     
     // Relacionamentos
     public int CharacterId { get; init; }

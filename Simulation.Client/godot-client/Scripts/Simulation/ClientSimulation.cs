@@ -1,7 +1,7 @@
 using Arch.Core;
 using Arch.System;
-using Game.DTOs.Game.Npc;
-using Game.DTOs.Game.Player;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS;
 using Game.ECS.Entities;
 using Game.Network.Abstractions;

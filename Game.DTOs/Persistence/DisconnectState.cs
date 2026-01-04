@@ -8,16 +8,17 @@ namespace Game.DTOs.Persistence;
 public sealed record DisconnectPersistenceDto
 {
     public required int CharacterId { get; init; }
+    public required int MapId { get; init; }
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
     public required int PositionZ { get; init; }
     public required int DirX { get; init; }
     public required int DirY { get; init; }
-    public int CurrentHp { get; init; }
-    public int CurrentMp { get; init; }
+    public required int CurrentHp { get; init; }
+    public required int CurrentMp { get; init; }
     
     public override string ToString()
     {
-        return $"DisconnectPersistenceDto(CharacterId={CharacterId}, Position=({PositionX}, {PositionY}), Facing=({DirX}, {DirY}), CurrentHp={CurrentHp}, CurrentMp={CurrentMp})";
+        return $"DisconnectPersistenceDto(CharacterId={CharacterId}, MapId=({MapId}), Position=({PositionX}, {PositionY}), Facing=({DirX}, {DirY}), CurrentHp={CurrentHp}, CurrentMp={CurrentMp})";
     }
 }

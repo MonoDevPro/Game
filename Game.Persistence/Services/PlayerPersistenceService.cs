@@ -55,11 +55,12 @@ internal sealed class PlayerPersistenceService(
 
     private static void ApplyPosition(Character character, PositionState position, bool updateTimestamp)
     {
-        character.PositionX = position.PositionX;
-        character.PositionY = position.PositionY;
-        character.PositionZ = position.PositionZ;
-        character.FacingX = position.DirX;
-        character.FacingY = position.DirY;
+        character.MapId = position.MapId;
+        character.DirX = position.DirX;
+        character.DirY = position.DirY;
+        character.PosX = position.PositionX;
+        character.PosY = position.PositionY;
+        character.PosZ = position.PositionZ;
 
         if (updateTimestamp)
             character.LastUpdatedAt = DateTime.UtcNow;
@@ -88,18 +89,19 @@ internal sealed class PlayerPersistenceService(
     {
         await PersistAsync(
             dto.CharacterId,
-            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                ApplyPosition(character, 
+                ApplyPosition(character,
                     new PositionState(
+                        dto.MapId,
                         dto.PositionX,
                         dto.PositionY, 
                         dto.PositionZ,
                         dto.DirX,
                         dto.DirY), updateTimestamp: true);
-                character.Stats.CurrentHp = dto.CurrentHp;
-                character.Stats.CurrentMp = dto.CurrentMp;
+                character.CurrentHp = dto.CurrentHp;
+                character.CurrentMp = dto.CurrentMp;
                 return true;
             },
             context: "disconnect data",
@@ -115,11 +117,11 @@ internal sealed class PlayerPersistenceService(
     {
         await PersistAsync(
             dto.CharacterId,
-            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                character.Stats.CurrentHp = dto.CurrentHp;
-                character.Stats.CurrentMp = dto.CurrentMp;
+                character.CurrentHp = dto.CurrentHp;
+                character.CurrentMp = dto.CurrentMp;
                 return true;
             },
             context: "vitals",
@@ -135,18 +137,18 @@ internal sealed class PlayerPersistenceService(
     {
         await PersistAsync(
             dto.CharacterId,
-            (repo, ct) => repo.GetByIdWithStatsAsync(dto.CharacterId, ct),
+            (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                character.Stats.Level = dto.Level;
-                character.Stats.Experience = dto.Experience;
-                character.Stats.BaseStrength = dto.BaseStrength;
-                character.Stats.BaseDexterity = dto.BaseDexterity;
-                character.Stats.BaseIntelligence = dto.BaseIntelligence;
-                character.Stats.BaseConstitution = dto.BaseConstitution;
-                character.Stats.BaseSpirit = dto.BaseSpirit;
-                character.Stats.CurrentHp = dto.CurrentHp;
-                character.Stats.CurrentMp = dto.CurrentMp;
+                character.Level = dto.Level;
+                character.Experience = dto.Experience;
+                character.BaseStrength = dto.BaseStrength;
+                character.BaseDexterity = dto.BaseDexterity;
+                character.BaseIntelligence = dto.BaseIntelligence;
+                character.BaseConstitution = dto.BaseConstitution;
+                character.BaseSpirit = dto.BaseSpirit;
+                character.CurrentHp = dto.CurrentHp;
+                character.CurrentMp = dto.CurrentMp;
                 return true;
             },
             context: "stats",
@@ -163,7 +165,7 @@ internal sealed class PlayerPersistenceService(
         try
         {
             var character = await unitOfWork.Characters
-                .GetByIdWithStatsAndInventoryAsync(dto.CharacterId, cancellationToken);
+                .GetByIdWithInventoryAsync(dto.CharacterId, cancellationToken);
 
             if (character?.Inventory is null)
             {
@@ -172,9 +174,6 @@ internal sealed class PlayerPersistenceService(
                     dto.CharacterId);
                 return;
             }
-
-            // ✅ Garantir que a coleção de slots existe
-            character.Inventory.Slots ??= new List<InventorySlot>();
 
             // ✅ Criar dicionário de slots existentes
             var existingSlots = character.Inventory.Slots.ToDictionary(slot => slot.SlotIndex);

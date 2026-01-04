@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.DTOs.Game.Npc;
+using Game.DTOs.Npc;
 
 namespace Game.ECS.Components;
 

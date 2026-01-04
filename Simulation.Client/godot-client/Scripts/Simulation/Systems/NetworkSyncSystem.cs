@@ -1,8 +1,8 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.DTOs.Game;
-using Game.DTOs.Game.Player;
+using Game.DTOs;
+using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
