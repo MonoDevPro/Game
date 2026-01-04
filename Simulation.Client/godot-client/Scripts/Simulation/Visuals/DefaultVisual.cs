@@ -171,7 +171,7 @@ public abstract partial class DefaultVisual : Node2D
         RefreshAnimationSpeeds();
     }
     
-    private DirectionEnum ConvertToFacingEnum(sbyte facingX, sbyte facingY)
+    private DirectionEnum ConvertToFacingEnum(int facingX, int facingY)
     {
         return (facingX, facingY) switch
         {

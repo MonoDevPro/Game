@@ -53,9 +53,6 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         // ======== SISTEMAS DE JOGO ==========
         
-        // 0. NetworkEntity gerencia IDs de rede
-        systems.Add(new NetworkEntitySystem(world, _loggerFactory?.CreateLogger<NetworkEntitySystem>()));
-        
         // 1. Input processa entrada do jogador
         systems.Add(new InputSystem(world));
         

@@ -9,15 +9,8 @@ namespace Game.ECS.Navigation.Systems;
 /// Sistema de movimento do SERVIDOR. 
 /// Baseado em ticks, determinístico, autoritativo.
 /// </summary>
-public sealed class ServerMovementSystem : BaseSystem<World, long>
+public sealed class ServerMovementSystem(World world, NavigationGrid grid) : BaseSystem<World, long>(world)
 {
-    private readonly NavigationGrid _grid;
-
-    public ServerMovementSystem(World world, NavigationGrid grid) : base(world)
-    {
-        _grid = grid;
-    }
-
     public override void Update(in long serverTick)
     {
         // 1. Completa movimentos que terminaram
@@ -79,7 +72,7 @@ public sealed class ServerMovementSystem : BaseSystem<World, long>
             state.Status = PathStatus.Following;
 
             // Pega próximo waypoint
-            var nextPos = path.GetCurrentWaypointAsPosition(_grid. Width);
+            var nextPos = path.GetCurrentWaypointAsPosition(grid. Width);
 
             if (nextPos. X < 0)
             {
@@ -96,7 +89,7 @@ public sealed class ServerMovementSystem : BaseSystem<World, long>
 
             // Tenta mover ocupação para próxima célula
             int entityId = entity.Id;
-            if (! _grid.TryMoveOccupancy(pos.X, pos.Y, nextPos.X, nextPos.Y, entityId))
+            if (! grid.TryMoveOccupancy(pos.X, pos.Y, nextPos.X, nextPos.Y, entityId))
             {
                 // Célula ocupada ou bloqueada
                 HandleBlockedMovement(world, entity, ref state, ref movement, nextPos);
@@ -131,7 +124,7 @@ public sealed class ServerMovementSystem : BaseSystem<World, long>
         GridPosition blockedCell)
     {
         // Verifica quem está bloqueando
-        int blockerId = _grid.GetOccupant(blockedCell. X, blockedCell.Y);
+        int blockerId = grid.GetOccupant(blockedCell. X, blockedCell.Y);
 
         if (! world.Has<WaitingToMove>(entity))
         {

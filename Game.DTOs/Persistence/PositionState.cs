@@ -7,6 +7,6 @@ public readonly record struct PositionState(
     int PositionX,
     int PositionY,
     int PositionZ,
-    sbyte DirX,
-    sbyte DirY
+    int DirX,
+    int DirY
 );

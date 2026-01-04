@@ -6,6 +6,6 @@ namespace Game.DTOs.Game.Player;
 public readonly partial record struct StateData(
     int NetworkId,
     int X, int Y, int Z,
-    sbyte DirX, sbyte DirY,
+    int DirX, int DirY,
     float Speed
 );

@@ -18,20 +18,22 @@ public sealed partial class InputSystem(World world)
     [Query]
     [All<Input, Walkable, Direction, Speed>]
     [None<Dead>]
-    private void ProcessInput(in Entity entity, in Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
+    private void ProcessInput(in Entity entity, ref Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
     {
-        var (nx, ny) = NormalizeInput(input.InputX, input.InputY);
+        NormalizeInput(ref input);
 
         // No movement input: keep facing direction as-is.
         // This prevents "attack while standing still" from zeroing Direction and breaking melee targeting.
-        if (nx == 0 && ny == 0)
+        if (!input.HasInput())
         {
             velocity.Value = 0f;
             return;
         }
-
+        
+        // Movement input detected: update direction and speed.
         var previousDir = direction;
-        direction = new Direction { X = nx, Y = ny };
+        direction.X = input.InputX;
+        direction.Y = input.InputY;
 
         if (previousDir.X != direction.X || previousDir.Y != direction.Y)
         {
@@ -42,7 +44,7 @@ public sealed partial class InputSystem(World world)
         velocity.Value = ComputeCellsPerSecond(in walk, in input.Flags);
     }
     
-    public static float ComputeCellsPerSecond(in Walkable walkable, in InputFlags flags)
+    private static float ComputeCellsPerSecond(in Walkable walkable, in InputFlags flags)
     {
         float speed = walkable.BaseSpeed + walkable.CurrentModifier;
         if (flags.HasFlag(InputFlags.Sprint))
@@ -54,10 +56,9 @@ public sealed partial class InputSystem(World world)
     /// Calcula o novo position e avalia se o movimento é permitido.
     /// Não realiza side-effects.
     /// </summary>
-    public static (sbyte x, sbyte y) NormalizeInput(sbyte inputX, sbyte inputY)
+    private static void NormalizeInput(ref Input input)
     {
-        sbyte nx = inputX switch { < 0 => -1, > 0 => 1, _ => 0 };
-        sbyte ny = inputY switch { < 0 => -1, > 0 => 1, _ => 0 };
-        return (nx, ny);
+        input.InputX = (sbyte)Math.Sign(input.InputX);
+        input.InputY = (sbyte)Math.Sign(input.InputY);
     }
 }

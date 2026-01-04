@@ -11,7 +11,7 @@ namespace Game.ECS.Navigation;
 /// Módulo de navegação para SERVIDOR.
 /// Tick-based, determinístico, sem visual.
 /// </summary>
-public sealed class ServerNavigationModule : IDisposable
+public sealed class NavigationModule : IDisposable
 {
     public NavigationGrid Grid { get; }
     public PathfindingPool Pool { get; }
@@ -22,7 +22,7 @@ public sealed class ServerNavigationModule : IDisposable
     private readonly Group<long> _systems;
     private bool _disposed;
 
-    public ServerNavigationModule(
+    public NavigationModule(
         World world,
         int gridWidth,
         int gridHeight,

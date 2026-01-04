@@ -11,8 +11,8 @@ public sealed record DisconnectPersistenceDto
     public required int PositionX { get; init; }
     public required int PositionY { get; init; }
     public required int PositionZ { get; init; }
-    public required sbyte DirX { get; init; }
-    public required sbyte DirY { get; init; }
+    public required int DirX { get; init; }
+    public required int DirY { get; init; }
     public int CurrentHp { get; init; }
     public int CurrentMp { get; init; }
     

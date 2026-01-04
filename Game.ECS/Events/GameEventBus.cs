@@ -8,9 +8,6 @@ namespace Game.ECS.Events;
 /// </summary>
 public sealed partial class GameEventBus : IDisposable
 {
-    public GameEventBus() { Hook(); }
-    ~GameEventBus() { Dispose(); }
-    
     /// Event handlers -> Lifecycle Events
     public event Action<SpawnEvent>? OnSpawn;
     public event Action<DespawnEvent>? OnDespawn;
@@ -37,6 +34,9 @@ public sealed partial class GameEventBus : IDisposable
     [Event] public void Send(ref DirectionChangedEvent evt) => OnDirectionChanged?.Invoke(evt);
     [Event] public void Send(ref NpcStateChangedEvent evt) => OnNpcStateChanged?.Invoke(evt);
     
+    public GameEventBus() { Hook(); }
+    ~GameEventBus() { Dispose(); }
+    
     private void ReleaseUnmanagedResources()
     {
         Unhook();
@@ -45,9 +45,7 @@ public sealed partial class GameEventBus : IDisposable
     private void Dispose(bool disposing)
     {
         ReleaseUnmanagedResources();
-        if (disposing)
-        {
-        }
+        if (disposing) { }
     }
 
     public void Dispose()

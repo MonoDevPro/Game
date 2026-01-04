@@ -8,20 +8,13 @@ namespace Game. ECS.Navigation. Systems;
 /// <summary>
 /// Processa requisições de pathfinding no servidor.
 /// </summary>
-public sealed class ServerPathRequestSystem : BaseSystem<World, long>
+public sealed class ServerPathRequestSystem(
+    World world,
+    GridPathfindingSystem pathfinder,
+    int maxPerTick = 50)
+    : BaseSystem<World, long>(world)
 {
-    private readonly GridPathfindingSystem _pathfinder;
-    private readonly int _maxPerTick;
     private int _processedThisTick;
-
-    public ServerPathRequestSystem(
-        World world,
-        GridPathfindingSystem pathfinder,
-        int maxPerTick = 50) : base(world)
-    {
-        _pathfinder = pathfinder;
-        _maxPerTick = maxPerTick;
-    }
 
     public override void BeforeUpdate(in long serverTick)
     {
@@ -39,7 +32,7 @@ public sealed class ServerPathRequestSystem : BaseSystem<World, long>
             ref PathState state,
             ref GridPathBuffer buffer) =>
         {
-            if (_processedThisTick >= _maxPerTick)
+            if (_processedThisTick >= maxPerTick)
                 return;
 
             if (state.Status != PathStatus. Pending)
@@ -48,7 +41,7 @@ public sealed class ServerPathRequestSystem : BaseSystem<World, long>
             _processedThisTick++;
             state.Status = PathStatus.Computing;
 
-            var result = _pathfinder.FindPath(
+            var result = pathfinder.FindPath(
                 pos.X, pos. Y,
                 request.TargetX, request.TargetY,
                 ref buffer,
