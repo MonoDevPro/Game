@@ -5,6 +5,8 @@
 /// </summary>
 public abstract class BaseEntity
 {
+    private readonly List<IDomainEvent> _domainEvents = new();
+    
     public int Id { get; set; } // Identificador único da entidade
     
     public bool IsActive { get; set; } = true; // ativo ou inativo
@@ -12,6 +14,36 @@ public abstract class BaseEntity
     public DateTimeOffset CreatedAt { get; set; } 
     
     public DateTimeOffset LastUpdatedAt { get; set; }
+    
+    /// <summary>
+    /// Eventos de domínio pendentes desta entidade.
+    /// </summary>
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    
+    /// <summary>
+    /// Adiciona um evento de domínio à lista de eventos pendentes.
+    /// </summary>
+    protected void AddDomainEvent(IDomainEvent domainEvent)
+    {
+        _domainEvents.Add(domainEvent);
+    }
+    
+    /// <summary>
+    /// Remove um evento de domínio específico.
+    /// </summary>
+    protected void RemoveDomainEvent(IDomainEvent domainEvent)
+    {
+        _domainEvents.Remove(domainEvent);
+    }
+    
+    /// <summary>
+    /// Limpa todos os eventos de domínio pendentes.
+    /// Deve ser chamado após processar os eventos.
+    /// </summary>
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
     
     public override bool Equals(object? obj)
     {
