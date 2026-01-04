@@ -1,5 +1,4 @@
 using Arch.Core;
-using Game.Domain.ValueObjects.Vitals;
 using GameECS.Modules.Navigation.Shared.Data;
 using GameECS.Shared.Entities.Data;
 

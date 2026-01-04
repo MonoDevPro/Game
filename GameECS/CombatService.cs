@@ -1,23 +1,22 @@
 using Arch.Core;
+using Game.Domain.Combat;
 using Game.Domain.Combat.Core;
 using Game.Domain.Combat.Enums;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Attributes;
-using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.ValueObjects.Vitals;
+using Game.Domain.Vocations.ValueObjects;
 
 namespace GameECS.Combat;
 
 /// <summary>
 /// Serviço de combate compartilhado para validações e cálculos.
 /// </summary>
-public sealed class CombatService(CombatConfig config, CombatLog? log = null)
+public sealed class CombatService(CombatLog? log = null)
 {
     private readonly CombatLog _log = log ?? new CombatLog();
 
     public CombatLog Log => _log;
-    public CombatConfig Config => config;
 
     /// <summary>
     /// Valida se um ataque pode ser executado.

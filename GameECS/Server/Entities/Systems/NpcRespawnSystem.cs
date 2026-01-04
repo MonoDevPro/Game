@@ -5,10 +5,10 @@ using Arch.System.SourceGenerator;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.Enums;
-using Game.Domain.ValueObjects.Identitys;
-using Game.Domain.ValueObjects.Map;
-using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.ValueObjects.Identitys;
+using Game.Domain.Commons.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Vitals;
 
 namespace GameECS.Server.Entities.Systems;
 

@@ -1,7 +1,7 @@
 using Game.Domain.AI.Data;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.Interfaces;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 
 namespace GameECS.Shared.Entities.Data;
 

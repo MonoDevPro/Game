@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 using Game.Domain.Player;
 using Game.DTOs.Menu;
 using Game.Network.Abstractions;

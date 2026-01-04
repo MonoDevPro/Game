@@ -2,7 +2,7 @@ using System;
 using Game.DTOs.Chat;
 using Game.Network.Abstractions;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.ValueObjects.Vitals;
+using Game.Domain.Commons.ValueObjects.Vitals;
 using GameECS.Client;
 using GameECS.Modules.Navigation.Shared.Data;
 using GameECS.Shared.Entities.Data;

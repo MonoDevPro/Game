@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;

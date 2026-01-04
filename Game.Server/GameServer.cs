@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Domain.Entities;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Entities;
 using Game.Domain.Player;
 using Game.DTOs.Chat;
 using Game.DTOs.Menu;

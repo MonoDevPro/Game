@@ -3,8 +3,8 @@ using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Domain.AOI.ValueObjects;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.ValueObjects.Identitys;
-using Game.Domain.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Identitys;
+using Game.Domain.Commons.ValueObjects.Map;
 using GameECS.Core;
 
 namespace GameECS.Systems;

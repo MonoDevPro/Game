@@ -1,5 +1,5 @@
-using Game.Domain.Entities;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Entities;
+using Game.Domain.Commons.Enums;
 using Game.Domain.Player;
 using Game.Persistence.Interfaces;
 

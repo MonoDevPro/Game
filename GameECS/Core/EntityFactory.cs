@@ -3,12 +3,12 @@ using Game.Domain.AI.Enums;
 using Game.Domain.AI.Interfaces;
 using Game.Domain.AI.ValueObjects;
 using Game.Domain.AOI.ValueObjects;
-using Game.Domain.Entities.Interfaces;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Entities.Interfaces;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.ValueObjects.Character;
+using Game.Domain.Commons.ValueObjects.Identitys;
+using Game.Domain.Commons.ValueObjects.Map;
 using Game.Domain.Player;
-using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Identitys;
-using Game.Domain.ValueObjects.Map;
 using GameECS.Shared.Entities.Data;
 
 namespace GameECS.Core;

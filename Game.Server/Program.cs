@@ -1,4 +1,4 @@
-using Game.Domain.Entities;
+using Game.Domain.Commons.Entities;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;

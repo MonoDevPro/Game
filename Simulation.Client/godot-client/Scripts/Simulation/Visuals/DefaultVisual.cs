@@ -1,9 +1,9 @@
 using System;
 using Godot;
 using GodotClient.Core.Autoloads;
-using MovementDirection = Game.Domain.Enums.DirectionType;
-using GenderType = Game.Domain.Enums.GenderType;
-using VocationType = Game.Domain.Enums.VocationType;
+using MovementDirection = Game.Domain.Commons.Enums.DirectionType;
+using GenderType = Game.Domain.Commons.Enums.GenderType;
+using VocationType = Game.Domain.Commons.Enums.VocationType;
 
 namespace GodotClient.Simulation.Visuals;
 

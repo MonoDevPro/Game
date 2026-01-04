@@ -2,11 +2,11 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.Extensions;
+using Game.Domain.Commons.ValueObjects.Identitys;
+using Game.Domain.Commons.ValueObjects.Map;
+using Game.Domain.Navigation;
 using Game.Domain.Navigation.Core;
 using Game.Domain.Navigation.ValueObjects;
-using Game.Domain.ValueObjects.Identitys;
-using Game.Domain.ValueObjects.Map;
 using GameECS.Server.Entities.Components;
 
 namespace GameECS.Server.Entities.Systems;

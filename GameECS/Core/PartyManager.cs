@@ -1,7 +1,7 @@
 using Arch.Core;
+using Game.Domain.Commons.ValueObjects.Identitys;
 using Game.Domain.Party.Interfaces;
 using Game.Domain.Party.ValueObjects;
-using Game.Domain.ValueObjects.Identitys;
 
 namespace GameECS.Core;
 

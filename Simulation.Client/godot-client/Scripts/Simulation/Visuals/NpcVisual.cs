@@ -1,8 +1,8 @@
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 using GameECS.Client;
 using GameECS.Shared.Entities.Data;
 using Godot;
-using MovementDirection = Game.Domain.Enums.DirectionType;
+using MovementDirection = Game.Domain.Commons.Enums.DirectionType;
 
 namespace GodotClient.Simulation.Visuals;
 
@@ -28,7 +28,7 @@ public sealed partial class NpcVisual : DefaultVisual, IEntityVisual
     
     public void UpdateFromSnapshot(NpcData snapshot)
     {
-        LoadSprite(VocationType.Warrior, Game.Domain.Enums.GenderType.Male); // TODO: Default sprite for NPCs, need load prefabs based on NPC type
+        LoadSprite(VocationType.Warrior, GenderType.Male); // TODO: Default sprite for NPCs, need load prefabs based on NPC type
         UpdateName(snapshot.Name);
         UpdateAnimationState((MovementDirection)snapshot.Direction, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));

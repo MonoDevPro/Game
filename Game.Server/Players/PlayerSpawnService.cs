@@ -1,8 +1,7 @@
 using Arch.Core;
-using Game.Domain.Enums;
+using Game.Domain.Commons.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Vitals;
 using Game.Domain.Player.ValueObjects;
-using Game.Domain.ValueObjects.Map;
-using Game.Domain.ValueObjects.Vitals;
 using Game.Server.Sessions;
 using GameECS.Server;
 

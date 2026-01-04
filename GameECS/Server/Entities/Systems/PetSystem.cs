@@ -4,7 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.Domain.AI.Enums;
 using Game.Domain.AI.ValueObjects;
 using Game.Domain.Combat.ValueObjects;
-using Game.Domain.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Map;
 
 namespace GameECS.Systems;
 

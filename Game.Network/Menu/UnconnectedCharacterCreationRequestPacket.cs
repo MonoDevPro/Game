@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 using MemoryPack;
 
 namespace Game.Network.Packets.Menu;

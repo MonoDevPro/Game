@@ -1,18 +1,21 @@
 using Arch.Core;
-using Game.Domain.DomainServices;
-using Game.Domain.Enums;
 using Game.Domain.AOI.ValueObjects;
+using Game.Domain.Combat.ValueObjects;
+using Game.Domain.Commons.Entities;
+using Game.Domain.Commons.Enums;
+using Game.Domain.Commons.ValueObjects.Attributes;
+using Game.Domain.Commons.ValueObjects.Character;
+using Game.Domain.Commons.ValueObjects.Equipment;
+using Game.Domain.Commons.ValueObjects.Identitys;
+using Game.Domain.Commons.ValueObjects.Map;
+using Game.Domain.Commons.ValueObjects.Vitals;
+using Game.Domain.Navigation;
 using Game.Domain.Navigation.Core;
 using Game.Domain.Navigation.ValueObjects;
 using Game.Domain.Player;
 using Game.Domain.Player.ValueObjects;
-using Game.Domain.ValueObjects.Attributes;
-using Game.Domain.ValueObjects.Character;
-using Game.Domain.ValueObjects.Identitys;
-using Game.Domain.ValueObjects.Map;
-using Game.Domain.ValueObjects.Vitals;
-using Game.Domain.Entities;
-using Game.Domain.ValueObjects.Equipment;
+using Game.Domain.Vocations;
+using Game.Domain.Vocations.ValueObjects;
 using GameECS.Core;
 using GameECS.Modules.Navigation.Shared.Data;
 using GameECS.Server.Entities.Components;
@@ -145,7 +148,7 @@ public sealed class ServerGameSimulation : IDisposable
         var targetY = movement.IsMoving ? movement.TargetCell.Y : (input.HasInput ? input.TargetY : position.Y);
         var direction = movement.IsMoving
             ? (byte)movement.Direction
-            : (byte)Game.Domain.Extensions.DirectionExtensions.FromPositions(position, new GridPosition(targetX, targetY));
+            : (byte)DirectionExtensions.FromPositions(position, new GridPosition(targetX, targetY));
 
         return new MovementSnapshot
         {

@@ -1,8 +1,8 @@
-using Game.Domain.Enums;
+using Game.Domain.Commons.Enums;
 using GameECS.Client;
 using GameECS.Shared.Entities.Data;
 using Godot;
-using MovementDirection = Game.Domain.Enums.DirectionType;
+using MovementDirection = Game.Domain.Commons.Enums.DirectionType;
 
 namespace GodotClient.Simulation.Visuals;
 
@@ -32,7 +32,7 @@ public sealed partial class PlayerVisual : DefaultVisual, IEntityVisual
 
     public void UpdateFromSnapshot(in PlayerDto snapshot)
     {
-        LoadSprite((VocationType)snapshot.Vocation, (Game.Domain.Enums.GenderType)snapshot.Gender);
+        LoadSprite((VocationType)snapshot.Vocation, (GenderType)snapshot.Gender);
         UpdateName(snapshot.Name);
         UpdateAnimationState((MovementDirection)snapshot.Direction, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));

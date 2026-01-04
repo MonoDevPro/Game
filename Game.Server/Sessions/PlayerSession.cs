@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.Domain.Entities;
+using Game.Domain.Commons.Entities;
 using Game.Domain.Player;
 using Game.Network.Abstractions;
 
