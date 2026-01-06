@@ -1,7 +1,9 @@
 using Arch.Core;
 using Arch.System;
+using Arch.System.SourceGenerator;
 using Game. ECS.Navigation. Components;
 using Game. ECS.Navigation. Core;
+using Game.ECS.Services.Pathfinding;
 
 namespace Game.ECS.Navigation.Systems;
 
@@ -9,53 +11,38 @@ namespace Game.ECS.Navigation.Systems;
 /// Sistema de movimento do SERVIDOR. 
 /// Baseado em ticks, determinístico, autoritativo.
 /// </summary>
-public sealed class ServerMovementSystem(World world, NavigationGrid grid) : BaseSystem<World, long>(world)
+public sealed partial class ServerMovementSystem(World world, NavigationGrid grid) : BaseSystem<World, long>(world)
 {
-    public override void Update(in long serverTick)
+    [Query]
+    [All<GridPosition, MovementState, GridNavigationAgent>]
+    private void CompleteMovements(
+        [Data]in long serverTick,
+        in Entity entity,
+        ref GridPosition pos,
+        ref MovementState movement)
     {
-        // 1. Completa movimentos que terminaram
-        CompleteMovements(World, serverTick);
-        
-        // 2. Inicia novos movimentos do path buffer
-        ProcessPathFollowing(World, serverTick);
+        if (! movement.IsMoving)
+            return;
+
+        if (movement.ShouldComplete(serverTick))
+        {
+            // Atualiza posição para célula destino
+            pos = movement.TargetCell;
+            movement. Complete();
+        }
     }
 
-    private void CompleteMovements(World world, long serverTick)
+    [Query]
+    [All<GridPosition, MovementState, ServerAgentSettings, GridNavigationAgent>]
+    private void ProcessPathFollowing([Data]in long serverTick, in Entity entity,
+        ref GridPosition pos,
+        ref MovementState movement,
+        ref PathBuffer path,
+        ref PathfindingRequest state,
+        ref ServerAgentSettings settings)
     {
-        var query = new QueryDescription()
-            .WithAll<GridPosition, ServerMovementState, GridNavigationAgent>();
-
-        world.Query(in query, (Entity entity,
-            ref GridPosition pos,
-            ref ServerMovementState movement) =>
-        {
-            if (! movement.IsMoving)
-                return;
-
-            if (movement.ShouldComplete(serverTick))
-            {
-                // Atualiza posição para célula destino
-                pos = movement.TargetCell;
-                movement. Complete();
-            }
-        });
-    }
-
-    private void ProcessPathFollowing(World world, long serverTick)
-    {
-        var query = new QueryDescription()
-            .WithAll<GridPosition, ServerMovementState, GridPathBuffer, 
-                     PathState, ServerAgentSettings, GridNavigationAgent>();
-
-        world.Query(in query, (Entity entity,
-            ref GridPosition pos,
-            ref ServerMovementState movement,
-            ref GridPathBuffer path,
-            ref PathState state,
-            ref ServerAgentSettings settings) =>
-        {
             // Só processa se tem caminho pronto ou seguindo
-            if (state.Status != PathStatus.Ready && state.Status != PathStatus.Following)
+            if (state.Status != PathfindingStatus.InProgress && state.Status != PathfindingStatus.Pending)
                 return;
 
             // Ainda está movendo?  Espera
@@ -65,18 +52,18 @@ public sealed class ServerMovementSystem(World world, NavigationGrid grid) : Bas
             // Caminho completo? 
             if (! path.IsValid || path.IsComplete)
             {
-                CompleteNavigation(world, entity, ref state, ref movement);
+                CompleteNavigation(World, entity, ref state, ref movement);
                 return;
             }
 
-            state.Status = PathStatus.Following;
+            state.Status = PathfindingStatus.InProgress;
 
             // Pega próximo waypoint
             var nextPos = path.GetCurrentWaypointAsPosition(grid. Width);
 
             if (nextPos. X < 0)
             {
-                CompleteNavigation(world, entity, ref state, ref movement);
+                CompleteNavigation(World, entity, ref state, ref movement);
                 return;
             }
 
@@ -92,7 +79,7 @@ public sealed class ServerMovementSystem(World world, NavigationGrid grid) : Bas
             if (! grid.TryMoveOccupancy(pos.X, pos.Y, nextPos.X, nextPos.Y, entityId))
             {
                 // Célula ocupada ou bloqueada
-                HandleBlockedMovement(world, entity, ref state, ref movement, nextPos);
+                HandleBlockedMovement(World, entity, ref state, ref movement, nextPos);
                 return;
             }
 
@@ -104,23 +91,22 @@ public sealed class ServerMovementSystem(World world, NavigationGrid grid) : Bas
             path.AdvanceWaypoint();
 
             // Adiciona tag IsMoving
-            if (! world.Has<IsMoving>(entity))
-                world.Add<IsMoving>(entity);
+            if (!World.Has<IsMoving>(entity))
+                World.Add<IsMoving>(entity);
 
             // Remove tags de espera
-            if (world.Has<WaitingToMove>(entity))
-                world.Remove<WaitingToMove>(entity);
+            if (World.Has<WaitingToMove>(entity))
+                World.Remove<WaitingToMove>(entity);
 
-            if (world.Has<ReachedDestination>(entity))
-                world.Remove<ReachedDestination>(entity);
-        });
+            if (World.Has<ReachedDestination>(entity))
+                World.Remove<ReachedDestination>(entity);
     }
 
     private void HandleBlockedMovement(
         World world,
         Entity entity,
-        ref PathState state,
-        ref ServerMovementState movement,
+        ref PathfindingRequest state,
+        ref MovementState movement,
         GridPosition blockedCell)
     {
         // Verifica quem está bloqueando
@@ -141,10 +127,10 @@ public sealed class ServerMovementSystem(World world, NavigationGrid grid) : Bas
     private static void CompleteNavigation(
         World world,
         Entity entity,
-        ref PathState state,
-        ref ServerMovementState movement)
+        ref PathfindingRequest state,
+        ref MovementState movement)
     {
-        state.Status = PathStatus. Completed;
+        state.Status = PathfindingStatus.Completed;
         movement.Reset();
 
         if (world.Has<IsMoving>(entity))

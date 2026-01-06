@@ -12,12 +12,13 @@ namespace Game.Persistence;
 /// Author: MonoDevPro
 /// Date: 2025-10-13
 /// </summary>
-internal class UnitOfWork(GameDbContext context) : IUnitOfWork
+public class UnitOfWork(GameDbContext context) : IUnitOfWork
 {
     private IDbContextTransaction? _transaction;
     
     public IAccountRepository Accounts { get; } = new AccountRepository(context);
     public ICharacterRepository Characters { get; } = new CharacterRepository(context);
+    public IMapRepository Maps { get; } = new MapRepository(context);
 
     // ========== TRANSACTION MANAGEMENT ==========
     

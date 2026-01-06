@@ -1,4 +1,4 @@
-namespace Game.DTOs.Persistence;
+namespace Game.Domain.Data;
 
 /// <summary>
 /// DTO para persistir stats completos do personagem.
@@ -13,6 +13,4 @@ public sealed record StatsState
     public required int BaseIntelligence { get; init; }
     public required int BaseConstitution { get; init; }
     public required int BaseSpirit { get; init; }
-    public required int CurrentHp { get; init; }
-    public required int CurrentMp { get; init; }
 }

@@ -1,6 +1,3 @@
-using Game.Domain.Entities;
-using Game.Domain.Enums;
-using Game.ECS.Services;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;
@@ -13,10 +10,12 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
+using Game.Server.Simulation.Maps;
 
 var builder = CreateHostBuilder(args);
 
 var host = builder.Build();
+
 host.Run();
 
 return;
@@ -46,26 +45,13 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<NpcSpawnService>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<ChatService>();
-            services.AddSingleton<NetworkSecurity>(p => new NetworkSecurity(maxMessagesPerSecond: 50));
+            services.AddSingleton(new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
             
-            services.AddSingleton<Map>(sp =>
-            {
-                int width = 200;
-                int height = 200;
-                int layers = 1;
-                var map = new Map("ExampleMap", width, height, layers, borderBlocked: true);
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        var tileType = (x == 0 || y == 0 || x == width - 1 || y == height - 1) ? TileType.Wall : TileType.Floor;
-                        map.SetTile(x, y, 0, new Tile { Type = tileType, CollisionMask = 0 });
-                    }
-                }
-                return map;
-            });
-            
+            // Maps (DB + cache)
+            services.AddSingleton<IMapCacheService, MapCacheService>();
+            services.AddSingleton<IMapLoader, DbMapLoader>();
+
             // Network
             //services.AddSingleton<GameServer>();
             services.AddNetworking(new NetworkOptions

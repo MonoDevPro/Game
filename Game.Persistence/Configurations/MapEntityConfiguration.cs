@@ -51,7 +51,7 @@ public class MapEntityConfiguration : IEntityTypeConfiguration<Map>
             .Metadata.SetValueComparer(comparer);
 
         builder.Property(m => m.Tiles)
-            .HasColumnType("bytea") // PostgreSQL - use "varbinary(max)" para SQL Server
+            .HasColumnType("BLOB")
             .IsRequired();
         
         // Propriedade calculada - ignorar
@@ -60,8 +60,43 @@ public class MapEntityConfiguration : IEntityTypeConfiguration<Map>
         // Índices
         builder.HasIndex(m => m.Name);
         builder.HasIndex(m => new { m.Width, m.Height });
+        
+        // Seed inicial de mapas
+        SeedMaps(builder);
     }
+    
+    private void SeedMaps(EntityTypeBuilder<Map> entity)
+    {
+        var maps = new[]
+        {
+            new Map(name: "Starter Village", width: 100, height: 100, layers: 1, borderBlocked: true)
+            {
+                Id = 1,
+                IsActive = true
+            },
+            new Map(name: "Forest of Beginnings", width: 200, height: 200, layers: 1, borderBlocked: true)
+            {
+                Id = 2,
+                IsActive = true
+            }
+        };
+        
+        // Inicializar tiles padrão
+        foreach (var map in maps)
+        {
+            for (int i = 0; i < map.Tiles.Length; i++)
+            {
+                map.Tiles[i] = new Tile
+                {
+                    Type = TileType.Floor,
+                    CollisionMask = 0
+                };
+            }
+        }
 
+        entity.HasData(maps);
+    }
+    
     private static byte[] SerializeTiles(Tile[] tiles)
     {
         if (tiles.Length == 0)

@@ -1,5 +1,5 @@
+using Game.Domain.Data;
 using Game.Domain.Entities;
-using Game.DTOs.Persistence;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
@@ -53,17 +53,9 @@ internal sealed class PlayerPersistenceService(
         }
     }
 
-    private static void ApplyPosition(Character character, PositionState position, bool updateTimestamp)
+    private static void ApplyState(Character character, CharacterState state)
     {
-        character.MapId = position.MapId;
-        character.DirX = position.DirX;
-        character.DirY = position.DirY;
-        character.PosX = position.PositionX;
-        character.PosY = position.PositionY;
-        character.PosZ = position.PositionZ;
-
-        if (updateTimestamp)
-            character.LastUpdatedAt = DateTime.UtcNow;
+        character.ApplyCharacterState(state);
     }
 
     private async Task SaveCharacterAsync(Character character, string context, CancellationToken cancellationToken, Action? extraLog = null)
@@ -84,7 +76,7 @@ internal sealed class PlayerPersistenceService(
     /// Não persiste inventário para evitar overhead e problemas de sincronização.
     /// </summary>
     public async Task PersistDisconnectAsync(
-        DisconnectPersistenceDto dto,
+        CharacterState dto,
         CancellationToken cancellationToken = default)
     {
         await PersistAsync(
@@ -92,16 +84,17 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                ApplyPosition(character,
-                    new PositionState(
+                ApplyState(character,
+                    new CharacterState(
+                        dto.CharacterId,
                         dto.MapId,
                         dto.PositionX,
                         dto.PositionY, 
                         dto.PositionZ,
                         dto.DirX,
-                        dto.DirY), updateTimestamp: true);
-                character.CurrentHp = dto.CurrentHp;
-                character.CurrentMp = dto.CurrentMp;
+                        dto.DirY,
+                        dto.CurrentHp,
+                        dto.CurrentMp));
                 return true;
             },
             context: "disconnect data",
@@ -120,8 +113,7 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                character.CurrentHp = dto.CurrentHp;
-                character.CurrentMp = dto.CurrentMp;
+                character.ApplyVitalsState(dto);
                 return true;
             },
             context: "vitals",
@@ -140,15 +132,7 @@ internal sealed class PlayerPersistenceService(
             (repo, ct) => repo.GetByIdAsync(dto.CharacterId, ct),
             character =>
             {
-                character.Level = dto.Level;
-                character.Experience = dto.Experience;
-                character.BaseStrength = dto.BaseStrength;
-                character.BaseDexterity = dto.BaseDexterity;
-                character.BaseIntelligence = dto.BaseIntelligence;
-                character.BaseConstitution = dto.BaseConstitution;
-                character.BaseSpirit = dto.BaseSpirit;
-                character.CurrentHp = dto.CurrentHp;
-                character.CurrentMp = dto.CurrentMp;
+                character.ApplyStatsState(dto);
                 return true;
             },
             context: "stats",

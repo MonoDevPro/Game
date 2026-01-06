@@ -7,6 +7,7 @@ public interface IUnitOfWork : IDisposable
     // Repositórios
     IAccountRepository Accounts { get; }
     ICharacterRepository Characters { get; }
+    IMapRepository Maps { get; }
     
     // Transações
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

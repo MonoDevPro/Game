@@ -1,4 +1,4 @@
-namespace Game.DTOs.Persistence;
+namespace Game.Domain.Data;
 
 /// <summary>
 /// DTO para persistir vitals (HP/MP) do personagem.

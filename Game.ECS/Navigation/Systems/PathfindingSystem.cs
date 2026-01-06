@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Game.ECS.Navigation.Components;
 
 namespace Game.ECS.Services.Pathfinding. Systems;
 
@@ -50,7 +51,7 @@ public sealed class PathfindingSystem(
         startNode.Y = request. StartY;
         startNode. GCost = 0;
         startNode.HCost = Heuristic(request.StartX, request.StartY, request.GoalX, request.GoalY);
-        startNode. ParentIndex = -1;
+        startNode.ParentIndex = -1;
         startNode.Generation = generation; // ← Marca como válido nesta geração
 
         BinaryHeap. Push(ctx, startIndex, ctx.Nodes);

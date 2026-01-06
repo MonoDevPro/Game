@@ -18,7 +18,7 @@ public sealed partial class InputSystem(World world)
     [Query]
     [All<Input, Walkable, Direction, Speed>]
     [None<Dead>]
-    private void ProcessInput(in Entity entity, ref Input input, ref Direction direction, ref Speed velocity, in Walkable walk)
+    private void ProcessInput(in Entity entity, ref Input input, ref Direction direction, ref Speed speed, in Walkable walk)
     {
         NormalizeInput(ref input);
 
@@ -26,7 +26,7 @@ public sealed partial class InputSystem(World world)
         // This prevents "attack while standing still" from zeroing Direction and breaking melee targeting.
         if (!input.HasInput())
         {
-            velocity.Value = 0f;
+            speed.Value = 0f;
             return;
         }
         
@@ -41,7 +41,7 @@ public sealed partial class InputSystem(World world)
             EventBus.Send(ref dirChangedEvent);
         }
 
-        velocity.Value = ComputeCellsPerSecond(in walk, in input.Flags);
+        speed.Value = ComputeCellsPerSecond(in walk, in input.Flags);
     }
     
     private static float ComputeCellsPerSecond(in Walkable walkable, in InputFlags flags)

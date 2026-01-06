@@ -1,11 +1,11 @@
 using Arch.Core;
 using Arch.System;
-using Game.Domain.Entities;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
+using Game.Server.Simulation.Maps;
 using Game.Server.Simulation.Systems;
 
 namespace Game.Server.Simulation;
@@ -20,15 +20,18 @@ public sealed class ServerGameSimulation : GameSimulation
     private readonly ILoggerFactory? _loggerFactory;
     
     public ServerGameSimulation(
-        INetworkManager network, 
-        IEnumerable<Map> maps,
+        INetworkManager network,
+        IMapLoader mapLoader,
         ILoggerFactory? factory = null)
         : base(factory?.CreateLogger<ServerGameSimulation>())
     {
         _networkManager = network;
         _loggerFactory = factory;
-        
-        // Registra os mapas fornecidos
+
+        // Load + register maps for collision/spatial.
+        // This runs synchronously during startup (constructor), so simulation is ready before the server loop begins.
+        var maps = mapLoader.LoadAllAsync(CancellationToken.None).GetAwaiter().GetResult();
+
         foreach (var map in maps)
         {
             MapIndex.RegisterMap(
@@ -37,11 +40,11 @@ public sealed class ServerGameSimulation : GameSimulation
                 new MapSpatial()
             );
         }
-        
-        // Configura os sistemas
+
+        // Configure systems
         ConfigureSystems(World, Systems);
-        
-        // Inicializa os sistemas
+
+        // Initialize systems
         Systems.Initialize();
     }
 

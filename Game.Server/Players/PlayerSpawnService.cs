@@ -19,7 +19,7 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var playerSnapshot = new PlayerData(
+        var data = new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: character.MapId,
@@ -45,7 +45,7 @@ public sealed class PlayerSpawnService(
             MagicDefense: character.MagicDefense
         );
 
-        var entity = simulation.CreatePlayer(ref playerSnapshot);
+        var entity = simulation.CreatePlayer(ref data);
         session.Entity = entity;
 
         logger.LogInformation("Spawned player {Name} at ({PosX}, {PosY})", character.Name, character.PosX, character.PosY);

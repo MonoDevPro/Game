@@ -4,6 +4,7 @@ using Game.ECS. Navigation.Components;
 using Game.ECS.Navigation.Core;
 using Game. ECS.Navigation. Data;
 using Game.ECS.Navigation.Systems;
+using Game.ECS.Services.Pathfinding;
 
 namespace Game.ECS.Navigation;
 
@@ -68,8 +69,8 @@ public sealed class NavigationModule : IDisposable
 
         var entity = _world.Create(
             new GridPosition(gridX, gridY),
-            new ServerMovementState(),
-            new GridPathBuffer(),
+            new MovementState(),
+            new PathBuffer(),
             new PathState { Status = PathStatus. None },
             actualSettings,
             new GridNavigationAgent()
@@ -97,7 +98,7 @@ public sealed class NavigationModule : IDisposable
         state.Status = PathStatus.Pending;
         state.FailReason = PathFailReason.None;
 
-        ref var buffer = ref _world.Get<GridPathBuffer>(entity);
+        ref var buffer = ref _world.Get<PathBuffer>(entity);
         buffer.Clear();
 
         if (_world.Has<ReachedDestination>(entity))
@@ -120,16 +121,16 @@ public sealed class NavigationModule : IDisposable
     /// </summary>
     public void StopMovement(Entity entity)
     {
-        if (_world.Has<PathRequest>(entity))
-            _world.Remove<PathRequest>(entity);
+        if (_world.Has<PathfindingRequest>(entity))
+            _world.Remove<PathfindingRequest>(entity);
 
         ref var state = ref _world.Get<PathState>(entity);
         state.Status = PathStatus.Cancelled;
 
-        ref var buffer = ref _world.Get<GridPathBuffer>(entity);
+        ref var buffer = ref _world.Get<PathBuffer>(entity);
         buffer.Clear();
 
-        ref var movement = ref _world.Get<ServerMovementState>(entity);
+        ref var movement = ref _world.Get<MovementState>(entity);
         movement.Reset();
 
         if (_world. Has<IsMoving>(entity))
@@ -152,7 +153,7 @@ public sealed class NavigationModule : IDisposable
     public MovementSnapshot GetSnapshot(Entity entity, long currentTick)
     {
         var pos = _world.Get<GridPosition>(entity);
-        var movement = _world.Get<ServerMovementState>(entity);
+        var movement = _world.Get<MovementState>(entity);
 
         return new MovementSnapshot
         {

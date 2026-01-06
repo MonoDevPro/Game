@@ -8,8 +8,6 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
 {
     // ========== CONSTANTS ==========
     
-    private const int MinCharacterNameLength = 3;
-    private const int MaxCharacterNameLength = 20;
     private const int MaxCharactersPerAccount = 5;
     
     // ========== RECORDS ==========
@@ -81,19 +79,12 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         var nameTrimmed = characterInfo.Name.Trim();
         characterInfo = characterInfo with { Name = nameTrimmed };
 
-        var validationResult = ValidateCharacterName(characterInfo.Name);
-        if (!validationResult.IsValid)
-            return CharacterCreationResult.Failure(validationResult.ErrorMessage!);
-
         // ✅ Usar repositório especializado
         var characterCount = await unitOfWork.Characters.CountByAccountIdAsync(
             characterInfo.AccountId, cancellationToken);
 
         if (characterCount >= MaxCharactersPerAccount)
-        {
-            return CharacterCreationResult.Failure(
-                $"Limite de {MaxCharactersPerAccount} personagens por conta atingido.");
-        }
+            return CharacterCreationResult.Failure($"Limite de {MaxCharactersPerAccount} personagens por conta atingido.");
 
         // ✅ Usar transação do Unit of Work
         await unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -102,28 +93,26 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
         {
             // ✅ Verificar nome duplicado
             if (await unitOfWork.Characters.ExistsByNameAsync(characterInfo.Name, cancellationToken))
-            {
                 return CharacterCreationResult.Failure("Nome do personagem já está em uso.");
-            }
 
-            // Criar personagem
-            var character = new Character
+            try
             {
-                AccountId = characterInfo.AccountId,
-                Name = characterInfo.Name,
-                Gender = characterInfo.Gender,
-            };
-            
-            character.CreateInitial(characterInfo.Vocation);
-
-            // ✅ Adicionar via repositório
-            await unitOfWork.Characters.AddAsync(character, cancellationToken);
-            await unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            logger.LogInformation("New character created: {CharacterName} (ID: {CharacterId})",
-                character.Name, character.Id);
-
-            return CharacterCreationResult.From(character);
+                // Criar personagem
+                var character = new Character(accountId: characterInfo.AccountId, name: characterInfo.Name,
+                    gender: characterInfo.Gender, vocation: characterInfo.Vocation);
+                
+                await unitOfWork.Characters.AddAsync(character, cancellationToken);
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
+                
+                logger.LogInformation("New character created: {CharacterName} (ID: {CharacterId})",
+                    character.Name, character.Id);
+                return CharacterCreationResult.From(character);
+            }
+            catch (ArgumentException e)
+            {
+                logger.LogError(e, "Validation error creating character: {CharacterName}", characterInfo.Name);
+                return CharacterCreationResult.Failure(e.Message);
+            }
         }
         catch (Exception ex)
         {
@@ -182,45 +171,5 @@ public sealed class AccountCharacterService(IUnitOfWork unitOfWork, ILogger<Acco
             logger.LogError(ex, "Error deleting character {CharacterId}", characterId);
             return CharacterDeletionResult.Failure("Erro ao deletar personagem.");
         }
-    }
-    
-    // ========== PRIVATE METHODS ==========
-    
-    private static (bool IsValid, string? ErrorMessage) ValidateCharacterName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return (false, "Nome do personagem é obrigatório.");
-        }
-        
-        if (name.Length < MinCharacterNameLength)
-        {
-            return (false, $"Nome deve ter no mínimo {MinCharacterNameLength} caracteres.");
-        }
-        
-        if (name.Length > MaxCharacterNameLength)
-        {
-            return (false, $"Nome deve ter no máximo {MaxCharacterNameLength} caracteres.");
-        }
-        
-        // Validar caracteres permitidos (apenas letras, sem números ou símbolos)
-        if (!name.All(c => char.IsLetter(c) || c == ' '))
-        {
-            return (false, "Nome pode conter apenas letras e espaços.");
-        }
-        
-        // Validar que não começa/termina com espaço
-        if (name.StartsWith(' ') || name.EndsWith(' '))
-        {
-            return (false, "Nome não pode começar ou terminar com espaço.");
-        }
-        
-        // Validar espaços consecutivos
-        if (name.Contains("  "))
-        {
-            return (false, "Nome não pode conter espaços consecutivos.");
-        }
-        
-        return (true, null);
     }
 }

@@ -1,36 +1,38 @@
 using System.Runtime.CompilerServices;
+using Game.ECS.Navigation.Components;
 
-namespace Game. ECS.Navigation. Core;
+namespace Game.ECS.Services.Pathfinding;
 
 /// <summary>
-/// Binary Heap estático otimizado para A*.
+/// Binary Heap inline otimizado para A* - zero alocação
 /// </summary>
 public static class BinaryHeap
 {
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public static void Push(PathfindingContext ctx, int nodeIndex)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Push(PathfindingContext ctx, int nodeIndex, PathNode[] nodes)
     {
         int i = ctx.OpenCount++;
         ctx.OpenHeap[i] = nodeIndex;
-        
+            
         // Bubble up
         while (i > 0)
         {
             int parent = (i - 1) >> 1;
-            if (ctx. Nodes[ctx.OpenHeap[i]].FCost >= ctx.Nodes[ctx.OpenHeap[parent]].FCost)
+            if (nodes[ctx.OpenHeap[i]].FCost >= nodes[ctx.OpenHeap[parent]].FCost)
                 break;
-            
+                
+            // Swap
             (ctx.OpenHeap[i], ctx.OpenHeap[parent]) = (ctx.OpenHeap[parent], ctx.OpenHeap[i]);
             i = parent;
         }
     }
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public static int Pop(PathfindingContext ctx)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Pop(PathfindingContext ctx, PathNode[] nodes)
     {
         int result = ctx.OpenHeap[0];
-        ctx.OpenHeap[0] = ctx. OpenHeap[--ctx.OpenCount];
-        
+        ctx.OpenHeap[0] = ctx.OpenHeap[--ctx.OpenCount];
+            
         // Bubble down
         int i = 0;
         while (true)
@@ -40,16 +42,16 @@ public static class BinaryHeap
             int smallest = i;
 
             if (left < ctx.OpenCount && 
-                ctx. Nodes[ctx.OpenHeap[left]].FCost < ctx.Nodes[ctx.OpenHeap[smallest]].FCost)
+                nodes[ctx.OpenHeap[left]].FCost < nodes[ctx.OpenHeap[smallest]].FCost)
                 smallest = left;
 
             if (right < ctx.OpenCount && 
-                ctx. Nodes[ctx. OpenHeap[right]].FCost < ctx.Nodes[ctx.OpenHeap[smallest]].FCost)
+                nodes[ctx.OpenHeap[right]]. FCost < nodes[ctx.OpenHeap[smallest]].FCost)
                 smallest = right;
 
             if (smallest == i) break;
 
-            (ctx.OpenHeap[i], ctx. OpenHeap[smallest]) = (ctx.OpenHeap[smallest], ctx.OpenHeap[i]);
+            (ctx.OpenHeap[i], ctx.OpenHeap[smallest]) = (ctx.OpenHeap[smallest], ctx.OpenHeap[i]);
             i = smallest;
         }
 
@@ -57,5 +59,18 @@ public static class BinaryHeap
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsEmpty(PathfindingContext ctx) => ctx.OpenCount == 0;
+    public static void UpdatePriority(PathfindingContext ctx, int heapIndex, PathNode[] nodes)
+    {
+        // Bubble up após atualização de custo
+        int i = heapIndex;
+        while (i > 0)
+        {
+            int parent = (i - 1) >> 1;
+            if (nodes[ctx.OpenHeap[i]].FCost >= nodes[ctx.OpenHeap[parent]].FCost)
+                break;
+                
+            (ctx.OpenHeap[i], ctx.OpenHeap[parent]) = (ctx.OpenHeap[parent], ctx.OpenHeap[i]);
+            i = parent;
+        }
+    }
 }

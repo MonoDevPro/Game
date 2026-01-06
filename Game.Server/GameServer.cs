@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net;
 using Game.Core.Extensions;
+using Game.Domain.Data;
 using Game.Domain.Entities;
 using Game.DTOs;
-using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.Network.Abstractions;
@@ -17,6 +17,7 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
+using Game.Server.Simulation.Maps;
 
 namespace Game.Server;
 
@@ -47,6 +48,7 @@ public sealed class GameServer : IDisposable
     private readonly NetworkSecurity? _security;
     private readonly SessionTokenManager _tokenManager;
     private readonly ChatService _chatService;
+    private readonly IMapCacheService _mapCache;
     private readonly int _connectionTimeoutSeconds;
     
     private readonly ConcurrentDictionary<int, PendingConnection> _pendingConnections = new();
@@ -64,6 +66,7 @@ public sealed class GameServer : IDisposable
         ILogger<GameServer> logger,
         SessionTokenManager tokenManager, // ✅ Injetar
         ChatService chatService,
+        IMapCacheService mapCache,
         NetworkSecurity? security = null)
     {
         _networkManager = networkManager;
@@ -76,6 +79,7 @@ public sealed class GameServer : IDisposable
         _security = security;
         _tokenManager = tokenManager;
         _chatService = chatService;
+        _mapCache = mapCache;
 
         _connectionTimeoutSeconds = configuration.GetValue("GameServer:ConnectionTimeoutSeconds", 10);
 
@@ -249,20 +253,18 @@ public sealed class GameServer : IDisposable
         // ✅ Remove sessão de jogo (se existir)
         if (_sessionManager.TryRemoveByPeer(peer, out var session))
         {
-            if (session is not null && session.SelectedCharacter is not null)
+            if (session?.SelectedCharacter != null)
             {
-                var characterPersistData = new DisconnectPersistenceDto
-                {
-                    CharacterId = session.SelectedCharacter.Id,
-                    MapId = session.SelectedCharacter.MapId,
-                    PositionX = session.SelectedCharacter.PosX,
-                    PositionY = session.SelectedCharacter.PosY,
-                    PositionZ = session.SelectedCharacter.PosZ,
-                    DirX = session.SelectedCharacter.DirX,
-                    DirY = session.SelectedCharacter.DirY,
-                    CurrentHp = session.SelectedCharacter.CurrentHp,
-                    CurrentMp = session.SelectedCharacter.CurrentMp
-                };
+                var characterPersistData = new CharacterState(
+                    CharacterId: session.SelectedCharacter.Id,
+                    MapId: session.SelectedCharacter.MapId,
+                    PositionX: session.SelectedCharacter.PosX,
+                    PositionY: session.SelectedCharacter.PosY,
+                    PositionZ: session.SelectedCharacter.PosZ,
+                    DirX: session.SelectedCharacter.DirX,
+                    DirY: session.SelectedCharacter.DirY,
+                    CurrentHp: session.SelectedCharacter.CurrentHp,
+                    CurrentMp: session.SelectedCharacter.CurrentMp);
                 
                 // ✅ Persistir dados de desconexão (leve e rápido)
                 var snapshot = _simulation.World
@@ -741,8 +743,9 @@ public sealed class GameServer : IDisposable
             // ✅ 6. Broadcasta spawn para outros jogadores
             _networkManager.SendToAllExcept(peer, localSnapshot, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
 
-            // ✅ 7. Envia dados do mapa
-            var currentMap = scope.ServiceProvider.GetRequiredService<Map>();
+            // ✅ 7. Envia dados do mapa (carregado do DB + cache)
+            var mapId = session.SelectedCharacter.MapId;
+            var currentMap = await _mapCache.GetMapAsync(mapId);
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
             var gameDataPacket = new PlayerJoinPacket

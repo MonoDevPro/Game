@@ -2,101 +2,19 @@ using System.Runtime.CompilerServices;
 
 namespace Game.ECS.Navigation.Components;
 
-#region Request Components
+public enum PathfindingStatus : byte { Pending, InProgress, Completed, Failed, Cancelled }
 
-/// <summary>
-/// Componente que solicita cálculo de caminho. 
-/// Usa coordenadas de GRID (inteiros).
-/// </summary>
-public struct PathRequest
+public struct PathfindingRequest
 {
-    public int TargetX;
-    public int TargetY;
-    public PathRequestFlags Flags;
-    public PathPriority Priority;
+    public int StartX;
+    public int StartY;
+    public int GoalX;
+    public int GoalY;
     public int MaxSearchNodes;
-
-    public static PathRequest Create(int targetX, int targetY, PathPriority priority = PathPriority.Normal)
-    {
-        return new PathRequest
-        {
-            TargetX = targetX,
-            TargetY = targetY,
-            Priority = priority,
-            Flags = PathRequestFlags.None,
-            MaxSearchNodes = 0 // 0 = usar default
-        };
-    }
+    public PathfindingStatus Status;
 }
 
-[Flags]
-public enum PathRequestFlags :  byte
-{
-    None = 0,
-    AllowPartialPath = 1 << 0,
-    IgnoreDynamicObstacles = 1 << 1,
-    CardinalOnly = 1 << 2,  // Apenas movimento cardinal (sem diagonal)
-    Revalidate = 1 << 3     // Revalida caminho existente
-}
-
-public enum PathPriority : byte
-{
-    Low = 0,
-    Normal = 1,
-    High = 2,
-    Critical = 3
-}
-
-#endregion
-
-#region State Components
-
-/// <summary>
-/// Estado atual do pathfinding da entidade.
-/// </summary>
-public struct PathState
-{
-    public PathStatus Status;
-    public float TimeRequested;
-    public float TimeCompleted;
-    public int AttemptCount;
-    public PathFailReason FailReason;
-}
-
-public enum PathStatus : byte
-{
-    None = 0,
-    Pending,
-    Computing,
-    Ready,
-    Following,
-    Completed,
-    Failed,
-    Cancelled
-}
-
-public enum PathFailReason : byte
-{
-    None = 0,
-    NoPathExists,
-    StartBlocked,
-    GoalBlocked,
-    Timeout,
-    TooFarAway,
-    InvalidRequest,
-    AlreadyAtGoal,
-    BufferTooSmall
-}
-
-#endregion
-
-#region Path Data Components
-
-/// <summary>
-/// Buffer de caminho otimizado para grid.
-/// Armazena ÍNDICES do grid, não coordenadas float.
-/// </summary>
-public struct GridPathBuffer
+public struct PathBuffer
 {
     public const int MaxWaypoints = 128;
 
@@ -165,4 +83,31 @@ public struct GridPathBuffer
     }
 }
 
-#endregion
+/// <summary>
+/// Nó do A* com generation counter para invalidação rápida
+/// </summary>
+public struct PathNode :  IEquatable<PathNode>
+{
+    public int X;
+    public int Y;
+    public float GCost;
+    public float HCost;
+    public int ParentIndex;
+    public int Generation;  // ← NOVO: Marca qual "sessão" de busca este nó pertence
+
+    public float FCost => GCost + HCost;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsValidForGeneration(int currentGeneration) => Generation == currentGeneration;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(PathNode other) => X == other.X && Y == other.Y;
+
+    public override int GetHashCode() => X * 31 + Y;
+}
+
+public struct PathResult
+{
+    public int PathLength;
+    public bool IsValid;
+}

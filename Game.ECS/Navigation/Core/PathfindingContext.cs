@@ -1,47 +1,34 @@
 using System.Runtime.CompilerServices;
+using Game.ECS.Navigation.Components;
 
-namespace Game.ECS.Navigation.Core;
+namespace Game.ECS.Services.Pathfinding;
 
 /// <summary>
-/// Contexto reutilizável para operações de pathfinding.
-/// Elimina alocações durante runtime.
+/// Contexto reutilizável para uma operação de pathfinding
+/// Usa "generation counter" para invalidar nós sem limpar array
 /// </summary>
-public sealed class PathfindingContext
+public sealed class PathfindingContext(PathNode[] nodes, int[] path, int nodeCapacity, int pathCapacity)
 {
-    public PathNode[] Nodes { get; }
-    public int NodeCapacity { get; }
-    
-    // Binary Heap para Open List
-    public int[] OpenHeap { get; }
-    public int OpenCount;
-    
-    // BitArray para Closed List
-    public ulong[] ClosedBits { get; }
-    
-    // Generation counter para invalidação rápida
-    public int Generation { get; private set; }
-    
-    // Buffer temporário para reconstrução de caminho
-    public int[] TempPath { get; }
-    public int TempPathCapacity { get; }
+    public PathNode[] Nodes { get; } = nodes;
+    public int[] Path { get; } = path;
+    public int NodeCapacity { get; } = nodeCapacity;
+    public int PathCapacity { get; } = pathCapacity;
 
-    public PathfindingContext(int nodeCapacity, int pathCapacity = 256)
-    {
-        NodeCapacity = nodeCapacity;
-        Nodes = new PathNode[nodeCapacity];
-        OpenHeap = new int[nodeCapacity];
-        ClosedBits = new ulong[(nodeCapacity + 63) / 64];
-        TempPath = new int[pathCapacity];
-        TempPathCapacity = pathCapacity;
-        OpenCount = 0;
-        Generation = 0;
-    }
+    // Binary Heap inline para OpenList
+    public int[] OpenHeap { get; } = new int[nodeCapacity];
+    public int OpenCount = 0;
+    
+    // BitArray para ClosedList
+    public ulong[] ClosedBits { get; } = new ulong[(nodeCapacity + 63) / 64];
+
+    // Generation counter - evita limpar arrays enormes
+    public int Generation { get; private set; } = 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Reset()
     {
         OpenCount = 0;
-        Generation++;
+        Generation++; // Incrementa geração - invalida todos os nós anteriores
         Array.Clear(ClosedBits, 0, ClosedBits.Length);
     }
 

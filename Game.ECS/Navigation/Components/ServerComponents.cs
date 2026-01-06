@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Game.Domain.Enums;
 
 namespace Game.ECS. Navigation. Components;
 
@@ -28,10 +29,10 @@ public struct GridPosition :  IEquatable<GridPosition>
     public readonly bool Equals(GridPosition other) 
         => X == other.X && Y == other.Y;
 
-    public override readonly bool Equals(object? obj) 
+    public readonly override bool Equals(object? obj) 
         => obj is GridPosition other && Equals(other);
 
-    public override readonly int GetHashCode() 
+    public readonly override int GetHashCode() 
         => HashCode.Combine(X, Y);
 
     public static bool operator ==(GridPosition left, GridPosition right) 
@@ -40,19 +41,19 @@ public struct GridPosition :  IEquatable<GridPosition>
     public static bool operator !=(GridPosition left, GridPosition right) 
         => !left.Equals(right);
 
-    public override readonly string ToString() => $"({X}, {Y})";
+    public readonly override string ToString() => $"({X}, {Y})";
 }
 
 /// <summary>
 /// Estado de movimento no SERVIDOR - baseado em ticks, não tempo. 
 /// </summary>
-public struct ServerMovementState
+public struct MovementState
 {
     public GridPosition TargetCell;     // Próxima célula
     public long StartTick;              // Tick quando começou a mover
     public long EndTick;                // Tick quando deve chegar
     public bool IsMoving;
-    public MovementDirection Direction;
+    public DirectionEnum Direction;
 
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     public readonly bool ShouldComplete(long currentTick) 
@@ -77,22 +78,22 @@ public struct ServerMovementState
         IsMoving = false;
     }
 
-    private static MovementDirection GetDirection(GridPosition from, GridPosition to)
+    private static DirectionEnum GetDirection(GridPosition from, GridPosition to)
     {
         int dx = Math.Sign(to.X - from.X);
         int dy = Math.Sign(to. Y - from.Y);
 
         return (dx, dy) switch
         {
-            (0, -1) => MovementDirection.North,
-            (1, -1) => MovementDirection.NorthEast,
-            (1, 0) => MovementDirection.East,
-            (1, 1) => MovementDirection.SouthEast,
-            (0, 1) => MovementDirection.South,
-            (-1, 1) => MovementDirection.SouthWest,
-            (-1, 0) => MovementDirection. West,
-            (-1, -1) => MovementDirection. NorthWest,
-            _ => MovementDirection.None
+            (0, -1) => DirectionEnum.North,
+            (1, -1) => DirectionEnum.NorthEast,
+            (1, 0) => DirectionEnum.East,
+            (1, 1) => DirectionEnum.SouthEast,
+            (0, 1) => DirectionEnum.South,
+            (-1, 1) => DirectionEnum.SouthWest,
+            (-1, 0) => DirectionEnum. West,
+            (-1, -1) => DirectionEnum. NorthWest,
+            _ => DirectionEnum.None
         };
     }
 }
@@ -135,19 +136,6 @@ public struct ServerAgentSettings
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     public readonly int GetDuration(bool isDiagonal)
         => isDiagonal ?  DiagonalDurationTicks : MoveDurationTicks;
-}
-
-public enum MovementDirection :  byte
-{
-    None = 0,
-    North,
-    NorthEast,
-    East,
-    SouthEast,
-    South,
-    SouthWest,
-    West,
-    NorthWest
 }
 
 /// <summary>

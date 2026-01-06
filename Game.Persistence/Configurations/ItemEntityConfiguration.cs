@@ -1,4 +1,5 @@
 using Game.Domain.Entities;
+using Game.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -60,6 +61,9 @@ public class ItemEntityConfiguration : IEntityTypeConfiguration<Item>, IEntityTy
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired(false)
             .HasConstraintName("FK_ItemStats_Item");
+        
+        // Dados Seed
+        SeedItems(entity);
     }
 
     public void Configure(EntityTypeBuilder<ItemStats> entity)
@@ -85,5 +89,103 @@ public class ItemEntityConfiguration : IEntityTypeConfiguration<Item>, IEntityTy
         entity.Property(e => e.BonusAttackSpeed).HasDefaultValue(0f);
         entity.Property(e => e.BonusMovementSpeed).HasDefaultValue(0f);
         entity.Property(e => e.IsActive).HasDefaultValue(true);
+        
+        // Dados Seed
+        SeedItemStats(entity);
+    }
+
+    private void SeedItems(EntityTypeBuilder<Item> entity)
+    {
+        var items = new[]
+        {
+            new Item
+            {
+                Id = 1,
+                Name = "Health Potion",
+                Description = "Restaura 50 de HP",
+                Type = ItemType.Consumable,
+                StackSize = 99,
+                Weight = 1,
+                IconPath = "icons/health_potion.png",
+                RequiredLevel = 1,
+                RequiredVocation = null,
+                IsActive = true
+            },
+            new Item
+            {
+                Id = 2,
+                Name = "Iron Sword",
+                Description = "Uma espada de ferro básica",
+                Type = ItemType.Weapon,
+                StackSize = 1,
+                Weight = 10,
+                IconPath = "icons/iron_sword.png",
+                RequiredLevel = 5,
+                RequiredVocation = VocationType.Warrior,
+                IsActive = true
+            },
+            new Item
+            {
+                Id = 3,
+                Name = "Leather Armor",
+                Description = "Armadura leve de couro",
+                Type = ItemType.Armor,
+                StackSize = 1,
+                Weight = 15,
+                IconPath = "icons/leather_armor.png",
+                RequiredLevel = 3,
+                RequiredVocation = null,
+                IsActive = true
+            },
+            new Item
+            {
+                Id = 4,
+                Name = "Magic Staff",
+                Description = "Cajado mágico para magos",
+                Type = ItemType.Weapon,
+                StackSize = 1,
+                Weight = 8,
+                IconPath = "icons/magic_staff.png",
+                RequiredLevel = 5,
+                RequiredVocation = VocationType.Mage,
+                IsActive = true
+            }
+        };
+
+        entity.HasData(items);
+    }
+
+    private void SeedItemStats(EntityTypeBuilder<ItemStats> statsEntity)
+    {
+        // Stats dos itens equipáveis
+        var itemStats = new[]
+        {
+            new ItemStats
+            {
+                Id = 1,
+                ItemId = 2, // Iron Sword
+                BonusStrength = 5,
+                BonusPhysicalAttack = 15,
+                IsActive = true
+            },
+            new ItemStats
+            {
+                Id = 2,
+                ItemId = 3, // Leather Armor
+                BonusConstitution = 3,
+                BonusPhysicalDefense = 10,
+                IsActive = true
+            },
+            new ItemStats
+            {
+                Id = 3,
+                ItemId = 4, // Magic Staff
+                BonusIntelligence = 8,
+                BonusMagicAttack = 20,
+                IsActive = true
+            }
+        };
+
+        statsEntity.HasData(itemStats);
     }
 }

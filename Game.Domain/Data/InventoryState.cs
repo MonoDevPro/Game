@@ -1,4 +1,4 @@
-namespace Game.DTOs.Persistence;
+namespace Game.Domain.Data;
 
 public readonly record struct InventorySlotState(
     int SlotIndex,

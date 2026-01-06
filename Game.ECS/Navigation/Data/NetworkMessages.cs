@@ -1,6 +1,5 @@
 
-using Game.ECS.Components;
-using Game.ECS.Navigation.Components;
+using Game.Domain.Enums;
 
 namespace Game.ECS.Navigation.Data;
 
@@ -21,7 +20,7 @@ public struct TeleportMessage
     public int EntityId;
     public short X;
     public short Y;
-    public MovementDirection FacingDirection;
+    public DirectionEnum FacingDirection;
 }
 
 /// <summary>

@@ -1,5 +1,6 @@
 using System. Buffers;
 using System.Collections.Concurrent;
+using Game.ECS.Navigation.Components;
 
 namespace Game.ECS.Services. Pathfinding.Systems;
 

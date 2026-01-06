@@ -1,4 +1,5 @@
 using Game.Domain.Entities;
+using Game.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -85,6 +86,36 @@ public class CharacterEntityConfiguration :
             .HasForeignKey(eq => eq.CharacterId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_EquipmentSlots_Character");
+        
+        // Dados Seed
+        SeedCharacters(entity);
+    }
+
+    private void SeedCharacters(EntityTypeBuilder<Character> entity)
+    {
+        var characters = new[]
+        {
+            Character.CreateSeed(
+                id: 1,
+                accountId: 1,
+                name: "Warrior",
+                gender: Gender.Male,
+                vocation: VocationType.Warrior),
+            Character.CreateSeed(
+                id: 2,
+                accountId: 1,
+                name: "Archer",
+                gender: Gender.Male,
+                vocation: VocationType.Archer),
+            Character.CreateSeed(
+                id: 3,
+                accountId: 1,
+                name: "Mage",
+                gender: Gender.Male,
+                vocation: VocationType.Mage)
+        };
+
+        entity.HasData(characters);
     }
 
     public void Configure(EntityTypeBuilder<Inventory> entity)
@@ -111,6 +142,36 @@ public class CharacterEntityConfiguration :
             .HasForeignKey(s => s.InventoryId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_InventorySlots_Inventory");
+        
+        // Dados Seed
+        SeedInventories(entity);
+    }
+    
+    private void SeedInventories(EntityTypeBuilder<Inventory> entity)
+    {
+        var inventories = new[]
+        {
+            new Inventory
+            {
+                Id = 1,
+                CharacterId = 1,
+                Capacity = 30
+            },
+            new Inventory
+            {
+                Id = 2,
+                CharacterId = 2,
+                Capacity = 30
+            },
+            new Inventory
+            {
+                Id = 3,
+                CharacterId = 3,
+                Capacity = 30
+            }
+        };
+        
+        entity.HasData(inventories);
     }
 
     public void Configure(EntityTypeBuilder<EquipmentSlot> entity)

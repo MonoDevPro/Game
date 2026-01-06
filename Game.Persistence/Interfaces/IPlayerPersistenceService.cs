@@ -1,4 +1,4 @@
-using Game.DTOs.Persistence;
+using Game.Domain.Data;
 
 namespace Game.Persistence.Interfaces;
 
@@ -13,7 +13,7 @@ public interface IPlayerPersistenceService
     /// Persiste dados completos do personagem ao desconectar (posição, direção, vitals).
     /// </summary>
     Task PersistDisconnectAsync(
-        DisconnectPersistenceDto dto, 
+        CharacterState dto, 
         CancellationToken cancellationToken = default);
 
     /// <summary>

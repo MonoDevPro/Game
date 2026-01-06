@@ -28,7 +28,7 @@ public static class FactoryHelper
             new Direction { X = template.DirX, Y = template.DirY },
             new Speed { Value = 0f },
             
-            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
+            new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
             new SpatialAnchor
             {
                 MapId = template.MapId,
