@@ -1,163 +1,76 @@
-using System.Runtime.CompilerServices;
-using Game.Domain.Enums;
 
-namespace Game.ECS. Navigation. Components;
+namespace Game.ECS.Navigation.Components;
 
 // ============================================
 // COMPONENTES DO SERVIDOR (Autoritativos)
+// Usa Position existente de Game.ECS.Components
 // ============================================
 
-/// <summary>
-/// Posição no grid - SERVIDOR (fonte de verdade).
-/// </summary>
-public struct GridPosition :  IEquatable<GridPosition>
+public enum PathRequestFlags : byte
 {
-    public int X;
-    public int Y;
+    None = 0,
+    AllowPartialPath = 1 << 0,
+    HighPriority = 1 << 1,
+    IgnoreEntities = 1 << 2
+}
 
-    public GridPosition(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
+public enum PathPriority : byte
+{
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3
+}
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public readonly int ManhattanDistanceTo(GridPosition other)
-        => Math.Abs(X - other. X) + Math.Abs(Y - other.Y);
+public enum PathStatus : byte
+{
+    None = 0,
+    Pending = 1,
+    InProgress = 2,
+    Completed = 3,
+    Failed = 4,
+    Cancelled = 5
+}
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly bool Equals(GridPosition other) 
-        => X == other.X && Y == other.Y;
-
-    public readonly override bool Equals(object? obj) 
-        => obj is GridPosition other && Equals(other);
-
-    public readonly override int GetHashCode() 
-        => HashCode.Combine(X, Y);
-
-    public static bool operator ==(GridPosition left, GridPosition right) 
-        => left.Equals(right);
-
-    public static bool operator !=(GridPosition left, GridPosition right) 
-        => !left.Equals(right);
-
-    public readonly override string ToString() => $"({X}, {Y})";
+public enum PathFailReason : byte
+{
+    None = 0,
+    NoPath = 1,
+    Timeout = 2,
+    InvalidStart = 3,
+    InvalidGoal = 4,
+    Cancelled = 5
 }
 
 /// <summary>
-/// Estado de movimento no SERVIDOR - baseado em ticks, não tempo. 
+/// Estado do pathfinding da entidade.
 /// </summary>
-public struct MovementState
+public struct NavPathState
 {
-    public GridPosition TargetCell;     // Próxima célula
-    public long StartTick;              // Tick quando começou a mover
-    public long EndTick;                // Tick quando deve chegar
-    public bool IsMoving;
-    public DirectionEnum Direction;
-
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public readonly bool ShouldComplete(long currentTick) 
-        => IsMoving && currentTick >= EndTick;
-
-    public void StartMove(GridPosition from, GridPosition to, long currentTick, int durationTicks)
-    {
-        TargetCell = to;
-        StartTick = currentTick;
-        EndTick = currentTick + durationTicks;
-        IsMoving = true;
-        Direction = GetDirection(from, to);
-    }
-
-    public void Complete()
-    {
-        IsMoving = false;
-    }
-
-    public void Reset()
-    {
-        IsMoving = false;
-    }
-
-    private static DirectionEnum GetDirection(GridPosition from, GridPosition to)
-    {
-        int dx = Math.Sign(to.X - from.X);
-        int dy = Math.Sign(to. Y - from.Y);
-
-        return (dx, dy) switch
-        {
-            (0, -1) => DirectionEnum.North,
-            (1, -1) => DirectionEnum.NorthEast,
-            (1, 0) => DirectionEnum.East,
-            (1, 1) => DirectionEnum.SouthEast,
-            (0, 1) => DirectionEnum.South,
-            (-1, 1) => DirectionEnum.SouthWest,
-            (-1, 0) => DirectionEnum. West,
-            (-1, -1) => DirectionEnum. NorthWest,
-            _ => DirectionEnum.None
-        };
-    }
+    public PathStatus Status;
+    public PathFailReason FailReason;
 }
 
 /// <summary>
-/// Configuração do agente - SERVIDOR.
-/// Usa ticks ao invés de tempo. 
+/// Tag: entidade é um agente de navegação.
 /// </summary>
-public struct ServerAgentSettings
-{
-    public int MoveDurationTicks;        // Ticks para mover 1 célula
-    public int DiagonalDurationTicks;    // Ticks para diagonal
-    public bool AllowDiagonal;
-    public byte MaxPathRetries;
-
-    public static ServerAgentSettings Default => new()
-    {
-        MoveDurationTicks = 6,           // ~100ms a 60 ticks/s
-        DiagonalDurationTicks = 9,       // ~141ms
-        AllowDiagonal = true,
-        MaxPathRetries = 3
-    };
-
-    public static ServerAgentSettings Slow => new()
-    {
-        MoveDurationTicks = 12,
-        DiagonalDurationTicks = 17,
-        AllowDiagonal = true,
-        MaxPathRetries = 3
-    };
-
-    public static ServerAgentSettings Fast => new()
-    {
-        MoveDurationTicks = 3,
-        DiagonalDurationTicks = 4,
-        AllowDiagonal = true,
-        MaxPathRetries = 3
-    };
-
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public readonly int GetDuration(bool isDiagonal)
-        => isDiagonal ?  DiagonalDurationTicks : MoveDurationTicks;
-}
+public struct NavAgent { }
 
 /// <summary>
-/// Tag:  entidade é um agente de navegação.
+/// Tag: entidade está se movendo via navegação.
 /// </summary>
-public struct GridNavigationAgent { }
-
-/// <summary>
-/// Tag:  entidade está se movendo.
-/// </summary>
-public struct IsMoving { }
+public struct NavIsMoving { }
 
 /// <summary>
 /// Tag: entidade chegou ao destino. 
 /// </summary>
-public struct ReachedDestination { }
+public struct NavReachedDestination { }
 
 /// <summary>
 /// Tag: entidade bloqueada aguardando. 
 /// </summary>
-public struct WaitingToMove
+public struct NavWaitingToMove
 {
-    public long WaitTime;
+    public long WaitStartTick;
     public int BlockedByEntityId;
 }

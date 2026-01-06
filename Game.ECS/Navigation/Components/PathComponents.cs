@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Game.ECS.Components;
 
 namespace Game.ECS.Navigation.Components;
 
@@ -8,13 +9,15 @@ public struct PathfindingRequest
 {
     public int StartX;
     public int StartY;
+    public int StartZ;
     public int GoalX;
     public int GoalY;
+    public int GoalZ;
     public int MaxSearchNodes;
     public PathfindingStatus Status;
 }
 
-public struct PathBuffer
+public struct NavPathBuffer
 {
     public const int MaxWaypoints = 128;
 
@@ -25,12 +28,13 @@ public struct PathBuffer
     public int CurrentIndex;
     public int GoalX;
     public int GoalY;
+    public int GoalZ;
 
     public readonly bool IsValid => WaypointCount > 0;
     public readonly bool IsComplete => CurrentIndex >= WaypointCount;
     public readonly int RemainingWaypoints => WaypointCount - CurrentIndex;
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void SetWaypoint(int index, int gridIndex)
     {
         if (index >= 0 && index < MaxWaypoints)
@@ -49,10 +53,10 @@ public struct PathBuffer
         return -1;
     }
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int GetCurrentWaypoint() => GetWaypoint(CurrentIndex);
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int GetNextWaypoint() => GetWaypoint(CurrentIndex + 1);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,33 +71,33 @@ public struct PathBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public GridPosition GetCurrentWaypointAsPosition(int gridWidth)
+    public Position GetCurrentWaypointAsPosition(int gridWidth, int gridHeight, int floor)
     {
         int idx = GetCurrentWaypoint();
-        if (idx < 0) return new GridPosition(-1, -1);
-        return new GridPosition(idx % gridWidth, idx / gridWidth);
+        if (idx < 0) return new Position { X = -1, Y = -1, Z = floor };
+        return new Position { X = idx % gridWidth, Y = idx / gridWidth, Z = floor };
     }
 
     public void Clear()
     {
         WaypointCount = 0;
         CurrentIndex = 0;
-        GoalX = 0;
         GoalY = 0;
+        GoalZ = 0;
     }
 }
 
 /// <summary>
 /// Nó do A* com generation counter para invalidação rápida
 /// </summary>
-public struct PathNode :  IEquatable<PathNode>
+public struct PathNode : IEquatable<PathNode>
 {
     public int X;
     public int Y;
     public float GCost;
     public float HCost;
     public int ParentIndex;
-    public int Generation;  // ← NOVO: Marca qual "sessão" de busca este nó pertence
+    public int Generation;  // Marca qual "sessão" de busca este nó pertence
 
     public float FCost => GCost + HCost;
 

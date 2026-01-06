@@ -6,6 +6,7 @@ using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;
+using Game.ECS.Navigation.Core.Contracts;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Systems;

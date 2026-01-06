@@ -1,12 +1,13 @@
 using Arch.Core;
 using Game.ECS.Components;
+using Game.ECS.Navigation.Core.Contracts;
 
 namespace Game.ECS.Services.Map;
 
 /// <summary>
 /// Implementação de IMapService para gerenciar múltiplos mapas do jogo.
 /// </summary>
-public class MapIndex
+public class MapIndex : IMapIndex
 {
     private readonly Dictionary<int, IMapGrid> _grids = [];
     private readonly Dictionary<int, IMapSpatial> _spatials = [];

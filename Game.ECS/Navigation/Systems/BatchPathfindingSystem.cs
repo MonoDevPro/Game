@@ -1,8 +1,8 @@
-using System. Buffers;
+using System.Buffers;
 using System.Collections.Concurrent;
 using Game.ECS.Navigation.Components;
 
-namespace Game.ECS.Services. Pathfinding.Systems;
+namespace Game.ECS.Navigation.Systems;
 
 public sealed class BatchPathfindingSystem(
     PathfindingSystem pathfinder,
@@ -40,18 +40,15 @@ public sealed class BatchPathfindingSystem(
 
     private void ProcessJob(ref PathfindingJob job)
     {
-        // Usa array do pool ao invés de stackalloc (mais seguro para callbacks)
         var pathBuffer = _pathArrayPool.Rent(256);
         try
         {
-            var result = pathfinder.FindPath(ref job.Request, pathBuffer. AsSpan());
-            
-            // Callback recebe Span - sem alocação! 
-            job. Callback?. Invoke(result, new ReadOnlySpan<int>(pathBuffer, 0, result.PathLength));
+            var result = pathfinder.FindPath(ref job.Request, pathBuffer.AsSpan());
+            job.Callback?.Invoke(result, new ReadOnlySpan<int>(pathBuffer, 0, result.PathLength));
         }
         finally
         {
-            _pathArrayPool. Return(pathBuffer);
+            _pathArrayPool.Return(pathBuffer);
         }
     }
 }
@@ -59,7 +56,7 @@ public sealed class BatchPathfindingSystem(
 public struct PathfindingJob
 {
     public PathfindingRequest Request;
-    public PathfindingCallback?  Callback;
+    public PathfindingCallback? Callback;
     public int EntityId;
 }
 

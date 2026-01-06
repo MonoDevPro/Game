@@ -1,9 +1,9 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-using System. Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Game.ECS.Navigation.Components;
 
-namespace Game.ECS.Services. Pathfinding;
+namespace Game.ECS.Navigation.Core;
 
 /// <summary>
 /// Pool lock-free de contextos para pathfinding
@@ -25,7 +25,7 @@ public sealed class PathfindingPool
         _defaultPathArraySize = defaultPathArraySize;
         
         _nodePool = ArrayPool<PathNode>.Shared;
-        _pathPool = ArrayPool<int>. Shared;
+        _pathPool = ArrayPool<int>.Shared;
         _contextPool = new ConcurrentBag<PathfindingContext>();
 
         // Pré-aquece o pool
@@ -35,12 +35,12 @@ public sealed class PathfindingPool
         }
     }
 
-    [MethodImpl(MethodImplOptions. AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public PathfindingContext RentContext()
     {
         return _contextPool.TryTake(out var context) 
             ? context 
-            :  CreateNewContext();
+            : CreateNewContext();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

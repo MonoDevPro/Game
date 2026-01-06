@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Game.ECS.Navigation.Components;
 
-namespace Game.ECS.Services.Pathfinding;
+namespace Game.ECS.Navigation.Core;
 
 /// <summary>
 /// Contexto reutilizável para uma operação de pathfinding

@@ -1,4 +1,4 @@
-namespace Game.ECS. Navigation.Data;
+namespace Game.ECS.Navigation.Data;
 
 /// <summary>
 /// Configuração global do sistema de navegação. 

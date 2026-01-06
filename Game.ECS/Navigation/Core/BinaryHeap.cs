@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Game.ECS.Navigation.Components;
 
-namespace Game.ECS.Services.Pathfinding;
+namespace Game.ECS.Navigation.Core;
 
 /// <summary>
 /// Binary Heap inline otimizado para A* - zero alocação
@@ -46,7 +46,7 @@ public static class BinaryHeap
                 smallest = left;
 
             if (right < ctx.OpenCount && 
-                nodes[ctx.OpenHeap[right]]. FCost < nodes[ctx.OpenHeap[smallest]].FCost)
+                nodes[ctx.OpenHeap[right]].FCost < nodes[ctx.OpenHeap[smallest]].FCost)
                 smallest = right;
 
             if (smallest == i) break;

@@ -1,41 +1,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Arch.Core;
-using Position = Game.ECS.Components.Position;
+using Game.ECS.Components;
+using Game.ECS.Navigation.Core.Contracts;
 
 namespace Game.ECS.Services.Map;
-
-public interface IMapSpatial
-{
-    // Ocupação de células
-    void Insert(Position position, in Entity entity);
-    bool Remove(Position position, in Entity entity);
-
-    // Atualiza a posição do item (equivalente a Remove+Insert, porém atômico/otimizado)
-    bool Update(Position oldPosition, Position newPosition, in Entity entity);
-
-    // Movimento atômico: verifica/aplica numa única chamada (sem expor Remove/Insert separadamente)
-    bool TryMove(Position from, Position to, in Entity entity);
-
-    // Consultas sem alocação: escreve no buffer; retorna o número de itens escritos
-    int QueryAt(Position position, Span<Entity> results);
-    int QueryArea(Position min, Position max, Span<Entity> results);
-    
-    /// <summary>
-    /// Query otimizada para área circular (ideal para percepção de NPCs).
-    /// </summary>
-    int QueryCircle(Position center, sbyte radius, Span<Entity> results);
-
-    // Versões por callback (sem buffers, com early-exit retornando false)
-    void ForEachAt(Position position, Func<Entity, bool> visitor);
-    void ForEachArea(Position min, Position max, Func<Entity, bool> visitor);
-
-    // Fast-path: obtém o primeiro ocupante (comum em checagens simples)
-    bool TryGetFirstAt(Position position, out Entity entity);
-
-    // Limpeza total
-    void Clear();
-}
 
 /// <summary>
 /// Implementação otimizada de spatial hashing para IMapSpatial.
