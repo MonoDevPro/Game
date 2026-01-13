@@ -61,9 +61,9 @@ public sealed class AttackFacingTests
         simulation.World.Get<Health>(target).Current.Should().BeLessThan(initialHp);
     }
 
-    private static PlayerData CreateSnapshot(int playerId, int networkId, int x, int y, sbyte dirX, sbyte dirY)
+    private static PlayerSnapshot CreateSnapshot(int playerId, int networkId, int x, int y, sbyte dirX, sbyte dirY)
     {
-        return new PlayerData(
+        return new PlayerSnapshot(
             PlayerId: playerId,
             NetworkId: networkId,
             MapId: 1,

@@ -7,14 +7,13 @@ namespace Game.ECS.Entities;
 
 public static class SnapshotHelper
 {
-    public static StateData BuildState(this World world, Entity entity)
+    public static StateSnapshot BuildState(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var position = ref world.Get<Position>(entity);
-        ref var speed = ref world.Get<Speed>(entity);
         ref var direction = ref world.Get<Direction>(entity);
 
-        return new StateData
+        return new StateSnapshot
         {
             NetworkId = networkId.Value,
             X = position.X,
@@ -22,17 +21,16 @@ public static class SnapshotHelper
             Z = position.Z,
             DirX = direction.X,
             DirY = direction.Y,
-            Speed = speed.Value
         };
     }
 
-    public static VitalsData BuildVitals(this World world, Entity entity)
+    public static VitalsSnapshot BuildVitals(this World world, Entity entity)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
 
-        return new VitalsData
+        return new VitalsSnapshot
         {
             NetworkId = networkId.Value,
             CurrentHp = health.Current,
@@ -42,7 +40,7 @@ public static class SnapshotHelper
         };
     }
     
-    public static PlayerData BuildPlayerSnapshot(this World world, Entity entity, string name)
+    public static PlayerSnapshot BuildPlayerSnapshot(this World world, Entity entity, string name)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var playerId = ref world.Get<UniqueID>(entity);
@@ -53,10 +51,9 @@ public static class SnapshotHelper
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
         ref var combatStats = ref world.Get<CombatStats>(entity);
 
-        return new PlayerData(
+        return new PlayerSnapshot(
             PlayerId: playerId.Value,
             NetworkId: networkId.Value,
             MapId: mapId.Value,
@@ -74,8 +71,6 @@ public static class SnapshotHelper
             Mp: mana.Current,
             MaxMp: mana.Max,
             MpRegen: mana.RegenerationRate,
-            MovementSpeed: walkable.CurrentModifier,
-            AttackSpeed: combatStats.AttackSpeed,
             PhysicalAttack: combatStats.AttackPower,
             MagicAttack: combatStats.MagicPower,
             PhysicalDefense: combatStats.Defense,
@@ -92,7 +87,6 @@ public static class SnapshotHelper
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
-        ref var walkable = ref world.Get<Walkable>(entity);
         ref var combatStats = ref world.Get<CombatStats>(entity);
 
         return new NpcData(
@@ -111,8 +105,6 @@ public static class SnapshotHelper
             Mp: mana.Current,
             MaxMp: mana.Max,
             MpRegen: mana.RegenerationRate,
-            MovementSpeed: walkable.CurrentModifier,
-            AttackSpeed: combatStats.AttackSpeed,
             PhysicalAttack: combatStats.AttackPower,
             MagicAttack: combatStats.MagicPower,
             PhysicalDefense: combatStats.Defense,

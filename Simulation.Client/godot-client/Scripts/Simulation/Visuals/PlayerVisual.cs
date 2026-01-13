@@ -19,7 +19,7 @@ public sealed partial class PlayerVisual : DefaultVisual
         return playerVisual;
     }
 
-    public void UpdateFromSnapshot(in PlayerData snapshot)
+    public void UpdateFromSnapshot(in PlayerSnapshot snapshot)
     {
         LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
         UpdateName(snapshot.Name);

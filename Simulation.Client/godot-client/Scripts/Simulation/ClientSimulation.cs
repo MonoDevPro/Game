@@ -95,7 +95,7 @@ public sealed class ClientSimulation : GameSimulation
     
     public bool TryGetAnyEntity(int networkId, out Entity entity)
     {
-        if (TryGetPlayerEntity(networkId, out entity))
+        if (TryGetEntity(networkId, out entity))
             return true;
         if (TryGetNpcEntity(networkId, out entity))
             return true;
@@ -103,7 +103,7 @@ public sealed class ClientSimulation : GameSimulation
         return false;
     }
 
-    public Entity CreateLocalPlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
+    public Entity CreateLocalPlayer(ref PlayerSnapshot snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
@@ -114,7 +114,7 @@ public sealed class ClientSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateRemotePlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
+    public Entity CreateRemotePlayer(ref PlayerSnapshot snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
         var entity = CreatePlayer(ref snapshot);
@@ -124,10 +124,10 @@ public sealed class ClientSimulation : GameSimulation
         return entity;
     }
     
-    public override bool DestroyPlayer(int networkId)
+    public override bool DestroyEntity(int networkId)
     {
         _visualSyncSystem?.UnregisterPlayerVisual(networkId);
-        return base.DestroyPlayer(networkId);
+        return base.DestroyEntity(networkId);
     }
 
     public Entity CreateNpc(ref NpcData snapshot, Visuals.NpcVisual visual)
@@ -147,9 +147,9 @@ public sealed class ClientSimulation : GameSimulation
     
     public void DestroyAny(int networkId)
     {
-        if (TryGetPlayerEntity(networkId, out _))
+        if (TryGetEntity(networkId, out _))
         {
-            DestroyPlayer(networkId);
+            DestroyEntity(networkId);
         }
         else if (TryGetNpcEntity(networkId, out _))
         {
@@ -157,7 +157,7 @@ public sealed class ClientSimulation : GameSimulation
         }
     }
     
-    public void ApplyState(ref StateData stateSnapshot)
+    public void ApplyState(ref StateSnapshot stateSnapshot)
     {
         if (!TryGetAnyEntity(stateSnapshot.NetworkId, out Entity entity))
         {
@@ -168,9 +168,9 @@ public sealed class ClientSimulation : GameSimulation
         World.UpdateState(entity, ref stateSnapshot);
     }
     
-    public void ApplyVitals(ref VitalsData vitalsSnapshot)
+    public void ApplyVitals(ref VitalsSnapshot vitalsSnapshot)
     {
-        if (!TryGetPlayerEntity(vitalsSnapshot.NetworkId, out var entity) &&
+        if (!TryGetEntity(vitalsSnapshot.NetworkId, out var entity) &&
             !TryGetNpcEntity(vitalsSnapshot.NetworkId, out entity))
         {
             GD.PrintErr($"[GameClient] Cannot apply vitals: entity with NetworkId {vitalsSnapshot.NetworkId} not found.");

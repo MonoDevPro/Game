@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net;
 using Game.Core.Extensions;
-using Game.Domain.Data;
 using Game.Domain.Entities;
 using Game.DTOs;
+using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.Network.Abstractions;

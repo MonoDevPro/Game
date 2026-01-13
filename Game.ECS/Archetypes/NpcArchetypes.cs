@@ -29,11 +29,6 @@ public static class NpcArchetypes
         
         // Transform
         Component<Direction>.ComponentType,
-        Component<Speed>.ComponentType,
-        
-        // Movement
-        Component<Walkable>.ComponentType,
-        Component<SpatialAnchor>.ComponentType,
         
         // Combat
         Component<CombatStats>.ComponentType,

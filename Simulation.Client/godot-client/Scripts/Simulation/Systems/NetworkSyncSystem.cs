@@ -31,7 +31,7 @@ public sealed partial class NetworkSyncSystem(World world, INetworkManager sende
         if (dirtyFlags.HasFlag(DirtyComponentType.Input) && World.TryGet(entity, out Input input))
         {
             var inputPacket = new InputPacket{ Input = 
-                new InputData
+                new InputRequest
                 {
                     InputX = input.InputX, 
                     InputY = input.InputY, 

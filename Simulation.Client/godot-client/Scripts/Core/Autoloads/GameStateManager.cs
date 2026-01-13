@@ -21,7 +21,7 @@ public partial class GameStateManager : Node
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
     public PlayerJoinPacket? CurrentGameData { get; set; }
-    private readonly Dictionary<int, PlayerData> _pendingPlayerSpawns = new();
+    private readonly Dictionary<int, PlayerSnapshot> _pendingPlayerSpawns = new();
     private readonly Dictionary<int, NpcData> _pendingNpcSpawns = new();
     
     public override void _Ready()
@@ -55,7 +55,7 @@ public partial class GameStateManager : Node
     /// When a player snapshot with the same NetworkId already exists, it's replaced.
     /// </summary>
     /// <param name="snapshots">Snapshots to buffer until consumption.</param>
-    public void StorePlayerSnapshots(IEnumerable<PlayerData> snapshots)
+    public void StorePlayerSnapshots(IEnumerable<PlayerSnapshot> snapshots)
     {
         foreach (var snapshot in snapshots)
             _pendingPlayerSpawns[snapshot.NetworkId] = snapshot;
@@ -75,7 +75,7 @@ public partial class GameStateManager : Node
     /// <summary>
     /// Returns all buffered player snapshots and clears the buffer.
     /// </summary>
-    public PlayerData[] ConsumePlayerSnapshots()
+    public PlayerSnapshot[] ConsumePlayerSnapshots()
     {
         if (_pendingPlayerSpawns.Count == 0)
             return [];

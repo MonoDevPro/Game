@@ -57,9 +57,9 @@ public sealed class MovementCollisionTests
         simulation.World.Has<MovementIntent>(player1).Should().BeFalse();
     }
 
-    private static PlayerData CreateSnapshot(int playerId, int networkId, int x, int y)
+    private static PlayerSnapshot CreateSnapshot(int playerId, int networkId, int x, int y)
     {
-        return new PlayerData(
+        return new PlayerSnapshot(
             PlayerId: playerId,
             NetworkId: networkId,
             MapId: 1,

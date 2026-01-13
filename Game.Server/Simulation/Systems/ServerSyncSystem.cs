@@ -22,9 +22,9 @@ public sealed partial class ServerSyncSystem(
     : GameSystem(world, logger)
 {
     // Buffers for batching updates
-    private readonly List<StateData> _stateUpdates = new(16);
-    private readonly List<VitalsData> _vitalsUpdates = new(16);
-    private readonly List<AttackData> _attackUpdates = new(16);
+    private readonly List<StateSnapshot> _stateUpdates = new(16);
+    private readonly List<VitalsSnapshot> _vitalsUpdates = new(16);
+    private readonly List<AttackSnapshot> _attackUpdates = new(16);
     
     // Sync interval tracking
     private float _stateAccumulator;
@@ -39,7 +39,7 @@ public sealed partial class ServerSyncSystem(
         // Subscribe to attack events
         bus.OnAttack += (evt) =>
         {
-            _attackUpdates.Add(new AttackData(
+            _attackUpdates.Add(new AttackSnapshot(
                 AttackerNetworkId: World.Get<NetworkId>(evt.Attacker).Value,
                 Style: evt.Style,
                 AttackDuration: 1.0f, // Placeholder, should be based on attack style
@@ -96,7 +96,7 @@ public sealed partial class ServerSyncSystem(
         in Speed speed,
         in Direction direction)
     {
-        _stateUpdates.Add(new StateData(
+        _stateUpdates.Add(new StateSnapshot(
             NetworkId: networkId.Value,
             X: position.X,
             Y: position.Y,
@@ -114,7 +114,7 @@ public sealed partial class ServerSyncSystem(
         in Health health,
         in Mana mana)
     {
-        _vitalsUpdates.Add(new VitalsData(
+        _vitalsUpdates.Add(new VitalsSnapshot(
             NetworkId: networkId.Value,
             CurrentHp: health.Current,
             MaxHp: health.Max,

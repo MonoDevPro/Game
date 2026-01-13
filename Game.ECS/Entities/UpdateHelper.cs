@@ -6,26 +6,24 @@ namespace Game.ECS.Entities;
 
 public static class UpdateHelper
 {
-    public static void UpdateState(this World world, Entity entity, ref StateData data)
+    public static void UpdateState(this World world, Entity entity, ref StateSnapshot snapshot)
     {
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Direction>(entity);
-        ref var speed = ref world.Get<Speed>(entity);
-        position.X = data.X;
-        position.Y = data.Y;
-        position.Z = data.Z;
-        facing.X = data.DirX;
-        facing.Y = data.DirY;
-        speed.Value = data.Speed;
+        position.X = snapshot.X;
+        position.Y = snapshot.Y;
+        position.Z = snapshot.Z;
+        facing.X = snapshot.DirX;
+        facing.Y = snapshot.DirY;
     }
     
-    public static void UpdateVitals(this World world, Entity entity, ref VitalsData data)
+    public static void UpdateVitals(this World world, Entity entity, ref VitalsSnapshot snapshot)
     {
         ref var health = ref world.Get<Health>(entity);
         ref var mana = ref world.Get<Mana>(entity);
-        health.Current = data.CurrentHp;
-        health.Max = data.MaxHp;
-        mana.Current = data.CurrentMp;
-        mana.Max = data.MaxMp;
+        health.Current = snapshot.CurrentHp;
+        health.Max = snapshot.MaxHp;
+        mana.Current = snapshot.CurrentMp;
+        mana.Max = snapshot.MaxMp;
     }
 }

@@ -3,12 +3,9 @@ using Arch.Core;
 using Arch.System;
 using Game.DTOs.Npc;
 using Game.DTOs.Player;
-using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;
-using Game.ECS.Navigation.Core.Contracts;
 using Game.ECS.Services;
-using Game.ECS.Services.Map;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
 
@@ -62,9 +59,7 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
     
-    protected readonly MapIndex MapIndex = new();
-    protected readonly EntityIndex<int> PlayerIndex = new();
-    protected readonly EntityIndex<int> NPCIndex = new();
+    protected readonly EntityIndex<int> NetworkIndex = new();
     protected readonly GameEventBus EventBus = new();
     
     /// Fixed timestep para updates da simulação.
@@ -72,17 +67,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     
     /// Tick atual da simulação.
     private uint CurrentTick { get; set; }
-    
-    /// <summary>
-    /// Registers a map with the map service.
-    /// </summary>
-    public void RegisterMap(int mapId, IMapGrid mapGrid, IMapSpatial mapSpatial) =>
-        MapIndex.RegisterMap(mapId, mapGrid, mapSpatial);
-
-    /// <summary>
-    /// Exposes the registered map ids so services (e.g., NPC spawner) can align with available maps.
-    /// </summary>
-    public IEnumerable<int> GetRegisteredMapIds() => MapIndex.GetRegisteredMapIds();
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
@@ -114,11 +98,10 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
         base.Dispose();
     }
     
-    public Entity CreatePlayer(ref PlayerData playerSnapshot)
+    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
-        RegisterSpatialAnchor(entity);
-        PlayerIndex.Register(playerSnapshot.NetworkId, entity);
+        NetworkIndex.Register(playerSnapshot.NetworkId, entity);
         return entity;
     }
     
@@ -126,92 +109,26 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     {
         // Atualiza o template com a localização de spawn e networkId
         var entity = World.CreateNpc(ref snapshot, ref behaviour);
-        RegisterSpatialAnchor(entity);
-        NPCIndex.Register(snapshot.NetworkId, entity);
+        NetworkIndex.Register(snapshot.NetworkId, entity);
         return entity;
     }
     
     /// <summary>
     /// Tenta obter a entidade de um jogador pelo NetworkId.
     /// </summary>
-    public bool TryGetPlayerEntity(int networkId, out Entity entity) =>
-        PlayerIndex.TryGetEntity(networkId, out entity);
-    
-    /// <summary>
-    /// Tenta obter a entidade de um NPC pelo NetworkId.
-    /// </summary>
-    public bool TryGetNpcEntity(int networkId, out Entity entity) =>
-        NPCIndex.TryGetEntity(networkId, out entity);
+    public bool TryGetEntity(int networkId, out Entity entity) =>
+        NetworkIndex.TryGetEntity(networkId, out entity);
     
     /// <summary>
     /// Destrói a entidade de um jogador pelo NetworkId.
     /// </summary>
-    public virtual bool DestroyPlayer(int networkId)
+    public virtual bool DestroyEntity(int networkId)
     {
-        if (!PlayerIndex.TryGetEntity(networkId, out var entity))
+        if (!NetworkIndex.TryGetEntity(networkId, out var entity))
             return false;
         
-        PlayerIndex.RemoveByKey(networkId);
-        UnregisterSpatialAnchor(entity);
+        NetworkIndex.RemoveByKey(networkId);
         World.Destroy(entity);
         return true;
-    }
-    
-    /// <summary>
-    /// Destrói a entidade de um NPC pelo NetworkId.
-    /// </summary>
-    public virtual bool DestroyNpc(int networkId)
-    {
-        if (!NPCIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        NPCIndex.RemoveByKey(networkId);
-        UnregisterSpatialAnchor(entity);
-        World.Destroy(entity);
-        return true;
-    }
-
-    /// <summary>
-    /// Garante que a entidade esteja registrada no índice espacial e sincroniza o anchor inicial.
-    /// </summary>
-    private void RegisterSpatialAnchor(Entity entity)
-    {
-        if (!World.Has<SpatialAnchor>(entity) || !World.Has<MapId>(entity) || !World.Has<Position>(entity))
-            return;
-
-        ref var position = ref World.Get<Position>(entity);
-        ref var mapId = ref World.Get<MapId>(entity);
-        ref var anchor = ref World.Get<SpatialAnchor>(entity);
-
-        try
-        {
-            MapIndex.GetMapSpatial(mapId.Value).Insert(position, entity);
-            anchor.MapId = mapId.Value;
-            anchor.Position = position;
-            anchor.IsTracked = true;
-        }
-        catch (KeyNotFoundException)
-        {
-            LogWarning("[GameSimulation] Failed to register spatial anchor for entity {Entity}: map {MapId} is not registered", entity, mapId.Value);
-        }
-    }
-
-    /// <summary>
-    /// Remove a entidade do índice espacial, evitando células fantasmas após destruição.
-    /// </summary>
-    private void UnregisterSpatialAnchor(Entity entity)
-    {
-        if (!World.Has<SpatialAnchor>(entity))
-            return;
-
-        ref var anchor = ref World.Get<SpatialAnchor>(entity);
-        if (!anchor.IsTracked)
-            return;
-
-        if (!MapIndex.HasMap(anchor.MapId))
-            return;
-
-        MapIndex.GetMapSpatial(anchor.MapId).Remove(anchor.Position, entity);
-        anchor.IsTracked = false;
     }
 }

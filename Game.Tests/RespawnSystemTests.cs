@@ -72,9 +72,9 @@ public sealed class RespawnSystemTests
         mana.Current.Should().Be((int)MathF.Ceiling(mana.Max * SimulationConfig.ReviveManaPercent));
     }
 
-    private static PlayerData CreateSnapshot(int playerId, int networkId, int x, int y)
+    private static PlayerSnapshot CreateSnapshot(int playerId, int networkId, int x, int y)
     {
-        return new PlayerData(
+        return new PlayerSnapshot(
             PlayerId: playerId,
             NetworkId: networkId,
             MapId: 1,

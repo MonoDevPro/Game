@@ -213,7 +213,7 @@ public partial class GameClient : Node2D
         }
     }
     
-    private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerData snapshot)
+    private Visuals.PlayerVisual SpawnPlayerVisual(in PlayerSnapshot snapshot)
     {
         var playerVisual = Visuals.PlayerVisual.Create();
         
@@ -266,7 +266,7 @@ public partial class GameClient : Node2D
             HandleSingleVitals(singlePacket);
     }
 
-    private void HandleSingleVitals(in VitalsData packet)
+    private void HandleSingleVitals(in VitalsSnapshot packet)
     {
         if (_simulation is null)
             return;
@@ -314,14 +314,14 @@ public partial class GameClient : Node2D
     {
         foreach (var singlePacket in packet.PlayerData)
         {
-            PlayerData dataPacket = singlePacket;
-            HandlePlayerSpawn(peer, ref dataPacket);
+            PlayerSnapshot snapshotPacket = singlePacket;
+            HandlePlayerSpawn(peer, ref snapshotPacket);
         }
     }
-    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerData dataPacket)
+    private void HandlePlayerSpawn(INetPeerAdapter peer, ref PlayerSnapshot snapshotPacket)
     {
-        var isLocal = dataPacket.NetworkId == _localNetworkId;
-        var playerData = dataPacket;
+        var isLocal = snapshotPacket.NetworkId == _localNetworkId;
+        var playerData = snapshotPacket;
 
         if (isLocal)
             _simulation?.CreateLocalPlayer(ref playerData, SpawnPlayerVisual(playerData));
@@ -331,7 +331,7 @@ public partial class GameClient : Node2D
         if (!isLocal) 
             UpdateStatus($"{playerData.Name} joined");
         
-        GD.Print($"[GameClient] Spawned player '{dataPacket.Name}' (NetID: {dataPacket.NetworkId})");
+        GD.Print($"[GameClient] Spawned player '{snapshotPacket.Name}' (NetID: {snapshotPacket.NetworkId})");
     }
     
     private void HandleDespawn(INetPeerAdapter peer, ref LeftPacket packet)
@@ -356,7 +356,7 @@ public partial class GameClient : Node2D
             HandleSingleCombatState(singlePacket);
     }
     
-    private void HandleSingleCombatState(in AttackData packet)
+    private void HandleSingleCombatState(in AttackSnapshot packet)
     {
         GD.Print($"[GameClient] HandleCombatState called: Attacker={packet.AttackerNetworkId}");
         

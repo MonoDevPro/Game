@@ -18,7 +18,6 @@ public class UnitOfWork(GameDbContext context) : IUnitOfWork
     
     public IAccountRepository Accounts { get; } = new AccountRepository(context);
     public ICharacterRepository Characters { get; } = new CharacterRepository(context);
-    public IMapRepository Maps { get; } = new MapRepository(context);
 
     // ========== TRANSACTION MANAGEMENT ==========
     

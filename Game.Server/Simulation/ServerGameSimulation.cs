@@ -89,7 +89,7 @@ public sealed class ServerGameSimulation : GameSimulation
     
     public bool ApplyPlayerInput(int networkId, Input data)
     {
-        if (!TryGetPlayerEntity(networkId, out var entity))
+        if (!TryGetEntity(networkId, out var entity))
             return false;
         ref var input = ref World.Get<Input>(entity);
         input.InputX = data.InputX;

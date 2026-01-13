@@ -1,0 +1,15 @@
+using MemoryPack;
+
+namespace Game.DTOs.Player;
+
+[MemoryPackable]
+public readonly partial record struct PlayerSnapshot(
+    int PlayerId, int NetworkId, int MapId,
+    string Name, byte Gender, byte Vocation,
+    int X, int Y, int Z,
+    int DirX, int DirY,
+    int Hp, int MaxHp, float HpRegen,
+    int Mp, int MaxMp, float MpRegen,
+    int PhysicalAttack, int MagicAttack,
+    int PhysicalDefense, int MagicDefense
+);

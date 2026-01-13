@@ -8,7 +8,7 @@ namespace Game.ECS.Entities;
 
 public static class FactoryHelper
 {
-    public static Entity CreatePlayer(this World world, ref PlayerData template)
+    public static Entity CreatePlayer(this World world, ref PlayerSnapshot template)
     {
         var entity = world.Create(PlayerArchetypes.PlayerArchetype);
         
@@ -26,15 +26,6 @@ public static class FactoryHelper
             new Input { },
             
             new Direction { X = template.DirX, Y = template.DirY },
-            new Speed { Value = 0f },
-            
-            new Walkable { BaseSpeed = 3f, CurrentModifier = template.MovementSpeed },
-            new SpatialAnchor
-            {
-                MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
-                IsTracked = false
-            },
             
             new CombatStats
             { 
@@ -88,15 +79,6 @@ public static class FactoryHelper
             new NavigationAgent { TargetPosition = default, StoppingDistance = 0f, IsPathPending = false },
 
             new Direction { X = template.DirX, Y = template.DirY },
-            new Speed { Value = 0f },
-
-            new Walkable { BaseSpeed = 1f, CurrentModifier = template.MovementSpeed },
-            new SpatialAnchor
-            {
-                MapId = template.MapId,
-                Position = new Position { X = template.X, Y = template.Y, Z = template.Z },
-                IsTracked = false
-            },
 
             new CombatStats
             {

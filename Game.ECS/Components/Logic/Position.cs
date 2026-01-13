@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Game.ECS.Components;
 
-public partial struct Position : IEquatable<Position>
+public partial struct Position(int x, int y, int z) : IEquatable<Position>
 {
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     public static (sbyte X, sbyte Y) GetDirectionTowards(in Position from, in Position to)
@@ -10,7 +10,7 @@ public partial struct Position : IEquatable<Position>
     
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     public static int ManhattanDistance(Position pos, Position other)
-        => Math.Abs(pos.X - other.X) + Math.Abs(pos.Y - other.Y);
+        => Math.Abs(pos.X - other.X) + Math.Abs(pos.Y - other.Y); 
 
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
     public static int EuclideanDistanceSquared(Position pos, Position other)

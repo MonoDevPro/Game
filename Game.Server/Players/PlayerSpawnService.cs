@@ -19,7 +19,7 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var data = new PlayerData(
+        var data = new PlayerSnapshot(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: character.MapId,
@@ -37,8 +37,6 @@ public sealed class PlayerSpawnService(
             Mp: character.CurrentMp,
             MaxMp: character.MaxMp,
             MpRegen: character.MpRegenPerTick(),
-            MovementSpeed: (float)character.MovementSpeed,
-            AttackSpeed: (float)character.AttackSpeed,
             PhysicalAttack: character.PhysicalAttack,
             MagicAttack: character.MagicAttack,
             PhysicalDefense: character.PhysicalDefense,
@@ -63,12 +61,12 @@ public sealed class PlayerSpawnService(
         if (!simulation.World.TryGet<NetworkId>(session.Entity, out var networkId))
             return;
         
-        simulation.DestroyPlayer(networkId.Value);
+        simulation.DestroyEntity(networkId.Value);
         logger.LogInformation("Despawned player {Name}", character.Name);
         session.Entity = Entity.Null;
     }
 
-    public PlayerData BuildSnapshot(PlayerSession session)
+    public PlayerSnapshot BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
@@ -83,7 +81,7 @@ public sealed class PlayerSpawnService(
                     character.Name);
         }
         
-        return new PlayerData(
+        return new PlayerSnapshot(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: character.MapId,
@@ -101,8 +99,6 @@ public sealed class PlayerSpawnService(
             Mp: character.CurrentMp,
             MaxMp: character.MaxMp,
             MpRegen: character.MpRegenPerTick(),
-            MovementSpeed: (float)character.MovementSpeed,
-            AttackSpeed: (float)character.AttackSpeed,
             PhysicalAttack: character.PhysicalAttack,
             MagicAttack: character.MagicAttack,
             PhysicalDefense: character.PhysicalDefense,

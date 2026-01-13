@@ -20,7 +20,6 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<InventorySlot> InventorySlots { get; set; }
     public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
-    public DbSet<Map> Maps { get; set; }
 
     // ========== MODEL CONFIGURATION ==========
     

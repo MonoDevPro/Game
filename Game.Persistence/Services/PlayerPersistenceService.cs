@@ -1,5 +1,5 @@
-using Game.Domain.Data;
 using Game.Domain.Entities;
+using Game.DTOs.Persistence;
 using Game.Persistence.Interfaces;
 using Game.Persistence.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;

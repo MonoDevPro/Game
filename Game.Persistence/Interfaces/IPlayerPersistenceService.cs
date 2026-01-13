@@ -1,4 +1,4 @@
-using Game.Domain.Data;
+using Game.DTOs.Persistence;
 
 namespace Game.Persistence.Interfaces;
 
