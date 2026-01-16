@@ -26,6 +26,6 @@ public sealed partial class PlayerVisual : DefaultVisual
         UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
-        UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
+        UpdateAnimationSpeed(1f, 1f);
     }
 }

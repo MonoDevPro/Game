@@ -29,6 +29,11 @@ public sealed class WorldMap
     public MapFlags Flags { get; set; }
     public string? BgmId { get; set; }
     
+    public int DefaultSpawnX { get; set; }
+    public int DefaultSpawnY { get; set; }
+    public int DefaultSpawnZ { get; set; }
+    
+    
     // Dimensão física (potência de 2 para Morton)
     private readonly int _physicalSide;
     private readonly int _physicalArea;
@@ -65,7 +70,8 @@ public sealed class WorldMap
         (-1, -1, 1.414f)  // NW
     ];
     
-    public WorldMap(int id, string name, int width, int height, int layers = 1, MapFlags flags = MapFlags.None, string? bgmId = null)
+    public WorldMap(int id, string name, int width, int height, int layers = 1, MapFlags flags = MapFlags.None, string? bgmId = null,
+        int defaultSpawnX = 0, int defaultSpawnY = 0, int defaultSpawnZ = 0)
     {
         if (width <= 0 || height <= 0 || layers <= 0)
             throw new ArgumentException("Dimensions must be positive");
@@ -77,6 +83,9 @@ public sealed class WorldMap
         Layers = layers;
         Flags = flags;
         BgmId = bgmId;
+        DefaultSpawnX = defaultSpawnX;
+        DefaultSpawnY = defaultSpawnY;
+        DefaultSpawnZ = defaultSpawnZ;
         
         _physicalSide = Morton.NextPow2(Math.Max(width, height));
         _physicalArea = _physicalSide * _physicalSide;

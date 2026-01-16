@@ -1,11 +1,14 @@
 using Arch.Core;
 using Arch.System;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS;
 using Game.ECS.Components;
+using Game.ECS.Entities;
+using Game.ECS.Events;
+using Game.ECS.Services;
 using Game.ECS.Services.Map;
-using Game.ECS.Systems;
 using Game.Network.Abstractions;
-using Game.Server.Simulation.Maps;
 using Game.Server.Simulation.Systems;
 
 namespace Game.Server.Simulation;
@@ -19,26 +22,22 @@ public sealed class ServerGameSimulation : GameSimulation
     private readonly INetworkManager _networkManager;
     private readonly ILoggerFactory? _loggerFactory;
     
+    private readonly EntityIndex<int> _networkIndex = new();
+    private readonly GameEventBus _eventBus = new();
+    
     public ServerGameSimulation(
         INetworkManager network,
-        IMapLoader mapLoader,
+        WorldMapRegistry mapLoader,
         ILoggerFactory? factory = null)
         : base(factory?.CreateLogger<ServerGameSimulation>())
     {
         _networkManager = network;
         _loggerFactory = factory;
-
-        // Load + register maps for collision/spatial.
-        // This runs synchronously during startup (constructor), so simulation is ready before the server loop begins.
-        var maps = mapLoader.LoadAllAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-        foreach (var map in maps)
-        {
-            MapIndex.RegisterMap(
-                map.Id,
-                new MapGrid(map.Width, map.Height, map.Layers, map.GetCollisionGrid()),
-                new MapSpatial()
-            );
+        
+        foreach (var map in mapLoader.Maps)
+        {            
+            LogInformation("Registering map {MapId} - {MapName} ({Width}x{Height})", 
+                map.Id, map.Name, map.Width, map.Height);
         }
 
         // Configure systems
@@ -57,34 +56,52 @@ public sealed class ServerGameSimulation : GameSimulation
         // ======== SISTEMAS DE JOGO ==========
         
         // 1. Input processa entrada do jogador
-        systems.Add(new InputSystem(world));
-        
         // 2. NPC AI processa comportamento de NPCs
-        systems.Add(new AISystem(world, MapIndex, _loggerFactory?.CreateLogger<AISystem>()));
-        
         // 3. Spatial sync garante ocupação inicial no grid
-        systems.Add(new SpatialSyncSystem(world, MapIndex, _loggerFactory?.CreateLogger<SpatialSyncSystem>()));
-
         // 4. Movement calcula novas posições
-        systems.Add(new MovementSystem(world, MapIndex, EventBus, _loggerFactory?.CreateLogger<MovementSystem>()));
-        
         // 5. Combat processa comandos de ataque
-        systems.Add(new CombatSystem(world, MapIndex, _loggerFactory?.CreateLogger<CombatSystem>()));
-        
         // 6. Projectile move projéteis e aplica dano
-        systems.Add(new ProjectileSystem(world, MapIndex, _loggerFactory?.CreateLogger<ProjectileSystem>()));
-        
         // 7. Damage processa dano periódico (DoT) e dano adiado
-        systems.Add(new DamageSystem(world, _loggerFactory?.CreateLogger<DamageSystem>()));
-        
+        //systems.Add(new DamageSystem(world, _loggerFactory?.CreateLogger<DamageSystem>()));
         // 8. Lifecycle processa spawn, morte e respawn de entidades
-        systems.Add(new LifecycleSystem(world, _loggerFactory?.CreateLogger<LifecycleSystem>()));
-        
         // 9. Regeneration processa regeneração de vida/mana
-        systems.Add(new RegenerationSystem(world, _loggerFactory?.CreateLogger<RegenerationSystem>()));
-        
+        //systems.Add(new RegenerationSystem(world, _loggerFactory?.CreateLogger<RegenerationSystem>()));
         // 10. ServerSync envia atualizações para clientes
-        systems.Add(new ServerSyncSystem(world, _networkManager, EventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
+        systems.Add(new ServerSyncSystem(world, _networkManager, _eventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
+    }
+    
+    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
+    {
+        var entity = World.CreatePlayer(ref playerSnapshot);
+        _networkIndex.Register(playerSnapshot.NetworkId, entity);
+        return entity;
+    }
+    
+    public Entity CreateNpc(ref NpcData snapshot, ref Behaviour behaviour)
+    {
+        // Atualiza o template com a localização de spawn e networkId
+        var entity = World.CreateNpc(ref snapshot, ref behaviour);
+        _networkIndex.Register(snapshot.NetworkId, entity);
+        return entity;
+    }
+    
+    /// <summary>
+    /// Tenta obter a entidade de um jogador pelo NetworkId.
+    /// </summary>
+    public bool TryGetEntity(int networkId, out Entity entity) =>
+        _networkIndex.TryGetEntity(networkId, out entity);
+    
+    /// <summary>
+    /// Destrói a entidade de um jogador pelo NetworkId.
+    /// </summary>
+    public bool DestroyEntity(int networkId)
+    {
+        if (!_networkIndex.TryGetEntity(networkId, out var entity))
+            return false;
+        
+        _networkIndex.RemoveByKey(networkId);
+        World.Destroy(entity);
+        return true;
     }
     
     public bool ApplyPlayerInput(int networkId, Input data)

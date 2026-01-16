@@ -1,11 +1,10 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Game.Core.Extensions;
-using Game.Domain.Entities;
 using Game.DTOs;
 using Game.DTOs.Persistence;
 using Game.ECS.Components;
 using Game.ECS.Entities;
+using Game.ECS.Services.Map;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -13,11 +12,9 @@ using Game.Persistence.Interfaces;
 using Game.Server.Authentication;
 using Game.Server.Chat;
 using Game.Server.Players;
-using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
-using Game.Server.Simulation.Maps;
 
 namespace Game.Server;
 
@@ -41,14 +38,13 @@ public sealed class GameServer : IDisposable
     private readonly INetworkManager _networkManager;
     private readonly PlayerSessionManager _sessionManager;
     private readonly PlayerSpawnService _spawnService;
-    private readonly NpcSpawnService _npcSpawnService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameServer> _logger;
     private readonly ServerGameSimulation _simulation;
+    private readonly WorldMapRegistry _mapRegistry;
     private readonly NetworkSecurity? _security;
     private readonly SessionTokenManager _tokenManager;
     private readonly ChatService _chatService;
-    private readonly IMapCacheService _mapCache;
     private readonly int _connectionTimeoutSeconds;
     
     private readonly ConcurrentDictionary<int, PendingConnection> _pendingConnections = new();
@@ -60,31 +56,27 @@ public sealed class GameServer : IDisposable
         INetworkManager networkManager,
         PlayerSessionManager sessionManager,
         PlayerSpawnService spawnService,
-        NpcSpawnService npcSpawnService,
         IServiceScopeFactory scopeFactory,
         ServerGameSimulation simulation,
+        WorldMapRegistry mapRegistry,
         ILogger<GameServer> logger,
         SessionTokenManager tokenManager, // ✅ Injetar
         ChatService chatService,
-        IMapCacheService mapCache,
         NetworkSecurity? security = null)
     {
         _networkManager = networkManager;
         _sessionManager = sessionManager;
         _spawnService = spawnService;
-        _npcSpawnService = npcSpawnService;
         _scopeFactory = scopeFactory;
         _simulation = simulation;
+        _mapRegistry = mapRegistry;
         _logger = logger;
         _security = security;
         _tokenManager = tokenManager;
         _chatService = chatService;
-        _mapCache = mapCache;
 
         _connectionTimeoutSeconds = configuration.GetValue("GameServer:ConnectionTimeoutSeconds", 10);
 
-        _npcSpawnService.SpawnInitialNpcs();
-        
         _networkManager.OnPeerConnected += OnPeerConnected;
         _networkManager.OnPeerDisconnected += OnPeerDisconnected;
 
@@ -745,19 +737,27 @@ public sealed class GameServer : IDisposable
 
             // ✅ 7. Envia dados do mapa (carregado do DB + cache)
             var mapId = session.SelectedCharacter.MapId;
-            var currentMap = await _mapCache.GetMapAsync(mapId);
+            
+            if (!_mapRegistry.TryGet(mapId, out var currentMap) || currentMap is null)
+            {
+                _logger.LogError("Map {MapId} not found for character {CharacterName} (Peer: {PeerId})", 
+                    mapId, character.Name, peer.Id);
+                peer.Disconnect();
+                return;
+            }
 
             // ✅ 8. ENVIA GAMEDATAPACKET PARA O CLIENTE!
             var gameDataPacket = new PlayerJoinPacket
             {
-                MapData = currentMap.ToMapDto(currentMap.Id),
+                MapData = currentMap.ToDto(new Position { X = 5, Y = 5, Z = 0 } ),
                 LocalPlayer = localSnapshot.PlayerData[0],
             };
+            
             _networkManager.SendToPeer(peer, gameDataPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             _networkManager.SendToPeer(peer, othersSnapshots, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
             
 
-            var npcSnapshotArray = _npcSpawnService
+            /*var npcSnapshotArray = _npcSpawnService
                 .BuildSnapshots()
                 .Select(snapshot => snapshot)
                 .ToArray();
@@ -766,7 +766,7 @@ public sealed class GameServer : IDisposable
             {
                 var npcSpawnPacket = new NpcSpawnPacket(npcSnapshotArray);
                 _networkManager.SendToPeer(peer, npcSpawnPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-            }
+            }*/
 
             // ✅ Envia histórico de chat recente
             SendChatHistoryToPeer(peer);

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Game.Domain.Data;
 using Game.Domain.Enums;
 using Game.DTOs.Persistence;
 

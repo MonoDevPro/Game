@@ -88,12 +88,11 @@ public sealed partial class ServerSyncSystem(
     #region Player State Collection
     
     [Query]
-    [All<NetworkId, Position, Speed, Direction, Walkable>]
+    [All<NetworkId, Position, Direction>]
     [Any<PlayerControlled, AIControlled>]
     private void CollectStateUpdates(
         in NetworkId networkId,
         in Position position,
-        in Speed speed,
         in Direction direction)
     {
         _stateUpdates.Add(new StateSnapshot(
@@ -101,7 +100,6 @@ public sealed partial class ServerSyncSystem(
             X: position.X,
             Y: position.Y,
             Z: position.Z,
-            Speed: speed.Value,
             DirX: direction.X,
             DirY: direction.Y
         ));

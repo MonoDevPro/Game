@@ -34,7 +34,7 @@ public static class FactoryHelper
                 Defense = template.PhysicalDefense,
                 MagicDefense = template.MagicDefense,
                 AttackRange = 1.5f,
-                AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
+                AttackSpeed = 1f
             },
             new CombatState { CooldownTimer = 0f },
             
@@ -87,7 +87,7 @@ public static class FactoryHelper
                 Defense = template.PhysicalDefense,
                 MagicDefense = template.MagicDefense,
                 AttackRange = behaviour.AttackRange,
-                AttackSpeed = template.AttackSpeed > 0 ? template.AttackSpeed : 1f
+                AttackSpeed = 1f
             },
             new CombatState { CooldownTimer = 0f },
 

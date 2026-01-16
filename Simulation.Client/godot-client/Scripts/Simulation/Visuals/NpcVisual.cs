@@ -14,14 +14,15 @@ public sealed partial class NpcVisual : DefaultVisual
 {
     public static NpcVisual Create()
         => GD.Load<PackedScene>("res://Scenes/Prefabs/NpcVisual.tscn").Instantiate<NpcVisual>();
-    
+
     public void UpdateFromSnapshot(NpcData snapshot)
     {
-        LoadSprite(VocationType.Warrior, Gender.Male); // TODO: Default sprite for NPCs, need load prefabs based on NPC type
+        LoadSprite(VocationType.Warrior,
+            Gender.Male); // TODO: Default sprite for NPCs, need load prefabs based on NPC type
         UpdateName(snapshot.Name);
         UpdateAnimationState(new Direction { X = snapshot.DirX, Y = snapshot.DirY }, false, false, false);
         UpdatePosition(new Vector3I(snapshot.X, snapshot.Y, snapshot.Z));
         UpdateVitals(snapshot.Hp, snapshot.MaxHp, snapshot.Mp, snapshot.MaxMp);
-        if (Sprite is not null) UpdateAnimationSpeed(snapshot.MovementSpeed, snapshot.AttackSpeed);
+        if (Sprite is not null) UpdateAnimationSpeed();
     }
 }

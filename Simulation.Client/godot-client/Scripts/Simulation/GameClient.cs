@@ -145,14 +145,14 @@ public partial class GameClient : Node2D
             return;
         }
 
-        var width = mapSnap.Value.Width;
-        var height = mapSnap.Value.Height;
-        var layers = mapSnap.Value.Layers;
+        /*var width = mapSnap.Width;
+        var height = mapSnap.Height;
+        var layers = mapSnap.Layers;
         bool[,,] collisionMasks = new bool[width, height, layers];
         
         for (var z = 0; z < layers; z++)
         {
-            var collisionLayer = mapSnap.Value.LoadCollisionLayer(z);
+            var collisionLayer = mapSnap.LoadCollisionLayer(z);
             for (var x = 0; x < width; x++)
             for (var y = 0; y < height; y++)
                 collisionMasks[x, y, z] = collisionLayer[y * width + x] != 0;
@@ -164,7 +164,7 @@ public partial class GameClient : Node2D
         var mapGrid = new MapGrid(width, height, layers, collisionMasks);
         var spatial = new MapSpatial();
         
-        _simulation?.RegisterMap(mapSnap.Value.MapId, mapGrid, spatial);
+        _simulation?.RegisterMap(mapSnap.Value.MapId, mapGrid, spatial);*/
         UpdateStatus($"Playing (NetID: {_localNetworkId})");
         
         // Carrega visuais dos jogadores
@@ -271,9 +271,9 @@ public partial class GameClient : Node2D
         if (_simulation is null)
             return;
 
-        if (!_simulation.TryGetAnyEntity(packet.NetworkId, out var entity))
+        if (!_simulation.TryGetEntity(packet.NetworkId, out var entity))
             return;
-        if (!_simulation.TryGetAnyVisual(packet.NetworkId, out var visual))
+        if (!_simulation.TryGetVisual(packet.NetworkId, out var visual))
             return;
 
         var heathCurrent = _simulation.World.Get<Health>(entity).Current;
@@ -367,7 +367,7 @@ public partial class GameClient : Node2D
         }
 
         // Localiza entidade do atacante
-        if (!_simulation.TryGetAnyEntity(packet.AttackerNetworkId, out var attackerEntity))
+        if (!_simulation.TryGetEntity(packet.AttackerNetworkId, out var attackerEntity))
         {
             GD.PushWarning($"[GameClient] HandleCombatState: Could not find attacker entity {packet.AttackerNetworkId}");
             return;

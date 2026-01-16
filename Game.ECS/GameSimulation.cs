@@ -59,9 +59,6 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
     
-    protected readonly EntityIndex<int> NetworkIndex = new();
-    protected readonly GameEventBus EventBus = new();
-    
     /// Fixed timestep para updates da simulação.
     private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDelta);
     
@@ -96,39 +93,5 @@ public abstract class GameSimulation(ILogger<GameSimulation>? logger = null) : G
     {
         Systems.Dispose();
         base.Dispose();
-    }
-    
-    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
-    {
-        var entity = World.CreatePlayer(ref playerSnapshot);
-        NetworkIndex.Register(playerSnapshot.NetworkId, entity);
-        return entity;
-    }
-    
-    public Entity CreateNpc(ref NpcData snapshot, ref Behaviour behaviour)
-    {
-        // Atualiza o template com a localização de spawn e networkId
-        var entity = World.CreateNpc(ref snapshot, ref behaviour);
-        NetworkIndex.Register(snapshot.NetworkId, entity);
-        return entity;
-    }
-    
-    /// <summary>
-    /// Tenta obter a entidade de um jogador pelo NetworkId.
-    /// </summary>
-    public bool TryGetEntity(int networkId, out Entity entity) =>
-        NetworkIndex.TryGetEntity(networkId, out entity);
-    
-    /// <summary>
-    /// Destrói a entidade de um jogador pelo NetworkId.
-    /// </summary>
-    public virtual bool DestroyEntity(int networkId)
-    {
-        if (!NetworkIndex.TryGetEntity(networkId, out var entity))
-            return false;
-        
-        NetworkIndex.RemoveByKey(networkId);
-        World.Destroy(entity);
-        return true;
     }
 }

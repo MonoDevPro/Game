@@ -24,6 +24,15 @@ public sealed class WorldMapRegistry
     
     public void Register(WorldMap map) => _maps[map.Id] = map;
     
+    public void RegisterRange(IEnumerable<WorldMap> maps)
+    {
+        foreach (var map in maps)
+        {
+            _maps[map.Id] = map;
+        }
+    }
+    
+    
     public bool TryGet(int id, out WorldMap?  map) => _maps.TryGetValue(id, out map);
     
     public void Unregister(int id) => _maps.Remove(id);

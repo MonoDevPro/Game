@@ -5,6 +5,7 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
+using GodotClient.Simulation.Visuals;
 
 namespace GodotClient.Simulation.Systems;
 
@@ -14,67 +15,31 @@ namespace GodotClient.Simulation.Systems;
 public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesRoot) 
     : GameSystem(world)
 {
-    private readonly Dictionary<int, Visuals.PlayerVisual> _playerVisuals = new();
-    private readonly Dictionary<int, Visuals.NpcVisual> _npcVisuals = new();
+    private readonly Dictionary<int, DefaultVisual> _visuals = new();
 
-    public void RegisterPlayerVisual(int networkId, Visuals.PlayerVisual visual)
+    public void RegisterVisual(int networkId, DefaultVisual visual)
     {
-        UnregisterPlayerVisual(networkId);
+        if (_visuals.TryGetValue(networkId, out _))
+        {
+            UnregisterVisual(networkId);
+        }
         
-        _playerVisuals[networkId] = visual;
-        
+        _visuals[networkId] = visual;
         entitiesRoot.AddChild(visual);
-    }
-
-    public void RegisterNpcVisual(int networkId, Visuals.NpcVisual visual)
-    {
-        UnregisterNpcVisual(networkId);
-        
-        _npcVisuals[networkId] = visual;
-        
-        entitiesRoot.AddChild(visual);
-    }
-
-    public void UnregisterPlayerVisual(int networkId)
-    {
-        if (_playerVisuals.Remove(networkId, out var visual))
-            visual.QueueFree();
-    }
-
-    public void UnregisterNpcVisual(int networkId)
-    {
-        if (_npcVisuals.Remove(networkId, out var visual))
-            visual.QueueFree();
     }
     
-    public void UnregisterAnyVisual(int networkId)
+    public void UnregisterVisual(int networkId)
     {
-        UnregisterNpcVisual(networkId);
-        UnregisterPlayerVisual(networkId);
+        if (!_visuals.TryGetValue(networkId, out var visual)) 
+            return;
+        
+        visual.QueueFree();
+        _visuals.Remove(networkId);
     }
 
-    public bool TryGetPlayerVisual(int networkId, out Visuals.PlayerVisual visual) =>
-        _playerVisuals.TryGetValue(networkId, out visual!);
-
-    public bool TryGetNpcVisual(int networkId, out Visuals.NpcVisual visual) =>
-        _npcVisuals.TryGetValue(networkId, out visual!);
-
-    private bool TryGetAnyVisual(int networkId, out Visuals.DefaultVisual visual)
+    public bool TryGetAnyVisual(int networkId, out DefaultVisual visual)
     {
-        if (TryGetPlayerVisual(networkId, out var playerVisual))
-        {
-            visual = playerVisual;
-            return true;
-        }
-
-        if (TryGetNpcVisual(networkId, out var npcVisual))
-        {
-            visual = npcVisual;
-            return true;
-        }
-
-        visual = null!;
-        return false;
+        return _visuals.TryGetValue(networkId, out visual!);
     }
 
     [Query]
@@ -82,14 +47,13 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     private void SyncAnimations(
         in Entity e, 
         in NetworkId networkId,
-        in Speed speed,
         in Direction dir,
         [Data] in float deltaTime)
     {
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
-        bool isMoving = speed.Value > 0f && (dir.X != 0 || dir.Y != 0);
+        bool isMoving = (dir.X != 0 || dir.Y != 0);
         bool isAttacking = World.Has<AttackCommand>(e);
         var isDead = World.Has<Dead>(e);
         visual.UpdateAnimationState(dir, isMoving, isAttacking, isDead);
@@ -108,7 +72,6 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     private void InterpolatePosition(
         in Entity e,
         in Position pos, 
-        in Speed speed,
         in Direction dir,
         in NetworkId networkId)
     {
@@ -122,7 +85,7 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
 
         // Extrapolação para compensar latência (usa Direction para saber a direção do movimento)
-        if (speed.Value > 0f && dir is not { X: 0, Y: 0 })
+        if (dir is not { X: 0, Y: 0 })
         {
             float extrapolation = 0.5f;
             Vector2 direction = new(dir.X, dir.Y);

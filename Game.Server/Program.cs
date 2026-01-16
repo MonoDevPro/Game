@@ -1,3 +1,4 @@
+using Game.ECS.Services.Map;
 using Game.Network;
 using Game.Network.Abstractions;
 using Game.Persistence;
@@ -10,7 +11,6 @@ using Game.Server.Npc;
 using Game.Server.Security;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
-using Game.Server.Simulation.Maps;
 
 var builder = CreateHostBuilder(args);
 
@@ -34,6 +34,18 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             
             // ECS
             services.AddSingleton<ServerGameSimulation>();
+            services.AddSingleton<WorldMapRegistry>(sp =>
+            {
+                var registry = new WorldMapRegistry();
+                WorldMap[] maps =
+                [
+                    new(1, "Starter Village", 100, 100, 3),
+                    new(2, "Forest of Beginnings", 200, 200, 2),
+                    new(3, "Cave of Trials", 150, 150, 4)
+                ];
+                registry.RegisterRange(maps);
+                return registry;
+            });
             
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<SessionTokenManager>();
@@ -42,16 +54,11 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddScoped<AccountCharacterService>();
             services.AddSingleton<PlayerSpawnService>();
             services.AddSingleton<INpcRepository, NpcRepository>();
-            services.AddSingleton<NpcSpawnService>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<ChatService>();
             services.AddSingleton(new NetworkSecurity(maxMessagesPerSecond: 50));
             services.AddSingleton<GameServer>();
             
-            // Maps (DB + cache)
-            services.AddSingleton<IMapCacheService, MapCacheService>();
-            services.AddSingleton<IMapLoader, DbMapLoader>();
-
             // Network
             //services.AddSingleton<GameServer>();
             services.AddNetworking(new NetworkOptions
