@@ -6,8 +6,10 @@ using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;
+using Game.ECS.Navigation.Components;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
+using Game.ECS.Services.Navigation;
 using Game.Network.Abstractions;
 using Game.Server.Simulation.Systems;
 
@@ -21,9 +23,16 @@ public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetworkManager _networkManager;
     private readonly ILoggerFactory? _loggerFactory;
+    private readonly WorldMapRegistry _mapRegistry;
     
     private readonly EntityIndex<int> _networkIndex = new();
     private readonly GameEventBus _eventBus = new();
+    
+    // Módulos de navegação por mapa
+    private readonly Dictionary<int, NavigationModule> _navigationModules = new();
+    
+    // Tick counter para navegação (usa long para tick-based)
+    private long _serverTick;
     
     public ServerGameSimulation(
         INetworkManager network,
@@ -33,11 +42,16 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         _networkManager = network;
         _loggerFactory = factory;
+        _mapRegistry = mapLoader;
         
         foreach (var map in mapLoader.Maps)
         {            
             LogInformation("Registering map {MapId} - {MapName} ({Width}x{Height})", 
                 map.Id, map.Name, map.Width, map.Height);
+            
+            // Cria módulo de navegação para cada mapa
+            var navModule = new NavigationModule(World, map);
+            _navigationModules[map.Id] = navModule;
         }
 
         // Configure systems
@@ -66,7 +80,11 @@ public sealed class ServerGameSimulation : GameSimulation
         // 8. Lifecycle processa spawn, morte e respawn de entidades
         // 9. Regeneration processa regeneração de vida/mana
         //systems.Add(new RegenerationSystem(world, _loggerFactory?.CreateLogger<RegenerationSystem>()));
-        // 10. ServerSync envia atualizações para clientes
+        // 10. PlayerNavigation sync para broadcast de movimento jogadores
+        systems.Add(new PlayerNavigationSyncSystem(world, _networkManager, _navigationModules, _loggerFactory?.CreateLogger<PlayerNavigationSyncSystem>()));
+        // 11. NpcNavigation sync para broadcast de movimento NPCs
+        systems.Add(new NpcNavigationSyncSystem(world, _networkManager, _navigationModules, _loggerFactory?.CreateLogger<NpcNavigationSyncSystem>()));
+        // 12. ServerSync envia atualizações de estado para clientes
         systems.Add(new ServerSyncSystem(world, _networkManager, _eventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     
@@ -74,6 +92,19 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
         _networkIndex.Register(playerSnapshot.NetworkId, entity);
+        
+        // Adiciona componentes de navegação se houver módulo de navegação para o mapa
+        if (_navigationModules.TryGetValue(playerSnapshot.MapId, out var navModule))
+        {
+            navModule.AddNavigationComponents(entity);
+            
+            // Registra entidade no WorldMap para ocupação
+            if (_mapRegistry.TryGet(playerSnapshot.MapId, out var worldMap) && worldMap != null)
+            {
+                worldMap.AddEntity(new Position { X = playerSnapshot.X, Y = playerSnapshot.Y, Z = playerSnapshot.Z }, entity);
+            }
+        }
+        
         return entity;
     }
     
@@ -82,7 +113,98 @@ public sealed class ServerGameSimulation : GameSimulation
         // Atualiza o template com a localização de spawn e networkId
         var entity = World.CreateNpc(ref snapshot, ref behaviour);
         _networkIndex.Register(snapshot.NetworkId, entity);
+        
+        // Adiciona componentes de navegação se houver módulo de navegação para o mapa
+        if (_navigationModules.TryGetValue(snapshot.MapId, out var navModule))
+        {
+            navModule.AddNavigationComponents(entity);
+            
+            // Registra entidade no WorldMap para ocupação
+            if (_mapRegistry.TryGet(snapshot.MapId, out var worldMap) && worldMap != null)
+            {
+                worldMap.AddEntity(new Position { X = snapshot.X, Y = snapshot.Y, Z = snapshot.Z }, entity);
+            }
+        }
+        
         return entity;
+    }
+    
+    /// <summary>
+    /// Solicita movimento de um NPC para uma posição de destino.
+    /// </summary>
+    public bool RequestNpcMove(int networkId, int targetX, int targetY, int targetZ = 0)
+    {
+        if (!TryGetEntity(networkId, out var entity))
+            return false;
+            
+        ref var mapId = ref World.Get<MapId>(entity);
+        if (!_navigationModules.TryGetValue(mapId.Value, out var navModule))
+            return false;
+            
+        navModule.RequestMove(entity, targetX, targetY, targetZ);
+        return true;
+    }
+    
+    /// <summary>
+    /// Para o movimento de um NPC.
+    /// </summary>
+    public bool StopNpcMove(int networkId)
+    {
+        if (!TryGetEntity(networkId, out var entity))
+            return false;
+            
+        ref var mapId = ref World.Get<MapId>(entity);
+        if (!_navigationModules.TryGetValue(mapId.Value, out var navModule))
+            return false;
+            
+        navModule.StopMovement(entity);
+        return true;
+    }
+    
+    /// <summary>
+    /// Obtém o módulo de navegação para um mapa específico.
+    /// </summary>
+    public NavigationModule? GetNavigationModule(int mapId)
+    {
+        return _navigationModules.TryGetValue(mapId, out var navModule) ? navModule : null;
+    }
+    
+    /// <summary>
+    /// Tick de navegação - chamado internamente pelo Update.
+    /// </summary>
+    private void TickNavigation()
+    {
+        _serverTick++;
+        foreach (var navModule in _navigationModules.Values)
+        {
+            navModule.Tick(_serverTick);
+        }
+    }
+    
+    /// <summary>
+    /// Override do Update para também processar navegação.
+    /// </summary>
+    public override void Update(in float deltaTime)
+    {
+        // Processa navegação (tick-based)
+        TickNavigation();
+        
+        // Processa sistemas ECS
+        base.Update(in deltaTime);
+    }
+    
+    /// <summary>
+    /// Disposes all resources including navigation modules.
+    /// </summary>
+    public override void Dispose()
+    {
+        foreach (var navModule in _navigationModules.Values)
+        {
+            navModule.Dispose();
+        }
+        _navigationModules.Clear();
+        
+        base.Dispose();
     }
     
     /// <summary>
@@ -112,6 +234,56 @@ public sealed class ServerGameSimulation : GameSimulation
         input.InputX = data.InputX;
         input.InputY = data.InputY;
         input.Flags = data.Flags;
+        
+        // Se tiver input de movimento, solicita movimento via navegação
+        if (data.InputX != 0 || data.InputY != 0)
+        {
+            ref var mapId = ref World.Get<MapId>(entity);
+            ref var position = ref World.Get<Position>(entity);
+            
+            // Calcula posição alvo baseada no input direcional
+            int targetX = position.X + data.InputX;
+            int targetY = position.Y + data.InputY;
+            
+            // Solicita movimento direto (um passo apenas, sem pathfinding completo)
+            if (_navigationModules.TryGetValue(mapId.Value, out var navModule))
+            {
+                navModule.RequestMove(entity, targetX, targetY, position.Z);
+            }
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Solicita movimento de um jogador para uma posição específica (click-to-move).
+    /// </summary>
+    public bool RequestPlayerMove(int networkId, int targetX, int targetY, int targetZ = 0)
+    {
+        if (!TryGetEntity(networkId, out var entity))
+            return false;
+            
+        ref var mapId = ref World.Get<MapId>(entity);
+        if (!_navigationModules.TryGetValue(mapId.Value, out var navModule))
+            return false;
+            
+        navModule.RequestMove(entity, targetX, targetY, targetZ);
+        return true;
+    }
+    
+    /// <summary>
+    /// Para o movimento de um jogador.
+    /// </summary>
+    public bool StopPlayerMove(int networkId)
+    {
+        if (!TryGetEntity(networkId, out var entity))
+            return false;
+            
+        ref var mapId = ref World.Get<MapId>(entity);
+        if (!_navigationModules.TryGetValue(mapId.Value, out var navModule))
+            return false;
+            
+        navModule.StopMovement(entity);
         return true;
     }
 }

@@ -99,6 +99,8 @@ public partial class GameClient : Node2D
             _network.UnregisterPacketHandler<VitalsPacket>();
             _network.UnregisterPacketHandler<AttackPacket>();
             _network.UnregisterPacketHandler<NpcSpawnPacket>();
+            _network.UnregisterPacketHandler<NpcMovementPacket>();
+            _network.UnregisterPacketHandler<PlayerMovementPacket>();
             _network.UnregisterPacketHandler<ChatMessagePacket>();
         }
 
@@ -240,6 +242,8 @@ public partial class GameClient : Node2D
         _network.RegisterPacketHandler<VitalsPacket>(HandleVitals);
         _network.RegisterPacketHandler<AttackPacket>(HandleCombatState);
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawn);
+        _network.RegisterPacketHandler<NpcMovementPacket>(HandleNpcMovement);
+        _network.RegisterPacketHandler<PlayerMovementPacket>(HandlePlayerMovement);
         _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");
@@ -394,6 +398,28 @@ public partial class GameClient : Node2D
         {
             var npcData = npc;
             _simulation.CreateNpc(ref npcData, SpawnNpcVisual(npcData));
+        }
+    }
+    
+    private void HandleNpcMovement(INetPeerAdapter peer, ref NpcMovementPacket packet)
+    {
+        if (_simulation is null)
+            return;
+        
+        foreach (var movement in packet.Movements)
+        {
+            _simulation.ApplyNpcMovement(movement);
+        }
+    }
+    
+    private void HandlePlayerMovement(INetPeerAdapter peer, ref PlayerMovementPacket packet)
+    {
+        if (_simulation is null)
+            return;
+        
+        foreach (var movement in packet.Movements)
+        {
+            _simulation.ApplyPlayerMovement(movement);
         }
     }
 

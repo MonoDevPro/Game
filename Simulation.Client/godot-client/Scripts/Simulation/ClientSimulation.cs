@@ -162,4 +162,132 @@ public sealed class ClientSimulation : GameSimulation
         World.UpdateVitals(entity, ref vitalsSnapshot);
     }
     
+    /// <summary>
+    /// Aplica snapshot de movimento de NPC recebido do servidor.
+    /// Atualiza posição e direção do NPC, além de iniciar interpolação visual.
+    /// </summary>
+    public void ApplyNpcMovement(NpcMovementSnapshot movement)
+    {
+        if (!TryGetEntity(movement.NetworkId, out var entity))
+        {
+            // NPC pode não existir ainda (spawn ainda não chegou)
+            return;
+        }
+        
+        // Atualiza posição no ECS
+        ref var position = ref World.Get<Game.ECS.Components.Position>(entity);
+        position.X = movement.CurrentX;
+        position.Y = movement.CurrentY;
+        position.Z = movement.CurrentZ;
+        
+        // Atualiza direção
+        ref var direction = ref World.Get<Game.ECS.Components.Direction>(entity);
+        direction.X = movement.DirectionX;
+        direction.Y = movement.DirectionY;
+        
+        // Se estiver movendo, adiciona componente de movimento para interpolação
+        if (movement.IsMoving && _visualSyncSystem != null)
+        {
+            // Adiciona/atualiza componente de movimento local para interpolação
+            if (World.Has<NpcMovementData>(entity))
+            {
+                ref var movementData = ref World.Get<NpcMovementData>(entity);
+                movementData.TargetX = movement.TargetX;
+                movementData.TargetY = movement.TargetY;
+                movementData.TargetZ = movement.TargetZ;
+                movementData.IsMoving = true;
+                movementData.TicksRemaining = movement.TicksRemaining;
+            }
+            else
+            {
+                World.Add(entity, new NpcMovementData
+                {
+                    TargetX = movement.TargetX,
+                    TargetY = movement.TargetY,
+                    TargetZ = movement.TargetZ,
+                    IsMoving = true,
+                    TicksRemaining = movement.TicksRemaining
+                });
+            }
+        }
+        else if (World.Has<NpcMovementData>(entity))
+        {
+            ref var movementData = ref World.Get<NpcMovementData>(entity);
+            movementData.IsMoving = false;
+        }
+    }
+    
+    /// <summary>
+    /// Aplica snapshot de movimento de jogador recebido do servidor.
+    /// Atualiza posição e direção do jogador, além de iniciar interpolação visual.
+    /// </summary>
+    public void ApplyPlayerMovement(PlayerMovementSnapshot movement)
+    {
+        if (!TryGetEntity(movement.NetworkId, out var entity))
+        {
+            // Jogador pode não existir ainda (spawn ainda não chegou)
+            return;
+        }
+        
+        // Pula atualização para o jogador local (predição local é usada)
+        if (World.Has<LocalPlayerTag>(entity))
+        {
+            // Reconciliação: apenas atualiza se a diferença for significativa
+            ref var position = ref World.Get<Game.ECS.Components.Position>(entity);
+            var deltaX = Math.Abs(position.X - movement.CurrentX);
+            var deltaY = Math.Abs(position.Y - movement.CurrentY);
+            
+            // Se diferença for grande (mais de 2 tiles), corrige posição
+            if (deltaX > 2 || deltaY > 2)
+            {
+                position.X = movement.CurrentX;
+                position.Y = movement.CurrentY;
+                position.Z = movement.CurrentZ;
+            }
+            return;
+        }
+        
+        // Atualiza posição no ECS para outros jogadores
+        ref var pos = ref World.Get<Game.ECS.Components.Position>(entity);
+        pos.X = movement.CurrentX;
+        pos.Y = movement.CurrentY;
+        pos.Z = movement.CurrentZ;
+        
+        // Atualiza direção
+        ref var direction = ref World.Get<Game.ECS.Components.Direction>(entity);
+        direction.X = movement.DirectionX;
+        direction.Y = movement.DirectionY;
+        
+        // Se estiver movendo, adiciona componente de movimento para interpolação
+        if (movement.IsMoving && _visualSyncSystem != null)
+        {
+            // Adiciona/atualiza componente de movimento local para interpolação
+            if (World.Has<PlayerMovementData>(entity))
+            {
+                ref var movementData = ref World.Get<PlayerMovementData>(entity);
+                movementData.TargetX = movement.TargetX;
+                movementData.TargetY = movement.TargetY;
+                movementData.TargetZ = movement.TargetZ;
+                movementData.IsMoving = true;
+                movementData.TicksRemaining = movement.TicksRemaining;
+            }
+            else
+            {
+                World.Add(entity, new PlayerMovementData
+                {
+                    TargetX = movement.TargetX,
+                    TargetY = movement.TargetY,
+                    TargetZ = movement.TargetZ,
+                    IsMoving = true,
+                    TicksRemaining = movement.TicksRemaining
+                });
+            }
+        }
+        else if (World.Has<PlayerMovementData>(entity))
+        {
+            ref var movementData = ref World.Get<PlayerMovementData>(entity);
+            movementData.IsMoving = false;
+        }
+    }
+    
 }
