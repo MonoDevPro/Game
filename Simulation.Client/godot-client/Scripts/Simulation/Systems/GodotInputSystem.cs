@@ -1,53 +1,71 @@
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.DTOs;
 using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Systems;
+using Game.Network.Abstractions;
+using Godot;
 using GodotClient.Simulation.Components;
 
 namespace GodotClient.Simulation.Systems;
 
-public sealed partial class GodotInputSystem(World world)
+public sealed partial class GodotInputSystem(World world, INetworkManager sender)
     : GameSystem(world)
 {
+    private sbyte _moveX;
+    private sbyte _moveY;
+    private InputFlags _flags;
+    
     [Query]
-    [All<PlayerControlled, LocalPlayerTag, Input>]
+    [All<PlayerControlled, LocalPlayerTag>]
     [None<Dead>]
-    private void ApplyInput(in Entity e, ref Input input, ref DirtyFlags dirty)
+    private void ApplyInput(in Entity e)
     {
         if (GameClient.Instance is { IsChatFocused: true })
         {
-            if (input is { InputX: 0, InputY: 0, Flags: InputFlags.None }) 
+            if (_moveX == 0 && _moveY == 0 && _flags == InputFlags.None ) 
                 return;
             
-            input.InputX = 0;
-            input.InputY = 0;
-            input.Flags = InputFlags.None;
-            dirty.MarkDirty(DirtyComponentType.Input);
+            _moveX = 0;
+            _moveY = 0;
+            _flags = InputFlags.None;
             return;
         }
 
         sbyte moveX = 0, moveY = 0;
-        if (Godot.Input.IsActionPressed("walk_west"))       moveX = -1;
-        else if (Godot.Input.IsActionPressed("walk_east"))  moveX = 1;
+        if (Input.IsActionPressed("walk_west"))       moveX = -1;
+        else if (Input.IsActionPressed("walk_east"))  moveX = 1;
 
-        if (Godot.Input.IsActionPressed("walk_north"))      moveY = -1;
-        else if (Godot.Input.IsActionPressed("walk_south")) moveY = 1;
+        if (Input.IsActionPressed("walk_north"))      moveY = -1;
+        else if (Input.IsActionPressed("walk_south")) moveY = 1;
 
         var buttons = InputFlags.None;
-        if (Godot.Input.IsActionPressed("click_left"))      buttons |= InputFlags.ClickLeft;
-        if (Godot.Input.IsActionPressed("click_right"))     buttons |= InputFlags.ClickRight;
-        if (Godot.Input.IsActionPressed("attack"))          buttons |= InputFlags.BasicAttack;
-        if (Godot.Input.IsActionPressed("sprint"))          buttons |= InputFlags.Sprint;
+        if (Input.IsActionPressed("click_left"))      buttons |= InputFlags.ClickLeft;
+        if (Input.IsActionPressed("click_right"))     buttons |= InputFlags.ClickRight;
+        if (Input.IsActionPressed("attack"))          buttons |= InputFlags.BasicAttack;
+        if (Input.IsActionPressed("sprint"))          buttons |= InputFlags.Sprint;
         
-        if (input.InputX == moveX && input.InputY == moveY && input.Flags == buttons)
-            return; // No change
-
-        // Always apply input to allow stopping movement when keys are released
-        input.InputX = moveX;
-        input.InputY = moveY;
-        input.Flags = buttons;
-        dirty.MarkDirty(DirtyComponentType.Input);
+        _moveX = moveX;
+        _moveY = moveY;
+        _flags = buttons;
+        
+        if (_moveX == 0 && _moveY == 0 && _flags == InputFlags.None ) 
+            return;
+        
+        var inputPacket = new InputPacket{ Input = 
+            new InputRequest
+            {
+                InputX = _moveX, 
+                InputY = _moveY, 
+                Flags = _flags
+            } };
+            
+        sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+        GD.Print($"[ClientSyncSystem] Sent PlayerInputPacket: " +
+                 $"InputX={inputPacket.Input.InputX}, " +
+                 $"InputY={inputPacket.Input.InputY}, " +
+                 $"Flags={inputPacket.Input.Flags}");
     }
 }

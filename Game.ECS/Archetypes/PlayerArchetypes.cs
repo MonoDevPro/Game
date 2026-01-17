@@ -29,9 +29,6 @@ public static class PlayerArchetypes
         Component<GenderId>.ComponentType,
         Component<VocationId>.ComponentType,
         
-        // Input
-        Component<Input>.ComponentType,
-        
         // Transform
         Component<Direction>.ComponentType,
         

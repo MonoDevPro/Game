@@ -1,3 +1,4 @@
+using System;
 using Arch.Core;
 using Arch.System;
 using Game.DTOs.Npc;
@@ -48,14 +49,11 @@ public sealed class ClientSimulation : GameSimulation
     protected override void ConfigureSystems(World world, Group<float> systems)
     {
         // Sistemas de entrada do jogador
-        systems.Add(new GodotInputSystem(world));
+        systems.Add(new GodotInputSystem(world, _networkManager));
         
         // Sync de nós visuais (interpolação e animação)
         _visualSyncSystem = new ClientVisualSyncSystem(world, GameClient.Instance.EntitiesRoot);
         systems.Add(_visualSyncSystem);
-        
-        // Sincronização com o servidor (envia input)
-        systems.Add(new NetworkSyncSystem(world, _networkManager));
     }
     
     // Visual
@@ -104,7 +102,7 @@ public sealed class ClientSimulation : GameSimulation
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
-        World.Add<LocalPlayerTag, DirtyFlags>(entity);
+        World.Add<LocalPlayerTag>(entity);
         _visualSyncSystem?.RegisterVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(in snapshot);
         visual.MakeCamera();

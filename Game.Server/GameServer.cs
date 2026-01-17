@@ -794,22 +794,7 @@ public sealed class GameServer : IDisposable
     /// </summary>
     private void HandlePlayerInput(INetPeerAdapter peer, ref InputPacket input)
     {
-        if (_simulation.ApplyPlayerInput(peer.Id, 
-                new Input
-                {
-                    InputX = input.Input.InputX, 
-                    InputY = input.Input.InputY, 
-                    Flags = input.Input.Flags
-                } ))
-        {
-            _logger.LogDebug(
-                "Applied input from peer {PeerId}: Input=({InputX}, {InputY}), Flags={Flags}",
-                peer.Id, 
-                input.Input.InputX,
-                input.Input.InputY,
-                input.Input.Flags
-            );
-        }
+        _simulation.ApplyPlayerInput(peer.Id, input.Input);
     }
 
     private void HandleChatMessage(INetPeerAdapter peer, ref ChatMessagePacket packet)

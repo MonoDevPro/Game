@@ -226,30 +226,24 @@ public sealed class ServerGameSimulation : GameSimulation
         return true;
     }
     
-    public bool ApplyPlayerInput(int networkId, Input data)
+    public bool ApplyPlayerInput(int networkId, InputRequest inputRequest)
     {
         if (!TryGetEntity(networkId, out var entity))
             return false;
-        ref var input = ref World.Get<Input>(entity);
-        input.InputX = data.InputX;
-        input.InputY = data.InputY;
-        input.Flags = data.Flags;
         
         // Se tiver input de movimento, solicita movimento via navegação
-        if (data.InputX != 0 || data.InputY != 0)
+        if (inputRequest.InputX != 0 || inputRequest.InputY != 0)
         {
             ref var mapId = ref World.Get<MapId>(entity);
             ref var position = ref World.Get<Position>(entity);
             
             // Calcula posição alvo baseada no input direcional
-            int targetX = position.X + data.InputX;
-            int targetY = position.Y + data.InputY;
+            int targetX = position.X + inputRequest.InputX;
+            int targetY = position.Y + inputRequest.InputY;
             
             // Solicita movimento direto (um passo apenas, sem pathfinding completo)
             if (_navigationModules.TryGetValue(mapId.Value, out var navModule))
-            {
                 navModule.RequestMove(entity, targetX, targetY, position.Z);
-            }
         }
         
         return true;

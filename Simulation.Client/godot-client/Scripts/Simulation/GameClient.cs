@@ -420,6 +420,8 @@ public partial class GameClient : Node2D
         foreach (var movement in packet.Movements)
         {
             _simulation.ApplyPlayerMovement(movement);
+            
+            GD.Print($"[GameClient] Applied PlayerMovement for NetID {movement.NetworkId}");
         }
     }
 

@@ -23,8 +23,6 @@ public static class FactoryHelper
             new GenderId { Value = template.Gender },
             new VocationId { Value = template.Vocation },
             
-            new Input { },
-            
             new Direction { X = template.DirX, Y = template.DirY },
             
             new CombatStats
