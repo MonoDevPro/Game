@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.DTOs;
+using Game.ECS.Services.Snapshot.Data;
 using Game.Network.Abstractions;
 
 namespace Game.Tests;
@@ -26,7 +27,7 @@ public sealed class CombatSyncTests
 
         public IPeerRepository Peers { get; } = new DummyPeerRepository();
 
-        public List<AttackPacket> CombatPackets { get; } = new();
+        public List<PlayerAttackPacket> CombatPackets { get; } = new();
 
         public void Initialize() { }
         public void ConnectToServer() => throw new NotSupportedException();
@@ -43,7 +44,7 @@ public sealed class CombatSyncTests
 
         public void SendToAll<T>(T packet, NetworkChannel channel, NetworkDeliveryMethod deliveryMethod) where T : struct
         {
-            if (packet is AttackPacket combat)
+            if (packet is PlayerAttackPacket combat)
                 CombatPackets.Add(combat);
         }
 

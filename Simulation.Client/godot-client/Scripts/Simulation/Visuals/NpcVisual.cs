@@ -1,6 +1,7 @@
 using Game.Domain.Enums;
 using Game.DTOs.Npc;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;

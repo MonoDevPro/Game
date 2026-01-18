@@ -1,6 +1,7 @@
 using Arch.Core;
 using Game.DTOs.Player;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 
 namespace Game.ECS.Events;
 

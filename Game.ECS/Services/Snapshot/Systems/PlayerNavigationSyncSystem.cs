@@ -5,10 +5,11 @@ using Game.DTOs.Player;
 using Game.ECS.Components;
 using Game.ECS.Navigation.Components;
 using Game.ECS.Services.Navigation;
+using Game.ECS.Services.Snapshot.Sync;
 using Game.ECS.Systems;
-using Game.Network.Abstractions;
+using Microsoft.Extensions.Logging;
 
-namespace Game.Server.Simulation.Systems;
+namespace Game.ECS.Services.Snapshot.Systems;
 
 /// <summary>
 /// Sistema responsável por sincronizar o movimento de jogadores com os clientes.
@@ -16,7 +17,7 @@ namespace Game.Server.Simulation.Systems;
 /// </summary>
 public sealed partial class PlayerNavigationSyncSystem(
     World world,
-    INetworkManager networkManager,
+    INetSync networkManager,
     Dictionary<int, NavigationModule> navigationModules,
     ILogger<PlayerNavigationSyncSystem>? logger = null)
     : GameSystem(world, logger)
@@ -53,10 +54,9 @@ public sealed partial class PlayerNavigationSyncSystem(
     /// Query para coletar dados de movimento de jogadores que estão navegando.
     /// </summary>
     [Query]
-    [All<PlayerControlled, NetworkId, MapId, Position, NavMovementState, NavAgent>]
+    [All<PlayerControlled, NetworkId, Position, NavMovementState, NavAgent>]
     private void CollectPlayerMovement(
         in NetworkId networkId,
-        in MapId mapId,
         in Position position,
         in NavMovementState movement)
     {
@@ -83,7 +83,7 @@ public sealed partial class PlayerNavigationSyncSystem(
             return;
             
         var packet = new PlayerMovementPacket([.._movementUpdates]);
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Unreliable);
+        networkManager.SendToAllUnreliable(ref packet);
         
         LogDebug("Sent player movement update for {Count} entities", _movementUpdates.Count);
         _movementUpdates.Clear();

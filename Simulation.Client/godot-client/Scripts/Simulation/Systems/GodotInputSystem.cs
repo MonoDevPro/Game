@@ -4,6 +4,7 @@ using Arch.System.SourceGenerator;
 using Game.DTOs;
 using Game.DTOs.Player;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 using Game.ECS.Systems;
 using Game.Network.Abstractions;
 using Godot;
@@ -54,8 +55,8 @@ public sealed partial class GodotInputSystem(World world, INetworkManager sender
         if (_moveX == 0 && _moveY == 0 && _flags == InputFlags.None ) 
             return;
         
-        var inputPacket = new InputPacket{ Input = 
-            new InputRequest
+        var inputPacket = new PlayerInputPacket{ Input = 
+            new PlayerInputRequest
             {
                 InputX = _moveX, 
                 InputY = _moveY, 

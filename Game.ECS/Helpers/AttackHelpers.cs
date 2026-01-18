@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Game.Domain.Enums;
 using Game.DTOs.Player;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 
 namespace Game.ECS.Helpers;
 

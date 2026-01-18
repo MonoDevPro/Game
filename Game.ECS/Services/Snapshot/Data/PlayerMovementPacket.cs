@@ -19,7 +19,16 @@ public readonly partial record struct PlayerMovementSnapshot(
     sbyte DirectionX,
     sbyte DirectionY,
     ushort TicksRemaining
-);
+)
+{
+    /// <summary>
+    /// Calcula duração em segundos baseado nos ticks restantes.
+    /// </summary>
+    public readonly float GetDurationSeconds(float tickRate)
+    {
+        return TicksRemaining / tickRate;
+    }
+}
 
 /// <summary>
 /// Pacote de movimentação de jogadores para broadcast.

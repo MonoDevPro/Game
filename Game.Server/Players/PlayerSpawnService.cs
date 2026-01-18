@@ -1,7 +1,7 @@
 using Arch.Core;
-using Game.DTOs.Player;
 using Game.ECS.Components;
-using Game.ECS.Entities;
+using Game.ECS.Services.Snapshot;
+using Game.ECS.Services.Snapshot.Data;
 using Game.Server.Sessions;
 using Game.Server.Simulation;
 
@@ -19,7 +19,7 @@ public sealed class PlayerSpawnService(
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
         
-        var data = new PlayerSnapshot(
+        var data = new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: character.MapId,
@@ -66,7 +66,7 @@ public sealed class PlayerSpawnService(
         session.Entity = Entity.Null;
     }
 
-    public PlayerSnapshot BuildSnapshot(PlayerSession session)
+    public PlayerData BuildSnapshot(PlayerSession session)
     {
         var character = session.SelectedCharacter 
                         ?? throw new InvalidOperationException("No character selected for session.");
@@ -81,7 +81,7 @@ public sealed class PlayerSpawnService(
                     character.Name);
         }
         
-        return new PlayerSnapshot(
+        return new PlayerData(
             PlayerId: session.Account.Id,
             NetworkId: session.Peer.Id,
             MapId: character.MapId,

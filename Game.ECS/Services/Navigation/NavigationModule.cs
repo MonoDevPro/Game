@@ -166,62 +166,10 @@ public sealed class NavigationModule : IDisposable
             _world.Remove<NavWaitingToMove>(entity);
     }
 
-    /// <summary>
-    /// Obtém dados para broadcast ao cliente.
-    /// </summary>
-    public NavMovementSnapshot GetSnapshot(Entity entity, long currentTick)
-    {
-        var pos = _world.Get<Position>(entity);
-        var movement = _world.Get<NavMovementState>(entity);
-
-        return new NavMovementSnapshot
-        {
-            EntityId = entity.Id,
-            CurrentX = (short)pos.X,
-            CurrentY = (short)pos.Y,
-            CurrentZ = (short)pos.Z,
-            TargetX = movement.IsMoving ? (short)movement.TargetCell.X : (short)pos.X,
-            TargetY = movement.IsMoving ? (short)movement.TargetCell.Y : (short)pos.Y,
-            TargetZ = movement.IsMoving ? (short)movement.TargetCell.Z : (short)pos.Z,
-            IsMoving = movement.IsMoving,
-            DirectionX = (sbyte)movement.MovementDirection.X,
-            DirectionY = (sbyte)movement.MovementDirection.Y,
-            TicksRemaining = movement.IsMoving
-                ? (ushort)Math.Max(0, movement.EndTick - currentTick)
-                : (ushort)0
-        };
-    }
-
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
         _systems.Dispose();
-    }
-}
-
-/// <summary>
-/// Snapshot de movimento para enviar ao cliente.
-/// </summary>
-public struct NavMovementSnapshot
-{
-    public int EntityId;
-    public short CurrentX;
-    public short CurrentY;
-    public short CurrentZ;
-    public short TargetX;
-    public short TargetY;
-    public short TargetZ;
-    public bool IsMoving;
-    public sbyte DirectionX;
-    public sbyte DirectionY;
-    public ushort TicksRemaining;
-
-    /// <summary>
-    /// Calcula duração em segundos baseado nos ticks restantes.
-    /// </summary>
-    public readonly float GetDurationSeconds(float tickRate)
-    {
-        return TicksRemaining / tickRate;
     }
 }

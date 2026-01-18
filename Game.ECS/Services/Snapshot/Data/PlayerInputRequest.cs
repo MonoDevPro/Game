@@ -1,13 +1,16 @@
 using MemoryPack;
 
-namespace Game.DTOs.Player;
+namespace Game.ECS.Services.Snapshot.Data;
 
 [MemoryPackable]
-public readonly partial record struct InputRequest(
+public readonly partial record struct PlayerInputRequest(
     sbyte InputX, 
     sbyte InputY, 
     InputFlags Flags
 );
+
+[MemoryPackable]
+public readonly partial record struct PlayerInputPacket(PlayerInputRequest Input);
 
 // ============================================
 // Inputs - Entrada do jogador

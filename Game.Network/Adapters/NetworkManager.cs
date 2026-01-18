@@ -1,11 +1,12 @@
 using System.Net;
+using Game.ECS.Services.Snapshot.Sync;
 using Game.Network.Abstractions;
 using LiteNetLib;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Network.Adapters;
 
-public class NetworkManager : INetworkManager, IDisposable
+public class NetworkManager : INetworkManager, INetSync, IDisposable
 {
     private readonly NetworkOptions _netOptions;
     private readonly NetManager _net;
@@ -111,5 +112,25 @@ public class NetworkManager : INetworkManager, IDisposable
     public void Dispose()
     {
         Stop();
+    }
+
+    public void SendToAllReliable<T>(ref T packet) where T : struct
+    {
+        SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+    }
+
+    public void SendToAllUnreliable<T>(ref T packet) where T : struct
+    {
+        SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Unreliable);
+    }
+
+    public void SendToReliable<T>(int networkId, ref T packet) where T : struct
+    {
+        SendToPeerId(networkId, packet, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
+    }
+
+    public void SendToUnreliable<T>(int networkId, ref T packet) where T : struct
+    {
+        SendToPeerId(networkId, packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Unreliable);
     }
 }

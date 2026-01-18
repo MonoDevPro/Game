@@ -1,13 +1,16 @@
 using MemoryPack;
 
-namespace Game.DTOs.Player;
+namespace Game.ECS.Services.Snapshot.Data;
 
 [MemoryPackable]
-public readonly partial record struct AttackSnapshot(
+public readonly partial record struct PlayerAttackSnapshot(
     int AttackerNetworkId,
     AttackStyle Style,
     float AttackDuration,
     float CooldownRemaining);
+
+[MemoryPackable]
+public readonly partial record struct PlayerAttackPacket(PlayerAttackSnapshot[] Attacks);
     
 /// <summary>
 /// Define o estilo de ataque baseado na vocação.

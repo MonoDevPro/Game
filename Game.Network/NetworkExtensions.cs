@@ -1,4 +1,5 @@
 using Game.ECS.Services;
+using Game.ECS.Services.Snapshot.Sync;
 using Game.Network.Abstractions;
 using Game.Network.Adapters;
 using LiteNetLib;
@@ -13,14 +14,18 @@ public static class NetworkExtensions
         this IServiceCollection services, 
         NetworkOptions options)
     {
-        services.AddSingleton<INetworkManager>(sp =>
+        services.AddSingleton<NetworkManager>(a => BuildNetworkManager(a, options));
+        services.AddSingleton<INetworkManager>(sp => sp.GetRequiredService<NetworkManager>());
+        services.AddSingleton<INetSync>(sp => sp.GetRequiredService<NetworkManager>());
+        return services;
+    }
+        
+        
+        private static NetworkManager BuildNetworkManager(IServiceProvider sp, NetworkOptions options)
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            
             var packetProcessor = new PacketProcessor(loggerFactory.CreateLogger<PacketProcessor>());
-            
             var listener = new NetworkListener(options.ConnectionKey, packetProcessor, loggerFactory.CreateLogger<NetworkListener>());
-
             var net = new NetManager(listener)
             {
                 DisconnectTimeout = options.DisconnectTimeoutMs,
@@ -28,13 +33,8 @@ public static class NetworkExtensions
                 PingInterval = options.PingIntervalMs,
                 UnconnectedMessagesEnabled = true,
             };
-
             var packetSender = new PacketSender(net, packetProcessor);
-
             return new NetworkManager(loggerFactory.CreateLogger<NetworkManager>(), options, net, listener,
                 packetSender, packetProcessor);
-        });
-        
-        return services;
+        }
     }
-}

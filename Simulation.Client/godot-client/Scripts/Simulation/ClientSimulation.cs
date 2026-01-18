@@ -6,6 +6,8 @@ using Game.DTOs.Player;
 using Game.ECS;
 using Game.ECS.Entities;
 using Game.ECS.Services;
+using Game.ECS.Services.Snapshot;
+using Game.ECS.Services.Snapshot.Data;
 using Game.Network.Abstractions;
 using Godot;
 using GodotClient.Simulation.Components;
@@ -71,7 +73,7 @@ public sealed class ClientSimulation : GameSimulation
         return false;
     }
     
-    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
+    public Entity CreatePlayer(ref PlayerData playerSnapshot)
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
         _networkIndex.Register(playerSnapshot.NetworkId, entity);
@@ -98,7 +100,7 @@ public sealed class ClientSimulation : GameSimulation
         return true;
     }
 
-    public Entity CreateLocalPlayer(ref PlayerSnapshot snapshot, Visuals.PlayerVisual visual)
+    public Entity CreateLocalPlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {true})");
         var entity = CreatePlayer(ref snapshot);
@@ -109,7 +111,7 @@ public sealed class ClientSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateRemotePlayer(ref PlayerSnapshot snapshot, Visuals.PlayerVisual visual)
+    public Entity CreateRemotePlayer(ref PlayerData snapshot, Visuals.PlayerVisual visual)
     {
         GD.Print($"[GameClient] Spawning player visual for '{snapshot.Name}' (NetID: {snapshot.NetworkId}, Local: {false})");
         var entity = CreatePlayer(ref snapshot);
@@ -121,10 +123,8 @@ public sealed class ClientSimulation : GameSimulation
 
     public Entity CreateNpc(ref NpcData snapshot, Visuals.NpcVisual visual)
     {
-        var defaultBehaviour = Behaviour.Default;
-        
         // Atualiza o template com a localização de spawn e networkId
-        var entity = World.CreateNpc(ref snapshot, ref defaultBehaviour);
+        var entity = World.CreateNpc(ref snapshot);
         _networkIndex.Register(snapshot.NetworkId, entity);
         _visualSyncSystem?.RegisterVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
@@ -139,7 +139,7 @@ public sealed class ClientSimulation : GameSimulation
         }
     }
     
-    public void ApplyState(ref StateSnapshot stateSnapshot)
+    public void ApplyState(ref PlayerMovementSnapshot stateSnapshot)
     {
         if (!TryGetEntity(stateSnapshot.NetworkId, out Entity entity))
         {
@@ -147,17 +147,28 @@ public sealed class ClientSimulation : GameSimulation
             return;
         }
         
-        World.UpdateState(entity, ref stateSnapshot);
+        World.Get<Game.ECS.Components.Position>(entity) = new Game.ECS.Components.Position
+        {
+            X = stateSnapshot.CurrentX,
+            Y = stateSnapshot.CurrentY,
+            Z = stateSnapshot.CurrentZ
+        };
+        
+        World.Get<Game.ECS.Components.Direction>(entity) = new Game.ECS.Components.Direction
+        {
+            X = stateSnapshot.DirectionX,
+            Y = stateSnapshot.DirectionY
+        };
     }
     
-    public void ApplyVitals(ref VitalsSnapshot vitalsSnapshot)
+    public void ApplyVitals(ref PlayerVitalSnapshot vitalsSnapshot)
     {
         if (!TryGetEntity(vitalsSnapshot.NetworkId, out var entity))
         {
             GD.PrintErr($"[GameClient] Cannot apply vitals: entity with NetworkId {vitalsSnapshot.NetworkId} not found.");
             return;
         }
-        World.UpdateVitals(entity, ref vitalsSnapshot);
+        World.ApplyPlayerVitalSnapshot(entity, vitalsSnapshot);
     }
     
     /// <summary>

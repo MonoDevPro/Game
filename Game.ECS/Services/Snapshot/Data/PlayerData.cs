@@ -1,9 +1,10 @@
+using Game.DTOs.Map;
 using MemoryPack;
 
-namespace Game.DTOs.Player;
+namespace Game.ECS.Services.Snapshot.Data;
 
 [MemoryPackable]
-public readonly partial record struct PlayerSnapshot(
+public readonly partial record struct PlayerData(
     int PlayerId, int NetworkId, int MapId,
     string Name, byte Gender, byte Vocation,
     int X, int Y, int Z,
@@ -13,3 +14,6 @@ public readonly partial record struct PlayerSnapshot(
     int PhysicalAttack, int MagicAttack,
     int PhysicalDefense, int MagicDefense
 );
+    
+[MemoryPackable]
+public readonly partial record struct PlayerSpawnPacket(PlayerData[] PlayerData);

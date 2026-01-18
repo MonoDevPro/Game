@@ -1,17 +1,17 @@
 using Arch.Core;
 using Arch.System;
-using Game.DTOs.Npc;
-using Game.DTOs.Player;
 using Game.ECS;
 using Game.ECS.Components;
 using Game.ECS.Entities;
 using Game.ECS.Events;
-using Game.ECS.Navigation.Components;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Services.Navigation;
+using Game.ECS.Services.Navigation.Systems;
+using Game.ECS.Services.Snapshot.Data;
+using Game.ECS.Services.Snapshot.Sync;
+using Game.ECS.Services.Snapshot.Systems;
 using Game.Network.Abstractions;
-using Game.Server.Simulation.Systems;
 
 namespace Game.Server.Simulation;
 
@@ -21,7 +21,7 @@ namespace Game.Server.Simulation;
 /// </summary>
 public sealed class ServerGameSimulation : GameSimulation
 {
-    private readonly INetworkManager _networkManager;
+    private readonly INetSync _networkManager;
     private readonly ILoggerFactory? _loggerFactory;
     private readonly WorldMapRegistry _mapRegistry;
     
@@ -35,7 +35,7 @@ public sealed class ServerGameSimulation : GameSimulation
     private long _serverTick;
     
     public ServerGameSimulation(
-        INetworkManager network,
+        INetSync network,
         WorldMapRegistry mapLoader,
         ILoggerFactory? factory = null)
         : base(factory?.CreateLogger<ServerGameSimulation>())
@@ -84,11 +84,9 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new PlayerNavigationSyncSystem(world, _networkManager, _navigationModules, _loggerFactory?.CreateLogger<PlayerNavigationSyncSystem>()));
         // 11. NpcNavigation sync para broadcast de movimento NPCs
         systems.Add(new NpcNavigationSyncSystem(world, _networkManager, _navigationModules, _loggerFactory?.CreateLogger<NpcNavigationSyncSystem>()));
-        // 12. ServerSync envia atualizações de estado para clientes
-        systems.Add(new ServerSyncSystem(world, _networkManager, _eventBus, _loggerFactory?.CreateLogger<ServerSyncSystem>()));
     }
     
-    public Entity CreatePlayer(ref PlayerSnapshot playerSnapshot)
+    public Entity CreatePlayer(ref PlayerData playerSnapshot)
     {
         var entity = World.CreatePlayer(ref playerSnapshot);
         _networkIndex.Register(playerSnapshot.NetworkId, entity);
@@ -108,10 +106,10 @@ public sealed class ServerGameSimulation : GameSimulation
         return entity;
     }
     
-    public Entity CreateNpc(ref NpcData snapshot, ref Behaviour behaviour)
+    public Entity CreateNpc(ref NpcData snapshot)
     {
         // Atualiza o template com a localização de spawn e networkId
-        var entity = World.CreateNpc(ref snapshot, ref behaviour);
+        var entity = World.CreateNpc(ref snapshot);
         _networkIndex.Register(snapshot.NetworkId, entity);
         
         // Adiciona componentes de navegação se houver módulo de navegação para o mapa
@@ -226,7 +224,7 @@ public sealed class ServerGameSimulation : GameSimulation
         return true;
     }
     
-    public bool ApplyPlayerInput(int networkId, InputRequest inputRequest)
+    public bool ApplyPlayerInput(int networkId, PlayerInputRequest inputRequest)
     {
         if (!TryGetEntity(networkId, out var entity))
             return false;

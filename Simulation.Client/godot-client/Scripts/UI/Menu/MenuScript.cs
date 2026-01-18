@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using Game.Domain.Enums;
 using Game.DTOs;
+using Game.ECS.Services.Snapshot.Data;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
 using Game.Network.Packets.Menu;
@@ -641,9 +642,9 @@ public partial class MenuScript : Control
     
     private void RegisterConnectedHandlers()
     {
-        _network!.RegisterPacketHandler<PlayerJoinPacket>(HandleGameData);
-        _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawnWhileConnecting);
-        _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawnWhileConnecting);
+        _network!.RegisterPacketHandler<PlayerMapSnapshot>(HandleGameData);
+        _network!.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawnWhileConnecting);
+        _network!.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawnWhileConnecting);
     }
     
     // ========== CLEANUP ==========
@@ -679,7 +680,7 @@ public partial class MenuScript : Control
         _network.UnregisterUnconnectedPacketHandler<UnconnectedCharacterDeleteResponsePacket>(); // ✅ NOVO
         
         // Unregister CONNECTED handlers
-        _network.UnregisterPacketHandler<PlayerJoinPacket>();
+        _network.UnregisterPacketHandler<PlayerMapSnapshot>();
         _network.UnregisterPacketHandler<PlayerSpawnPacket>();
         _network.UnregisterPacketHandler<NpcSpawnPacket>();
     }   
@@ -1086,16 +1087,27 @@ public partial class MenuScript : Control
     
     // ========== PACKET HANDLERS (CONNECTED) ==========
     
-    private void HandleGameData(INetPeerAdapter peer, ref PlayerJoinPacket packet)
+    private void HandleGameData(INetPeerAdapter peer, ref PlayerMapSnapshot packet)
     {
-        GD.Print($"[Menu] Received GameDataPacket - Player: {packet.LocalPlayer.Name} (NetID: {packet.LocalPlayer.NetworkId})");
-        
         // Save to GameStateManager (persists across scenes)
         var gameState = GameStateManager.Instance;
-        gameState.LocalNetworkId = packet.LocalPlayer.NetworkId;
-        gameState.CurrentGameData = packet;
+        
+        gameState.CurrentMapData = packet;
         
         TransitionToState(MenuState.TransitioningToGame);
+    }
+    
+    private void HandleGameData(INetPeerAdapter peer, ref PlayerSpawnPacket packet)
+    {
+        // Save to GameStateManager (persists across scenes)
+        var gameState = GameStateManager.Instance;
+        
+        var localPlayer = packet.PlayerData.FirstOrDefault(p => p.NetworkId == peer.RemoteId);
+        
+        GD.Print($"[Menu] Received GameDataPacket - Player: {localPlayer.Name} (NetID: {localPlayer.NetworkId})");
+        
+        gameState.LocalNetworkId = localPlayer.NetworkId;
+        gameState.CurrentGameData = packet;
     }
 
     private void HandlePlayerSpawnWhileConnecting(INetPeerAdapter peer, ref PlayerSpawnPacket packet)

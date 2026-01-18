@@ -1,6 +1,7 @@
 using Game.Domain.Enums;
 using Game.DTOs.Player;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 using Godot;
 
 namespace GodotClient.Simulation.Visuals;
@@ -19,7 +20,7 @@ public sealed partial class PlayerVisual : DefaultVisual
         return playerVisual;
     }
 
-    public void UpdateFromSnapshot(in PlayerSnapshot snapshot)
+    public void UpdateFromSnapshot(in PlayerData snapshot)
     {
         LoadSprite((VocationType)snapshot.Vocation, (Gender)snapshot.Gender);
         UpdateName(snapshot.Name);

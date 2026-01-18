@@ -1,4 +1,4 @@
-using Game.DTOs.Npc;
+using Game.ECS.Services.Snapshot.Data;
 
 namespace Game.Server.Npc;
 

@@ -5,10 +5,11 @@ using Game.DTOs.Npc;
 using Game.ECS.Components;
 using Game.ECS.Navigation.Components;
 using Game.ECS.Services.Navigation;
+using Game.ECS.Services.Snapshot.Sync;
 using Game.ECS.Systems;
-using Game.Network.Abstractions;
+using Microsoft.Extensions.Logging;
 
-namespace Game.Server.Simulation.Systems;
+namespace Game.ECS.Services.Snapshot.Systems;
 
 /// <summary>
 /// Sistema responsável por sincronizar o movimento de NPCs com os clientes.
@@ -16,7 +17,7 @@ namespace Game.Server.Simulation.Systems;
 /// </summary>
 public sealed partial class NpcNavigationSyncSystem(
     World world,
-    INetworkManager networkManager,
+    INetSync networkManager,
     Dictionary<int, NavigationModule> navigationModules,
     ILogger<NpcNavigationSyncSystem>? logger = null)
     : GameSystem(world, logger)
@@ -84,7 +85,7 @@ public sealed partial class NpcNavigationSyncSystem(
             return;
             
         var packet = new NpcMovementPacket([.._movementUpdates]);
-        networkManager.SendToAll(packet, NetworkChannel.Simulation, NetworkDeliveryMethod.Unreliable);
+        networkManager.SendToAllUnreliable(ref packet);
         
         LogDebug("Sent NPC movement update for {Count} entities", _movementUpdates.Count);
         _movementUpdates.Clear();

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.DTOs;
-using Game.DTOs.Npc;
-using Game.DTOs.Player;
+using Game.ECS.Services.Snapshot.Data;
 using Godot;
 
 namespace GodotClient.Core.Autoloads;
@@ -20,8 +18,9 @@ public partial class GameStateManager : Node
 
     public int LocalNetworkId { get; set; } = -1;
     public bool Connected => LocalNetworkId > -1;
-    public PlayerJoinPacket? CurrentGameData { get; set; }
-    private readonly Dictionary<int, PlayerSnapshot> _pendingPlayerSpawns = new();
+    public PlayerSpawnPacket? CurrentGameData { get; set; }
+    public PlayerMapSnapshot? CurrentMapData { get; set; }
+    private readonly Dictionary<int, PlayerData> _pendingPlayerSpawns = new();
     private readonly Dictionary<int, NpcData> _pendingNpcSpawns = new();
     
     public override void _Ready()
@@ -55,7 +54,7 @@ public partial class GameStateManager : Node
     /// When a player snapshot with the same NetworkId already exists, it's replaced.
     /// </summary>
     /// <param name="snapshots">Snapshots to buffer until consumption.</param>
-    public void StorePlayerSnapshots(IEnumerable<PlayerSnapshot> snapshots)
+    public void StorePlayerSnapshots(IEnumerable<PlayerData> snapshots)
     {
         foreach (var snapshot in snapshots)
             _pendingPlayerSpawns[snapshot.NetworkId] = snapshot;
@@ -75,7 +74,7 @@ public partial class GameStateManager : Node
     /// <summary>
     /// Returns all buffered player snapshots and clears the buffer.
     /// </summary>
-    public PlayerSnapshot[] ConsumePlayerSnapshots()
+    public PlayerData[] ConsumePlayerSnapshots()
     {
         if (_pendingPlayerSpawns.Count == 0)
             return [];

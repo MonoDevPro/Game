@@ -1,14 +1,13 @@
 using Arch.Core;
-using Game.DTOs.Npc;
-using Game.DTOs.Player;
 using Game.ECS.Archetypes;
 using Game.ECS.Components;
+using Game.ECS.Services.Snapshot.Data;
 
 namespace Game.ECS.Entities;
 
 public static class FactoryHelper
 {
-    public static Entity CreatePlayer(this World world, ref PlayerSnapshot template)
+    public static Entity CreatePlayer(this World world, ref PlayerData template)
     {
         var entity = world.Create(PlayerArchetypes.PlayerArchetype);
         
@@ -45,7 +44,7 @@ public static class FactoryHelper
         return entity;
     }
     
-    public static Entity CreateNpc(this World world, ref NpcData template, ref Behaviour behaviour)
+    public static Entity CreateNpc(this World world, ref NpcData template)
     {
         // Create the entity with all necessary components
         var entity = world.Create(NpcArchetypes.NPC);
@@ -66,13 +65,13 @@ public static class FactoryHelper
             new Brain { CurrentState = AIState.Idle, StateTimer = 0f, CurrentTarget = Entity.Null },
             new AIBehaviour
             {
-                Type = behaviour.BehaviorType,
-                VisionRange = behaviour.VisionRange,
-                AttackRange = behaviour.AttackRange,
-                LeashRange = behaviour.LeashRange,
-                PatrolRadius = behaviour.PatrolRadius,
-                IdleDurationMin = behaviour.IdleDurationMin,
-                IdleDurationMax = behaviour.IdleDurationMax
+                Type = template.BehaviorType,
+                VisionRange = template.VisionRange,
+                AttackRange = template.AttackRange,
+                LeashRange = template.LeashRange,
+                PatrolRadius = template.PatrolRadius,
+                IdleDurationMin = template.IdleDurationMin,
+                IdleDurationMax = template.IdleDurationMax
             },
             new NavigationAgent { TargetPosition = default, StoppingDistance = 0f, IsPathPending = false },
 
@@ -84,7 +83,7 @@ public static class FactoryHelper
                 MagicPower = template.MagicAttack,
                 Defense = template.PhysicalDefense,
                 MagicDefense = template.MagicDefense,
-                AttackRange = behaviour.AttackRange,
+                AttackRange = template.AttackRange,
                 AttackSpeed = 1f
             },
             new CombatState { CooldownTimer = 0f },
