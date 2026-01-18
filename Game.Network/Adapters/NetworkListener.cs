@@ -45,7 +45,14 @@ public class NetworkListener(
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            packetProcessor.HandleData(peer, reader, _connectedPeers[peer.Id]);
+            // Check if peer still exists (may have been disconnected)
+            if (!_connectedPeers.TryGetValue(peer.Id, out var peerAdapter))
+            {
+                reader.Recycle();
+                return;
+            }
+            
+            packetProcessor.HandleData(peer, reader, peerAdapter);
             reader.Recycle();
         }
 

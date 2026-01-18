@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using Game.Domain.Enums;
 using Game.DTOs;
+using Game.DTOs.Npc;
+using Game.DTOs.Player;
 using Game.ECS.Services.Snapshot.Data;
 using Game.Network.Abstractions;
 using Game.Network.Packets.Game;
@@ -645,6 +647,11 @@ public partial class MenuScript : Control
         _network!.RegisterPacketHandler<PlayerMapSnapshot>(HandleGameData);
         _network!.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawnWhileConnecting);
         _network!.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawnWhileConnecting);
+        // Movement packets can arrive during connection phase - ignore them
+        _network!.RegisterPacketHandler<PlayerMovementPacket>(HandlePlayerMovementWhileConnecting);
+        _network!.RegisterPacketHandler<NpcMovementPacket>(HandleNpcMovementWhileConnecting);
+        // Chat messages can arrive during connection phase - ignore them
+        _network!.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessageWhileConnecting);
     }
     
     // ========== CLEANUP ==========
@@ -683,6 +690,9 @@ public partial class MenuScript : Control
         _network.UnregisterPacketHandler<PlayerMapSnapshot>();
         _network.UnregisterPacketHandler<PlayerSpawnPacket>();
         _network.UnregisterPacketHandler<NpcSpawnPacket>();
+        _network.UnregisterPacketHandler<PlayerMovementPacket>();
+        _network.UnregisterPacketHandler<NpcMovementPacket>();
+        _network.UnregisterPacketHandler<ChatMessagePacket>();
     }   
     
     // ========== UI EVENTS ==========
@@ -961,7 +971,7 @@ public partial class MenuScript : Control
     
     private void OnPeerConnected(INetPeerAdapter peer)
     {
-        GD.Print($"[Menu] Connected to server (Peer: {peer.Id})");
+        GD.Print($"[Menu] Connected to server (Peer.Id: {peer.Id}, Peer.RemoteId: {peer.RemoteId})");
         
         if (IsInState(MenuState.Connecting))
         {
@@ -1115,7 +1125,37 @@ public partial class MenuScript : Control
         if (packet.PlayerData.Length == 0)
             return;
 
-        GameStateManager.Instance.StorePlayerSnapshots(packet.PlayerData);
+        var gameState = GameStateManager.Instance;
+        
+        GD.Print($"[Menu] HandlePlayerSpawnWhileConnecting - Peer.Id: {peer.Id}, Peer.RemoteId: {peer.RemoteId}, Players: {packet.PlayerData.Length}");
+        foreach (var p in packet.PlayerData)
+        {
+            GD.Print($"[Menu]   - Player: {p.Name}, NetworkId: {p.NetworkId}");
+        }
+        
+        // If this is the first spawn packet, set the game data (LocalNetworkId, CurrentGameData)
+        if (gameState.CurrentGameData is null)
+        {
+            // Try to find local player by RemoteId first, otherwise use the first player
+            var localPlayer = packet.PlayerData.FirstOrDefault(p => p.NetworkId == peer.RemoteId);
+            
+            // Fallback: if RemoteId doesn't match, just use the first player (single player scenario)
+            if (string.IsNullOrEmpty(localPlayer.Name) && packet.PlayerData.Length > 0)
+            {
+                localPlayer = packet.PlayerData[0];
+                GD.Print($"[Menu] RemoteId {peer.RemoteId} didn't match any player, using first player: {localPlayer.Name} (NetID: {localPlayer.NetworkId})");
+            }
+            
+            // NetworkId can be 0 (first peer), so check by Name instead
+            if (!string.IsNullOrEmpty(localPlayer.Name))
+            {
+                GD.Print($"[Menu] Setting local player data - Player: {localPlayer.Name} (NetID: {localPlayer.NetworkId})");
+                gameState.LocalNetworkId = localPlayer.NetworkId;
+                gameState.CurrentGameData = packet;
+            }
+        }
+        
+        gameState.StorePlayerSnapshots(packet.PlayerData);
         GD.Print($"[Menu] Buffered {packet.PlayerData.Length} player snapshots while connecting");
     }
 
@@ -1126,6 +1166,33 @@ public partial class MenuScript : Control
 
         GameStateManager.Instance.StoreNpcSnapshots(packet.Npcs);
         GD.Print($"[Menu] Buffered {packet.Npcs.Length} NPC snapshots while connecting");
+    }
+
+    /// <summary>
+    /// Ignores player movement packets during connection phase.
+    /// These will be properly handled by GameClient once loaded.
+    /// </summary>
+    private void HandlePlayerMovementWhileConnecting(INetPeerAdapter peer, ref PlayerMovementPacket packet)
+    {
+        // Ignore movement packets during connection - GameClient will handle them after scene transition
+    }
+
+    /// <summary>
+    /// Ignores NPC movement packets during connection phase.
+    /// These will be properly handled by GameClient once loaded.
+    /// </summary>
+    private void HandleNpcMovementWhileConnecting(INetPeerAdapter peer, ref NpcMovementPacket packet)
+    {
+        // Ignore movement packets during connection - GameClient will handle them after scene transition
+    }
+
+    /// <summary>
+    /// Ignores chat messages during connection phase.
+    /// These will be properly handled by GameClient once loaded.
+    /// </summary>
+    private void HandleChatMessageWhileConnecting(INetPeerAdapter peer, ref ChatMessagePacket packet)
+    {
+        // Ignore chat messages during connection - GameClient will handle them after scene transition
     }
     
     // ========== UTILITIES ==========

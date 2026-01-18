@@ -56,7 +56,7 @@ static IHostBuilder CreateHostBuilder(string[] args) =>
             services.AddSingleton<INpcRepository, NpcRepository>();
             services.AddSingleton<PlayerSessionManager>();
             services.AddSingleton<ChatService>();
-            services.AddSingleton(new NetworkSecurity(maxMessagesPerSecond: 50));
+            services.AddSingleton(new NetworkSecurity(maxMessagesPerSecond: 100));
             services.AddSingleton<GameServer>();
             
             // Network

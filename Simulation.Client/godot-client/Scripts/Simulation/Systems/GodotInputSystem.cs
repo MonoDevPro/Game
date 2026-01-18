@@ -19,6 +19,18 @@ public sealed partial class GodotInputSystem(World world, INetworkManager sender
     private sbyte _moveY;
     private InputFlags _flags;
     
+    // Rate limiting: send at most every 50ms (20Hz) unless input changes
+    private const float MinSendInterval = 0.05f;
+    private float _timeSinceLastSend;
+    private sbyte _lastSentMoveX;
+    private sbyte _lastSentMoveY;
+    private InputFlags _lastSentFlags;
+    
+    public override void BeforeUpdate(in float deltaTime)
+    {
+        _timeSinceLastSend += deltaTime;
+    }
+    
     [Query]
     [All<PlayerControlled, LocalPlayerTag>]
     [None<Dead>]
@@ -55,6 +67,11 @@ public sealed partial class GodotInputSystem(World world, INetworkManager sender
         if (_moveX == 0 && _moveY == 0 && _flags == InputFlags.None ) 
             return;
         
+        // Only send if input changed or enough time has passed
+        bool inputChanged = _moveX != _lastSentMoveX || _moveY != _lastSentMoveY || _flags != _lastSentFlags;
+        if (!inputChanged && _timeSinceLastSend < MinSendInterval)
+            return;
+        
         var inputPacket = new PlayerInputPacket{ Input = 
             new PlayerInputRequest
             {
@@ -64,9 +81,11 @@ public sealed partial class GodotInputSystem(World world, INetworkManager sender
             } };
             
         sender.SendToServer(inputPacket, NetworkChannel.Simulation, NetworkDeliveryMethod.ReliableOrdered);
-        GD.Print($"[ClientSyncSystem] Sent PlayerInputPacket: " +
-                 $"InputX={inputPacket.Input.InputX}, " +
-                 $"InputY={inputPacket.Input.InputY}, " +
-                 $"Flags={inputPacket.Input.Flags}");
+        
+        // Update tracking
+        _lastSentMoveX = _moveX;
+        _lastSentMoveY = _moveY;
+        _lastSentFlags = _flags;
+        _timeSinceLastSend = 0f;
     }
 }
