@@ -54,10 +54,9 @@ public sealed partial class NpcNavigationSyncSystem(
     /// Query para coletar dados de movimento de NPCs que estão navegando.
     /// </summary>
     [Query]
-    [All<AIControlled, NetworkId, MapId, Position, NavMovementState, NavAgent>]
+    [All<AIControlled, NetworkId, Position, NavMovementState, NavAgent>]
     private void CollectNpcMovement(
         in NetworkId networkId,
-        in MapId mapId,
         in Position position,
         in NavMovementState movement)
     {

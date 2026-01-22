@@ -3,7 +3,6 @@ using System.Net;
 using Game.DTOs;
 using Game.DTOs.Persistence;
 using Game.ECS.Components;
-using Game.ECS.Entities;
 using Game.ECS.Services.Map;
 using Game.ECS.Services.Snapshot;
 using Game.ECS.Services.Snapshot.Data;

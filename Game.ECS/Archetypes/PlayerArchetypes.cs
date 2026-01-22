@@ -20,8 +20,6 @@ public static class PlayerArchetypes
     [
         // Set from systems
         Component<NetworkId>.ComponentType, // Assigned by the networking system
-        Component<MapId>.ComponentType,     // Assigned by the map management system
-        Component<Position>.ComponentType,  // Assigned by the spawn system
         
         // Identity
         Component<PlayerControlled>.ComponentType,

@@ -4,7 +4,7 @@ using Arch.System;
 using Game.DTOs.Npc;
 using Game.DTOs.Player;
 using Game.ECS;
-using Game.ECS.Entities;
+using Game.ECS.Components;
 using Game.ECS.Services;
 using Game.ECS.Services.Snapshot;
 using Game.ECS.Services.Snapshot.Data;
@@ -75,7 +75,10 @@ public sealed class ClientSimulation : GameSimulation
     
     public Entity CreatePlayer(ref PlayerData playerSnapshot)
     {
-        var entity = World.CreatePlayer(ref playerSnapshot);
+        var entity = World.Create<Position, Direction, LocalPlayerTag, PlayerControlled>(
+                new Position { X = playerSnapshot.X, Y = playerSnapshot.Y }, 
+                new Direction { X = playerSnapshot.DirX, Y = playerSnapshot.DirY },
+                default, default);
         _networkIndex.Register(playerSnapshot.NetworkId, entity);
         return entity;
     }
@@ -124,7 +127,8 @@ public sealed class ClientSimulation : GameSimulation
     public Entity CreateNpc(ref NpcData snapshot, Visuals.NpcVisual visual)
     {
         // Atualiza o template com a localização de spawn e networkId
-        var entity = World.CreateNpc(ref snapshot);
+        // TODO: Adicionar components
+        var entity = World.Create<Position, Direction>();
         _networkIndex.Register(snapshot.NetworkId, entity);
         _visualSyncSystem?.RegisterVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);

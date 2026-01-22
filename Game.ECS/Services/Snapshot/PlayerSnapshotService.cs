@@ -11,8 +11,8 @@ public static class PlayerSnapshotService
     public static PlayerData BuildPlayerSnapshot(this World world, Entity entity, string name)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
-        ref var playerId = ref world.Get<UniqueID>(entity);
         ref var mapId = ref world.Get<MapId>(entity);
+        ref var playerId = ref world.Get<UniqueID>(entity);
         ref var gender = ref world.Get<GenderId>(entity);
         ref var vocation = ref world.Get<VocationId>(entity);
         ref var position = ref world.Get<Position>(entity);

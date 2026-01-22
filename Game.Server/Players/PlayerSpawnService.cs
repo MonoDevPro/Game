@@ -68,18 +68,12 @@ public sealed class PlayerSpawnService(
 
     public PlayerData BuildSnapshot(PlayerSession session)
     {
-        var character = session.SelectedCharacter 
-                        ?? throw new InvalidOperationException("No character selected for session.");
+        var character = session.SelectedCharacter ?? throw new InvalidOperationException("No character selected for session.");
         
         var entity = session.Entity;
         
         if (simulation.World.IsAlive(entity))
-        {
-            return simulation.World
-                .BuildPlayerSnapshot(
-                    entity,
-                    character.Name);
-        }
+            return simulation.World.BuildPlayerSnapshot(entity, character.Name);
         
         return new PlayerData(
             PlayerId: session.Account.Id,

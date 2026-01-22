@@ -27,12 +27,10 @@ public sealed partial class GameEventBus : IDisposable
     public event Action<ManaChangedEvent>? OnManaChanged;
     public event Action<MovementEvent>? OnMovement;
     public event Action<DirectionChangedEvent>? OnDirectionChanged; 
-    public event Action<NpcStateChangedEvent>? OnNpcStateChanged;
     [Event] public void Send(ref HealthChangedEvent evt) => OnHealthChanged?.Invoke(evt);
     [Event] public void Send(ref ManaChangedEvent evt) => OnManaChanged?.Invoke(evt);
     [Event] public void Send(ref MovementEvent evt) => OnMovement?.Invoke(evt);
     [Event] public void Send(ref DirectionChangedEvent evt) => OnDirectionChanged?.Invoke(evt);
-    [Event] public void Send(ref NpcStateChangedEvent evt) => OnNpcStateChanged?.Invoke(evt);
     
     public GameEventBus() { Hook(); }
     ~GameEventBus() { Dispose(); }

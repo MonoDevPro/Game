@@ -215,11 +215,12 @@ public sealed class WorldMap
     public bool IsWalkableAndFree(Position pos) 
         => IsWalkableAndFree(pos.X, pos.Y, pos.Z);
     
-    public void AddEntity(Position pos, Entity entity)
+    public bool AddEntity(Position pos, Entity entity)
     {
-        if (!InBounds(pos)) return;
+        if (!InBounds(pos)) return false;
         ref var cell = ref _occupants[pos.Z][GetIndex(pos.X, pos.Y)];
         cell.Add(entity, _listPool);
+        return true;
     }
     
     public bool RemoveEntity(Position pos, Entity entity)

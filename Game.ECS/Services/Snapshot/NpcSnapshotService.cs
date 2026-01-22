@@ -6,11 +6,10 @@ namespace Game.ECS.Services.Snapshot;
 
 public static class NpcSnapshotService
 {
-    public static NpcData BuildNpcSnapshot(this World world, Entity entity, string name)
+    public static NpcData BuildNpcSnapshot(this World world, Entity entity, int mapId, string name)
     {
         ref var networkId = ref world.Get<NetworkId>(entity);
         ref var npcId = ref world.Get<UniqueID>(entity);
-        ref var mapId = ref world.Get<MapId>(entity);
         ref var position = ref world.Get<Position>(entity);
         ref var facing = ref world.Get<Direction>(entity);
         ref var health = ref world.Get<Health>(entity);
@@ -21,7 +20,7 @@ public static class NpcSnapshotService
         return new NpcData(
             NpcId: npcId.Value,
             NetworkId: networkId.Value,
-            MapId: mapId.Value,
+            MapId: mapId,
             Name: name,
             X: position.X,
             Y: position.Y,

@@ -71,11 +71,15 @@ public sealed class NavigationModule : IDisposable
     /// Adiciona componentes de navegação a uma entidade existente.
     /// Assume que a entidade já tem Position e está registrada no MapSpatial.
     /// </summary>
-    public void AddNavigationComponents(Entity entity, NavAgentSettings? settings = null)
+    public void AddNavigationComponents(Entity entity, Position startPosition, NavAgentSettings? settings = null)
     {
-        var actualSettings = settings ?? NavAgentSettings.Default;
+        if (!_worldMap.AddEntity(startPosition, entity))
+            return;
         
+        var actualSettings = settings ?? NavAgentSettings.Default;
         _world.Add(entity,
+            new MapId { Value = MapId },
+            startPosition,
             new NavMovementState(),
             new NavPathBuffer(),
             new NavPathState { Status = PathStatus.None },

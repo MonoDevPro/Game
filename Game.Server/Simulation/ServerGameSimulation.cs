@@ -2,16 +2,13 @@ using Arch.Core;
 using Arch.System;
 using Game.ECS;
 using Game.ECS.Components;
-using Game.ECS.Entities;
 using Game.ECS.Events;
 using Game.ECS.Services;
 using Game.ECS.Services.Map;
 using Game.ECS.Services.Navigation;
-using Game.ECS.Services.Navigation.Systems;
 using Game.ECS.Services.Snapshot.Data;
 using Game.ECS.Services.Snapshot.Sync;
 using Game.ECS.Services.Snapshot.Systems;
-using Game.Network.Abstractions;
 
 namespace Game.Server.Simulation;
 
@@ -23,8 +20,7 @@ public sealed class ServerGameSimulation : GameSimulation
 {
     private readonly INetSync _networkManager;
     private readonly ILoggerFactory? _loggerFactory;
-    private readonly WorldMapRegistry _mapRegistry;
-    
+
     private readonly EntityIndex<int> _networkIndex = new();
     private readonly GameEventBus _eventBus = new();
     
@@ -42,8 +38,7 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         _networkManager = network;
         _loggerFactory = factory;
-        _mapRegistry = mapLoader;
-        
+
         foreach (var map in mapLoader.Maps)
         {            
             LogInformation("Registering map {MapId} - {MapName} ({Width}x{Height})", 
@@ -86,44 +81,87 @@ public sealed class ServerGameSimulation : GameSimulation
         systems.Add(new NpcNavigationSyncSystem(world, _networkManager, _navigationModules, _loggerFactory?.CreateLogger<NpcNavigationSyncSystem>()));
     }
     
-    public Entity CreatePlayer(ref PlayerData playerSnapshot)
+    public Entity CreatePlayer(ref PlayerData template)
     {
-        var entity = World.CreatePlayer(ref playerSnapshot);
-        _networkIndex.Register(playerSnapshot.NetworkId, entity);
+        var entity = World.Create(
+            new NetworkId { Value = template.NetworkId },
+            new PlayerControlled { },
+            new UniqueID { Value = template.PlayerId },
+            new GenderId { Value = template.Gender },
+            new VocationId { Value = template.Vocation },
+            new Direction { X = template.DirX, Y = template.DirY },
+            new CombatStats
+            {
+                AttackPower = template.PhysicalAttack,
+                MagicPower = template.MagicAttack,
+                Defense = template.PhysicalDefense,
+                MagicDefense = template.MagicDefense,
+                AttackRange = 1.5f,
+                AttackSpeed = 1f
+            },
+            new CombatState { CooldownTimer = 0f },
+            new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
+            new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Z));
+        
+        _networkIndex.Register(template.NetworkId, entity);
         
         // Adiciona componentes de navegação se houver módulo de navegação para o mapa
-        if (_navigationModules.TryGetValue(playerSnapshot.MapId, out var navModule))
+        if (_navigationModules.TryGetValue(template.MapId, out var navModule))
         {
-            navModule.AddNavigationComponents(entity);
-            
-            // Registra entidade no WorldMap para ocupação
-            if (_mapRegistry.TryGet(playerSnapshot.MapId, out var worldMap) && worldMap != null)
+            navModule.AddNavigationComponents(entity, new Position
             {
-                worldMap.AddEntity(new Position { X = playerSnapshot.X, Y = playerSnapshot.Y, Z = playerSnapshot.Z }, entity);
-            }
+                X = template.X, 
+                Y = template.Y, 
+                Z = template.Z
+            });
         }
-        
         return entity;
     }
     
-    public Entity CreateNpc(ref NpcData snapshot)
+    public Entity CreateNpc(ref NpcData template)
     {
-        // Atualiza o template com a localização de spawn e networkId
-        var entity = World.CreateNpc(ref snapshot);
-        _networkIndex.Register(snapshot.NetworkId, entity);
+        var entity = World.Create(
+            new NetworkId { Value = template.NetworkId },
+            new AIControlled { },
+            new UniqueID { Value = template.NpcId }, // Using NetworkId as UniqueId for server-side
+            new AIBehaviour
+            {
+                Type = template.BehaviorType,
+                VisionRange = template.VisionRange,
+                AttackRange = template.AttackRange,
+                LeashRange = template.LeashRange,
+                PatrolRadius = template.PatrolRadius,
+                IdleDurationMin = template.IdleDurationMin,
+                IdleDurationMax = template.IdleDurationMax
+            },
+            new Direction { X = template.DirX, Y = template.DirY },
+            new CombatStats
+            {
+                AttackPower = template.PhysicalAttack,
+                MagicPower = template.MagicAttack,
+                Defense = template.PhysicalDefense,
+                MagicDefense = template.MagicDefense,
+                AttackRange = template.AttackRange,
+                AttackSpeed = 1f
+            },
+            new CombatState { CooldownTimer = 0f },
+            new Health { Current = template.Hp, Max = template.MaxHp, RegenerationRate = template.HpRegen },
+            new Mana { Current = template.Mp, Max = template.MaxMp, RegenerationRate = template.MpRegen },
+            new SpawnPoint(template.MapId, template.X, template.Y, template.Z));
+        
+        _networkIndex.Register(template.NetworkId, entity);
         
         // Adiciona componentes de navegação se houver módulo de navegação para o mapa
-        if (_navigationModules.TryGetValue(snapshot.MapId, out var navModule))
+        if (_navigationModules.TryGetValue(template.MapId, out var navModule))
         {
-            navModule.AddNavigationComponents(entity);
-            
-            // Registra entidade no WorldMap para ocupação
-            if (_mapRegistry.TryGet(snapshot.MapId, out var worldMap) && worldMap != null)
+            navModule.AddNavigationComponents(entity, new Position
             {
-                worldMap.AddEntity(new Position { X = snapshot.X, Y = snapshot.Y, Z = snapshot.Z }, entity);
-            }
+                X = template.X, 
+                Y = template.Y, 
+                Z = template.Z
+            });
         }
-        
         return entity;
     }
     
@@ -134,7 +172,7 @@ public sealed class ServerGameSimulation : GameSimulation
     {
         if (!TryGetEntity(networkId, out var entity))
             return false;
-            
+        
         ref var mapId = ref World.Get<MapId>(entity);
         if (!_navigationModules.TryGetValue(mapId.Value, out var navModule))
             return false;

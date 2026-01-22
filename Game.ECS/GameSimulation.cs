@@ -1,11 +1,6 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
-using Game.DTOs.Npc;
-using Game.DTOs.Player;
-using Game.ECS.Entities;
-using Game.ECS.Events;
-using Game.ECS.Services;
 using Game.ECS.Systems;
 using Microsoft.Extensions.Logging;
 
