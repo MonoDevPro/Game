@@ -5,6 +5,7 @@ using Arch.System.SourceGenerator;
 using Game.ECS.Components;
 using Game.ECS.Systems;
 using Godot;
+using GodotClient.Simulation.Components;
 using GodotClient.Simulation.Visuals;
 
 namespace GodotClient.Simulation.Systems;
@@ -52,8 +53,15 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
     {
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
-        
-        bool isMoving = (dir.X != 0 || dir.Y != 0);
+
+        bool isMoving = false;
+        if (World.Has<PlayerMovementData>(e))
+            isMoving = World.Get<PlayerMovementData>(e).IsMoving;
+        else if (World.Has<NpcMovementData>(e))
+            isMoving = World.Get<NpcMovementData>(e).IsMoving;
+        else
+            isMoving = (dir.X != 0 || dir.Y != 0);
+
         bool isAttacking = World.Has<AttackCommand>(e);
         var isDead = World.Has<Dead>(e);
         visual.UpdateAnimationState(dir, isMoving, isAttacking, isDead);
@@ -81,11 +89,17 @@ public sealed partial class ClientVisualSyncSystem(World world, Node2D entitiesR
         if (!TryGetAnyVisual(networkId.Value, out var visual))
             return;
         
+        bool isMoving = false;
+        if (World.Has<PlayerMovementData>(e))
+            isMoving = World.Get<PlayerMovementData>(e).IsMoving;
+        else if (World.Has<NpcMovementData>(e))
+            isMoving = World.Get<NpcMovementData>(e).IsMoving;
+
         Vector2 current = visual.GlobalPosition;
         Vector2 target = new(pos.X * pixelsPerCell, pos.Y * pixelsPerCell);
 
-        // Extrapolação para compensar latência (usa Direction para saber a direção do movimento)
-        if (dir is not { X: 0, Y: 0 })
+        // Extrapolação só quando há movimento em progresso
+        if (isMoving && dir is not { X: 0, Y: 0 })
         {
             float extrapolation = 0.5f;
             Vector2 direction = new(dir.X, dir.Y);

@@ -75,10 +75,11 @@ public sealed class ClientSimulation : GameSimulation
     
     public Entity CreatePlayer(ref PlayerData playerSnapshot)
     {
-        var entity = World.Create<Position, Direction, LocalPlayerTag, PlayerControlled>(
-                new Position { X = playerSnapshot.X, Y = playerSnapshot.Y }, 
-                new Direction { X = playerSnapshot.DirX, Y = playerSnapshot.DirY },
-                default, default);
+        var entity = World.Create(
+            new Position { X = playerSnapshot.X, Y = playerSnapshot.Y },
+            new Direction { X = playerSnapshot.DirX, Y = playerSnapshot.DirY },
+            new NetworkId { Value = playerSnapshot.NetworkId },
+            new PlayerControlled());
         _networkIndex.Register(playerSnapshot.NetworkId, entity);
         return entity;
     }
@@ -128,7 +129,10 @@ public sealed class ClientSimulation : GameSimulation
     {
         // Atualiza o template com a localização de spawn e networkId
         // TODO: Adicionar components
-        var entity = World.Create<Position, Direction>();
+        var entity = World.Create(
+            new Position { X = snapshot.X, Y = snapshot.Y, Z = snapshot.Z },
+            new Direction { X = snapshot.DirX, Y = snapshot.DirY },
+            new NetworkId { Value = snapshot.NetworkId });
         _networkIndex.Register(snapshot.NetworkId, entity);
         _visualSyncSystem?.RegisterVisual(snapshot.NetworkId, visual);
         visual.UpdateFromSnapshot(snapshot);
@@ -239,24 +243,6 @@ public sealed class ClientSimulation : GameSimulation
         if (!TryGetEntity(movement.NetworkId, out var entity))
         {
             // Jogador pode não existir ainda (spawn ainda não chegou)
-            return;
-        }
-        
-        // Pula atualização para o jogador local (predição local é usada)
-        if (World.Has<LocalPlayerTag>(entity))
-        {
-            // Reconciliação: apenas atualiza se a diferença for significativa
-            ref var position = ref World.Get<Game.ECS.Components.Position>(entity);
-            var deltaX = Math.Abs(position.X - movement.CurrentX);
-            var deltaY = Math.Abs(position.Y - movement.CurrentY);
-            
-            // Se diferença for grande (mais de 2 tiles), corrige posição
-            if (deltaX > 2 || deltaY > 2)
-            {
-                position.X = movement.CurrentX;
-                position.Y = movement.CurrentY;
-                position.Z = movement.CurrentZ;
-            }
             return;
         }
         

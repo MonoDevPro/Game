@@ -156,7 +156,7 @@ public sealed class PathfindingSystem(
     private bool IsValidCoord(int x, int y, int z = 0) => x >= 0 && x < mapData.Width && y >= 0 && y < mapData.Height;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsWalkable(int x, int y, int z = 0) => mapData.IsWalkableAndFree(x, y, z);
+    private bool IsWalkable(int x, int y, int z = 0) => !mapData.IsBlocked(x, y, z);
 
     private PathResult ReconstructPath(PathfindingContext ctx, int goalIndex, Span<int> pathBuffer, int generation)
     {

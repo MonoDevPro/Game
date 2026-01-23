@@ -240,12 +240,11 @@ public partial class GameClient : Node2D
         
         _network.RegisterPacketHandler<PlayerSpawnPacket>(HandlePlayerSpawn);
         _network.RegisterPacketHandler<LeftPacket>(HandleDespawn);
-        _network.RegisterPacketHandler<PlayerMovementPacket>(HandleState);
+        _network.RegisterPacketHandler<PlayerMovementPacket>(HandlePlayerMovement);
         _network.RegisterPacketHandler<PlayerVitalPacket>(HandleVitals);
         _network.RegisterPacketHandler<PlayerAttackPacket>(HandleCombatState);
         _network.RegisterPacketHandler<NpcSpawnPacket>(HandleNpcSpawn);
         _network.RegisterPacketHandler<NpcMovementPacket>(HandleNpcMovement);
-        _network.RegisterPacketHandler<PlayerMovementPacket>(HandlePlayerMovement);
         _network.RegisterPacketHandler<ChatMessagePacket>(HandleChatMessage);
 
         GD.Print("[GameClient] Packet handlers registered (ECS)");

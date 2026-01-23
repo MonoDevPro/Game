@@ -113,7 +113,8 @@ public abstract partial class DefaultVisual : Node2D
 
     public void UpdatePosition(Vector3I gridPos)
     {
-        Position = new Vector2(gridPos.X, gridPos.Y);
+        const float pixelsPerCell = 32f;
+        Position = new Vector2(gridPos.X * pixelsPerCell, gridPos.Y * pixelsPerCell);
         ZIndex = gridPos.Z;
     }
 
