@@ -5,7 +5,6 @@ using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.LiteNetLib;
 using Game.Persistence;
 using Game.Simulation;
-using Microsoft.Extensions.Logging;
 
 namespace Server.Host.WorldServer;
 
@@ -42,7 +41,7 @@ public class WorldServerWorker(
         var worldMap = CreateDefaultWorldMap();
         
         // Usa a simulação baseada em ECS com suporte a navegação
-        using var simulation = new ServerWorldSimulation(worldMap, logger: logger);
+        var simulation = new ServerWorldSimulation(worldMap, logger: logger);
         var commandQueue = new CommandQueue();
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();
