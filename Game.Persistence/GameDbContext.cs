@@ -1,32 +1,58 @@
 using Microsoft.EntityFrameworkCore;
-using Game.Domain.Entities;
-using Game.Domain.Enums;
 
 namespace Game.Persistence;
 
-/// <summary>
-/// Contexto do banco de dados do jogo com configurações de cascade delete otimizadas.
-/// Autor: MonoDevPro
-/// Data: 2025-10-13 20:18:33
-/// </summary>
-public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
+public sealed class GameDbContext : DbContext
 {
-    // ========== DBSETS ==========
-    
-    public DbSet<Account> Accounts { get; set; }
-    public DbSet<Character> Characters { get; set; }
-    public DbSet<Item> Items { get; set; }
-    public DbSet<ItemStats> ItemStats { get; set; }
-    public DbSet<Inventory> Inventories { get; set; }
-    public DbSet<InventorySlot> InventorySlots { get; set; }
-    public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
+    public GameDbContext(DbContextOptions<GameDbContext> options) : base(options)
+    {
+    }
 
-    // ========== MODEL CONFIGURATION ==========
-    
+    public DbSet<AccountRow> Accounts => Set<AccountRow>();
+    public DbSet<CharacterRow> Characters => Set<CharacterRow>();
+    public DbSet<CharacterVocationRow> CharacterVocations => Set<CharacterVocationRow>();
+    public DbSet<EnterTicketRow> EnterTickets => Set<EnterTicketRow>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<AccountRow>(builder =>
+        {
+            builder.ToTable("accounts");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Username).IsRequired();
+            builder.Property(x => x.PasswordHash).IsRequired();
+            builder.HasIndex(x => x.Username).IsUnique();
+        });
+
+        modelBuilder.Entity<CharacterRow>(builder =>
+        {
+            builder.ToTable("characters");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Name).IsRequired();
+            builder.HasIndex(x => new { x.AccountId, x.Name }).IsUnique();
+        });
         
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(GameDbContext).Assembly);
+        modelBuilder.Entity<CharacterVocationRow>(builder =>
+        {
+            builder.ToTable("character_vocations");
+            builder.HasKey(x => new { x.CharacterId, x.Vocation });
+            builder.Property(x => x.Level).HasDefaultValue(1);
+            builder.Property(x => x.Experience).HasDefaultValue(0);
+            builder.Property(x => x.Strength).HasDefaultValue(10);
+            builder.Property(x => x.Endurance).HasDefaultValue(10);
+            builder.Property(x => x.Agility).HasDefaultValue(10);
+            builder.Property(x => x.Intelligence).HasDefaultValue(10);
+            builder.Property(x => x.Willpower).HasDefaultValue(10);
+            builder.Property(x => x.HealthPoints).HasDefaultValue(100);
+            builder.Property(x => x.ManaPoints).HasDefaultValue(100);
+        });
+
+        modelBuilder.Entity<EnterTicketRow>(builder =>
+        {
+            builder.ToTable("enter_tickets");
+            builder.HasKey(x => x.Ticket);
+            builder.Property(x => x.Ticket).IsRequired();
+            builder.Property(x => x.ExpiresAt).IsRequired();
+        });
     }
 }

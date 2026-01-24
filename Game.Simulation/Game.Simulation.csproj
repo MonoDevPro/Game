@@ -6,4 +6,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Game.Contracts\Game.Contracts.csproj" />
+      <ProjectReference Include="..\Game.Infrastructure.ArchECS\Game.Infrastructure.ArchECS.csproj" />
+    </ItemGroup>
+
 </Project>

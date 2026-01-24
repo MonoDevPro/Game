@@ -1,5 +1,0 @@
-[gd_scene format=3 uid="uid://dghhh56hs8fpc"]
-
-[node name="Camera2D" type="Camera2D"]
-limit_smoothed = true
-position_smoothing_enabled = true

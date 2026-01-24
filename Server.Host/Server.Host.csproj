@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-WorldServer.Host-a25e2d5a-1096-40ad-8887-82f2b9308cbd</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Game.Application\Game.Application.csproj" />
+      <ProjectReference Include="..\Game.Infrastructure.LiteNetLib\Game.Infrastructure.LiteNetLib.csproj" />
+      <ProjectReference Include="..\Game.Infrastructure.Serialization\Game.Infrastructure.Serialization.csproj" />
+      <ProjectReference Include="..\Game.Infrastructure.Shared\Game.Infrastructure.Shared.csproj" />
+      <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
+      <ProjectReference Include="..\Game.Simulation\Game.Simulation.csproj" />
+    </ItemGroup>
+</Project>

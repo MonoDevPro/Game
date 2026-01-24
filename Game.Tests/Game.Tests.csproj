@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Game.Server\Game.Server.csproj" />
     <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
     <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
   </ItemGroup>
