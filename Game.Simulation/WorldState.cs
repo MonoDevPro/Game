@@ -3,6 +3,11 @@ using Game.Contracts;
 
 namespace Game.Simulation;
 
+/// <summary>
+/// Classe legada para compatibilidade. 
+/// Use <see cref="ServerWorldSimulation"/> para nova implementação baseada em ECS.
+/// </summary>
+[Obsolete("Use ServerWorldSimulation para implementação baseada em ECS. Esta classe será removida em versões futuras.")]
 public sealed class WorldState
 {
     private readonly Dictionary<int, PlayerState> _players = new();
@@ -18,6 +23,11 @@ public sealed class WorldState
         {
             _players[characterId] = player with { X = player.X + dx, Y = player.Y + dy };
         }
+    }
+
+    public void RemovePlayer(int characterId)
+    {
+        _players.Remove(characterId);
     }
 
     public WorldSnapshot BuildSnapshot()
