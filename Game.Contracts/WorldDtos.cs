@@ -1,23 +1,33 @@
+using MemoryPack;
+
 namespace Game.Contracts;
 
-public readonly record struct EnterWorldRequest(string EnterTicket);
-public readonly record struct WorldSpawnInfo(int CharacterId, string Name, int X, int Y);
-public readonly record struct EnterWorldResponse(bool Success, string? Error, WorldSpawnInfo? Spawn);
+[MemoryPackable]
+public readonly partial record struct EnterWorldRequest(string EnterTicket) : IEnvelopePayload;
+
+[MemoryPackable]
+public readonly partial record struct WorldSpawnInfo(int CharacterId, string Name, int X, int Y, int Floor);
+
+[MemoryPackable]
+public readonly partial record struct EnterWorldResponse(bool Success, string? Error, WorldSpawnInfo? Spawn) : IEnvelopePayload;
 
 /// <summary>
 /// Comando de movimento por delta (relativo à posição atual).
 /// </summary>
-public readonly record struct WorldMoveCommand(int CharacterId, int Dx, int Dy);
+[MemoryPackable]
+public readonly partial record struct WorldMoveCommand(int CharacterId, int Dx, int Dy) : IEnvelopePayload;
 
 /// <summary>
 /// Comando de navegação para uma posição específica (usa pathfinding).
 /// </summary>
-public readonly record struct WorldNavigateCommand(int CharacterId, int TargetX, int TargetY, int TargetFloor = 0);
+[MemoryPackable]
+public readonly partial record struct WorldNavigateCommand(int CharacterId, int TargetX, int TargetY, int TargetFloor = 0) : IEnvelopePayload;
 
 /// <summary>
 /// Comando para parar movimento.
 /// </summary>
-public readonly record struct WorldStopCommand(int CharacterId);
+[MemoryPackable]
+public readonly partial record struct WorldStopCommand(int CharacterId) : IEnvelopePayload;
 
 /// <summary>
 /// Estado de um jogador para sincronização.
@@ -33,14 +43,15 @@ public readonly record struct WorldStopCommand(int CharacterId);
 /// <param name="TargetX">Posição X de destino (para interpolação).</param>
 /// <param name="TargetY">Posição Y de destino (para interpolação).</param>
 /// <param name="MoveProgress">Progresso do movimento atual (0.0 a 1.0).</param>
-public readonly record struct PlayerState(
-    int CharacterId, 
-    string Name, 
-    int X, 
-    int Y, 
+[MemoryPackable]
+public readonly partial record struct PlayerState(
+    int CharacterId,
+    string Name,
+    int X,
+    int Y,
     int Floor = 0,
-    int DirX = 0, 
-    int DirY = 0, 
+    int DirX = 0,
+    int DirY = 0,
     bool IsMoving = false,
     int TargetX = 0,
     int TargetY = 0,
@@ -52,26 +63,17 @@ public readonly record struct PlayerState(
 /// <param name="ServerTick">Tick do servidor quando o snapshot foi criado.</param>
 /// <param name="Timestamp">Timestamp UTC em milissegundos para compensação de latência.</param>
 /// <param name="Players">Lista de estados dos jogadores.</param>
-public readonly record struct WorldSnapshot(long ServerTick, long Timestamp, List<PlayerState> Players)
-{
-    /// <summary>
-    /// Construtor de compatibilidade (sem tick/timestamp).
-    /// </summary>
-    public WorldSnapshot(List<PlayerState> Players) : this(0, 0, Players) { }
-    
-    /// <summary>
-    /// Construtor de compatibilidade (sem timestamp).
-    /// </summary>
-    public WorldSnapshot(long ServerTick, List<PlayerState> Players) 
-        : this(ServerTick, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), Players) { }
-}
-public readonly record struct WorldCollisions(int MapId, int Floor, int Width, int Height, byte[] CompressedData, int UncompressedBitCount);
+[MemoryPackable]
+public readonly partial record struct WorldSnapshot(
+    long ServerTick,
+    long Timestamp,
+    List<PlayerState> Players) : IEnvelopePayload;
 
-public sealed record CharacterData(
-    int CharacterId, int MapId, int Floor,
-    int X, int Y, int DirX, int DirY,
-    int Hp, int MaxHp, int HpRegen,
-    int Mp, int MaxMp, int MpRegen,
-    int PhysicalAttack, int MagicAttack,
-    int PhysicalDefense, int MagicDefense
-);
+[MemoryPackable]
+public readonly partial record struct WorldCollisions(
+    int MapId,
+    int Floor,
+    int Width,
+    int Height,
+    byte[] CompressedData,
+    int UncompressedBitCount);

@@ -1,6 +1,6 @@
 using Game.Domain;
 
-namespace Game.Persistence;
+namespace Game.Infrastructure.EfCore;
 
 public sealed class AccountRow
 {
@@ -18,6 +18,7 @@ public sealed class CharacterRow
     public byte Gender { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
+    public int Floor { get; set; }
     public byte Direction { get; set; }
 }
 

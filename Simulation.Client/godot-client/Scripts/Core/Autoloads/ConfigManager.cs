@@ -2,7 +2,7 @@ using System;
 using Godot;
 using Microsoft.Extensions.Configuration;
 
-namespace GodotClient.Core.Autoloads;
+namespace Game.Core.Autoloads;
 
 public partial class ConfigManager : Node
 {

@@ -18,6 +18,7 @@
     
   <ItemGroup>
     <Content Include="appsettings.json" />
+    <Content Include="project.godot" />
     <Content Include="Scenes\game.tscn" />
     <Content Include="Scenes\menu.tscn" />
   </ItemGroup>

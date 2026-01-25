@@ -3,10 +3,9 @@ using Game.Contracts;
 using Godot;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using MemoryPack;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient.Core.Autoloads;
+namespace Game.Core.Autoloads;
 
 /// <summary>
 /// Gerenciador de rede do client Godot.
@@ -136,7 +135,7 @@ public sealed class NetClientConnection : IDisposable
         if (_peer is null)
             return;
 
-        var data = MemoryPackSerializer.Serialize(envelope);
+        var data = EnvelopeSerializer.Serialize(envelope);
         var writer = new NetDataWriter();
         writer.Put(data);
         _peer.Send(writer, deliveryMethod);
@@ -154,7 +153,7 @@ public sealed class NetClientConnection : IDisposable
 
         try
         {
-            var envelope = MemoryPackSerializer.Deserialize<Envelope>(payload);
+            var envelope = EnvelopeSerializer.Deserialize(payload);
             EnvelopeReceived?.Invoke(envelope);
         }
         catch

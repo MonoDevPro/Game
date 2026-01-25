@@ -2,7 +2,7 @@ using Game.Application;
 using Game.Infrastructure.LiteNetLib;
 using Game.Infrastructure.Serialization;
 using Game.Infrastructure.Shared;
-using Game.Persistence;
+using Game.Infrastructure.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Server.Host.Common;

@@ -1,9 +1,9 @@
 using System;
+using Game.Core.Autoloads;
 using Game.Domain;
 using Godot;
-using GodotClient.Core.Autoloads;
 
-namespace GodotClient.Visuals;
+namespace Game.Visuals;
 
 /// <summary>
 /// Representação visual do jogador com predição local e reconciliação de servidor.

@@ -4,7 +4,6 @@ namespace Game.Infrastructure.ArchECS.Commons.Components;
 
 // Character-related components 
 public struct CharacterId               { public int Value; }
-public struct AccountId                 { public int Value; }
 
 // Spatial components
 public struct MapId                     { public int Value; }

@@ -3,7 +3,7 @@ using Godot;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GodotClient.Core.Autoloads;
+namespace Game.Core.Autoloads;
 
 public sealed partial class ServicesManager : Node
 {

@@ -10,7 +10,7 @@ namespace Game.Simulation;
 /// </summary>
 public sealed class CommandQueue
 {
-    private readonly ConcurrentQueue<IWorldCommand> _queue = new();
+    private readonly ConcurrentQueue<ISimulationCommand> _queue = new();
 
     /// <summary>
     /// Número de comandos pendentes na fila.
@@ -22,62 +22,10 @@ public sealed class CommandQueue
     /// Thread-safe: pode ser chamado de qualquer thread.
     /// </summary>
     /// <param name="command">Comando a ser enfileirado.</param>
-    public void Enqueue(IWorldCommand command)
+    public void Enqueue(ISimulationCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
         _queue.Enqueue(command);
-    }
-
-    /// <summary>
-    /// Processa todos os comandos pendentes no mundo ECS.
-    /// Deve ser chamado apenas da thread de simulação.
-    /// </summary>
-    /// <param name="world">Mundo ECS onde os comandos serão aplicados.</param>
-    /// <returns>Número de comandos processados.</returns>
-    public int Drain(World world)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        
-        var count = 0;
-        while (_queue.TryDequeue(out var command))
-        {
-            command.Execute(world);
-            count++;
-        }
-
-        return count;
-    }
-
-    /// <summary>
-    /// Processa todos os comandos pendentes usando a simulação do servidor.
-    /// Suporta comandos especiais de navegação que requerem ServerWorldSimulation.
-    /// </summary>
-    /// <param name="simulation">Simulação do servidor.</param>
-    /// <returns>Número de comandos processados.</returns>
-    public int Drain(ServerWorldSimulation simulation)
-    {
-        ArgumentNullException.ThrowIfNull(simulation);
-        
-        var count = 0;
-        while (_queue.TryDequeue(out var command))
-        {
-            // Trata comandos especiais de navegação
-            switch (command)
-            {
-                case NavigateCommand navCmd:
-                    navCmd.Execute(simulation);
-                    break;
-                case StopMoveCommand stopCmd:
-                    stopCmd.Execute(simulation);
-                    break;
-                default:
-                    command.Execute(simulation.World);
-                    break;
-            }
-            count++;
-        }
-
-        return count;
     }
 
     /// <summary>
@@ -89,12 +37,14 @@ public sealed class CommandQueue
     public int Drain(IWorldSimulation simulation)
     {
         ArgumentNullException.ThrowIfNull(simulation);
-        
-        // Se é ServerWorldSimulation, usa o método específico para suportar navegação
-        if (simulation is ServerWorldSimulation serverSim)
-            return Drain(serverSim);
             
-        return Drain(simulation.World);
+        var count = 0;
+        while (_queue.TryDequeue(out var command))
+        {
+            command.Execute(simulation);
+            count++;
+        }
+        return count;
     }
 
     /// <summary>

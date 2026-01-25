@@ -1,7 +1,7 @@
 using Game.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace Game.Persistence;
+namespace Game.Infrastructure.EfCore;
 
 public static class DbInitializer
 {
@@ -24,8 +24,8 @@ public static class DbInitializer
 
         var characters = new CharacterRow[]
         {
-            new CharacterRow { AccountId = account.Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 100, Y = 100, Direction = (byte)Direction.South },
-            new CharacterRow { AccountId = account.Id, Name = "Mage", Gender = (byte)Gender.Male, X = 102, Y = 102, Direction = (byte)Direction.South },
+            new CharacterRow { AccountId = account.Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, Direction = (byte)Direction.South },
+            new CharacterRow { AccountId = account.Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, Direction = (byte)Direction.South },
         };
         db.Characters.AddRange(characters);
         await db.SaveChangesAsync(ct);

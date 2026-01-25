@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Game.Contracts;
 using Godot;
 
-namespace GodotClient.UI.Chat;
+namespace Game.UI.Chat;
 
 public partial class ChatHud
 {

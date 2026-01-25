@@ -105,7 +105,7 @@ public sealed class WorldMap
     // ========== INDEXAÇÃO ==========
     
     [MethodImpl(MethodImplOptions. AggressiveInlining)]
-    public bool InBounds(int x, int y, int floor = 0)
+    public bool InBounds(int x, int y, int floor)
         => (uint)x < (uint)Width && (uint)y < (uint)Height && (uint)floor < (uint)Floors;
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -193,9 +193,9 @@ public sealed class WorldMap
     // ========== ENTIDADES (OCUPAÇÃO DINÂMICA) ==========
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsOccupied(int x, int y, int floor = 0)
+    public bool IsOccupied(int x, int y, int floor)
     {
-        if (!InBounds(x, y)) return false;
+        if (!InBounds(x, y, floor)) return false;
         return _occupants[floor][GetIndex(x, y)].Count > 0;
     }
     

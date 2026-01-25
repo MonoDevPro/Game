@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace GodotClient.Core.Autoloads;
+namespace Game.Core.Autoloads;
 
 /// <summary>
 /// Gerencia estado global do jogo (persist entre cenas).

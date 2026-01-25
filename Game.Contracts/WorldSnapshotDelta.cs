@@ -1,3 +1,5 @@
+using MemoryPack;
+
 namespace Game.Contracts;
 
 /// <summary>
@@ -9,12 +11,13 @@ namespace Game.Contracts;
 /// <param name="BaseTick">Tick do snapshot base (para delta).</param>
 /// <param name="Added">Jogadores novos ou que mudaram.</param>
 /// <param name="Removed">IDs de jogadores removidos.</param>
-public readonly record struct WorldSnapshotDelta(
+[MemoryPackable]
+public readonly partial record struct WorldSnapshotDelta(
     long ServerTick,
     long Timestamp,
     long BaseTick,
     List<PlayerState> Added,
-    List<int> Removed)
+    List<int> Removed) : IEnvelopePayload
 {
     /// <summary>
     /// Indica se este delta tem mudanças.

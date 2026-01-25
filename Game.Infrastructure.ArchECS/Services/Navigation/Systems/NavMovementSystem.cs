@@ -36,11 +36,15 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
             
             MoveEvent moveEvent = new(entity, pos, floor.Value);
             EventBus.Send(ref moveEvent);
+            
+            if (world.Has<NavIsMoving>(entity))
+                world.Remove<NavIsMoving>(entity);
         }
     }
 
     [Query]
     [All<Position, NavMovementState, NavAgentSettings, NavPathBuffer, NavPathState, NavAgent>]
+    [None<NavDirectionalMode>]
     private void ProcessPathFollowing(
         [Data] in long serverTick,
         in Entity entity,
@@ -86,7 +90,7 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
         if (!grid.TryMoveEntity(pos, floor.Value, nextPos, floor.Value, entity))
         {
             // Célula ocupada ou bloqueada
-            HandleBlockedMovement(World, entity, serverTick, ref state, ref movement, nextPos, floor.Value);
+            HandleBlockedMovement(entity, serverTick, ref state, ref movement, nextPos, floor.Value);
             return;
         }
 
@@ -110,7 +114,6 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
     }
 
     private void HandleBlockedMovement(
-        World world,
         Entity entity,
         long serverTick,
         ref NavPathState state,

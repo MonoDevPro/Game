@@ -3,7 +3,7 @@ using Game.Application;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.LiteNetLib;
-using Game.Persistence;
+using Game.Infrastructure.EfCore;
 using Game.Simulation;
 
 namespace Server.Host.WorldServer;
@@ -14,13 +14,13 @@ namespace Server.Host.WorldServer;
 /// Suporta tanto movimento simples por delta quanto navegação por pathfinding.
 /// </summary>
 public class WorldServerWorker(
-    IServiceScopeFactory scopeFactory, 
+    IServiceScopeFactory scopeFactory,
     NetServer server,
     ILogger<WorldServerWorker>? logger = null) : BackgroundService
 {
     private const int WorldPort = 9051;
-    private const int TickIntervalMs = 100;
-    
+    private const int TickIntervalMs = 1;
+
     // Configuração do mapa padrão
     private const int DefaultMapWidth = 100;
     private const int DefaultMapHeight = 100;
@@ -29,30 +29,30 @@ public class WorldServerWorker(
     {
         logger?.LogInformation("WorldServer iniciando na porta {Port}", WorldPort);
         Console.WriteLine($"WorldServer listening on {WorldPort}");
-        
+
         // Inicializa banco de dados
         using (var scope = scopeFactory.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<GameDbContext>();
             await DbInitializer.EnsureCreatedAndSeedAsync(db, stoppingToken);
         }
-        
+
         // Cria mapa do mundo para navegação
         var worldMap = CreateDefaultWorldMap();
-        
+
         // Usa a simulação baseada em ECS com suporte a navegação
         var simulation = new ServerWorldSimulation(worldMap, logger: logger);
         var commandQueue = new CommandQueue();
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();
-        
+
         // Estado para delta compression por peer
         var lastSnapshotByPeer = new ConcurrentDictionary<int, WorldSnapshot>();
         var fullSnapshotCounter = 0;
         const int fullSnapshotInterval = 10; // Envia snapshot completo a cada 10 ticks
-        
-        logger?.LogInformation("Mapa criado: {Width}x{Height}, Navegação: {HasNav}", 
-            worldMap.Width, worldMap.Height, simulation.HasNavigation);
+
+        logger?.LogInformation("Mapa criado: {Width}x{Height}",
+            worldMap.Width, worldMap.Height);
 
         // Handler de desconexão
         server.PeerDisconnected += (peer, info) =>
@@ -74,19 +74,19 @@ public class WorldServerWorker(
                 case OpCode.WorldEnterRequest:
                     await HandleEnterWorld(peer, envelope, simulation, peerByCharacter, characterByPeer, stoppingToken);
                     break;
-                    
+
                 case OpCode.WorldMoveCommand:
                     HandleMoveCommand(peer, envelope, characterByPeer, commandQueue);
                     break;
-                    
+
                 case OpCode.WorldNavigateCommand:
                     HandleNavigateCommand(peer, envelope, characterByPeer, commandQueue);
                     break;
-                    
+
                 case OpCode.WorldStopCommand:
                     HandleStopCommand(peer, envelope, characterByPeer, commandQueue);
                     break;
-                    
+
                 case OpCode.WorldSnapshotRequest:
                     // Cliente solicitou snapshot completo (após perda de pacotes)
                     lastSnapshotByPeer.TryRemove(peer.Id, out _);
@@ -95,77 +95,62 @@ public class WorldServerWorker(
         };
 
         // Captura Ctrl+C para shutdown graceful
-        Console.CancelKeyPress += (_, e) =>
-        {
-            e.Cancel = true;
-        };
+        Console.CancelKeyPress += (_, e) => { e.Cancel = true; };
 
         server.Start(WorldPort);
-        
-        var tickInterval = TimeSpan.FromMilliseconds(TickIntervalMs);
-        var lastTick = DateTime.UtcNow;
-        
+
         // Game loop principal
         while (!stoppingToken.IsCancellationRequested)
         {
             server.PollEvents();
-            
-            var now = DateTime.UtcNow;
-            if (now - lastTick >= tickInterval)
+
+            // Processa comandos pendentes na simulação ECS
+            commandQueue.Drain(simulation);
+
+            // Atualiza a simulação ECS (processa sistemas e navegação)
+            simulation.Update(TickIntervalMs);
+
+            // Constrói snapshot atual
+            var currentSnapshot = simulation.BuildSnapshot();
+            fullSnapshotCounter++;
+
+            // Envia para cada peer conectado
+            foreach (var (characterId, peer) in peerByCharacter)
             {
-                // Processa comandos pendentes na simulação ECS
-                commandQueue.Drain(simulation);
-                
-                // Atualiza a simulação ECS (processa sistemas e navegação)
-                var deltaMs = (long)(now - lastTick).TotalMilliseconds;
-                simulation.Update(deltaMs);
-                
-                // Constrói snapshot atual
-                var currentSnapshot = simulation.BuildSnapshot();
-                fullSnapshotCounter++;
-                
-                // Envia para cada peer conectado
-                foreach (var (characterId, peer) in peerByCharacter)
+                var hasLastSnapshot = lastSnapshotByPeer.TryGetValue(peer.Id, out var lastSnapshot);
+
+                // Envia snapshot completo periodicamente ou se não há snapshot anterior
+                var sendFullSnapshot = fullSnapshotCounter >= fullSnapshotInterval || !hasLastSnapshot;
+
+                if (sendFullSnapshot)
                 {
-                    var hasLastSnapshot = lastSnapshotByPeer.TryGetValue(peer.Id, out var lastSnapshot);
-                    
-                    // Envia snapshot completo periodicamente ou se não há snapshot anterior
-                    var sendFullSnapshot = fullSnapshotCounter >= fullSnapshotInterval || !hasLastSnapshot;
-                    
-                    if (sendFullSnapshot)
+                    server.Send(peer, new Envelope(OpCode.WorldSnapshot, currentSnapshot),
+                        LiteNetLib.DeliveryMethod.Unreliable);
+                    lastSnapshotByPeer[peer.Id] = currentSnapshot;
+                }
+                else
+                {
+                    // Calcula e envia delta
+                    var delta = SnapshotDeltaCalculator.Calculate(lastSnapshot, currentSnapshot);
+
+                    // Só envia delta se houver mudanças
+                    if (delta.HasChanges)
                     {
-                        server.Send(peer, new Envelope(OpCode.WorldSnapshot, currentSnapshot), 
+                        server.Send(peer, new Envelope(OpCode.WorldSnapshotDelta, delta),
                             LiteNetLib.DeliveryMethod.Unreliable);
-                        lastSnapshotByPeer[peer.Id] = currentSnapshot;
                     }
-                    else
-                    {
-                        // Calcula e envia delta
-                        var delta = SnapshotDeltaCalculator.Calculate(lastSnapshot, currentSnapshot);
-                        
-                        // Só envia delta se houver mudanças
-                        if (delta.HasChanges)
-                        {
-                            server.Send(peer, new Envelope(OpCode.WorldSnapshotDelta, delta), 
-                                LiteNetLib.DeliveryMethod.Unreliable);
-                        }
-                        
-                        lastSnapshotByPeer[peer.Id] = currentSnapshot;
-                    }
+
+                    lastSnapshotByPeer[peer.Id] = currentSnapshot;
                 }
-                
-                // Reseta contador após envio de snapshot completo
-                if (fullSnapshotCounter >= fullSnapshotInterval)
-                {
-                    fullSnapshotCounter = 0;
-                }
-                
-                lastTick = now;
             }
 
-            await Task.Delay(10, stoppingToken).ContinueWith(_ => { });
+            // Reseta contador após envio de snapshot completo
+            if (fullSnapshotCounter >= fullSnapshotInterval)
+                fullSnapshotCounter = 0;
+            
+            await Task.Delay(TickIntervalMs, stoppingToken);
         }
-        
+
         logger?.LogInformation("WorldServer finalizado");
     }
 
@@ -175,17 +160,17 @@ public class WorldServerWorker(
     private static WorldMap CreateDefaultWorldMap()
     {
         var map = new WorldMap(
-            id: 1, 
-            name: "MainWorld", 
-            width: DefaultMapWidth, 
+            id: 1,
+            name: "MainWorld",
+            width: DefaultMapWidth,
             height: DefaultMapHeight,
             floors: 1,
             defaultSpawnX: DefaultMapWidth / 2,
             defaultSpawnY: DefaultMapHeight / 2);
-        
+
         // Adiciona algumas paredes/obstáculos de exemplo (opcional)
         // map.SetTile(10, 10, 0, Tile.Blocked);
-        
+
         return map;
     }
 
@@ -208,7 +193,7 @@ public class WorldServerWorker(
         using var scope = scopeFactory.CreateScope();
         var world = scope.ServiceProvider.GetRequiredService<WorldUseCases>();
         var result = await world.EnterWorldAsync(request, stoppingToken);
-        
+
         if (!result.Success || result.Value.Spawn is null)
         {
             server.Send(peer,
@@ -217,15 +202,15 @@ public class WorldServerWorker(
         }
 
         var spawn = result.Value.Spawn;
-        
+
         // Adiciona jogador à simulação ECS com suporte a navegação
-        simulation.UpsertPlayer(spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y);
+        simulation.UpsertPlayer(spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y, spawn.Value.Floor);
         peerByCharacter[spawn.Value.CharacterId] = peer;
         characterByPeer[peer.Id] = spawn.Value.CharacterId;
 
-        logger?.LogDebug("Jogador {CharacterId} ({Name}) entrou no mundo em ({X}, {Y})", 
+        logger?.LogDebug("Jogador {CharacterId} ({Name}) entrou no mundo em ({X}, {Y})",
             spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y);
-        
+
         server.Send(peer, new Envelope(OpCode.WorldEnterResponse, result.Value));
     }
 
@@ -241,9 +226,12 @@ public class WorldServerWorker(
         if (!characterByPeer.TryGetValue(peer.Id, out var characterId) ||
             characterId != request.CharacterId)
             return;
+        
+        logger?.LogTrace("Movimento solicitado: {CharacterId} -> (ΔX: {Dx}, ΔY: {Dy})",
+            characterId, request.Dx, request.Dy);
 
         // Movimento simples por delta
-        commandQueue.Enqueue(new MoveCommand(request.CharacterId, request.Dx, request.Dy));
+        commandQueue.Enqueue(new DeltaMoveCommand(request.CharacterId, request.Dx, request.Dy));
     }
 
     private void HandleNavigateCommand(
@@ -260,8 +248,10 @@ public class WorldServerWorker(
             return;
 
         // Navegação com pathfinding para posição específica
-        commandQueue.Enqueue(new NavigateCommand(request.CharacterId, request.TargetX, request.TargetY, request.TargetFloor));
-        logger?.LogTrace("Navegação solicitada: {CharacterId} -> ({X}, {Y})", 
+        commandQueue.Enqueue(new NavigateCommand(request.CharacterId, request.TargetX, request.TargetY,
+            request.TargetFloor));
+        
+        logger?.LogTrace("Navegação solicitada: {CharacterId} -> ({X}, {Y})",
             characterId, request.TargetX, request.TargetY);
     }
 

@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using Game.Contracts;
+using Game.Core.Autoloads;
 using Game.Domain;
+using Game.UI.Actions;
+using Game.UI.Chat;
+using Game.UI.Joystick;
+using Game.Visuals;
 using Godot;
-using GodotClient.Core.Autoloads;
-using GodotClient.UI.Actions;
-using GodotClient.UI.Chat;
-using GodotClient.UI.Joystick;
-using GodotClient.Visuals;
 using Input = Godot.Input;
 
-namespace GodotClient.Simulation;
+namespace Game.Simulation;
 
 /// <summary>
 /// Cliente principal do jogo orientado a ECS:

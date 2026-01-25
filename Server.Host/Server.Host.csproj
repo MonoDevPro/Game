@@ -16,7 +16,7 @@
       <ProjectReference Include="..\Game.Infrastructure.LiteNetLib\Game.Infrastructure.LiteNetLib.csproj" />
       <ProjectReference Include="..\Game.Infrastructure.Serialization\Game.Infrastructure.Serialization.csproj" />
       <ProjectReference Include="..\Game.Infrastructure.Shared\Game.Infrastructure.Shared.csproj" />
-      <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
+      <ProjectReference Include="..\Game.Infrastructure.EfCore\Game.Infrastructure.EfCore.csproj" />
       <ProjectReference Include="..\Game.Simulation\Game.Simulation.csproj" />
     </ItemGroup>
 </Project>

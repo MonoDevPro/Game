@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Game.Persistence;
+namespace Game.Infrastructure.EfCore;
 
 public sealed class GameDbContext : DbContext
 {

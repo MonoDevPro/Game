@@ -17,26 +17,14 @@ public sealed record NavigateCommand(
     int TargetX, 
     int TargetY, 
     int TargetFloor = 0,
-    PathRequestFlags Flags = PathRequestFlags.None) : IWorldCommand
+    PathRequestFlags Flags = PathRequestFlags.None) : ISimulationCommand
 {
-    /// <summary>
-    /// Executa o comando de navegação.
-    /// Nota: Este comando requer acesso à ServerWorldSimulation para funcionar corretamente.
-    /// Use o método Execute(ServerWorldSimulation) para execução completa.
-    /// </summary>
-    public void Execute(World world)
-    {
-        // Este método é chamado pelo CommandQueue.Drain(World)
-        // Para navegação completa, use o overload que recebe ServerWorldSimulation
-        // Aqui fazemos apenas uma marcação que será processada no próximo tick
-    }
-
     /// <summary>
     /// Executa o comando de navegação usando a simulação completa.
     /// </summary>
     /// <param name="simulation">Simulação do servidor com suporte a navegação.</param>
     /// <returns>True se a navegação foi iniciada com sucesso.</returns>
-    public bool Execute(ServerWorldSimulation simulation)
+    public bool Execute(IWorldSimulation simulation)
     {
         return simulation.RequestPlayerMove(CharacterId, TargetX, TargetY, TargetFloor, Flags);
     }
@@ -46,14 +34,9 @@ public sealed record NavigateCommand(
 /// Comando para parar o movimento de um jogador.
 /// </summary>
 /// <param name="CharacterId">ID do personagem.</param>
-public sealed record StopMoveCommand(int CharacterId) : IWorldCommand
+public sealed record StopMoveCommand(int CharacterId) : ISimulationCommand
 {
-    public void Execute(World world)
-    {
-        // Processado pelo ServerWorldSimulation
-    }
-
-    public bool Execute(ServerWorldSimulation simulation)
+    public bool Execute(IWorldSimulation simulation)
     {
         return simulation.StopPlayerMove(CharacterId);
     }

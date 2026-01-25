@@ -2,7 +2,7 @@ using Game.Application;
 using Game.Infrastructure.LiteNetLib;
 using Game.Infrastructure.Serialization;
 using Game.Infrastructure.Shared;
-using Game.Persistence;
+using Game.Infrastructure.EfCore;
 using Server.Host.Common;
 
 namespace Server.Host.AuthServer;

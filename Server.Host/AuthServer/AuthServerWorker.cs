@@ -1,7 +1,7 @@
 using Game.Application;
 using Game.Contracts;
 using Game.Infrastructure.LiteNetLib;
-using Game.Persistence;
+using Game.Infrastructure.EfCore;
 
 namespace Server.Host.AuthServer;
 

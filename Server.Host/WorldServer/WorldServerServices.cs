@@ -1,7 +1,7 @@
 using Game.Application;
 using Game.Infrastructure.LiteNetLib;
 using Game.Infrastructure.Serialization;
-using Game.Persistence;
+using Game.Infrastructure.EfCore;
 using Server.Host.Common;
 
 namespace Server.Host.WorldServer;
@@ -22,7 +22,8 @@ public static class WorldServerServices
         services.AddKeyedSingleton<NetServer>(netServerKey);
         services.AddHostedService<WorldServerWorker>(a => new WorldServerWorker(
             a.GetRequiredService<IServiceScopeFactory>(),
-            a.GetRequiredKeyedService<NetServer>(netServerKey)));
+            a.GetRequiredKeyedService<NetServer>(netServerKey),
+            a.GetRequiredService<ILogger<WorldServerWorker>>()));
 
         return services;
     }

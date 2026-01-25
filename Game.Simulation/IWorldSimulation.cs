@@ -22,11 +22,6 @@ public interface IWorldSimulation : IDisposable
     long CurrentTick { get; }
 
     /// <summary>
-    /// Indica se a simulação tem suporte a navegação (pathfinding).
-    /// </summary>
-    bool HasNavigation { get; }
-
-    /// <summary>
     /// Mapa do mundo (pode ser null se criado sem mapa).
     /// </summary>
     WorldMap? Map { get; }
@@ -45,7 +40,7 @@ public interface IWorldSimulation : IDisposable
     /// <param name="x">Posição X.</param>
     /// <param name="y">Posição Y.</param>
     /// <returns>A entidade criada ou atualizada.</returns>
-    Entity UpsertPlayer(int characterId, string name, int x, int y);
+    Entity UpsertPlayer(int characterId, string name, int x, int y, int floor);
 
     /// <summary>
     /// Remove um jogador do mundo.
@@ -53,13 +48,6 @@ public interface IWorldSimulation : IDisposable
     /// <param name="characterId">ID do personagem.</param>
     /// <returns>True se o jogador foi removido com sucesso.</returns>
     bool RemovePlayer(int characterId);
-
-    /// <summary>
-    /// Verifica se um jogador existe no mundo.
-    /// </summary>
-    /// <param name="characterId">ID do personagem.</param>
-    /// <returns>True se o jogador existe.</returns>
-    bool HasPlayer(int characterId);
 
     /// <summary>
     /// Constrói um snapshot do estado atual do mundo.
@@ -77,7 +65,10 @@ public interface IWorldSimulation : IDisposable
     /// <param name="targetFloor">Andar de destino.</param>
     /// <param name="flags">Flags de pathfinding.</param>
     /// <returns>True se a requisição foi aceita.</returns>
-    bool RequestPlayerMove(int characterId, int targetX, int targetY, int targetFloor = 0,
+    bool RequestPlayerMove(int characterId, int targetX, int targetY, int targetFloor,
+        PathRequestFlags flags = PathRequestFlags.None);
+
+    bool RequestPlayerMoveDelta(int characterId, int deltaX, int deltaY,
         PathRequestFlags flags = PathRequestFlags.None);
 
     /// <summary>
@@ -86,13 +77,4 @@ public interface IWorldSimulation : IDisposable
     /// <param name="characterId">ID do personagem.</param>
     /// <returns>True se o movimento foi parado.</returns>
     bool StopPlayerMove(int characterId);
-
-    /// <summary>
-    /// Move um jogador diretamente por delta (sem pathfinding).
-    /// </summary>
-    /// <param name="characterId">ID do personagem.</param>
-    /// <param name="dx">Delta X.</param>
-    /// <param name="dy">Delta Y.</param>
-    /// <returns>True se o movimento foi aplicado.</returns>
-    bool MovePlayerByDelta(int characterId, int dx, int dy);
 }

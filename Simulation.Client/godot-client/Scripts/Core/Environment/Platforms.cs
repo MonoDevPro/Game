@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace GodotClient.Core.Environment;
+namespace Game.Core.Environment;
 
 public static class EnvironmentSettings
 {

@@ -1,3 +1,5 @@
 namespace Game.Contracts;
 
-public readonly record struct Envelope(OpCode OpCode, object? Payload);
+public interface IEnvelopePayload { }
+
+public readonly record struct Envelope(OpCode OpCode, IEnvelopePayload? Payload);

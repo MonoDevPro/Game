@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Game.Persistence\Game.Persistence.csproj" />
+    <ProjectReference Include="..\Game.Infrastructure.EfCore\Game.Infrastructure.EfCore.csproj" />
     <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
   </ItemGroup>
 

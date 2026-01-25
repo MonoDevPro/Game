@@ -1,16 +1,10 @@
 using Game.Application;
 
-namespace Game.Persistence;
+namespace Game.Infrastructure.EfCore;
 
-public sealed class EfEnterTicketService : IEnterTicketService
+public sealed class EfEnterTicketService(GameDbContext db) : IEnterTicketService
 {
-    private readonly GameDbContext _db;
     private readonly TimeSpan _ttl = TimeSpan.FromMinutes(5);
-
-    public EfEnterTicketService(GameDbContext db)
-    {
-        _db = db;
-    }
 
     public string IssueTicket(int characterId)
     {
@@ -21,14 +15,14 @@ public sealed class EfEnterTicketService : IEnterTicketService
             CharacterId = characterId,
             ExpiresAt = DateTimeOffset.UtcNow.Add(_ttl)
         };
-        _db.EnterTickets.Add(row);
-        _db.SaveChanges();
+        db.EnterTickets.Add(row);
+        db.SaveChanges();
         return ticket;
     }
 
     public bool TryConsumeTicket(string ticket, out int characterId)
     {
-        var row = _db.EnterTickets.FirstOrDefault(x => x.Ticket == ticket);
+        var row = db.EnterTickets.FirstOrDefault(x => x.Ticket == ticket);
         if (row is null)
         {
             characterId = 0;
@@ -37,15 +31,15 @@ public sealed class EfEnterTicketService : IEnterTicketService
 
         if (row.ExpiresAt < DateTimeOffset.UtcNow)
         {
-            _db.EnterTickets.Remove(row);
-            _db.SaveChanges();
+            db.EnterTickets.Remove(row);
+            db.SaveChanges();
             characterId = 0;
             return false;
         }
 
         characterId = row.CharacterId;
-        _db.EnterTickets.Remove(row);
-        _db.SaveChanges();
+        db.EnterTickets.Remove(row);
+        db.SaveChanges();
         return true;
     }
 }

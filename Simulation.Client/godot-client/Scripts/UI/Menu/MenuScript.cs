@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Game.Contracts;
+using Game.Core.Autoloads;
 using Game.Domain;
 using Godot;
-using GodotClient.Core.Autoloads;
-using LiteNetLib;
 
-namespace GodotClient.UI.Menu;
+namespace Game.UI.Menu;
 
 /// <summary>
 /// Controlador do menu principal com autenticação usando Envelope/OpCode.

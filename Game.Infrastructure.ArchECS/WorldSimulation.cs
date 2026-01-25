@@ -12,44 +12,46 @@ namespace Game.Infrastructure.ArchECS;
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class WorldSimulation(ILogger<WorldSimulation>? logger = null) : GameSystem(World.Create(
-        chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
-        minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
-        archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-        entityCapacity: SimulationConfig.EntityCapacity), logger)
+public abstract class WorldSimulation(World world, NavigationModule navigation, 
+    long tickDeltaMilliseconds = SimulationConfig.TickDeltaMilliseconds, ILogger? logger = null)
+    : GameSystem(world, logger)
 {
-    
     /// Sistemas ECS da simulação.
     protected readonly Group<float> Systems = new(SimulationConfig.SimulationName);
-    
+
     /// Fixed timestep para updates da simulação.
-    private readonly FixedTimeStep _fixedTimeStep = new(SimulationConfig.TickDeltaMilliseconds);
-    
+    private readonly FixedTimeStep _fixedTimeStep = new(tickDeltaMilliseconds);
+
     /// Tick atual da simulação.
-    private uint CurrentTick { get; set; }
+    public long CurrentTick { get; private set; }
+    
+    protected readonly NavigationModule Navigation = navigation;
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
     protected abstract void ConfigureSystems(World world, Group<float> systems);
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in long deltaTime)
     {
         _fixedTimeStep.Accumulate(deltaTime);
-        
+
         while (_fixedTimeStep.ShouldUpdate())
         {
             CurrentTick++;
 
-            Systems.BeforeUpdate(SimulationConfig.TickDeltaMilliseconds);
+            Systems.BeforeUpdate(CurrentTick);
 
-            Systems.Update(SimulationConfig.TickDeltaMilliseconds);
+            Systems.Update(CurrentTick);
 
-            Systems.AfterUpdate(SimulationConfig.TickDeltaMilliseconds);
-
+            Systems.AfterUpdate(CurrentTick);
+            
+            Navigation?.Tick(CurrentTick);
+            
             _fixedTimeStep.Step();
         }
+        
     }
 
     public override void Dispose()

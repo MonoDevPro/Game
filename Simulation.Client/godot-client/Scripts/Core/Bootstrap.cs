@@ -1,7 +1,7 @@
+using Game.Core.Autoloads;
 using Godot;
-using GodotClient.Core.Autoloads;
 
-namespace GodotClient.Core;
+namespace Game.Core;
 
 public partial class Bootstrap : Node
 {

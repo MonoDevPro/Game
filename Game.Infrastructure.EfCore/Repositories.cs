@@ -2,7 +2,7 @@ using Game.Application;
 using Game.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace Game.Persistence;
+namespace Game.Infrastructure.EfCore;
 
 public sealed class EfAccountRepository(GameDbContext db) : IAccountRepository
 {
@@ -14,18 +14,11 @@ public sealed class EfAccountRepository(GameDbContext db) : IAccountRepository
     }
 }
 
-public sealed class EfCharacterRepository : ICharacterRepository
+public sealed class EfCharacterRepository(GameDbContext db) : ICharacterRepository
 {
-    private readonly GameDbContext _db;
-
-    public EfCharacterRepository(GameDbContext db)
-    {
-        _db = db;
-    }
-
     public async Task<IReadOnlyList<Character>> ListByAccountIdAsync(int accountId, CancellationToken ct = default)
     {
-        var rows = await _db.Characters.AsNoTracking()
+        var rows = await db.Characters.AsNoTracking()
             .Where(x => x.AccountId == accountId)
             .ToListAsync(ct);
         return rows.Select(ToDomain).ToList();
@@ -33,14 +26,14 @@ public sealed class EfCharacterRepository : ICharacterRepository
 
     public async Task<Character?> FindByIdAsync(int id, CancellationToken ct = default)
     {
-        var row = await _db.Characters.AsNoTracking()
+        var row = await db.Characters.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         return row is null ? null : ToDomain(row);
     }
 
     public async Task UpdateAsync(Character character, CancellationToken ct = default)
     {
-        var row = await _db.Characters.FirstOrDefaultAsync(x => x.Id == character.Id, ct);
+        var row = await db.Characters.FirstOrDefaultAsync(x => x.Id == character.Id, ct);
         if (row is null)
         {
             return;
@@ -48,11 +41,11 @@ public sealed class EfCharacterRepository : ICharacterRepository
 
         row.X = character.X;
         row.Y = character.Y;
-        await _db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
     }
 
     private static Character ToDomain(CharacterRow row)
-        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, (Direction)row.Direction);
+        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, row.Floor, (Direction)row.Direction);
 }
 
 public sealed class EfCharacterVocationRepository : ICharacterVocationRepository

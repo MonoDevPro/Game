@@ -1,8 +1,8 @@
+using Game.Core.Environment;
+using Game.Simulation;
 using Godot;
-using GodotClient.Core.Environment;
-using GodotClient.Simulation;
 
-namespace GodotClient.UI.Joystick;
+namespace Game.UI.Joystick;
 
 public enum JoystickMode
 {
