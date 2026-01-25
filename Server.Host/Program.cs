@@ -1,13 +1,18 @@
 using Server.Host.AuthServer;
 using Server.Host.ChatServer;
+using Server.Host.Common;
 using Server.Host.WorldServer;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+var hostOptions = builder.Configuration
+    .GetSection(ServerHostOptions.SectionName)
+    .Get<ServerHostOptions>() ?? new ServerHostOptions();
+
 builder.Services
-    .AddAuthServerServices("Data Source=game_database.db", "auth")
-    .AddChatServerServices("Data Source=game_database.db", "chat")
-    .AddWorldServerServices("Data Source=game_database.db", "world");
+    .AddAuthServerServices(hostOptions.ConnectionString, hostOptions.AuthServerKey)
+    .AddChatServerServices(hostOptions.ChatServerKey)
+    .AddWorldServerServices(hostOptions.ConnectionString, hostOptions.WorldServerKey);
 
 var host = builder.Build();
 host.Run();
