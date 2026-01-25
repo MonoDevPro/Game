@@ -30,6 +30,12 @@ public readonly partial record struct WorldNavigateCommand(int CharacterId, int 
 public readonly partial record struct WorldStopCommand(int CharacterId) : IEnvelopePayload;
 
 /// <summary>
+/// Comando de ataque básico direcional.
+/// </summary>
+[MemoryPackable]
+public readonly partial record struct WorldBasicAttackCommand(int CharacterId, int DirX, int DirY) : IEnvelopePayload;
+
+/// <summary>
 /// Estado de um jogador para sincronização.
 /// </summary>
 /// <param name="CharacterId">ID do personagem.</param>
@@ -55,7 +61,11 @@ public readonly partial record struct PlayerState(
     bool IsMoving = false,
     int TargetX = 0,
     int TargetY = 0,
-    float MoveProgress = 0f);
+    float MoveProgress = 0f,
+    int CurrentHp = 0,
+    int MaxHp = 0,
+    int CurrentMp = 0,
+    int MaxMp = 0);
 
 /// <summary>
 /// Snapshot do estado do mundo para sincronização.

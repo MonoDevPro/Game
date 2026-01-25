@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Game.Contracts;
 using Game.Core.Autoloads;
@@ -46,9 +47,13 @@ public partial class GameClient : Node2D
     private NetClientConnection? _chatConnection;
     private WorldSnapshot? _lastSnapshot;
     private readonly Dictionary<int, PlayerVisual> _playersById = new();
+    private readonly Dictionary<int, ulong> _attackUntilById = new();
     private ulong _lastMoveSentMs;
+    private int _lastDirX = 0;
+    private int _lastDirY = 1;
     private const int MoveSendIntervalMs = 100;
     private const float PixelsPerCell = 32f;
+    private const ulong AttackAnimationDurationMs = 250;
     
     public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");
 
@@ -93,6 +98,11 @@ public partial class GameClient : Node2D
         if (_localPlayerId <= 0 || IsChatFocused)
             return;
 
+        if (Input.IsActionJustPressed("attack"))
+        {
+            SendBasicAttack();
+        }
+
         var now = Time.GetTicksMsec();
         if (now - _lastMoveSentMs < MoveSendIntervalMs)
             return;
@@ -103,6 +113,12 @@ public partial class GameClient : Node2D
         if (Input.IsActionPressed("walk_east")) dx += 1;
         if (Input.IsActionPressed("walk_north")) dy -= 1;
         if (Input.IsActionPressed("walk_south")) dy += 1;
+
+        if (dx != 0 || dy != 0)
+        {
+            _lastDirX = Math.Clamp(dx, -1, 1);
+            _lastDirY = Math.Clamp(dy, -1, 1);
+        }
 
         if (dx == 0 && dy == 0)
             return;
@@ -171,6 +187,12 @@ public partial class GameClient : Node2D
                 if (envelope.Payload is WorldSnapshotDelta delta)
                 {
                     ApplySnapshotDelta(delta);
+                }
+                break;
+            case OpCode.CombatEventBatch:
+                if (envelope.Payload is CombatEventBatch combatBatch)
+                {
+                    HandleCombatEvents(combatBatch);
                 }
                 break;
         }
@@ -260,7 +282,23 @@ public partial class GameClient : Node2D
             visual.UpdatePosition(new Vector3I(player.X, player.Y, player.Floor));
         }
         var direction = GetDirection(player.DirX, player.DirY);
-        visual.UpdateAnimationState(direction, player.IsMoving);
+        var isAttacking = false;
+        var now = Time.GetTicksMsec();
+        if (_attackUntilById.TryGetValue(player.CharacterId, out var until))
+        {
+            if (now < until)
+                isAttacking = true;
+            else
+                _attackUntilById.Remove(player.CharacterId);
+        }
+
+        visual.UpdateAnimationState(direction, player.IsMoving, isAttacking);
+        visual.UpdateVitals(player.CurrentHp, player.MaxHp, player.CurrentMp, player.MaxMp);
+        if (player.CharacterId == _localPlayerId && (player.DirX != 0 || player.DirY != 0))
+        {
+            _lastDirX = Math.Clamp(player.DirX, -1, 1);
+            _lastDirY = Math.Clamp(player.DirY, -1, 1);
+        }
     }
 
     private static Direction GetDirection(int dirX, int dirY)
@@ -315,6 +353,71 @@ public partial class GameClient : Node2D
         var sender = string.IsNullOrWhiteSpace(_localPlayerName) ? "Player" : _localPlayerName;
         var chatMessage = new ChatSendRequest("Global", sender, trimmed);
         _chatConnection.Send(new Envelope(OpCode.ChatSendRequest, chatMessage));
+    }
+
+    private void HandleCombatEvents(CombatEventBatch batch)
+    {
+        var now = Time.GetTicksMsec();
+        foreach (var combatEvent in batch.Events)
+        {
+            switch (combatEvent.Type)
+            {
+                case CombatEventType.AttackStarted:
+                    _attackUntilById[combatEvent.AttackerId] = now + AttackAnimationDurationMs;
+                    break;
+                case CombatEventType.Hit:
+                    if (_playersById.TryGetValue(combatEvent.TargetId, out var visual))
+                    {
+                        visual.CreateFloatingDamageLabel(combatEvent.Damage, false);
+                    }
+                    break;
+                case CombatEventType.ProjectileSpawn:
+                    SpawnProjectileVisual(combatEvent);
+                    break;
+            }
+        }
+    }
+
+    private void SpawnProjectileVisual(CombatEvent combatEvent)
+    {
+        if (combatEvent.DirX == 0 && combatEvent.DirY == 0)
+            return;
+
+        var speed = combatEvent.Speed <= 0f ? 10f : combatEvent.Speed;
+        var range = combatEvent.Range <= 0 ? 1 : combatEvent.Range;
+
+        var start = new Vector2(combatEvent.X * PixelsPerCell, combatEvent.Y * PixelsPerCell);
+        var end = start + new Vector2(combatEvent.DirX, combatEvent.DirY) * (range * PixelsPerCell);
+
+        var projectile = ProjectileVisual.Create();
+        projectile.Position = start;
+        projectile.ZIndex = combatEvent.Floor;
+        EntitiesRoot.AddChild(projectileVisual);
+
+        var duration = Math.Max(0.05f, range / speed);
+        var tween = projectileVisual.CreateTween();
+        tween.TweenProperty(projectileVisual, "position", end, duration)
+            .SetTrans(Tween.TransitionType.Linear)
+            .SetEase(Tween.EaseType.InOut);
+        tween.TweenCallback(Callable.From(() => projectileVisual.QueueFree()));
+    }
+
+    private void SendBasicAttack()
+    {
+        if (_localPlayerId <= 0 || _worldConnection is null)
+            return;
+
+        var dirX = _lastDirX;
+        var dirY = _lastDirY;
+        if (dirX == 0 && dirY == 0)
+        {
+            dirY = 1;
+            _lastDirY = 1;
+        }
+
+        _worldConnection.Send(new Envelope(
+            OpCode.WorldBasicAttackCommand,
+            new WorldBasicAttackCommand(_localPlayerId, dirX, dirY)));
     }
     
 

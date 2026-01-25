@@ -97,6 +97,19 @@ public sealed class EfCharacterVocationRepository : ICharacterVocationRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task UpdateVitalsAsync(int characterId, int healthPoints, int manaPoints, CancellationToken ct = default)
+    {
+        var row = await _db.CharacterVocations.FirstOrDefaultAsync(x => x.CharacterId == characterId, ct);
+        if (row is null)
+        {
+            return;
+        }
+
+        row.HealthPoints = healthPoints;
+        row.ManaPoints = manaPoints;
+        await _db.SaveChangesAsync(ct);
+    }
+
     private static CharacterVocation ToDomain(CharacterVocationRow row)
         => new(row.Id, row.CharacterId, (Vocation)row.Vocation, row.Level, row.Experience, row.Strength, row.Endurance, row.Agility, row.Intelligence, row.Willpower, row.HealthPoints, row.ManaPoints);
 }

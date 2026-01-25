@@ -9,6 +9,9 @@ var hostOptions = builder.Configuration
     .GetSection(ServerHostOptions.SectionName)
     .Get<ServerHostOptions>() ?? new ServerHostOptions();
 
+builder.Services.AddOptions<CombatOptions>()
+    .BindConfiguration(CombatOptions.SectionName);
+
 builder.Services
     .AddAuthServerServices(hostOptions.ConnectionString, hostOptions.AuthServerKey)
     .AddChatServerServices(hostOptions.ChatServerKey)

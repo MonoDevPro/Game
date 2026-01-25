@@ -116,6 +116,11 @@ public static class SnapshotDeltaCalculator
         // Mudou alvo (enquanto em movimento)
         if (curr.IsMoving && (prev.TargetX != curr.TargetX || prev.TargetY != curr.TargetY))
             return true;
+
+        // Mudou HP/MP
+        if (prev.CurrentHp != curr.CurrentHp || prev.MaxHp != curr.MaxHp ||
+            prev.CurrentMp != curr.CurrentMp || prev.MaxMp != curr.MaxMp)
+            return true;
             
         return false;
     }

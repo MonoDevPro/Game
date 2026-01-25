@@ -3,6 +3,8 @@ using Arch.System;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS;
 using Game.Infrastructure.ArchECS.Commons.Components;
+using Game.Infrastructure.ArchECS.Services.Combat;
+using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
@@ -16,11 +18,12 @@ namespace Game.Simulation;
 /// Herda de WorldSimulation (ECS) e gerencia entidades de jogadores.
 /// Integra com o módulo de navegação para pathfinding e movimento.
 /// </summary>
-public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
+public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, ICombatSimulation
 {
     private readonly ILogger? _logger;
     private readonly Dictionary<int, int> _playerIdToEntityId = new();
     private readonly WorldMap? _worldMap;
+    private readonly CombatModule? _combat;
     
     /// <summary>
     /// Cria uma simulação com mapa e navegação completa.
@@ -31,6 +34,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     public ServerWorldSimulation(
         WorldMap worldMap,
         NavigationConfig? navigationConfig = null,
+        CombatConfig? combatConfig = null,
         ILogger? logger = null) : this(
         World.Create(
             chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
@@ -39,6 +43,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
             entityCapacity: SimulationConfig.EntityCapacity),
         worldMap,
         navigationConfig,
+        combatConfig,
         logger)
     {
         ConfigureSystems(World, Systems);
@@ -53,11 +58,13 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         World world,
         WorldMap worldMap,
         NavigationConfig? navigationConfig = null,
+        CombatConfig? combatConfig = null,
         ILogger? logger = null
         ) : base(world, new NavigationModule(world, worldMap, navigationConfig), SimulationConfig.TickDeltaMilliseconds, logger)
     {
         _logger = logger;
         _worldMap = worldMap;
+        _combat = new CombatModule(world, worldMap, combatConfig);
         
         ConfigureSystems(World, Systems);
         Systems.Initialize();
@@ -75,6 +82,11 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         // Sistemas de navegação são gerenciados pelo NavigationModule
         // Outros sistemas podem ser adicionados aqui conforme necessidade
         _logger?.LogInformation("ServerWorldSimulation: Sistemas configurados");
+    }
+    
+    protected override void OnTick(long serverTick)
+    {
+        _combat?.Tick(serverTick);
     }
 
     /// <summary>
@@ -96,6 +108,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
             {
                 // Já registrado na navegação, apenas atualiza posição
                 Navigation.MovePlayerDirectly(entityId, x, y, floor);
+                _combat?.RegisterEntity(characterId, e);
                 return e;
             }
 
@@ -116,6 +129,8 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
             new Position { X = x, Y = y }, 
             new Direction { X = dirX, Y = dirY }, 
             floor);
+
+        _combat?.RegisterEntity(characterId, entity);
         
         _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})", 
             characterId, name, x, y, floor);
@@ -204,6 +219,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         
         // Remove do dicionário de jogadores
         _playerIdToEntityId.Remove(characterId);
+        _combat?.UnregisterEntity(characterId);
         _logger?.LogDebug("Jogador removido: {CharacterId}", characterId);
         return true;
     }
@@ -234,6 +250,19 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
             var floor = World.Has<FloorId>(entity) ? World.Get<FloorId>(entity).Value : 0;
             var dir = World.Has<Direction>(entity) ? World.Get<Direction>(entity) : new Direction { X = 0, Y = 0 };
             var target = pos;
+            var currentHp = 0;
+            var maxHp = 0;
+            var currentMp = 0;
+            var maxMp = 0;
+
+            if (World.Has<CombatStats>(entity))
+            {
+                var stats = World.Get<CombatStats>(entity);
+                currentHp = stats.CurrentHealth;
+                maxHp = stats.MaxHealth;
+                currentMp = stats.CurrentMana;
+                maxMp = stats.MaxMana;
+            }
             
             bool isMoving = false;
             float moveProgress = 0f;
@@ -268,7 +297,11 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
                 isMoving,
                 target.X,
                 target.Y,
-                moveProgress));
+                moveProgress,
+                currentHp,
+                maxHp,
+                currentMp,
+                maxMp));
         }
 
         return new WorldSnapshot(CurrentTick, timestamp, players);
@@ -285,8 +318,62 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     public override void Dispose()
     {
         Navigation?.Dispose();
+        _combat?.Dispose();
         _playerIdToEntityId.Clear();
         base.Dispose();
+    }
+
+    public bool RequestBasicAttack(int characterId, int dirX, int dirY)
+    {
+        if (_combat is null)
+            return false;
+        
+        return _combat.RequestBasicAttack(characterId, dirX, dirY, CurrentTick);
+    }
+
+    public bool TryDrainCombatEvents(out List<CombatEvent> events)
+    {
+        if (_combat is null)
+        {
+            events = [];
+            return false;
+        }
+        
+        return _combat.TryDrainEvents(out events);
+    }
+
+    public bool TryDrainCombatVitals(out List<CombatVitalUpdate> updates)
+    {
+        if (_combat is null)
+        {
+            updates = [];
+            return false;
+        }
+        
+        return _combat.TryDrainVitals(out updates);
+    }
+
+    public bool ConfigureCombatState(int characterId, in CombatStats stats, byte vocation, int teamId)
+    {
+        if (_combat is null)
+            return false;
+
+        if (!_combat.TryGetEntity(characterId, out var entity))
+            return false;
+
+        _combat.ApplyCombatState(entity, stats, vocation, teamId);
+        return true;
+    }
+
+    public bool TryGetCombatStats(int characterId, out CombatStats stats)
+    {
+        if (_combat is null)
+        {
+            stats = default;
+            return false;
+        }
+
+        return _combat.TryGetCombatStats(characterId, out stats);
     }
 }
 

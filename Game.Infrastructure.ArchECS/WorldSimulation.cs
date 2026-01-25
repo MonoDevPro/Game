@@ -31,6 +31,13 @@ public abstract class WorldSimulation(World world, NavigationModule navigation,
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
     /// </summary>
     protected abstract void ConfigureSystems(World world, Group<float> systems);
+    
+    /// <summary>
+    /// Hook para executar módulos adicionais por tick (ex: combate).
+    /// </summary>
+    protected virtual void OnTick(long serverTick)
+    {
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in long deltaTime)
@@ -48,6 +55,7 @@ public abstract class WorldSimulation(World world, NavigationModule navigation,
             Systems.AfterUpdate(CurrentTick);
             
             Navigation?.Tick(CurrentTick);
+            OnTick(CurrentTick);
             
             _fixedTimeStep.Step();
         }

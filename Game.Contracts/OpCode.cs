@@ -18,6 +18,8 @@ public enum OpCode : ushort
     WorldNavigateCommand = 111,
     /// <summary>Para movimento atual.</summary>
     WorldStopCommand = 112,
+    /// <summary>Ataque básico (direcional).</summary>
+    WorldBasicAttackCommand = 113,
     
     /// <summary>Snapshot completo do mundo.</summary>
     WorldSnapshot = 120,
@@ -25,6 +27,9 @@ public enum OpCode : ushort
     WorldSnapshotDelta = 121,
     /// <summary>Cliente solicita snapshot completo (após perda de pacotes).</summary>
     WorldSnapshotRequest = 122,
+    
+    /// <summary>Eventos de combate do servidor.</summary>
+    CombatEventBatch = 130,
     
     ChatSendRequest = 200,
     ChatMessage = 201,

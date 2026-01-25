@@ -3,6 +3,7 @@ using Game.Infrastructure.LiteNetLib;
 using Game.Infrastructure.Serialization;
 using Game.Infrastructure.EfCore;
 using Server.Host.Common;
+using Microsoft.Extensions.Options;
 
 namespace Server.Host.WorldServer;
 
@@ -23,6 +24,7 @@ public static class WorldServerServices
         services.AddHostedService<WorldServerWorker>(a => new WorldServerWorker(
             a.GetRequiredService<IServiceScopeFactory>(),
             a.GetRequiredKeyedService<NetServer>(netServerKey),
+            a.GetRequiredService<IOptions<CombatOptions>>(),
             a.GetRequiredService<ILogger<WorldServerWorker>>()));
 
         return services;
