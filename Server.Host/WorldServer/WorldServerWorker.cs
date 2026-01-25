@@ -221,6 +221,7 @@ public class WorldServerWorker(
             width: DefaultMapWidth,
             height: DefaultMapHeight,
             floors: 1,
+            flags: MapFlags.PvPEnabled,
             defaultSpawnX: DefaultMapWidth / 2,
             defaultSpawnY: DefaultMapHeight / 2);
 

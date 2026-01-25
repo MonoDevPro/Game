@@ -14,22 +14,48 @@ public static class DbInitializer
             return;
         }
 
-        var account = new AccountRow
+        var accounts = new AccountRow[]
         {
-            Username = "demo",
-            PasswordHash = PasswordHasher.Hash("demo")
+            new()
+            {
+                Username = "demo",
+                PasswordHash = PasswordHasher.Hash("demo")
+            },
+            new()
+            {
+                Username = "player1",
+                PasswordHash = PasswordHasher.Hash("password1")
+            }
         };
-        db.Accounts.Add(account);
+        db.Accounts.AddRange(accounts);
         await db.SaveChangesAsync(ct);
 
         var characters = new CharacterRow[]
         {
-            new CharacterRow { AccountId = account.Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, DirX = 0, DirY = 1 },
-            new CharacterRow { AccountId = account.Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, DirX = 0, DirY = 1 },
+            new CharacterRow
+            {
+                AccountId = accounts[0].Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, DirX = 0,
+                DirY = 1
+            },
+            new CharacterRow
+            {
+                AccountId = accounts[0].Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, DirX = 0, DirY = 1
+            },
+
+            new CharacterRow
+            {
+                AccountId = accounts[1].Id, Name = "Player1_Warrior", Gender = (byte)Gender.Female, X = 15, Y = 15,
+                DirX = 0, DirY = 1
+            },
+            new CharacterRow
+            {
+                AccountId = accounts[1].Id, Name = "Player1_Mage", Gender = (byte)Gender.Female, X = 20, Y = 20,
+                DirX = 0, DirY = 1
+            },
         };
         db.Characters.AddRange(characters);
         await db.SaveChangesAsync(ct);
-        
+
         db.CharacterVocations.AddRange(new CharacterVocationRow[]
         {
             new CharacterVocationRow
@@ -59,8 +85,36 @@ public static class DbInitializer
                 Willpower = 20,
                 HealthPoints = 100,
                 ManaPoints = 200
-            }
+            },
+            new CharacterVocationRow
+            {
+                CharacterId = characters[2].Id,
+                Vocation = (byte)Vocation.Warrior,
+                Level = 8,
+                Experience = 3000,
+                Strength = 18,
+                Endurance = 14,
+                Agility = 12,
+                Intelligence = 6,
+                Willpower = 11,
+                HealthPoints = 180,
+                ManaPoints = 40
+            },
+            new CharacterVocationRow
+            {
+                CharacterId = characters[3].Id,
+                Vocation = (byte)Vocation.Mage,
+                Level = 8,
+                Experience = 3000,
+                Strength = 6,
+                Endurance = 11,
+                Agility = 11,
+                Intelligence = 22,
+                Willpower = 18,
+                HealthPoints = 110,
+                ManaPoints = 180
+            },
         });
-        
+        await db.SaveChangesAsync(ct);
     }
 }

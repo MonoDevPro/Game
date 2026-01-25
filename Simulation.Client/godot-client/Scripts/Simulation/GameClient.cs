@@ -388,7 +388,11 @@ public partial class GameClient : Node2D
 
         var start = new Vector2(combatEvent.X * PixelsPerCell, combatEvent.Y * PixelsPerCell);
         var end = start + new Vector2(combatEvent.DirX, combatEvent.DirY) * (range * PixelsPerCell);
-
+        
+        // oofset
+        start += new Vector2(PixelsPerCell, PixelsPerCell);
+        end += new Vector2(PixelsPerCell, PixelsPerCell);
+        
         var projectileVisual = ProjectileVisual.Create();
         projectileVisual.Position = start;
         projectileVisual.ZIndex = combatEvent.Floor;
