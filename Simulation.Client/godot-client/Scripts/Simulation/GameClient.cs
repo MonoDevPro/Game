@@ -46,7 +46,7 @@ public partial class GameClient : Node2D
     private NetClientConnection? _chatConnection;
     private WorldSnapshot? _lastSnapshot;
     private readonly Dictionary<int, PlayerVisual> _playersById = new();
-    private long _lastMoveSentMs;
+    private ulong _lastMoveSentMs;
     private const int MoveSendIntervalMs = 100;
     
     public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");

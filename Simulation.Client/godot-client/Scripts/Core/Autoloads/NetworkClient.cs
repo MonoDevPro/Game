@@ -35,7 +35,7 @@ public partial class NetworkClient : Node
 
         _logger = ServicesManager.Instance.GetRequiredService<ILogger<NetworkClient>>();
         _config = ConfigManager.Instance.Configuration.Network ?? new NetworkConfiguration();
-
+        
         AuthConnection = CreateConnection();
         WorldConnection = CreateConnection();
         ChatConnection = CreateConnection();
