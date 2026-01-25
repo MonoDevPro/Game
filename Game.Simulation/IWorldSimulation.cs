@@ -39,8 +39,11 @@ public interface IWorldSimulation : IDisposable
     /// <param name="name">Nome do jogador.</param>
     /// <param name="x">Posição X.</param>
     /// <param name="y">Posição Y.</param>
+    /// <param name="floor">Andar.</param>
+    /// <param name="dirX">Direção X.</param>
+    /// <param name="dirY">Direção Y.</param>
     /// <returns>A entidade criada ou atualizada.</returns>
-    Entity UpsertPlayer(int characterId, string name, int x, int y, int floor);
+    Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY);
 
     /// <summary>
     /// Remove um jogador do mundo.

@@ -37,8 +37,8 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
             MoveEvent moveEvent = new(entity, pos, floor.Value);
             EventBus.Send(ref moveEvent);
             
-            if (world.Has<NavIsMoving>(entity))
-                world.Remove<NavIsMoving>(entity);
+            if (World.Has<NavIsMoving>(entity))
+                World.Remove<NavIsMoving>(entity);
         }
     }
 
@@ -49,6 +49,7 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
         [Data] in long serverTick,
         in Entity entity,
         ref Position pos,
+        ref Direction dir,
         ref FloorId floor,
         ref NavMovementState movement,
         ref NavPathBuffer path,
@@ -69,7 +70,7 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
             CompleteNavigation(World, entity, ref state, ref movement);
             return;
         }
-
+        
         // Pega próximo waypoint
         var nextPos = path.GetCurrentWaypointAsPosition(grid.Width, grid.Height);
 
@@ -99,6 +100,9 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
         int duration = settings.GetDuration(isDiagonal);
 
         movement.StartMove(pos, nextPos, serverTick, duration);
+        
+        dir = movement.MovementDirection;
+        
         path.AdvanceWaypoint();
 
         // Adiciona tag NavIsMoving

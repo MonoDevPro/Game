@@ -45,7 +45,7 @@ public sealed class EfCharacterRepository(GameDbContext db) : ICharacterReposito
     }
 
     private static Character ToDomain(CharacterRow row)
-        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, row.Floor, (Direction)row.Direction);
+        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, row.Floor, row.DirX, row.DirY);
 }
 
 public sealed class EfCharacterVocationRepository : ICharacterVocationRepository

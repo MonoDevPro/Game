@@ -204,7 +204,8 @@ public class WorldServerWorker(
         var spawn = result.Value.Spawn;
 
         // Adiciona jogador à simulação ECS com suporte a navegação
-        simulation.UpsertPlayer(spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y, spawn.Value.Floor);
+        simulation.UpsertPlayer(spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y, spawn.Value.Floor,
+            spawn.Value.DirX, spawn.Value.DirY);
         peerByCharacter[spawn.Value.CharacterId] = peer;
         characterByPeer[peer.Id] = spawn.Value.CharacterId;
 

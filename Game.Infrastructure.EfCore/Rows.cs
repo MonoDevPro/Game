@@ -19,7 +19,8 @@ public sealed class CharacterRow
     public int X { get; set; }
     public int Y { get; set; }
     public int Floor { get; set; }
-    public byte Direction { get; set; }
+    public int DirX { get; set; }
+    public int DirY { get; set; }
 }
 
 public sealed class CharacterVocationRow

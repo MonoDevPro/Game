@@ -24,8 +24,8 @@ public static class DbInitializer
 
         var characters = new CharacterRow[]
         {
-            new CharacterRow { AccountId = account.Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, Direction = (byte)Direction.South },
-            new CharacterRow { AccountId = account.Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, Direction = (byte)Direction.South },
+            new CharacterRow { AccountId = account.Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, DirX = 0, DirY = 1 },
+            new CharacterRow { AccountId = account.Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, DirX = 0, DirY = 1 },
         };
         db.Characters.AddRange(characters);
         await db.SaveChangesAsync(ct);

@@ -48,6 +48,7 @@ public partial class GameClient : Node2D
     private readonly Dictionary<int, PlayerVisual> _playersById = new();
     private ulong _lastMoveSentMs;
     private const int MoveSendIntervalMs = 100;
+    private const float PixelsPerCell = 32f;
     
     public Node2D EntitiesRoot => GetNode<Node2D>("Map/Entities");
 
@@ -246,7 +247,18 @@ public partial class GameClient : Node2D
 
     private void UpdateVisual(PlayerVisual visual, PlayerState player)
     {
-        visual.UpdatePosition(new Vector3I(player.X, player.Y, player.Floor));
+        if (player.IsMoving)
+        {
+            var t = Mathf.Clamp(player.MoveProgress, 0f, 1f);
+            var lerpX = (player.X + (player.TargetX - player.X) * t) * PixelsPerCell;
+            var lerpY = (player.Y + (player.TargetY - player.Y) * t) * PixelsPerCell;
+            visual.Position = new Vector2(lerpX, lerpY);
+            visual.ZIndex = player.Floor;
+        }
+        else
+        {
+            visual.UpdatePosition(new Vector3I(player.X, player.Y, player.Floor));
+        }
         var direction = GetDirection(player.DirX, player.DirY);
         visual.UpdateAnimationState(direction, player.IsMoving);
     }

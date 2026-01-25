@@ -78,9 +78,10 @@ public sealed class NavigationModule : IDisposable
     /// <param name="entityId">ID único da entidade (CharacterId, NpcId, etc).</param>
     /// <param name="entity">Entity do ECS.</param>
     /// <param name="startPosition">Posição inicial.</param>
+    /// <param name="startDirection">Direção inicial.</param>
     /// <param name="floor">Andar/floor.</param>
     /// <param name="settings">Configurações do agente (opcional).</param>
-    public void AddNavigationComponents(int entityId, Entity entity, Position startPosition, int floor, NavAgentSettings? settings = null)
+    public void AddNavigationComponents(int entityId, Entity entity, Position startPosition, Direction startDirection, int floor, NavAgentSettings? settings = null)
     {
         if (!_worldMap.AddEntity(startPosition, floor, entity))
             return;
@@ -93,6 +94,7 @@ public sealed class NavigationModule : IDisposable
             new MapId { Value = MapId },
             new FloorId { Value = floor },
             startPosition,
+            startDirection,
             new NavMovementState(),
             new NavPathBuffer(),
             new NavPathState { Status = PathStatus.None },
@@ -182,6 +184,12 @@ public sealed class NavigationModule : IDisposable
             
         // Cancela pathfinding se estiver ativo
         CancelPathfinding(entity);
+
+        _world.Get<Direction>(entity) = direction;
+
+        // Garante modo direcional ativo para o sistema processar o request
+        if (!_world.Has<NavDirectionalMode>(entity))
+            _world.Add<NavDirectionalMode>(entity);
         
         // Remove request direcional anterior se existir
         if (_world.Has<NavDirectionalRequest>(entity))
@@ -233,6 +241,8 @@ public sealed class NavigationModule : IDisposable
             StopDirectionalMovement(entity);
             return;
         }
+        
+        _world.Get<Direction>(entity) = newDirection;
             
         ref var request = ref _world.Get<NavDirectionalRequest>(entity);
         request.Direction = newDirection;

@@ -87,7 +87,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     /// <param name="y">Posição Y inicial.</param>
     /// <param name="floor">Andar (padrão 0).</param>
     /// <returns>A entidade criada ou atualizada.</returns>
-    public Entity UpsertPlayer(int characterId, string name, int x, int y, int floor)
+    public Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY)
     {
         if (_playerIdToEntityId.TryGetValue(characterId, out var entityId))
             if (Navigation.Registry.TryGetEntity(entityId, out var e))
@@ -108,7 +108,12 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         _playerIdToEntityId[characterId] = entityId;
 
         // Se tem navegação, adiciona componentes de navegação
-        Navigation.AddNavigationComponents(entityId, entity, new Position { X = x, Y = y }, floor);
+        Navigation.AddNavigationComponents(
+            entityId, 
+            entity, 
+            new Position { X = x, Y = y }, 
+            new Direction { X = dirX, Y = dirY }, 
+            floor);
         
         _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})", 
             characterId, name, x, y, floor);
@@ -249,6 +254,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
                     }
                 }
             }
+            
             players.Add(new PlayerState(
                 characterId, 
                 name.Name, 

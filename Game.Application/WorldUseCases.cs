@@ -13,7 +13,7 @@ public sealed class WorldUseCases(ICharacterRepository characters, IEnterTicketS
         if (character is null)
             return Result<EnterWorldResponse>.Fail("Character not found");
 
-        var spawn = new WorldSpawnInfo(character.Id, character.Name, character.X, character.Y, character.Floor);
+        var spawn = new WorldSpawnInfo(character.Id, character.Name, character.X, character.Y, character.Floor, character.DirX, character.DirY);
         return Result<EnterWorldResponse>.Ok(new EnterWorldResponse(true, null, spawn));
     }
 }
