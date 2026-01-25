@@ -6,8 +6,7 @@ namespace Server.Host.ChatServer;
 public static class ChatServerServices
 {
     public static IServiceCollection AddChatServerServices(
-        this IServiceCollection services, 
-        string connectionString, 
+        this IServiceCollection services,
         string netServerKey)
     {
         services.AddSingleton<IMessageSerializer, MemoryPackMessageSerializer>();
