@@ -86,6 +86,8 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     /// <param name="x">Posição X inicial.</param>
     /// <param name="y">Posição Y inicial.</param>
     /// <param name="floor">Andar (padrão 0).</param>
+    /// <param name="dirX">Direção X inicial.</param>
+    /// <param name="dirY">Direção Y inicial.</param>
     /// <returns>A entidade criada ou atualizada.</returns>
     public Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY)
     {

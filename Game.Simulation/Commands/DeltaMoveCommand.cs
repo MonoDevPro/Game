@@ -1,8 +1,4 @@
-using Arch.Core;
-using Game.Infrastructure.ArchECS.Commons.Components;
-using Game.Infrastructure.ArchECS.Services.Navigation;
-
-namespace Game.Simulation;
+namespace Game.Simulation.Commands;
 
 /// <summary>
 /// Comando para mover uma entidade por um delta de posição.
@@ -10,7 +6,7 @@ namespace Game.Simulation;
 /// <param name="CharacterId">ID do personagem a ser movido.</param>
 /// <param name="Dx">Delta X (direção horizontal).</param>
 /// <param name="Dy">Delta Y (direção vertical).</param>
-public sealed record DeltaMoveCommand(int CharacterId, int Dx, int Dy) : ISimulationCommand
+public sealed record DeltaMoveCommand(int CharacterId, int Dx, int Dy) : IWorldCommand
 {
     public bool Execute(IWorldSimulation simulation)
     {

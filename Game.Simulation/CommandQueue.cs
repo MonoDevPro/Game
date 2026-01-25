@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Arch.Core;
+using Game.Simulation.Commands;
 
 namespace Game.Simulation;
 
@@ -10,7 +11,7 @@ namespace Game.Simulation;
 /// </summary>
 public sealed class CommandQueue
 {
-    private readonly ConcurrentQueue<ISimulationCommand> _queue = new();
+    private readonly ConcurrentQueue<IWorldCommand> _queue = new();
 
     /// <summary>
     /// Número de comandos pendentes na fila.
@@ -22,7 +23,7 @@ public sealed class CommandQueue
     /// Thread-safe: pode ser chamado de qualquer thread.
     /// </summary>
     /// <param name="command">Comando a ser enfileirado.</param>
-    public void Enqueue(ISimulationCommand command)
+    public void Enqueue(IWorldCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
         _queue.Enqueue(command);

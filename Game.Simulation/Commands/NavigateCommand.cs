@@ -1,7 +1,6 @@
-using Arch.Core;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 
-namespace Game.Simulation;
+namespace Game.Simulation.Commands;
 
 /// <summary>
 /// Comando para solicitar movimento de um jogador usando pathfinding.
@@ -17,7 +16,7 @@ public sealed record NavigateCommand(
     int TargetX, 
     int TargetY, 
     int TargetFloor = 0,
-    PathRequestFlags Flags = PathRequestFlags.None) : ISimulationCommand
+    PathRequestFlags Flags = PathRequestFlags.None) : IWorldCommand
 {
     /// <summary>
     /// Executa o comando de navegação usando a simulação completa.
@@ -34,7 +33,7 @@ public sealed record NavigateCommand(
 /// Comando para parar o movimento de um jogador.
 /// </summary>
 /// <param name="CharacterId">ID do personagem.</param>
-public sealed record StopMoveCommand(int CharacterId) : ISimulationCommand
+public sealed record StopMoveCommand(int CharacterId) : IWorldCommand
 {
     public bool Execute(IWorldSimulation simulation)
     {
