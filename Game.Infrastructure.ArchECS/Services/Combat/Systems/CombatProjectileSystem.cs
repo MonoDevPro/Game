@@ -28,8 +28,8 @@ public sealed partial class CombatProjectileSystem(
         ref FloorId floor)
     {
         var totalTravelDistance = projectile.SpeedCellsPerTick + projectile.TravelRemainder;
-        var cellsToMove = (int)travel;
-        projectile.TravelRemainder = travel - cellsToMove;
+        var cellsToMove = (int)totalTravelDistance;
+        projectile.TravelRemainder = totalTravelDistance - cellsToMove;
 
         if (cellsToMove <= 0)
             return;

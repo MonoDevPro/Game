@@ -389,9 +389,9 @@ public partial class GameClient : Node2D
         var start = new Vector2(combatEvent.X * PixelsPerCell, combatEvent.Y * PixelsPerCell);
         var end = start + new Vector2(combatEvent.DirX, combatEvent.DirY) * (range * PixelsPerCell);
 
-        var projectile = ProjectileVisual.Create();
-        projectile.Position = start;
-        projectile.ZIndex = combatEvent.Floor;
+        var projectileVisual = ProjectileVisual.Create();
+        projectileVisual.Position = start;
+        projectileVisual.ZIndex = combatEvent.Floor;
         EntitiesRoot.AddChild(projectileVisual);
 
         var duration = Math.Max(0.05f, range / speed);
