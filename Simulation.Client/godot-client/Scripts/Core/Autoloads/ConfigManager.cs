@@ -1,0 +1,77 @@
+using System;
+using Godot;
+using Microsoft.Extensions.Configuration;
+
+namespace GodotClient.Core.Autoloads;
+
+public partial class ConfigManager : Node
+{
+    private static ConfigManager? _instance;
+    public static ConfigManager Instance => _instance ?? throw new InvalidOperationException("ConfigManager not initialized");
+    
+    private readonly ClientConfiguration _configuration;
+    public ClientConfiguration Configuration => _configuration;
+    
+    public ConfigManager()
+    {
+        _instance = this;
+        
+        try
+        {
+            var basePath = ProjectSettings.GlobalizePath("res://");
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+
+            var root = builder.Build();
+            _configuration = root.Get<ClientConfiguration>() ?? new ClientConfiguration();
+        }
+        catch (Exception ex)
+        {
+            GD.PushError($"Failed to load configuration: {ex.Message}");
+            _configuration = new ClientConfiguration();
+        }
+    }   
+    
+    public override void _Ready()
+    {
+        base._Ready();
+    }
+
+    public LoginConfiguration GetLoginConfiguration()
+        => _configuration.Login ?? new LoginConfiguration();
+
+    public CharacterSelectionConfiguration GetCharacterSelectionConfiguration()
+        => _configuration.CharacterSelection ?? new CharacterSelectionConfiguration();
+}
+
+public sealed class ClientConfiguration
+{
+    public NetworkConfiguration? Network { get; set; }
+    public LoginConfiguration? Login { get; set; }
+    public CharacterSelectionConfiguration? CharacterSelection { get; set; }
+}
+
+public sealed class NetworkConfiguration
+{
+    public string ServerAddress { get; set; } = "127.0.0.1";
+    public int AuthPort { get; set; } = 9050;
+    public int WorldPort { get; set; } = 9051;
+    public int ChatPort { get; set; } = 9052;
+    public int ServerPort { get; set; } = 8001;
+    public string ConnectionKey { get; set; } = "GameServer";
+    public int PingIntervalMs { get; set; } = 2000;
+    public int DisconnectTimeoutMs { get; set; } = 5000;
+}
+
+public sealed class LoginConfiguration
+{
+    public bool AutoLogin { get; set; } = true;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+public sealed class CharacterSelectionConfiguration
+{
+    public int CharacterId { get; set; }
+}

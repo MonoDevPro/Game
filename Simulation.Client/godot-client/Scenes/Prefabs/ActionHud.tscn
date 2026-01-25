@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://c3hl5dofj8aoi"]
+
+[ext_resource type="Script" uid="uid://cpntca078pbpq" path="res://Scripts/UI/Actions/ActionHud.cs" id="1_aaoc8"]
+
+[node name="ActionHud" type="Control"]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("1_aaoc8")
+Action1 = "attack"
+Action2 = "attack"
+Action1ButtonPath = NodePath("Action1Button")
+Action2ButtonPath = NodePath("Action2Button")
+
+[node name="Action1Button" type="Button" parent="."]
+layout_mode = 0
+offset_top = -72.0
+offset_right = 71.0
+offset_bottom = -12.0
+action_mode = 0
+text = "Action 1"
+
+[node name="Action2Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 80.0
+offset_top = -72.0
+offset_right = 151.0
+offset_bottom = -12.0
+action_mode = 0
+text = "Action 2"

@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E45E1D80
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{ADA9B5CA-9B9B-415B-994A-6F8AB57B3862}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotClient", "Simulation.Client\godot-client\GodotClient.csproj", "{1579C5B1-C3A5-4F96-A053-E7B0C3827CC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,10 @@ Global
 		{099E8650-EA19-4D65-8C70-5A9332B1CBA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{099E8650-EA19-4D65-8C70-5A9332B1CBA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{099E8650-EA19-4D65-8C70-5A9332B1CBA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1579C5B1-C3A5-4F96-A053-E7B0C3827CC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1579C5B1-C3A5-4F96-A053-E7B0C3827CC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1579C5B1-C3A5-4F96-A053-E7B0C3827CC5}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{1579C5B1-C3A5-4F96-A053-E7B0C3827CC5}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

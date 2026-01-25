@@ -11,4 +11,4 @@ public sealed record CharacterVocation(int Id, int CharacterId, Vocation Vocatio
     
 public enum Gender : byte { Male, Female, }
 public enum Vocation : byte { Warrior, Archer, Mage }
-public enum Direction : byte { North, East, South, West, Northeast, Southeast, Southwest, Northwest }
+public enum Direction : byte { North, East, South, West, NorthEast, SouthEast, SouthWest, NorthWest }
