@@ -183,13 +183,17 @@ public abstract partial class DefaultVisual : Node2D
 
     public void UpdateVitals(int currentHp, int maxHp, int currentMp, int maxMp)
     {
-        if (HealthBar is null) return;
-        HealthBar.MaxValue = Math.Max(1, maxHp);
-        HealthBar.Value = Mathf.Clamp(currentHp, 0, maxHp);
-        
-        if (ManaBar is null) return;
-        ManaBar.MaxValue = Math.Max(1, maxMp);
-        ManaBar.Value = Mathf.Clamp(currentMp, 0, maxMp);
+        if (HealthBar is not null)
+        {
+            HealthBar.MaxValue = Math.Max(1, maxHp);
+            HealthBar.Value = Mathf.Clamp(currentHp, 0, maxHp);
+        }
+
+        if (ManaBar is not null)
+        {
+            ManaBar.MaxValue = Math.Max(1, maxMp);
+            ManaBar.Value = Mathf.Clamp(currentMp, 0, maxMp);
+        }
     }
 
     public void UpdateName(string name)
