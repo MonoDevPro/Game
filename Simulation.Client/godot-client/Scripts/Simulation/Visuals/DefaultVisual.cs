@@ -16,6 +16,8 @@ public abstract partial class DefaultVisual : Node2D
     public AnimatedSprite2D? Sprite;
     public Label? NameLabel;
     public ProgressBar? HealthBar;
+    public ProgressBar? ManaBar;
+    private Node2D? _pivot;
     private Direction _currentDirection = Direction.South;
     
     private float _movementAnimationDuration = 1f;
@@ -24,9 +26,11 @@ public abstract partial class DefaultVisual : Node2D
     public override void _Ready()
     {
         base._Ready();
+        _pivot = GetNodeOrNull<Node2D>("Pivot");
         Sprite = GetNodeOrNull<AnimatedSprite2D>("Pivot/AnimatedSprite2D");
         NameLabel = GetNodeOrNull<Label>("Pivot/NameLabel");
         HealthBar = GetNodeOrNull<ProgressBar>("Pivot/HealthBar");
+        ManaBar = GetNodeOrNull<ProgressBar>("Pivot/ManaBar");
         
         if (Sprite == null)
         {
@@ -55,13 +59,28 @@ public abstract partial class DefaultVisual : Node2D
             HealthBar = new ProgressBar
             {
                 Name = "HealthBar",
-                Position = new Vector2(-16, -40),
+                Position = new Vector2(-16, 22),
                 Size = new Vector2(32, 4),
                 MaxValue = 100,
                 Value = 100,
                 ShowPercentage = false
             };
-            AddChild(HealthBar);
+            _pivot?.AddChild(HealthBar);
+        }
+        
+        if (ManaBar == null)
+        {
+            GD.PrintErr("[DefaultVisual] ManaBar node not found!");
+            ManaBar = new ProgressBar
+            {
+                Name = "ManaBar",
+                Position = new Vector2(-16, 26),
+                Size = new Vector2(32, 4),
+                MaxValue = 100,
+                Value = 100,
+                ShowPercentage = false
+            };
+            _pivot?.AddChild(ManaBar);
         }
         
         GD.Print("[DefaultVisual] Ready completed.");
@@ -165,9 +184,12 @@ public abstract partial class DefaultVisual : Node2D
     public void UpdateVitals(int currentHp, int maxHp, int currentMp, int maxMp)
     {
         if (HealthBar is null) return;
-        
         HealthBar.MaxValue = Math.Max(1, maxHp);
         HealthBar.Value = Mathf.Clamp(currentHp, 0, maxHp);
+        
+        if (ManaBar is null) return;
+        ManaBar.MaxValue = Math.Max(1, maxMp);
+        ManaBar.Value = Mathf.Clamp(currentMp, 0, maxMp);
     }
 
     public void UpdateName(string name)

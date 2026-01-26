@@ -211,13 +211,8 @@ public partial class GameClient : Node2D
 
     private void ApplySnapshotDelta(WorldSnapshotDelta delta)
     {
-        if (_lastSnapshot is null)
-        {
-            RequestFullSnapshot();
-            return;
-        }
-
-        if (_lastSnapshot.Value.ServerTick != delta.BaseTick)
+        if (_lastSnapshot is null || 
+            _lastSnapshot.Value.ServerTick != delta.BaseTick)
         {
             RequestFullSnapshot();
             return;

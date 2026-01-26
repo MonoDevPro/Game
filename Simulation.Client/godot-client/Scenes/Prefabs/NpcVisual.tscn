@@ -1,10 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://bf2ulanb5y27w"]
+[gd_scene load_steps=5 format=3 uid="uid://bf2ulanb5y27w"]
 
 [ext_resource type="Script" uid="uid://unqj0yp037ho" path="res://Scripts/Simulation/Visuals/NpcVisual.cs" id="1_i4iwk"]
-[ext_resource type="SpriteFrames" uid="uid://divyovnuyskrc" path="res://Resources/SpriteSheets/archer_female_frames.tres" id="2_s2f2m"]
+[ext_resource type="SpriteFrames" uid="uid://u1vc6x2nldgn" path="res://Resources/SpriteSheets/archer_male_frames.tres" id="2_i4iwk"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ctox"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s2f2m"]
 bg_color = Color(0.28498816, 0.68719935, 0, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+corner_detail = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_euiki"]
+bg_color = Color(0.011764706, 0.4627451, 0.99607843, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
@@ -17,10 +25,11 @@ script = ExtResource("1_i4iwk")
 
 [node name="Pivot" type="Node2D" parent="."]
 z_as_relative = false
-position = Vector2(32, 32)
+position = Vector2(32, 40)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Pivot"]
-sprite_frames = ExtResource("2_s2f2m")
+position = Vector2(0, -8)
+sprite_frames = ExtResource("2_i4iwk")
 animation = &"idle_south"
 
 [node name="NameLabel" type="Label" parent="Pivot"]
@@ -30,9 +39,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -23.5
-offset_top = -40.0
+offset_top = -45.0
 offset_right = 23.5
-offset_bottom = -17.0
+offset_bottom = -22.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Name"
@@ -45,11 +54,25 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -16.0
-offset_top = 32.0
+offset_top = 22.0
 offset_right = 16.0
-offset_bottom = 38.0
+offset_bottom = 26.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 8
-theme_override_styles/fill = SubResource("StyleBoxFlat_0ctox")
-value = 100.0
+theme_override_font_sizes/font_size = 5
+theme_override_styles/fill = SubResource("StyleBoxFlat_s2f2m")
+value = 50.0
+show_percentage = false
+
+[node name="ManaBar" type="ProgressBar" parent="Pivot"]
+custom_minimum_size = Vector2(32, 0)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -16.0
+offset_top = 26.0
+offset_right = 16.0
+offset_bottom = 30.0
+grow_horizontal = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_euiki")
+value = 50.0
 show_percentage = false
