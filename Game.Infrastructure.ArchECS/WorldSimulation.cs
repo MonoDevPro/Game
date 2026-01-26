@@ -12,7 +12,7 @@ namespace Game.Infrastructure.ArchECS;
 /// Gerencia o World (mundo de entidades), systems (sistemas) e o loop de simulação com timestep fixo.
 /// Pode ser usado tanto como server (full simulation) quanto client (partial simulation).
 /// </summary>
-public abstract class WorldSimulation(World world, NavigationModule navigation, 
+public abstract class WorldSimulation(World world, 
     long tickDeltaMilliseconds = SimulationConfig.TickDeltaMilliseconds, ILogger? logger = null)
     : GameSystem(world, logger)
 {
@@ -24,8 +24,6 @@ public abstract class WorldSimulation(World world, NavigationModule navigation,
 
     /// Tick atual da simulação.
     public long CurrentTick { get; private set; }
-    
-    protected readonly NavigationModule Navigation = navigation;
 
     /// <summary>
     /// Configuração de sistemas. Deve ser implementada por subclasses para adicionar sistemas específicos.
@@ -35,9 +33,8 @@ public abstract class WorldSimulation(World world, NavigationModule navigation,
     /// <summary>
     /// Hook para executar módulos adicionais por tick (ex: combate).
     /// </summary>
-    protected virtual void OnTick(long serverTick)
-    {
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected virtual void OnTick(long serverTick) { }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override void Update(in long deltaTime)
@@ -54,7 +51,6 @@ public abstract class WorldSimulation(World world, NavigationModule navigation,
 
             Systems.AfterUpdate(CurrentTick);
             
-            Navigation?.Tick(CurrentTick);
             OnTick(CurrentTick);
             
             _fixedTimeStep.Step();

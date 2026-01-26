@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Game.Contracts;
@@ -22,14 +23,15 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
 {
     private readonly ILogger? _logger;
     private readonly Dictionary<int, int> _playerIdToEntityId = new();
-    private readonly WorldMap? _worldMap;
     private readonly CombatModule? _combat;
-    
+    private readonly NavigationModule? _navigation;
+
     /// <summary>
     /// Cria uma simulação com mapa e navegação completa.
     /// </summary>
     /// <param name="worldMap">Mapa do mundo para colisão e pathfinding.</param>
     /// <param name="navigationConfig">Configuração do sistema de navegação (opcional).</param>
+    /// <param name="combatConfig">Configuração do sistema de combate (opcional).</param>
     /// <param name="logger">Logger (opcional).</param>
     public ServerWorldSimulation(
         WorldMap worldMap,
@@ -48,34 +50,35 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     {
         ConfigureSystems(World, Systems);
         Systems.Initialize();
-        
+
         _logger?.LogInformation(
-            "ServerWorldSimulation inicializada com mapa {MapId} ({Width}x{Height})", 
+            "ServerWorldSimulation inicializada com mapa {MapId} ({Width}x{Height})",
             worldMap.Id, worldMap.Width, worldMap.Height);
     }
-    
+
     private ServerWorldSimulation(
         World world,
         WorldMap worldMap,
         NavigationConfig? navigationConfig = null,
         CombatConfig? combatConfig = null,
         ILogger? logger = null
-        ) : base(world, new NavigationModule(world, worldMap, navigationConfig), SimulationConfig.TickDeltaMilliseconds, logger)
+    ) : base(world, SimulationConfig.TickDeltaMilliseconds, logger)
     {
         _logger = logger;
-        _worldMap = worldMap;
+        Map = worldMap;
+        _navigation = new NavigationModule(world, worldMap, navigationConfig);
         _combat = new CombatModule(world, worldMap, combatConfig);
-        
+
         ConfigureSystems(World, Systems);
         Systems.Initialize();
-        
+
         _logger?.LogInformation("ServerWorldSimulation inicializada sem mapa");
     }
 
     /// <summary>
     /// Mapa do mundo (pode ser null se criado sem mapa).
     /// </summary>
-    public WorldMap? Map => _worldMap;
+    public WorldMap? Map { get; }
 
     protected override void ConfigureSystems(World world, Group<float> systems)
     {
@@ -83,9 +86,13 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         // Outros sistemas podem ser adicionados aqui conforme necessidade
         _logger?.LogInformation("ServerWorldSimulation: Sistemas configurados");
     }
-    
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override void OnTick(long serverTick)
     {
+        base.OnTick(serverTick);
+
+        _navigation?.Tick(serverTick);
         _combat?.Tick(serverTick);
     }
 
@@ -104,13 +111,18 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     public Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY)
     {
         if (_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-            if (Navigation.Registry.TryGetEntity(entityId, out var e))
+        {
+            if (_navigation is not null)
             {
-                // Já registrado na navegação, apenas atualiza posição
-                Navigation.MovePlayerDirectly(entityId, x, y, floor);
-                _combat?.RegisterEntity(characterId, e);
-                return e;
+                if (_navigation.Registry.TryGetEntity(entityId, out var e))
+                {
+                    // Já registrado na navegação, apenas atualiza posição
+                    _navigation.MovePlayerDirectly(entityId, x, y, floor);
+                    _combat?.RegisterEntity(characterId, e);
+                    return e;
+                }
             }
+        }
 
         // Cria nova entidade com componentes básicos
         var entity = World.Create(
@@ -123,16 +135,16 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         _playerIdToEntityId[characterId] = entityId;
 
         // Se tem navegação, adiciona componentes de navegação
-        Navigation.AddNavigationComponents(
-            entityId, 
-            entity, 
-            new Position { X = x, Y = y }, 
-            new Direction { X = dirX, Y = dirY }, 
+        _navigation?.AddNavigationComponents(
+            entityId,
+            entity,
+            new Position { X = x, Y = y },
+            new Direction { X = dirX, Y = dirY },
             floor);
 
         _combat?.RegisterEntity(characterId, entity);
-        
-        _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})", 
+
+        _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})",
             characterId, name, x, y, floor);
         return entity;
     }
@@ -147,7 +159,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     /// <param name="targetFloor">Andar de destino.</param>
     /// <param name="flags">Flags de pathfinding.</param>
     /// <returns>True se a requisição foi aceita.</returns>
-    public bool RequestPlayerMove(int characterId, int targetX, int targetY, int targetFloor, 
+    public bool RequestPlayerMove(int characterId, int targetX, int targetY, int targetFloor,
         PathRequestFlags flags = PathRequestFlags.None)
     {
         if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
@@ -156,14 +168,14 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             return false;
         }
 
-        Navigation.RequestPathfindingMove(entityId, targetX, targetY, targetFloor, flags);
-        _logger?.LogTrace("Movimento solicitado para {CharacterId}: ({X}, {Y}, {Floor})", 
+        _navigation?.RequestPathfindingMove(entityId, targetX, targetY, targetFloor, flags);
+        _logger?.LogTrace("Movimento solicitado para {CharacterId}: ({X}, {Y}, {Floor})",
             characterId, targetX, targetY, targetFloor);
-        
+
         return true;
     }
-    
-    public bool RequestPlayerMoveDelta(int characterId, int deltaX, int deltaY, 
+
+    public bool RequestPlayerMoveDelta(int characterId, int deltaX, int deltaY,
         PathRequestFlags flags = PathRequestFlags.None)
     {
         if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
@@ -172,14 +184,14 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             return false;
         }
 
-        Navigation.RequestDirectionalMove(entityId, new Direction { X = deltaX, Y = deltaY }, flags);
+        _navigation?.RequestDirectionalMove(entityId, new Direction { X = deltaX, Y = deltaY }, flags);
 
-        _logger?.LogTrace("Movimento delta solicitado para {CharacterId}: Δ({Dx}, {Dy})", 
+        _logger?.LogTrace("Movimento delta solicitado para {CharacterId}: Δ({Dx}, {Dy})",
             characterId, deltaX, deltaY);
-        
+
         return true;
     }
-    
+
 
     /// <summary>
     /// Para o movimento de um jogador.
@@ -191,7 +203,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         if (!_playerIdToEntityId.TryGetValue(characterId, out var entity))
             return false;
 
-        Navigation.StopMovement(entity);
+        _navigation?.StopMovement(entity);
         return true;
     }
 
@@ -207,16 +219,18 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             _logger?.LogWarning("Tentativa de remover jogador {CharacterId}, mas não encontrado", characterId);
             return false;
         }
-        
-        if (!Navigation.TryRemoveNavigationComponents(entityId, out var entity))
+
+        if (_navigation is null)
         {
-            _logger?.LogWarning("Tentativa de remover jogador {CharacterId}, mas entidade não encontrada", characterId);
+            _logger?.LogWarning("Tentativa de remover jogador {CharacterId}, mas navegação não está configurada", characterId);
             return false;
         }
         
+        var entity = _navigation.Registry.GetEntity(entityId);
+
         // Destroi a entidade no mundo ECS
         World.Destroy(entity);
-        
+
         // Remove do dicionário de jogadores
         _playerIdToEntityId.Remove(characterId);
         _combat?.UnregisterEntity(characterId);
@@ -233,18 +247,21 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         var players = new List<PlayerState>(_playerIdToEntityId.Count);
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         
-        foreach (Entity entity in Navigation.Registry.GetAllEntities())
+        if (_navigation is null)
+            return new WorldSnapshot(CurrentTick, timestamp, players);
+
+        foreach (Entity entity in _navigation.Registry.GetAllEntities())
         {
             var characterId = World.Get<CharacterId>(entity).Value;
-            
+
             // Ignora entidades destruídas
             if (!_playerIdToEntityId.ContainsKey(characterId))
                 continue;
-            
+
             // Ignora entidades não vivas
             if (!World.IsAlive(entity))
                 continue;
-                
+
             var pos = World.Get<Position>(entity);
             var name = World.Get<PlayerName>(entity);
             var floor = World.Has<FloorId>(entity) ? World.Get<FloorId>(entity).Value : 0;
@@ -263,10 +280,10 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
                 currentMp = stats.CurrentMana;
                 maxMp = stats.MaxMana;
             }
-            
+
             bool isMoving = false;
             float moveProgress = 0f;
-            
+
             if (World.Has<NavMovementState>(entity))
             {
                 ref readonly var movement = ref World.Get<NavMovementState>(entity);
@@ -275,7 +292,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
                     isMoving = true;
                     dir = movement.MovementDirection;
                     target = movement.TargetCell;
-                    
+
                     // Calcula progresso do movimento (0.0 a 1.0)
                     if (movement.EndTick > movement.StartTick)
                     {
@@ -285,15 +302,15 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
                     }
                 }
             }
-            
+
             players.Add(new PlayerState(
-                characterId, 
-                name.Name, 
-                pos.X, 
-                pos.Y, 
-                floor, 
-                dir.X, 
-                dir.Y, 
+                characterId,
+                name.Name,
+                pos.X,
+                pos.Y,
+                floor,
+                dir.X,
+                dir.Y,
                 isMoving,
                 target.X,
                 target.Y,
@@ -317,7 +334,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
 
     public override void Dispose()
     {
-        Navigation?.Dispose();
+        _navigation?.Dispose();
         _combat?.Dispose();
         _playerIdToEntityId.Clear();
         base.Dispose();
@@ -327,7 +344,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     {
         if (_combat is null)
             return false;
-        
+
         return _combat.RequestBasicAttack(characterId, dirX, dirY, CurrentTick);
     }
 
@@ -338,7 +355,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             events = [];
             return false;
         }
-        
+
         return _combat.TryDrainEvents(out events);
     }
 
@@ -349,7 +366,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             updates = [];
             return false;
         }
-        
+
         return _combat.TryDrainVitals(out updates);
     }
 
@@ -372,7 +389,6 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
             stats = default;
             return false;
         }
-
         return _combat.TryGetCombatStats(characterId, out stats);
     }
 }

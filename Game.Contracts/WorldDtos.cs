@@ -78,12 +78,3 @@ public readonly partial record struct WorldSnapshot(
     long ServerTick,
     long Timestamp,
     List<PlayerState> Players) : IEnvelopePayload;
-
-[MemoryPackable]
-public readonly partial record struct WorldCollisions(
-    int MapId,
-    int Floor,
-    int Width,
-    int Height,
-    byte[] CompressedData,
-    int UncompressedBitCount);

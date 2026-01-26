@@ -34,12 +34,13 @@ public static class DbInitializer
         {
             new CharacterRow
             {
-                AccountId = accounts[0].Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, DirX = 0,
-                DirY = 1
+                AccountId = accounts[0].Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, 
+                DirX = 0, DirY = 1
             },
             new CharacterRow
             {
-                AccountId = accounts[0].Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, DirX = 0, DirY = 1
+                AccountId = accounts[0].Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, 
+                DirX = 0, DirY = 1
             },
 
             new CharacterRow
