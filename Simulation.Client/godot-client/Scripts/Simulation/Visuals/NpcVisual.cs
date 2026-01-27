@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Game.Visuals;
+namespace Game.Simulation.Visuals;
 
 /// <summary>
 /// Representação visual do jogador com predição local e reconciliação de servidor.

@@ -1,14 +1,17 @@
 using Arch.Core;
 using Arch.System;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Microsoft.Extensions.Logging;
 
-namespace Game.Infrastructure.ArchECS.Commons.Systems;
+namespace Game.Infrastructure.ArchECS.Commons;
 
 /// <summary>
-/// Base abstrata para todos os sistemas do jogo. Encapsula o acesso ao <see cref="GameEventSystem"/>.
+/// Base abstrata para todos os sistemas do jogo./>.
 /// </summary>
 public abstract partial class GameSystem(World world, ILogger? logger = null) : BaseSystem<World, long>(world)
 {
+    protected readonly CentralEntityRegistry Registry = world.GetEntityRegistry();
+    
     protected void LogTrace(string message, params object[] args) => logger?.LogTrace(message, args);
     protected void LogDebug(string message, params object[] args) => logger?.LogDebug(message, args);
     protected void LogInformation(string message, params object[] args) => logger?.LogInformation(message, args);

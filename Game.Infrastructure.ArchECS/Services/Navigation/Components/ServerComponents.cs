@@ -6,7 +6,16 @@ namespace Game.Infrastructure.ArchECS.Services.Navigation.Components;
 // Usa Position existente de Game.ECS.Components
 // ============================================
 
-
+// Spatial components
+public struct MapId                     { public int Value; }
+public struct FloorId                   { public int Value; }
+public struct Direction                 { public int X; public int Y; }
+public struct Velocity                  { public int X; public int Y; }
+public struct Position : IEquatable<Position> { public int X; public int Y;
+    public bool Equals(Position other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Position other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+}
 
 /// <summary>
 /// Estado do pathfinding da entidade.

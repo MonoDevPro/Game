@@ -1,4 +1,3 @@
-using Game.Infrastructure.ArchECS.Commons.Components;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation.Components;
 

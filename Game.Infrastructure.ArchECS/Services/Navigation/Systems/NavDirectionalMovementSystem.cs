@@ -1,11 +1,8 @@
-using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.Infrastructure.ArchECS.Commons.Components;
-using Game.Infrastructure.ArchECS.Events;
-using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation.Systems;
 

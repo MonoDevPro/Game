@@ -1,5 +1,5 @@
 using Arch.Core;
-using Game.Infrastructure.ArchECS.Commons.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 
 namespace Game.Infrastructure.ArchECS.Events;
 

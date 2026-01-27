@@ -1,9 +1,9 @@
 using Arch.Core;
 using Arch.System;
-using Game.Infrastructure.ArchECS.Commons.Components;
-using Game.Infrastructure.ArchECS.Services.Map;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation.Systems;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation;
@@ -19,17 +19,13 @@ public sealed class NavigationModule : IDisposable
     public PathfindingSystem Pathfinder { get; }
     public NavigationConfig Config { get; }
     
-    /// <summary>
-    /// Registro de entidades de navegação.
-    /// Mapeia IDs externos (CharacterId, NpcId) para Entity do ECS.
-    /// </summary>
-    public NavEntityRegistry Registry { get; } = new();
-
     private readonly World _world;
     private readonly WorldMap _worldMap;
     private int MapId => _worldMap.Id;
     private readonly Group<long> _systems;
     private bool _disposed;
+    
+    private readonly CentralEntityRegistry _registry;
 
     /// <summary>
     /// Cria módulo de navegação integrado com MapIndex existente.
@@ -42,6 +38,8 @@ public sealed class NavigationModule : IDisposable
         _world = world;
         _worldMap = worldMap;
         Config = config ?? NavigationConfig.Default;
+        
+        _registry = world.GetEntityRegistry();
 
         Pool = new PathfindingPool(
             defaultNodeArraySize: _worldMap.Width * _worldMap.Height,
@@ -75,19 +73,15 @@ public sealed class NavigationModule : IDisposable
     /// <summary>
     /// Adiciona componentes de navegação a uma entidade e registra com ID.
     /// </summary>
-    /// <param name="entityId">ID único da entidade (CharacterId, NpcId, etc).</param>
     /// <param name="entity">Entity do ECS.</param>
     /// <param name="startPosition">Posição inicial.</param>
     /// <param name="startDirection">Direção inicial.</param>
     /// <param name="floor">Andar/floor.</param>
     /// <param name="settings">Configurações do agente (opcional).</param>
-    public void AddNavigationComponents(int entityId, Entity entity, Position startPosition, Direction startDirection, int floor, NavAgentSettings? settings = null)
+    public void AddNavigationComponents(Entity entity, Position startPosition, Direction startDirection, int floor, NavAgentSettings? settings = null)
     {
         if (!_worldMap.AddEntity(startPosition, floor, entity))
             return;
-        
-        // Registra no registry
-        Registry.Register(entityId, entity);
         
         var actualSettings = settings ?? NavAgentSettings.Default;
         _world.Add(entity,
@@ -109,30 +103,30 @@ public sealed class NavigationModule : IDisposable
     
     /// <summary>Solicita movimento único em uma direção.</summary>
     public void RequestDirectionalMove(int entityId, Direction direction, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestDirectionalMove(Registry.GetEntity(entityId), direction, flags);
+        => RequestDirectionalMove(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, flags);
     
     /// <summary>Solicita movimento direcional com tipo específico.</summary>
     public void RequestDirectionalMove(int entityId, Direction direction, DirectionalMovementType movementType, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestDirectionalMove(Registry.GetEntity(entityId), direction, movementType, flags);
+        => RequestDirectionalMove(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, movementType, flags);
     
     /// <summary>Inicia movimento contínuo em uma direção.</summary>
     public void StartContinuousMovement(int entityId, Direction direction, PathRequestFlags flags = PathRequestFlags.None)
-        => StartContinuousMovement(Registry.GetEntity(entityId), direction, flags);
+        => StartContinuousMovement(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, flags);
     
     /// <summary>Para movimento direcional contínuo.</summary>
     public void StopDirectionalMovement(int entityId)
-        => StopDirectionalMovement(Registry.GetEntity(entityId));
+        => StopDirectionalMovement(_registry.GetEntity(entityId, EntityDomain.Navigation));
     
     /// <summary>Atualiza direção de movimento contínuo.</summary>
     public void UpdateMovementDirection(int entityId, Direction newDirection)
-        => UpdateMovementDirection(Registry.GetEntity(entityId), newDirection);
+        => UpdateMovementDirection(_registry.GetEntity(entityId, EntityDomain.Navigation), newDirection);
     
     /// <summary>Verifica se entidade está em modo de movimento direcional.</summary>
     public bool IsInDirectionalMode(int entityId)
-        => IsInDirectionalMode(Registry.GetEntity(entityId));
+        => IsInDirectionalMode(_registry.GetEntity(entityId, EntityDomain.Navigation));
     
     public void MovePlayerDirectly(int entityId, int x, int y, int floor)
-        => MovePlayerDirectly(Registry.GetEntity(entityId), x, y, floor);
+        => MovePlayerDirectly(_registry.GetEntity(entityId, EntityDomain.Navigation), x, y, floor);
     
     // === Métodos por Entity ===
     
@@ -262,15 +256,15 @@ public sealed class NavigationModule : IDisposable
     
     /// <summary>Solicita movimento para uma posição via pathfinding.</summary>
     public void RequestPathfindingMove(int entityId, int targetX, int targetY, int targetFloor, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestPathfindingMove(Registry.GetEntity(entityId), targetX, targetY, targetFloor, flags);
+        => RequestPathfindingMove(_registry.GetEntity(entityId, EntityDomain.Navigation), targetX, targetY, targetFloor, flags);
     
     /// <summary>Solicita movimento para uma posição via pathfinding.</summary>
     public void RequestPathfindingMove(int entityId, Position target, int targetFloor, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestPathfindingMove(Registry.GetEntity(entityId), target.X, target.Y, targetFloor, flags);
+        => RequestPathfindingMove(_registry.GetEntity(entityId, EntityDomain.Navigation), target.X, target.Y, targetFloor, flags);
     
     /// <summary>Cancela pathfinding em andamento.</summary>
     public void CancelPathfinding(int entityId)
-        => CancelPathfinding(Registry.GetEntity(entityId));
+        => CancelPathfinding(_registry.GetEntity(entityId, EntityDomain.Navigation));
     
     // === Métodos por Entity ===
 
@@ -340,26 +334,11 @@ public sealed class NavigationModule : IDisposable
     
     /// <summary>Para todo movimento de uma entidade.</summary>
     public void StopMovement(int entityId)
-        => StopMovement(Registry.GetEntity(entityId));
-    
-    /// <summary>Remove componentes de navegação e desregistra do Registry.</summary>
-    public void RemoveNavigationComponents(int entityId)
-    {
-        if (!Registry.TryGetEntity(entityId, out var entity))
-            return;
-        
-        _worldMap.RemoveEntity(
-            _world.Get<Position>(entity), 
-            _world.Get<FloorId>(entity).Value, 
-            entity);
-        
-        RemoveNavigationComponents(entity);
-        Registry.Unregister(entityId);
-    }
+        => StopMovement(_registry.GetEntity(entityId, EntityDomain.Navigation));
     
     public bool TryRemoveNavigationComponents(int entityId, out Entity entity)
     {
-        if (!Registry.TryGetEntity(entityId, out entity))
+        if (!_registry.TryGetEntity(entityId, EntityDomain.Navigation, out entity))
             return false;
         
         _worldMap.RemoveEntity(
@@ -368,7 +347,7 @@ public sealed class NavigationModule : IDisposable
             entity);
         
         RemoveNavigationComponents(entity);
-        Registry.Unregister(entityId);
+        _registry.Unregister(entity);
         return true;
     }
     
@@ -395,8 +374,13 @@ public sealed class NavigationModule : IDisposable
     /// <summary>
     /// Remove componentes de navegação de uma entidade.
     /// </summary>
-    private void RemoveNavigationComponents(Entity entity)
+    public void RemoveNavigationComponents(Entity entity)
     {
+        _worldMap.RemoveEntity(
+            _world.Get<Position>(entity), 
+            _world.Get<FloorId>(entity).Value, 
+            entity);
+        
         if (_world.Has<MapId>(entity))
             _world.Remove<MapId>(entity);
         if (_world.Has<FloorId>(entity))
@@ -433,7 +417,7 @@ public sealed class NavigationModule : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        Registry.Clear();
+        _registry.Clear();
         _systems.Dispose();
     }
 }

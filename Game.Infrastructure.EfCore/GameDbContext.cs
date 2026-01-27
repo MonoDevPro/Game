@@ -10,7 +10,6 @@ public sealed class GameDbContext : DbContext
 
     public DbSet<AccountRow> Accounts => Set<AccountRow>();
     public DbSet<CharacterRow> Characters => Set<CharacterRow>();
-    public DbSet<CharacterVocationRow> CharacterVocations => Set<CharacterVocationRow>();
     public DbSet<EnterTicketRow> EnterTickets => Set<EnterTicketRow>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -30,12 +29,6 @@ public sealed class GameDbContext : DbContext
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Name).IsRequired();
             builder.HasIndex(x => new { x.AccountId, x.Name }).IsUnique();
-        });
-        
-        modelBuilder.Entity<CharacterVocationRow>(builder =>
-        {
-            builder.ToTable("character_vocations");
-            builder.HasKey(x => new { x.CharacterId, x.Vocation });
             builder.Property(x => x.Level).HasDefaultValue(1);
             builder.Property(x => x.Experience).HasDefaultValue(0);
             builder.Property(x => x.Strength).HasDefaultValue(10);

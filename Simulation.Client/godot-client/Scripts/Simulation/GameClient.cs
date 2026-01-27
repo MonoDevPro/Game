@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using Game.Contracts;
 using Game.Core.Autoloads;
 using Game.Domain;
+using Game.Simulation.Visuals;
 using Game.UI.Actions;
 using Game.UI.Chat;
 using Game.UI.Joystick;
-using Game.Visuals;
 using Godot;
 using Input = Godot.Input;
 
@@ -65,7 +65,6 @@ public partial class GameClient : Node2D
 
         CreateHudLayer();
 
-        // 4) Carrega dados iniciais (NetworkId local, snapshot de mapa, etc.)
         LoadGameData();
 
         RegisterNetworkHandlers();

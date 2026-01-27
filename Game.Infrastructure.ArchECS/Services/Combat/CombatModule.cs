@@ -3,7 +3,8 @@ using Arch.System;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Systems;
-using Game.Infrastructure.ArchECS.Services.Map;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat;
 
@@ -13,25 +14,25 @@ namespace Game.Infrastructure.ArchECS.Services.Combat;
 public sealed class CombatModule : IDisposable
 {
     public CombatConfig Config { get; }
-    public CombatEntityRegistry Registry { get; } = new();
 
     private readonly World _world;
-    private readonly WorldMap _worldMap;
     private readonly CombatEventBuffer _events = new();
-    private readonly CombatVitalsBuffer _vitals = new();
     private readonly Group<long> _systems;
     private bool _disposed;
+    
+    private readonly CentralEntityRegistry _registry;
 
     public CombatModule(World world, WorldMap worldMap, CombatConfig? config = null)
     {
         _world = world;
-        _worldMap = worldMap;
         Config = config ?? CombatConfig.Default;
+        
+        _registry = world.GetEntityRegistry();
 
         _systems = new Group<long>(
             "ServerCombat",
-            new CombatAttackSystem(world, _worldMap, Config, _events, _vitals, Registry),
-            new CombatProjectileSystem(world, _worldMap, _events, _vitals, Registry)
+            new CombatAttackSystem(world, worldMap, Config, _events),
+            new CombatProjectileSystem(world, worldMap, _events)
         );
 
         _systems.Initialize();
@@ -44,44 +45,55 @@ public sealed class CombatModule : IDisposable
         _systems.AfterUpdate(in serverTick);
     }
 
-    public void RegisterEntity(int entityId, Entity entity)
+    public void AddCombatComponents(
+        Entity entity, 
+        in CombatStats stats, 
+        byte vocation, 
+        int teamId)
     {
-        Registry.Register(entityId, entity);
-        EnsureCombatComponents(entity);
+        if (!_world.Has<AttackCooldown>(entity))
+            _world.Add(entity, new AttackCooldown());
+        
+        ApplyCombatStats(entity, in stats);
+        ApplyVocation(entity, vocation);
+        ApplyTeamId(entity, teamId);
     }
     
-    public void UnregisterEntity(int entityId)
+    public void ApplyCombatStats(Entity entity, in CombatStats stats)
     {
-        Registry.Unregister(entityId);
+        ref var combatStats = ref _world.AddOrGet<CombatStats>(entity);
+        combatStats = stats;
+    }
+    
+    public void ApplyVocation(Entity entity, byte vocation)
+    {
+        ref var vocationTag = ref _world.AddOrGet<VocationTag>(entity);
+        vocationTag.Value = vocation;
+    }
+    
+    public void ApplyTeamId(Entity entity, int teamId)
+    {
+        ref var team = ref _world.AddOrGet<TeamId>(entity);
+        team.Value = teamId;
+    }
+    
+    public void RemoveCombatComponents(Entity entity)
+    {
+        if (_world.Has<CombatStats>(entity))
+            _world.Remove<CombatStats>(entity);
+        if (_world.Has<VocationTag>(entity))
+            _world.Remove<VocationTag>(entity);
+        if (_world.Has<TeamId>(entity))
+            _world.Remove<TeamId>(entity);
+        if (_world.Has<AttackCooldown>(entity))
+            _world.Remove<AttackCooldown>(entity);
+        if (_world.Has<AttackRequest>(entity))
+            _world.Remove<AttackRequest>(entity);
     }
 
-    public bool TryGetEntity(int entityId, out Entity entity)
-        => Registry.TryGetEntity(entityId, out entity);
-
-    public bool TryGetCombatStats(int entityId, out CombatStats stats)
-    {
-        if (!Registry.TryGetEntity(entityId, out var entity))
-        {
-            stats = default;
-            return false;
-        }
-
-        if (!_world.Has<CombatStats>(entity))
-        {
-            stats = default;
-            return false;
-        }
-
-        stats = _world.Get<CombatStats>(entity);
-        return true;
-    }
-
-    public bool RequestBasicAttack(int entityId, int dirX, int dirY, long serverTick)
+    public bool RequestBasicAttack(Entity entity, int dirX, int dirY, long serverTick)
     {
         if (dirX == 0 && dirY == 0)
-            return false;
-
-        if (!Registry.TryGetEntity(entityId, out var entity))
             return false;
 
         dirX = Math.Clamp(dirX, -1, 1);
@@ -100,39 +112,15 @@ public sealed class CombatModule : IDisposable
         return true;
     }
 
-    public void EnsureCombatComponents(Entity entity)
-    {
-        if (!_world.Has<CombatStats>(entity))
-            _world.Add(entity, new CombatStats());
-        if (!_world.Has<AttackCooldown>(entity))
-            _world.Add(entity, new AttackCooldown());
-        if (!_world.Has<TeamId>(entity))
-            _world.Add(entity, new TeamId());
-        if (!_world.Has<VocationTag>(entity))
-            _world.Add(entity, new VocationTag());
-    }
-
-    public void ApplyCombatState(Entity entity, in CombatStats stats, byte vocation, int teamId)
-    {
-        EnsureCombatComponents(entity);
-        _world.Get<CombatStats>(entity) = stats;
-        _world.Get<VocationTag>(entity) = new VocationTag { Value = vocation };
-        _world.Get<TeamId>(entity) = new TeamId { Value = teamId };
-    }
-
     public bool TryDrainEvents(out List<CombatEvent> events)
         => _events.TryDrain(out events);
     
-    public bool TryDrainVitals(out List<CombatVitalUpdate> updates)
-        => _vitals.TryDrain(out updates);
-
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        Registry.Clear();
+        _registry.Clear();
         _events.Clear();
-        _vitals.Clear();
         _systems.Dispose();
     }
 }

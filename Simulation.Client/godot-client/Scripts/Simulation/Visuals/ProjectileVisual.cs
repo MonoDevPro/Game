@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Game.Visuals;
+namespace Game.Simulation.Visuals;
 
 /// <summary>
 /// Simple projectile visual (placeholder).

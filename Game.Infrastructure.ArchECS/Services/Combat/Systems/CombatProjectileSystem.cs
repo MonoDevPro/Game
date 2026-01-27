@@ -2,9 +2,12 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Contracts;
-using Game.Infrastructure.ArchECS.Commons.Components;
+using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
-using Game.Infrastructure.ArchECS.Services.Map;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 
@@ -14,10 +17,8 @@ namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 public sealed partial class CombatProjectileSystem(
     World world,
     WorldMap map,
-    CombatEventBuffer events,
-    CombatVitalsBuffer vitals,
-    CombatEntityRegistry registry)
-    : BaseSystem<World, long>(world)
+    CombatEventBuffer events)
+    : GameSystem(world)
 {
     [Query]
     [All<Projectile, Position, FloorId>]
@@ -58,7 +59,7 @@ public sealed partial class CombatProjectileSystem(
             if (!map.TryGetFirstEntity(position, floor.Value, out var targetEntity) || targetEntity == Entity.Null)
                 continue;
 
-            if (registry.TryGetEntity(projectile.OwnerId, out var ownerEntity) && targetEntity == ownerEntity)
+            if (Registry.TryGetEntity(projectile.OwnerId, EntityDomain.Combat, out var ownerEntity) && targetEntity == ownerEntity)
                 continue;
 
             TryApplyProjectileDamage(projectile, targetEntity, projectile.DirX, projectile.DirY);
@@ -90,7 +91,7 @@ public sealed partial class CombatProjectileSystem(
 
         targetStats.CurrentHealth = Math.Max(0, targetStats.CurrentHealth - damage);
 
-        var targetId = registry.TryGetId(targetEntity, out var id) ? id : 0;
+        var targetId = Registry.GetExternalId(targetEntity, EntityDomain.Combat);
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
         events.Add(new CombatEvent(
@@ -105,7 +106,5 @@ public sealed partial class CombatProjectileSystem(
             targetFloor,
             0f,
             0));
-
-        vitals.MarkDirty(targetId, targetStats.CurrentHealth, targetStats.CurrentMana);
     }
 }

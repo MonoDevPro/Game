@@ -3,13 +3,14 @@ using Arch.Core;
 using Arch.System;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS;
-using Game.Infrastructure.ArchECS.Commons.Components;
 using Game.Infrastructure.ArchECS.Services.Combat;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
-using Game.Infrastructure.ArchECS.Services.Map;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Simulation;
@@ -19,7 +20,7 @@ namespace Game.Simulation;
 /// Herda de WorldSimulation (ECS) e gerencia entidades de jogadores.
 /// Integra com o módulo de navegação para pathfinding e movimento.
 /// </summary>
-public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, ICombatSimulation
+public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
 {
     private readonly ILogger? _logger;
     private readonly Dictionary<int, int> _playerIdToEntityId = new();
@@ -48,9 +49,6 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         combatConfig,
         logger)
     {
-        ConfigureSystems(World, Systems);
-        Systems.Initialize();
-
         _logger?.LogInformation(
             "ServerWorldSimulation inicializada com mapa {MapId} ({Width}x{Height})",
             worldMap.Id, worldMap.Width, worldMap.Height);
@@ -69,10 +67,8 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         _navigation = new NavigationModule(world, worldMap, navigationConfig);
         _combat = new CombatModule(world, worldMap, combatConfig);
 
-        ConfigureSystems(World, Systems);
+        ConfigureSystems(Systems);
         Systems.Initialize();
-
-        _logger?.LogInformation("ServerWorldSimulation inicializada sem mapa");
     }
 
     /// <summary>
@@ -80,7 +76,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     /// </summary>
     public WorldMap? Map { get; }
 
-    protected override void ConfigureSystems(World world, Group<float> systems)
+    protected override void ConfigureSystems(Group<float> systems)
     {
         // Sistemas de navegação são gerenciados pelo NavigationModule
         // Outros sistemas podem ser adicionados aqui conforme necessidade
@@ -88,7 +84,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected override void OnTick(long serverTick)
+    protected override void OnTick(in long serverTick)
     {
         base.OnTick(serverTick);
 
@@ -101,29 +97,29 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     /// Se navegação estiver habilitada, registra o jogador no mapa.
     /// </summary>
     /// <param name="characterId">ID do personagem.</param>
+    /// <param name="teamId">ID do time do personagem.</param>
     /// <param name="name">Nome do jogador.</param>
     /// <param name="x">Posição X inicial.</param>
     /// <param name="y">Posição Y inicial.</param>
     /// <param name="floor">Andar (padrão 0).</param>
     /// <param name="dirX">Direção X inicial.</param>
     /// <param name="dirY">Direção Y inicial.</param>
+    /// <param name="vocation">Vocação do personagem.</param>
+    /// <param name="level">Nível do personagem.</param>
+    /// <param name="experience">Experiência do personagem.</param>
+    /// <param name="strength">Força do personagem.</param>
+    /// <param name="endurance">Resistência do personagem.</param>
+    /// <param name="agility">Agilidade do personagem.</param>
+    /// <param name="intelligence">Inteligência do personagem.</param>
+    /// <param name="willpower">Força de vontade do personagem.</param>
+    /// <param name="healthPoints">Pontos de vida do personagem.</param>
+    /// <param name="manaPoints">Pontos de mana do personagem.</param>
     /// <returns>A entidade criada ou atualizada.</returns>
-    public Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY)
+    public Entity UpsertPlayer(int characterId, int teamId, string name, int x, int y, int floor, int dirX, int dirY,
+        byte vocation, int level, long experience, 
+        int strength, int endurance, int agility, int intelligence, int willpower, 
+        int healthPoints, int manaPoints)
     {
-        if (_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-        {
-            if (_navigation is not null)
-            {
-                if (_navigation.Registry.TryGetEntity(entityId, out var e))
-                {
-                    // Já registrado na navegação, apenas atualiza posição
-                    _navigation.MovePlayerDirectly(entityId, x, y, floor);
-                    _combat?.RegisterEntity(characterId, e);
-                    return e;
-                }
-            }
-        }
-
         // Cria nova entidade com componentes básicos
         var entity = World.Create(
             new CharacterId { Value = characterId },
@@ -131,21 +127,89 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         );
 
         // Mapeia characterId para entityId
-        entityId = entity.Id;
+        var entityId = entity.Id;
         _playerIdToEntityId[characterId] = entityId;
+        
+        // Registra no registry
+        Registry.RegisterMultiDomain(entityId, entity, 
+            EntityDomain.Navigation | EntityDomain.Combat);
 
-        // Se tem navegação, adiciona componentes de navegação
-        _navigation?.AddNavigationComponents(
-            entityId,
+        // Adiciona componentes de navegação
+        entity = AddToNavigation(entity, x, y, floor, dirX, dirY);
+        
+        // Registra no módulo de combate
+        entity = AddToCombat(entity, teamId, vocation, level, experience,
+            strength, endurance, agility, intelligence, willpower,
+            healthPoints, manaPoints);
+        
+        _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})",
+            characterId, name, x, y, floor);
+        return entity;
+    }
+    
+    public bool RemovePlayer(int characterId)
+    {
+        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
+            return false;
+
+        if (!Registry.TryGetEntity(entityId, EntityDomain.Navigation, out var entity))
+            return false;
+
+        // Remove do módulo de navegação
+        _navigation?.RemoveNavigationComponents(entity);
+        
+        // Remove do módulo de combate
+        _combat?.RemoveCombatComponents(entity);
+        
+        Registry.Unregister(entity);
+        
+        _playerIdToEntityId.Remove(characterId);
+        
+        // Destroi entidade
+        World.Destroy(entity);
+        
+        _logger?.LogDebug("Jogador removido: {CharacterId}", characterId);
+        return true;
+    }
+    
+    private Entity AddToNavigation(Entity entity, int x, int y, int floor, int dirX, int dirY)
+    {
+        if (_navigation is null)
+            return entity;
+
+        // Adiciona componentes de navegação
+        _navigation.AddNavigationComponents(
             entity,
             new Position { X = x, Y = y },
             new Direction { X = dirX, Y = dirY },
             floor);
 
-        _combat?.RegisterEntity(characterId, entity);
+        return entity;
+    }
+    
+    private Entity AddToCombat(Entity entity, int teamId, byte vocation, int level, long experience,
+        int strength, int endurance, int agility, int intelligence, int willpower,
+        int healthPoints, int manaPoints)
+    {
+        if (_combat is null)
+            return entity;
+        
+        var stats = new CombatStats
+        {
+            Level = level,
+            Experience = experience,
+            Strength = strength,
+            Endurance = endurance,
+            Agility = agility,
+            Intelligence = intelligence,
+            Willpower = willpower,
+            MaxHealth = healthPoints,
+            MaxMana = manaPoints,
+            CurrentHealth = healthPoints,
+            CurrentMana = manaPoints
+        };
 
-        _logger?.LogDebug("Jogador criado: {CharacterId} ({Name}) em ({X}, {Y}, {Floor})",
-            characterId, name, x, y, floor);
+        _combat.AddCombatComponents(entity, stats, vocation, teamId);
         return entity;
     }
 
@@ -208,37 +272,6 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     }
 
     /// <summary>
-    /// Remove um jogador do mundo.
-    /// </summary>
-    /// <param name="characterId">ID do personagem a remover.</param>
-    /// <returns>True se o jogador foi removido com sucesso.</returns>
-    public bool RemovePlayer(int characterId)
-    {
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-        {
-            _logger?.LogWarning("Tentativa de remover jogador {CharacterId}, mas não encontrado", characterId);
-            return false;
-        }
-
-        if (_navigation is null)
-        {
-            _logger?.LogWarning("Tentativa de remover jogador {CharacterId}, mas navegação não está configurada", characterId);
-            return false;
-        }
-        
-        var entity = _navigation.Registry.GetEntity(entityId);
-
-        // Destroi a entidade no mundo ECS
-        World.Destroy(entity);
-
-        // Remove do dicionário de jogadores
-        _playerIdToEntityId.Remove(characterId);
-        _combat?.UnregisterEntity(characterId);
-        _logger?.LogDebug("Jogador removido: {CharacterId}", characterId);
-        return true;
-    }
-
-    /// <summary>
     /// Constrói um snapshot do estado atual do mundo para sincronização com clientes.
     /// Inclui posição, direção, estado de movimento e dados de interpolação.
     /// </summary>
@@ -250,7 +283,8 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         if (_navigation is null)
             return new WorldSnapshot(CurrentTick, timestamp, players);
 
-        foreach (Entity entity in _navigation.Registry.GetAllEntities())
+        // TODO: Otimizar iteração usando queries ou cache
+        foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation))
         {
             var characterId = World.Get<CharacterId>(entity).Value;
 
@@ -344,8 +378,14 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
     {
         if (_combat is null)
             return false;
-
-        return _combat.RequestBasicAttack(characterId, dirX, dirY, CurrentTick);
+        
+        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
+            return false;
+        
+        if (!Registry.TryGetEntity(entityId, EntityDomain.Combat, out var entity))
+            return false;
+        
+        return _combat.RequestBasicAttack(entity, dirX, dirY, CurrentTick);
     }
 
     public bool TryDrainCombatEvents(out List<CombatEvent> events)
@@ -357,39 +397,6 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation, I
         }
 
         return _combat.TryDrainEvents(out events);
-    }
-
-    public bool TryDrainCombatVitals(out List<CombatVitalUpdate> updates)
-    {
-        if (_combat is null)
-        {
-            updates = [];
-            return false;
-        }
-
-        return _combat.TryDrainVitals(out updates);
-    }
-
-    public bool ConfigureCombatState(int characterId, in CombatStats stats, byte vocation, int teamId)
-    {
-        if (_combat is null)
-            return false;
-
-        if (!_combat.TryGetEntity(characterId, out var entity))
-            return false;
-
-        _combat.ApplyCombatState(entity, stats, vocation, teamId);
-        return true;
-    }
-
-    public bool TryGetCombatStats(int characterId, out CombatStats stats)
-    {
-        if (_combat is null)
-        {
-            stats = default;
-            return false;
-        }
-        return _combat.TryGetCombatStats(characterId, out stats);
     }
 }
 

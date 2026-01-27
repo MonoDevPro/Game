@@ -16,7 +16,6 @@ public static class WorldServerServices
     {
         services.AddGameDatabase(connectionString);
         services.AddScoped<ICharacterRepository, EfCharacterRepository>();
-        services.AddScoped<ICharacterVocationRepository, EfCharacterVocationRepository>();
         services.AddScoped<IEnterTicketService, EfEnterTicketService>();
         services.AddScoped<WorldUseCases>();
         services.AddSingleton<IMessageSerializer, MemoryPackMessageSerializer>();

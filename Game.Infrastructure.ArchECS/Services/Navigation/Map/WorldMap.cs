@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
 using Arch.Core;
-using Game.Infrastructure.ArchECS.Commons.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 
-namespace Game.Infrastructure.ArchECS.Services.Map;
+namespace Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 /// <summary>
 /// Mapa unificado de alta performance para MMORPG. 

@@ -1,7 +1,7 @@
 using Arch.Core;
-using Game.Infrastructure.ArchECS.Commons.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 
-namespace Game.Infrastructure.ArchECS.Services.Map;
+namespace Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 /// <summary>
 /// Registro global de mapas do jogo.

@@ -14,16 +14,6 @@ public interface ICharacterRepository
     Task UpdateAsync(Character character, CancellationToken ct = default);
 }
 
-public interface ICharacterVocationRepository
-{
-    Task<IReadOnlyList<CharacterVocation>> ListByAccountIdAsync(int accountId, CancellationToken ct = default);
-    Task<CharacterVocation?> FindByCharacterIdAsync(int characterId, CancellationToken ct = default);
-    Task<CharacterVocation?> FindByIdAsync(int id, CancellationToken ct = default);
-    Task UpdateAsync(CharacterVocation vocation, CancellationToken ct = default);
-    Task UpdateVitalsAsync(int characterId, int healthPoints, int manaPoints, CancellationToken ct = default);
-}
-
-
 public interface ISessionService
 {
     string CreateSession(int accountId);

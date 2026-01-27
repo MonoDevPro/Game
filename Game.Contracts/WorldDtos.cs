@@ -6,7 +6,10 @@ namespace Game.Contracts;
 public readonly partial record struct EnterWorldRequest(string EnterTicket) : IEnvelopePayload;
 
 [MemoryPackable]
-public readonly partial record struct WorldSpawnInfo(int CharacterId, string Name, int X, int Y, int Floor, int DirX, int DirY);
+public readonly partial record struct WorldSpawnInfo(int CharacterId, string Name, int X, int Y, int Floor, 
+    int DirX, int DirY, byte Vocation, int Level, long Experience, 
+    int Strength, int Endurance, int Agility, int Intelligence, int Willpower, 
+    int HealthPoints, int ManaPoints);
 
 [MemoryPackable]
 public readonly partial record struct EnterWorldResponse(bool Success, string? Error, WorldSpawnInfo? Spawn) : IEnvelopePayload;

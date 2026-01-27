@@ -1,7 +1,7 @@
 using Arch.Core;
 using Game.Contracts;
-using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Simulation;
 
@@ -36,14 +36,28 @@ public interface IWorldSimulation : IDisposable
     /// Adiciona ou atualiza um jogador no mundo.
     /// </summary>
     /// <param name="characterId">ID do personagem.</param>
+    /// <param name="teamId">ID do time.</param>
     /// <param name="name">Nome do jogador.</param>
     /// <param name="x">Posição X.</param>
     /// <param name="y">Posição Y.</param>
     /// <param name="floor">Andar.</param>
     /// <param name="dirX">Direção X.</param>
     /// <param name="dirY">Direção Y.</param>
+    /// <param name="vocation">Vocação.</param>
+    /// <param name="level">Nível.</param>
+    /// <param name="experience">Experiência.</param>
+    /// <param name="strength">Força.</param>
+    /// <param name="endurance">Resistência.</param>
+    /// <param name="agility">Agilidade.</param>
+    /// <param name="intelligence">Inteligência.</param>
+    /// <param name="willpower">Força de vontade.</param>
+    /// <param name="healthPoints">Pontos de vida.</param>
+    /// <param name="manaPoints">Pontos de mana.</param>
     /// <returns>A entidade criada ou atualizada.</returns>
-    Entity UpsertPlayer(int characterId, string name, int x, int y, int floor, int dirX, int dirY);
+    Entity UpsertPlayer(int characterId, int teamId, string name, int x, int y, int floor, int dirX, int dirY,
+        byte vocation, int level, long experience,
+        int strength, int endurance, int agility, int intelligence, int willpower,
+        int healthPoints, int manaPoints);
 
     /// <summary>
     /// Remove um jogador do mundo.
@@ -73,6 +87,8 @@ public interface IWorldSimulation : IDisposable
 
     bool RequestPlayerMoveDelta(int characterId, int deltaX, int deltaY,
         PathRequestFlags flags = PathRequestFlags.None);
+
+    bool RequestBasicAttack(int characterId, int dirX, int dirY);
 
     /// <summary>
     /// Para o movimento de um jogador.

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation.Systems;
 

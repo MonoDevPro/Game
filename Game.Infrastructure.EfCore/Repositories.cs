@@ -34,82 +34,20 @@ public sealed class EfCharacterRepository(GameDbContext db) : ICharacterReposito
     public async Task UpdateAsync(Character character, CancellationToken ct = default)
     {
         var row = await db.Characters.FirstOrDefaultAsync(x => x.Id == character.Id, ct);
-        if (row is null)
-        {
-            return;
-        }
+        if (row is null) return;
 
         row.X = character.X;
         row.Y = character.Y;
+        row.Floor = character.Floor;
+        row.DirX = character.DirX;
+        row.DirY = character.DirY;
+        row.HealthPoints = character.HealthPoints;
+        row.ManaPoints = character.ManaPoints;
         await db.SaveChangesAsync(ct);
     }
 
     private static Character ToDomain(CharacterRow row)
-        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, row.Floor, row.DirX, row.DirY);
-}
-
-public sealed class EfCharacterVocationRepository : ICharacterVocationRepository
-{
-    private readonly GameDbContext _db;
-
-    public EfCharacterVocationRepository(GameDbContext db)
-    {
-        _db = db;
-    }
-
-    public async Task<IReadOnlyList<CharacterVocation>> ListByAccountIdAsync(int accountId, CancellationToken ct = default)
-    {
-        var rows = await _db.Characters.AsNoTracking()
-            .Where(x => x.AccountId == accountId)
-            .Select(x => x.Id)
-            .Join(_db.CharacterVocations.AsNoTracking(),
-                characterId => characterId,
-                vocation => vocation.CharacterId,
-                (_, vocation) => vocation)
-            .ToListAsync(ct);
-        return rows.Select(ToDomain).ToList();
-    }
-
-    public async Task<CharacterVocation?> FindByCharacterIdAsync(int characterId, CancellationToken ct = default)
-    {
-        var row = await _db.CharacterVocations.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CharacterId == characterId, ct);
-        return row is null ? null : ToDomain(row);
-    }
-
-    public async Task<CharacterVocation?> FindByIdAsync(int id, CancellationToken ct = default)
-    {
-        var row = await _db.CharacterVocations.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? null : ToDomain(row);
-    }
-
-    public async Task UpdateAsync(CharacterVocation vocation, CancellationToken ct = default)
-    {
-        var row = await _db.CharacterVocations.FirstOrDefaultAsync(x => x.Id == vocation.Id, ct);
-        if (row is null)
-        {
-            return;
-        }
-
-        row.Level = vocation.Level;
-        row.Experience = vocation.Experience;
-        await _db.SaveChangesAsync(ct);
-    }
-
-    public async Task UpdateVitalsAsync(int characterId, int healthPoints, int manaPoints, CancellationToken ct = default)
-    {
-        var row = await _db.CharacterVocations.FirstOrDefaultAsync(x => x.CharacterId == characterId, ct);
-        if (row is null)
-        {
-            return;
-        }
-
-        row.HealthPoints = healthPoints;
-        row.ManaPoints = manaPoints;
-        await _db.SaveChangesAsync(ct);
-    }
-
-    private static CharacterVocation ToDomain(CharacterVocationRow row)
-        => new(row.Id, row.CharacterId, (Vocation)row.Vocation, row.Level, row.Experience, row.Strength, row.Endurance, row.Agility, row.Intelligence, row.Willpower, row.HealthPoints, row.ManaPoints);
+        => new(row.Id, row.AccountId, row.Name, (Gender)row.Gender, row.X, row.Y, row.Floor, row.DirX, row.DirY,
+            (Vocation)row.Vocation, row.Level, row.Experience, row.Strength, row.Endurance, row.Agility,
+            row.Intelligence, row.Willpower, row.HealthPoints, row.ManaPoints);
 }

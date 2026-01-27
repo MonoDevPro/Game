@@ -35,33 +35,7 @@ public static class DbInitializer
             new CharacterRow
             {
                 AccountId = accounts[0].Id, Name = "Warrior", Gender = (byte)Gender.Male, X = 10, Y = 10, 
-                DirX = 0, DirY = 1
-            },
-            new CharacterRow
-            {
-                AccountId = accounts[0].Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, 
-                DirX = 0, DirY = 1
-            },
-
-            new CharacterRow
-            {
-                AccountId = accounts[1].Id, Name = "Player1_Warrior", Gender = (byte)Gender.Female, X = 15, Y = 15,
-                DirX = 0, DirY = 1
-            },
-            new CharacterRow
-            {
-                AccountId = accounts[1].Id, Name = "Player1_Mage", Gender = (byte)Gender.Female, X = 20, Y = 20,
-                DirX = 0, DirY = 1
-            },
-        };
-        db.Characters.AddRange(characters);
-        await db.SaveChangesAsync(ct);
-
-        db.CharacterVocations.AddRange(new CharacterVocationRow[]
-        {
-            new CharacterVocationRow
-            {
-                CharacterId = characters[0].Id,
+                DirX = 0, DirY = 1,
                 Vocation = (byte)Vocation.Warrior,
                 Level = 10,
                 Experience = 5000,
@@ -73,9 +47,10 @@ public static class DbInitializer
                 HealthPoints = 200,
                 ManaPoints = 50
             },
-            new CharacterVocationRow
+            new CharacterRow
             {
-                CharacterId = characters[1].Id,
+                AccountId = accounts[0].Id, Name = "Mage", Gender = (byte)Gender.Male, X = 5, Y = 5, 
+                DirX = 0, DirY = 1,
                 Vocation = (byte)Vocation.Mage,
                 Level = 10,
                 Experience = 5000,
@@ -87,9 +62,11 @@ public static class DbInitializer
                 HealthPoints = 100,
                 ManaPoints = 200
             },
-            new CharacterVocationRow
+
+            new CharacterRow
             {
-                CharacterId = characters[2].Id,
+                AccountId = accounts[1].Id, Name = "Player1_Warrior", Gender = (byte)Gender.Female, X = 15, Y = 15,
+                DirX = 0, DirY = 1,
                 Vocation = (byte)Vocation.Warrior,
                 Level = 8,
                 Experience = 3000,
@@ -101,9 +78,10 @@ public static class DbInitializer
                 HealthPoints = 180,
                 ManaPoints = 40
             },
-            new CharacterVocationRow
+            new CharacterRow
             {
-                CharacterId = characters[3].Id,
+                AccountId = accounts[1].Id, Name = "Player1_Mage", Gender = (byte)Gender.Female, X = 20, Y = 20,
+                DirX = 0, DirY = 1,
                 Vocation = (byte)Vocation.Mage,
                 Level = 8,
                 Experience = 3000,
@@ -115,7 +93,8 @@ public static class DbInitializer
                 HealthPoints = 110,
                 ManaPoints = 180
             },
-        });
+        };
+        db.Characters.AddRange(characters);
         await db.SaveChangesAsync(ct);
     }
 }

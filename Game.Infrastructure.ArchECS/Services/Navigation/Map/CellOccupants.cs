@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Arch.Core;
 
-namespace Game.Infrastructure.ArchECS.Services.Map;
+namespace Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 /// <summary>
 /// Armazena entidades em uma célula com inline storage para até 4 entidades.

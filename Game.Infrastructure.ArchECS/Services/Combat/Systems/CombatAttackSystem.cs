@@ -2,9 +2,11 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Contracts;
-using Game.Infrastructure.ArchECS.Commons.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
-using Game.Infrastructure.ArchECS.Services.Map;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Components;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 
@@ -15,11 +17,12 @@ public sealed partial class CombatAttackSystem(
     World world,
     WorldMap map,
     CombatConfig config,
-    CombatEventBuffer events,
-    CombatVitalsBuffer vitals,
-    CombatEntityRegistry registry)
+    CombatEventBuffer events)
     : BaseSystem<World, long>(world)
 {
+
+    private readonly CentralEntityRegistry _registry = world.GetEntityRegistry();
+    
     [Query]
     [All<AttackRequest, CombatStats, VocationTag, AttackCooldown, Position, FloorId>]
     private void ProcessAttackRequests(
@@ -37,8 +40,7 @@ public sealed partial class CombatAttackSystem(
         if (request.DirX == 0 && request.DirY == 0)
             return;
 
-        if (!registry.TryGetId(entity, out var attackerId))
-            return;
+        var attackerId = _registry.GetExternalId(entity, EntityDomain.Combat);
 
         if (!config.TryGetVocation(vocation.Value, out var vocationConfig))
             return;
@@ -57,7 +59,6 @@ public sealed partial class CombatAttackSystem(
         if (vocationConfig.ManaCost > 0)
         {
             stats.CurrentMana -= vocationConfig.ManaCost;
-            vitals.MarkDirty(attackerId, stats.CurrentHealth, stats.CurrentMana);
         }
 
         events.Add(new CombatEvent(
@@ -84,8 +85,8 @@ public sealed partial class CombatAttackSystem(
 
     private double CalculateEffectiveCooldownMs(int baseMs, int agility)
     {
-        var reduced = baseMs - (agility * config.MsPerAgility);
-        var minMs = baseMs * config.MinCooldownFactor;
+        var reduced = baseMs - (agility * config.Cooldown.MsPerAgility);
+        var minMs = baseMs * config.Cooldown.MinCooldownFactor;
         var effectiveCooldownMs = Math.Clamp(reduced, minMs, baseMs);
         return effectiveCooldownMs;
     }
@@ -97,7 +98,7 @@ public sealed partial class CombatAttackSystem(
         ref Position position,
         ref FloorId floor,
         ref AttackRequest request,
-        CombatConfig.VocationAttackConfig vocationConfig)
+        CombatConfig.VocationConfig vocationConfig)
     {
         var range = Math.Max(1, vocationConfig.Range);
         var dirX = Math.Clamp(request.DirX, -1, 1);
@@ -126,7 +127,7 @@ public sealed partial class CombatAttackSystem(
         ref Position position,
         ref FloorId floor,
         ref AttackRequest request,
-        CombatConfig.VocationAttackConfig vocationConfig)
+        CombatConfig.VocationConfig vocationConfig)
     {
         var dirX = Math.Clamp(request.DirX, -1, 1);
         var dirY = Math.Clamp(request.DirY, -1, 1);
@@ -135,7 +136,7 @@ public sealed partial class CombatAttackSystem(
 
         var damage = CalculateDamage(ref attackerStats, vocationConfig);
         var ownerTeamId = 0;
-        if (registry.TryGetEntity(attackerId, out var attackerEntity) && World.Has<TeamId>(attackerEntity))
+        if (_registry.TryGetEntity(attackerId, EntityDomain.Combat, out var attackerEntity) && World.Has<TeamId>(attackerEntity))
             ownerTeamId = World.Get<TeamId>(attackerEntity).Value;
 
         events.Add(new CombatEvent(
@@ -172,7 +173,7 @@ public sealed partial class CombatAttackSystem(
         Entity attackerEntity,
         Entity targetEntity,
         ref CombatStats attackerStats,
-        CombatConfig.VocationAttackConfig vocationConfig,
+        CombatConfig.VocationConfig vocationConfig,
         int dirX,
         int dirY)
     {
@@ -198,7 +199,7 @@ public sealed partial class CombatAttackSystem(
 
         targetStats.CurrentHealth = Math.Max(0, targetStats.CurrentHealth - damage);
 
-        var targetId = registry.TryGetId(targetEntity, out var id) ? id : 0;
+        var targetId = _registry.GetExternalId(targetEntity, EntityDomain.Combat);
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
         events.Add(new CombatEvent(
@@ -213,11 +214,9 @@ public sealed partial class CombatAttackSystem(
             targetFloor,
             0f,
             0));
-        
-        vitals.MarkDirty(targetId, targetStats.CurrentHealth, targetStats.CurrentMana);
     }
 
-    private int CalculateDamage(ref CombatStats stats, CombatConfig.VocationAttackConfig configData)
+    private int CalculateDamage(ref CombatStats stats, CombatConfig.VocationConfig configData)
     {
         var stat = configData.DamageStat switch
         {

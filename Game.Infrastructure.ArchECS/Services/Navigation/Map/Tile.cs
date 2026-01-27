@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Game.Infrastructure.ArchECS.Services.Map;
+namespace Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 /// <summary>
 /// Tile compacto (8 bytes alinhados para performance).

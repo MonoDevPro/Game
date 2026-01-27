@@ -21,12 +21,6 @@ public sealed class CharacterRow
     public int Floor { get; set; }
     public int DirX { get; set; }
     public int DirY { get; set; }
-}
-
-public sealed class CharacterVocationRow
-{
-    public int Id { get; set; }
-    public int CharacterId { get; set; }
     public byte Vocation { get; set; }
     public int Level { get; set; }
     public long Experience { get; set; }
@@ -37,6 +31,7 @@ public sealed class CharacterVocationRow
     public int Willpower { get; set; }
     public int HealthPoints { get; set; }
     public int ManaPoints { get; set; }
+    
 }
 
 public sealed class EnterTicketRow

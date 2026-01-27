@@ -12,9 +12,6 @@ public sealed record BasicAttackCommand(int CharacterId, int DirX, int DirY) : I
 {
     public bool Execute(IWorldSimulation simulation)
     {
-        if (simulation is not ICombatSimulation combat)
-            return false;
-
-        return combat.RequestBasicAttack(CharacterId, DirX, DirY);
+        return simulation.RequestBasicAttack(CharacterId, DirX, DirY);
     }
 }

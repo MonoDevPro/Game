@@ -1,16 +1,15 @@
 using System.Collections.Concurrent;
 using Game.Application;
 using Game.Contracts;
-using Game.Infrastructure.ArchECS.Services.Map;
 using Game.Infrastructure.LiteNetLib;
 using Game.Infrastructure.EfCore;
 using Game.Simulation;
 using Game.Simulation.Commands;
 using Game.Infrastructure.ArchECS.Services.Combat;
-using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Microsoft.Extensions.Options;
 using Server.Host.Common;
 using Game.Domain;
+using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Server.Host.WorldServer;
 
@@ -31,7 +30,6 @@ public class WorldServerWorker(
     // Configuração do mapa padrão
     private const int DefaultMapWidth = 100;
     private const int DefaultMapHeight = 100;
-    private const int PersistVitalsIntervalTicks = 30;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -49,23 +47,16 @@ public class WorldServerWorker(
         var worldMap = CreateDefaultWorldMap();
 
         // Usa a simulação baseada em ECS com suporte a navegação
-        var serverCombatConfig = new CombatConfig
-        {
-            MsPerAgility = combatOptions.Value.Cooldown.MsPerAgility,
-            MinCooldownFactor = combatOptions.Value.Cooldown.MinFactor,
-            Vocations = BuildVocationConfigs(combatOptions.Value)
-        };
+        var serverCombatConfig = BuildCombatConfig(combatOptions.Value);
         var simulation = new ServerWorldSimulation(worldMap, combatConfig: serverCombatConfig, logger: logger);
         var commandQueue = new CommandQueue();
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();
-        var pendingVitals = new ConcurrentQueue<CombatVitalUpdate>();
 
         // Estado para delta compression por peer
         var lastSnapshotByPeer = new ConcurrentDictionary<int, WorldSnapshot>();
         var fullSnapshotCounter = 0;
         const int fullSnapshotInterval = 10; // Envia snapshot completo a cada 10 ticks
-        var lastVitalsPersistTick = 0L;
 
         logger?.LogInformation("Mapa criado: {Width}x{Height}",
             worldMap.Width, worldMap.Height);
@@ -76,11 +67,7 @@ public class WorldServerWorker(
             if (characterByPeer.TryRemove(peer.Id, out var characterId))
             {
                 peerByCharacter.TryRemove(characterId, out _);
-                if (simulation.TryGetCombatStats(characterId, out var stats))
-                {
-                    pendingVitals.Enqueue(new CombatVitalUpdate(characterId, stats.CurrentHealth, stats.CurrentMana));
-                }
-                simulation.RemovePlayer(characterId);
+                simulation.RemovePlayer(characterId); // Remove o jogador da simulação
                 lastSnapshotByPeer.TryRemove(peer.Id, out _);
                 logger?.LogDebug("Jogador {CharacterId} desconectado", characterId);
             }
@@ -142,28 +129,6 @@ public class WorldServerWorker(
                     server.Send(peer, new Envelope(OpCode.CombatEventBatch, payload),
                         LiteNetLib.DeliveryMethod.Unreliable);
                 }
-            }
-
-            if (simulation.CurrentTick - lastVitalsPersistTick >= PersistVitalsIntervalTicks)
-            {
-                if (simulation.TryDrainCombatVitals(out var updates))
-                {
-                    await PersistCombatVitals(updates, stoppingToken);
-                }
-
-                if (!pendingVitals.IsEmpty)
-                {
-                    var pendingList = new List<CombatVitalUpdate>();
-                    while (pendingVitals.TryDequeue(out var pending))
-                    {
-                        pendingList.Add(pending);
-                    }
-
-                    if (pendingList.Count > 0)
-                        await PersistCombatVitals(pendingList, stoppingToken);
-                }
-
-                lastVitalsPersistTick = simulation.CurrentTick;
             }
 
             // Constrói snapshot atual
@@ -259,12 +224,14 @@ public class WorldServerWorker(
         }
 
         var spawn = result.Value.Spawn;
+        var teamId = 0;
 
         // Adiciona jogador à simulação ECS com suporte a navegação
-        simulation.UpsertPlayer(spawn.Value.CharacterId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y, spawn.Value.Floor,
-            spawn.Value.DirX, spawn.Value.DirY);
+        simulation.UpsertPlayer(spawn.Value.CharacterId, teamId, spawn.Value.Name, spawn.Value.X, spawn.Value.Y, spawn.Value.Floor,
+            spawn.Value.DirX, spawn.Value.DirY, spawn.Value.Vocation, spawn.Value.Level, spawn.Value.Experience,
+            spawn.Value.Strength, spawn.Value.Endurance, spawn.Value.Agility, spawn.Value.Intelligence, spawn.Value.Willpower,
+            spawn.Value.HealthPoints, spawn.Value.ManaPoints);
         
-        await ConfigureCombatState(scope, simulation, spawn.Value.CharacterId, stoppingToken);
         peerByCharacter[spawn.Value.CharacterId] = peer;
         characterByPeer[peer.Id] = spawn.Value.CharacterId;
 
@@ -348,9 +315,29 @@ public class WorldServerWorker(
         commandQueue.Enqueue(new BasicAttackCommand(request.CharacterId, request.DirX, request.DirY));
     }
 
-    private static Dictionary<byte, CombatConfig.VocationAttackConfig> BuildVocationConfigs(CombatOptions options)
+    private static CombatConfig BuildCombatConfig(CombatOptions options)
     {
-        var result = new Dictionary<byte, CombatConfig.VocationAttackConfig>();
+        return new CombatConfig
+        {
+            Cooldown = new CombatConfig.CooldownConfig
+            {
+                MsPerAgility = options.Cooldown.MsPerAgility,
+                MinCooldownFactor = options.Cooldown.MinFactor
+            },
+            Stats = new CombatConfig.StatsConfig
+            {
+                BaseHpPerLevel = options.Stats.BaseHpPerLevel,
+                BaseMpPerLevel = options.Stats.BaseMpPerLevel,
+                HpPerVitality = options.Stats.HpPerVitality,
+                MpPerWillpower = options.Stats.MpPerWillpower
+            },
+            Vocations = BuildVocationConfigs(options)
+        };
+    }
+    
+    private static Dictionary<byte, CombatConfig.VocationConfig> BuildVocationConfigs(CombatOptions options)
+    {
+        var result = new Dictionary<byte, CombatConfig.VocationConfig>();
         foreach (var (key, value) in options.Vocations)
         {
             if (!Enum.TryParse<Vocation>(key, true, out var vocation))
@@ -360,7 +347,7 @@ public class WorldServerWorker(
                 ? parsed
                 : CombatDamageStat.Strength;
 
-            result[(byte)vocation] = new CombatConfig.VocationAttackConfig
+            result[(byte)vocation] = new CombatConfig.VocationConfig
             {
                 BaseCooldownMs = value.BaseCooldownMs,
                 ManaCost = value.ManaCost,
@@ -373,53 +360,5 @@ public class WorldServerWorker(
         }
 
         return result;
-    }
-    
-    private async Task ConfigureCombatState(
-        IServiceScope scope,
-        ServerWorldSimulation simulation,
-        int characterId,
-        CancellationToken ct)
-    {
-        var characterRepo = scope.ServiceProvider.GetRequiredService<ICharacterRepository>();
-        var vocationRepo = scope.ServiceProvider.GetRequiredService<ICharacterVocationRepository>();
-
-        var character = await characterRepo.FindByIdAsync(characterId, ct);
-        var vocation = await vocationRepo.FindByCharacterIdAsync(characterId, ct);
-
-        if (character is null || vocation is null)
-            return;
-
-        var stats = new CombatStats
-        {
-            Level = vocation.Level,
-            Strength = vocation.Strength,
-            Endurance = vocation.Endurance,
-            Agility = vocation.Agility,
-            Intelligence = vocation.Intelligence,
-            Willpower = vocation.Willpower,
-            MaxHealth = vocation.HealthPoints,
-            MaxMana = vocation.ManaPoints,
-            CurrentHealth = vocation.HealthPoints,
-            CurrentMana = vocation.ManaPoints
-        };
-
-        simulation.ConfigureCombatState(characterId, stats, (byte)vocation.Vocation, character.AccountId);
-    }
-
-    private async Task PersistCombatVitals(
-        IReadOnlyList<CombatVitalUpdate> updates,
-        CancellationToken ct)
-    {
-        if (updates.Count == 0)
-            return;
-
-        using var scope = scopeFactory.CreateScope();
-        var vocationRepo = scope.ServiceProvider.GetRequiredService<ICharacterVocationRepository>();
-
-        foreach (var update in updates)
-        {
-            await vocationRepo.UpdateVitalsAsync(update.CharacterId, update.CurrentHealth, update.CurrentMana, ct);
-        }
     }
 }

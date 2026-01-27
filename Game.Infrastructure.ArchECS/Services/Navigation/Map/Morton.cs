@@ -1,7 +1,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace Game.Infrastructure.ArchECS.Services.Map;
+namespace Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 /// <summary>
 /// Utilitários Morton Code otimizados com AggressiveInlining.
