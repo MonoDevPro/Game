@@ -57,7 +57,7 @@ public sealed partial class NavPathRequestSystem(
         var result = pathfinder.FindPath(ref pathRequest, pathBuffer);
 
         // Processa resultado
-        if (result.IsValid && result.PathLength > 0)
+        if (result is { IsValid: true, PathLength: > 0 })
         {
             // Copia waypoints para o buffer
             buffer.Clear();

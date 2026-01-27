@@ -1,10 +1,11 @@
+using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.Contracts;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -20,9 +21,8 @@ public sealed partial class CombatAttackSystem(
     CombatEventBuffer events)
     : BaseSystem<World, long>(world)
 {
-
     private readonly CentralEntityRegistry _registry = world.GetEntityRegistry();
-    
+
     [Query]
     [All<AttackRequest, CombatStats, VocationTag, AttackCooldown, Position, FloorId>]
     private void ProcessAttackRequests(
@@ -40,8 +40,6 @@ public sealed partial class CombatAttackSystem(
         if (request.DirX == 0 && request.DirY == 0)
             return;
 
-        var attackerId = _registry.GetExternalId(entity, EntityDomain.Combat);
-
         if (!config.TryGetVocation(vocation.Value, out var vocationConfig))
             return;
 
@@ -52,7 +50,8 @@ public sealed partial class CombatAttackSystem(
             return;
 
         var effectiveMs = CalculateEffectiveCooldownMs(vocationConfig.BaseCooldownMs, stats.Agility);
-        var cooldownTicks = Math.Max(1, (int)Math.Ceiling(effectiveMs / (double)SimulationConfig.TickDeltaMilliseconds));
+        var cooldownTicks =
+            Math.Max(1, (int)Math.Ceiling(effectiveMs / (double)SimulationConfig.TickDeltaMilliseconds));
         cooldown.CooldownTicks = cooldownTicks;
         cooldown.NextAttackTick = serverTick + cooldownTicks;
 
@@ -61,26 +60,23 @@ public sealed partial class CombatAttackSystem(
             stats.CurrentMana -= vocationConfig.ManaCost;
         }
 
-        events.Add(new CombatEvent(
-            CombatEventType.AttackStarted,
-            attackerId,
-            0,
+        AttackStartedEvent attackEvent = new(
+            entity,
             request.DirX,
             request.DirY,
-            0,
             position.X,
             position.Y,
-            floor.Value,
-            0f,
-            0));
+            floor.Value);
+
+        EventBus.Send(ref attackEvent);
 
         if (vocationConfig.UsesProjectile)
         {
-            SpawnProjectile(attackerId, ref stats, ref position, ref floor, ref request, vocationConfig);
+            SpawnProjectile(entity, ref stats, ref position, ref floor, ref request, vocationConfig);
             return;
         }
 
-        ResolveMeleeAttack(attackerId, entity, ref stats, ref position, ref floor, ref request, vocationConfig);
+        ResolveMeleeAttack(entity, ref stats, ref position, ref floor, ref request, vocationConfig);
     }
 
     private double CalculateEffectiveCooldownMs(int baseMs, int agility)
@@ -92,7 +88,6 @@ public sealed partial class CombatAttackSystem(
     }
 
     private void ResolveMeleeAttack(
-        int attackerId,
         Entity attackerEntity,
         ref CombatStats attackerStats,
         ref Position position,
@@ -116,13 +111,13 @@ public sealed partial class CombatAttackSystem(
             if (targetEntity == attackerEntity)
                 continue;
 
-            TryApplyDamage(attackerId, attackerEntity, targetEntity, ref attackerStats, vocationConfig, dirX, dirY);
+            TryApplyDamage(attackerEntity, targetEntity, ref attackerStats, vocationConfig, dirX, dirY);
             return;
         }
     }
 
     private void SpawnProjectile(
-        int attackerId,
+        in Entity attacker,
         ref CombatStats attackerStats,
         ref Position position,
         ref FloorId floor,
@@ -136,40 +131,25 @@ public sealed partial class CombatAttackSystem(
 
         var damage = CalculateDamage(ref attackerStats, vocationConfig);
         var ownerTeamId = 0;
-        if (_registry.TryGetEntity(attackerId, EntityDomain.Combat, out var attackerEntity) && World.Has<TeamId>(attackerEntity))
-            ownerTeamId = World.Get<TeamId>(attackerEntity).Value;
+        if (World.Has<TeamId>(attacker))
+            ownerTeamId = World.Get<TeamId>(attacker).Value;
 
-        events.Add(new CombatEvent(
-            CombatEventType.ProjectileSpawn,
-            attackerId,
-            0,
+        ProjectileSpawnedEvent projectileEvent = new(
+            attacker,
             dirX,
             dirY,
-            0,
             position.X,
             position.Y,
             floor.Value,
             vocationConfig.ProjectileSpeed,
-            vocationConfig.Range));
+            vocationConfig.Range,
+            ownerTeamId,
+            damage);
 
-        World.Create(
-            new Position { X = position.X, Y = position.Y },
-            new FloorId { Value = floor.Value },
-            new Projectile
-            {
-                OwnerId = attackerId,
-                OwnerTeamId = ownerTeamId,
-                Damage = damage,
-                DirX = dirX,
-                DirY = dirY,
-                RemainingRange = Math.Max(1, vocationConfig.Range),
-                SpeedCellsPerTick = MathF.Max(0.1f, vocationConfig.ProjectileSpeed / SimulationConfig.TicksPerSecond),
-                TravelRemainder = 0f
-            });
+        EventBus.Send(ref projectileEvent);
     }
 
     private void TryApplyDamage(
-        int attackerId,
         Entity attackerEntity,
         Entity targetEntity,
         ref CombatStats attackerStats,
@@ -199,21 +179,20 @@ public sealed partial class CombatAttackSystem(
 
         targetStats.CurrentHealth = Math.Max(0, targetStats.CurrentHealth - damage);
 
-        var targetId = _registry.GetExternalId(targetEntity, EntityDomain.Combat);
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
-        events.Add(new CombatEvent(
-            CombatEventType.Hit,
-            attackerId,
-            targetId,
+
+
+        CombatDamageEvent damageEvent = new(
+            attackerEntity,
+            targetEntity,
             dirX,
             dirY,
-            damage,
             targetPos.X,
             targetPos.Y,
-            targetFloor,
-            0f,
-            0));
+            targetFloor);
+
+        EventBus.Send(ref damageEvent);
     }
 
     private int CalculateDamage(ref CombatStats stats, CombatConfig.VocationConfig configData)

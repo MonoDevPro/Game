@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Arch.Core;
 using Game.Application;
 using Game.Contracts;
 using Game.Infrastructure.LiteNetLib;
@@ -9,6 +10,7 @@ using Game.Infrastructure.ArchECS.Services.Combat;
 using Microsoft.Extensions.Options;
 using Server.Host.Common;
 using Game.Domain;
+using Game.Infrastructure.ArchECS;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Server.Host.WorldServer;
@@ -45,10 +47,17 @@ public class WorldServerWorker(
 
         // Cria mapa do mundo para navegação
         var worldMap = CreateDefaultWorldMap();
+        
+        // Cria o World ECS
+        var world = World.Create(
+            chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
+            minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
+            archetypeCapacity: SimulationConfig.ArchetypeCapacity,
+            entityCapacity: SimulationConfig.EntityCapacity);
 
         // Usa a simulação baseada em ECS com suporte a navegação
         var serverCombatConfig = BuildCombatConfig(combatOptions.Value);
-        var simulation = new ServerWorldSimulation(worldMap, combatConfig: serverCombatConfig, logger: logger);
+        var simulation = new ServerWorldSimulation(world, worldMap, combatConfig: serverCombatConfig, logger: logger);
         var commandQueue = new CommandQueue();
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();

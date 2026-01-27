@@ -74,12 +74,16 @@ public sealed class NavigationModule : IDisposable
     /// Adiciona componentes de navegação a uma entidade e registra com ID.
     /// </summary>
     /// <param name="entity">Entity do ECS.</param>
-    /// <param name="startPosition">Posição inicial.</param>
-    /// <param name="startDirection">Direção inicial.</param>
+    /// <param name="x">Posição X inicial.</param>
+    /// <param name="y">Posição Y inicial.</param>
+    /// <param name="dirX">Direção X inicial.</param>
+    /// <param name="dirY">Direção Y inicial.</param>
     /// <param name="floor">Andar/floor.</param>
     /// <param name="settings">Configurações do agente (opcional).</param>
-    public void AddNavigationComponents(Entity entity, Position startPosition, Direction startDirection, int floor, NavAgentSettings? settings = null)
+    public void AddNavigationComponents(Entity entity, int x, int y, int dirX, int dirY, int floor, NavAgentSettings? settings = null)
     {
+        var startPosition = new Position { X = x, Y = y };
+        
         if (!_worldMap.AddEntity(startPosition, floor, entity))
             return;
         
@@ -88,7 +92,7 @@ public sealed class NavigationModule : IDisposable
             new MapId { Value = MapId },
             new FloorId { Value = floor },
             startPosition,
-            startDirection,
+            new Direction { X = dirX, Y = dirY },
             new NavMovementState(),
             new NavPathBuffer(),
             new NavPathState { Status = PathStatus.None },
@@ -181,10 +185,6 @@ public sealed class NavigationModule : IDisposable
 
         _world.Get<Direction>(entity) = direction;
 
-        // Garante modo direcional ativo para o sistema processar o request
-        if (!_world.Has<NavDirectionalMode>(entity))
-            _world.Add<NavDirectionalMode>(entity);
-        
         // Remove request direcional anterior se existir
         if (_world.Has<NavDirectionalRequest>(entity))
             _world.Remove<NavDirectionalRequest>(entity);

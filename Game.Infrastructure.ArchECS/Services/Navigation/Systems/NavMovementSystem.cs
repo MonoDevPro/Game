@@ -2,7 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
-using Game.Infrastructure.ArchECS.Events;
+using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -17,6 +17,7 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
 {
     [Query]
     [All<Position, NavMovementState, NavAgent>]
+    [None<NavDirectionalMode>]
     private void CompleteMovements(
         [Data] in long serverTick,
         in Entity entity,
@@ -27,18 +28,18 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
         if (!movement.IsMoving)
             return;
 
-        if (movement.ShouldComplete(serverTick))
-        {
-            // Atualiza posição para célula destino
-            pos = movement.TargetCell;
-            movement.Complete();
+        if (!movement.ShouldComplete(serverTick)) 
+            return;
+        
+        // Atualiza posição para célula destino
+        pos = movement.TargetCell;
+        movement.Complete();
             
-            MoveEvent moveEvent = new(entity, pos, floor.Value);
-            EventBus.Send(ref moveEvent);
+        MoveEvent moveEvent = new(entity, pos, floor.Value);
+        EventBus.Send(ref moveEvent);
             
-            if (World.Has<NavIsMoving>(entity))
-                World.Remove<NavIsMoving>(entity);
-        }
+        if (World.Has<NavIsMoving>(entity))
+            World.Remove<NavIsMoving>(entity);
     }
 
     [Query]

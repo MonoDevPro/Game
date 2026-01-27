@@ -30,31 +30,12 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     /// <summary>
     /// Cria uma simulação com mapa e navegação completa.
     /// </summary>
+    /// <param name="world">Mundo ECS para a simulação.</param>
     /// <param name="worldMap">Mapa do mundo para colisão e pathfinding.</param>
     /// <param name="navigationConfig">Configuração do sistema de navegação (opcional).</param>
     /// <param name="combatConfig">Configuração do sistema de combate (opcional).</param>
     /// <param name="logger">Logger (opcional).</param>
     public ServerWorldSimulation(
-        WorldMap worldMap,
-        NavigationConfig? navigationConfig = null,
-        CombatConfig? combatConfig = null,
-        ILogger? logger = null) : this(
-        World.Create(
-            chunkSizeInBytes: SimulationConfig.ChunkSizeInBytes,
-            minimumAmountOfEntitiesPerChunk: SimulationConfig.MinimumAmountOfEntitiesPerChunk,
-            archetypeCapacity: SimulationConfig.ArchetypeCapacity,
-            entityCapacity: SimulationConfig.EntityCapacity),
-        worldMap,
-        navigationConfig,
-        combatConfig,
-        logger)
-    {
-        _logger?.LogInformation(
-            "ServerWorldSimulation inicializada com mapa {MapId} ({Width}x{Height})",
-            worldMap.Id, worldMap.Width, worldMap.Height);
-    }
-
-    private ServerWorldSimulation(
         World world,
         WorldMap worldMap,
         NavigationConfig? navigationConfig = null,
@@ -177,12 +158,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         if (_navigation is null)
             return entity;
 
-        // Adiciona componentes de navegação
-        _navigation.AddNavigationComponents(
-            entity,
-            new Position { X = x, Y = y },
-            new Direction { X = dirX, Y = dirY },
-            floor);
+        _navigation.AddNavigationComponents(entity, x, y, dirX, dirY, floor);
 
         return entity;
     }

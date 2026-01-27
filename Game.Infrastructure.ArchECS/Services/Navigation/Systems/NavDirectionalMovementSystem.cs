@@ -1,6 +1,8 @@
+using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -14,12 +16,38 @@ namespace Game.Infrastructure.ArchECS.Services.Navigation.Systems;
 public sealed partial class NavDirectionalMovementSystem(World world, WorldMap grid) 
     : BaseSystem<World, long>(world)
 {
+    [Query]
+    [All<Position, NavMovementState, NavAgent, NavDirectionalMode>]
+    private void CompleteMovements(
+        [Data] in long serverTick,
+        in Entity entity,
+        ref Position pos,
+        ref FloorId floor,
+        ref NavMovementState movement)
+    {
+        if (!movement.IsMoving)
+            return;
+
+        if (!movement.ShouldComplete(serverTick)) 
+            return;
+        
+        // Atualiza posição para célula destino
+        pos = movement.TargetCell;
+        movement.Complete();
+            
+        MoveEvent moveEvent = new(entity, pos, floor.Value);
+        EventBus.Send(ref moveEvent);
+            
+        if (World.Has<NavIsMoving>(entity))
+            World.Remove<NavIsMoving>(entity);
+    }
+    
     /// <summary>
     /// Processa novas requisições de movimento direcional.
     /// </summary>
     [Query]
-    [All<Position, NavMovementState, NavAgentSettings, NavAgent, NavDirectionalRequest, NavDirectionalMode>]
-    [None<NavIsMoving>]
+    [All<Position, NavMovementState, NavAgentSettings, NavAgent, NavDirectionalRequest>]
+    [None<NavIsMoving, NavDirectionalMode>]
     private void ProcessDirectionalRequests(
         [Data] in long serverTick,
         in Entity entity,
@@ -29,6 +57,10 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         ref NavAgentSettings settings,
         ref NavDirectionalRequest request)
     {
+        // Só processa movimento único
+        if (request.MovementType != DirectionalMovementType.Single)
+            return;
+        
         // Se ainda está movendo, espera completar
         if (movement.IsMoving)
             return;
@@ -43,7 +75,7 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         // Verifica se a posição é válida
         if (!grid.InBounds(targetPos.X, targetPos.Y, floor.Value))
         {
-            HandleInvalidMove(entity, ref request);
+            World.Remove<NavDirectionalRequest>(entity);
             return;
         }
 
@@ -51,6 +83,7 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         if (!grid.TryMoveEntity(pos, floor.Value, targetPos, floor.Value, entity))
         {
             HandleBlockedMove(entity, serverTick, ref request, targetPos, floor.Value);
+            World.Remove<NavDirectionalRequest>(entity);
             return;
         }
 
@@ -61,10 +94,7 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         movement.StartMove(pos, targetPos, serverTick, duration);
 
         // Adiciona tags apropriadas
-        World.Add<NavIsMoving>(entity);
-            
-        if (!World.Has<NavDirectionalMode>(entity))
-            World.Add<NavDirectionalMode>(entity);
+        World.Add<NavIsMoving, NavDirectionalMode>(entity);
 
         // Remove tags de espera/destino
         if (World.Has<NavWaitingToMove>(entity))
@@ -74,18 +104,15 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
             World.Remove<NavReachedDestination>(entity);
 
         // Para movimento único, remove a request após iniciar
-        if (request.MovementType == DirectionalMovementType.Single)
-        {
-            World.Remove<NavDirectionalRequest>(entity);
-        }
+        World.Remove<NavDirectionalRequest>(entity);
     }
 
     /// <summary>
     /// Processa movimento contínuo - re-aplica direção quando movimento anterior termina.
     /// </summary>
     [Query]
-    [All<Position, NavMovementState, NavAgentSettings, NavAgent, NavDirectionalRequest, NavDirectionalMode>]
-    [None<NavIsMoving>]
+    [All<Position, NavMovementState, NavAgentSettings, NavAgent, NavDirectionalRequest>]
+    [None<NavIsMoving, NavDirectionalMode>]
     private void ProcessContinuousMovement(
         [Data] in long serverTick,
         in Entity entity,
@@ -123,19 +150,10 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
 
         movement.StartMove(pos, targetPos, serverTick, duration);
 
-        World.Add<NavIsMoving>(entity);
+        World.Add<NavIsMoving, NavDirectionalMode>(entity);
 
         if (World.Has<NavWaitingToMove>(entity))
             World.Remove<NavWaitingToMove>(entity);
-    }
-
-    private void HandleInvalidMove(Entity entity, ref NavDirectionalRequest request)
-    {
-        // Para movimento único, remove a request
-        if (request.MovementType == DirectionalMovementType.Single)
-        {
-            World.Remove<NavDirectionalRequest>(entity);
-        }
     }
 
     private void HandleBlockedMove(
@@ -169,12 +187,6 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
                     BlockedByEntityId = blockingEntity.Id
                 });
             }
-        }
-
-        // Para movimento único, remove a request
-        if (request.MovementType == DirectionalMovementType.Single)
-        {
-            World.Remove<NavDirectionalRequest>(entity);
         }
     }
 }

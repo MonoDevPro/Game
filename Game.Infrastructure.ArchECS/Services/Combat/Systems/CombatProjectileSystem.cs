@@ -1,3 +1,4 @@
+using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
@@ -6,6 +7,7 @@ using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -20,6 +22,27 @@ public sealed partial class CombatProjectileSystem(
     CombatEventBuffer events)
     : GameSystem(world)
 {
+    [Event(order: 1)]
+    public void HandleProjectileCreation(ref ProjectileSpawnedEvent evt)
+    {
+        var attackerId = Registry.GetExternalId(evt.Attacker, EntityDomain.Combat);
+        World.Create(
+            new Position { X = evt.PosX, Y = evt.PosY },
+            new FloorId { Value = evt.Floor },
+            new Projectile
+            {
+                OwnerId = attackerId,
+                OwnerTeamId = evt.TeamId,
+                Damage = evt.Damage,
+                DirX = evt.DirX,
+                DirY = evt.DirY,
+                RemainingRange = evt.Range,
+                SpeedCellsPerTick = evt.Speed,
+                TravelRemainder = 0f
+            });
+    }
+    
+    
     [Query]
     [All<Projectile, Position, FloorId>]
     private void TickProjectile(
