@@ -284,7 +284,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
             return new WorldSnapshot(CurrentTick, timestamp, players);
 
         // TODO: Otimizar iteração usando queries ou cache
-        foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation))
+        foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation | EntityDomain.Combat))
         {
             var characterId = World.Get<CharacterId>(entity).Value;
 
