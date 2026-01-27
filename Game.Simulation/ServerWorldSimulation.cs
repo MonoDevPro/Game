@@ -283,7 +283,6 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         if (_navigation is null)
             return new WorldSnapshot(CurrentTick, timestamp, players);
 
-        // TODO: Otimizar iteração usando queries ou cache
         foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation | EntityDomain.Combat))
         {
             var characterId = World.Get<CharacterId>(entity).Value;
