@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Game.Tests;
 
+[Collection(nameof(EcsCollection))]
 public class CentralEntityRegistryTests
 {
     [Fact]

@@ -51,6 +51,7 @@ public sealed class CombatConfig
         public int BaseCooldownMs { get; init; } = 1000;
         public int ManaCost { get; init; }
         public int Range { get; init; } = 1;
+        // Velocidade em células por segundo.
         public float ProjectileSpeed { get; init; }
         public int DamageBase { get; init; } = 10;
         public float DamageScale { get; init; } = 1.0f;

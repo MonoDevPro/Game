@@ -2,6 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +19,7 @@ public sealed partial class CombatEventBuffer : GameSystem
     {
         _events.Add(new CombatEvent(
             Type: CombatEventType.AttackStarted,
-            AttackerId: evt.Attacker.Id,
+            AttackerId: ResolveNetworkId(evt.Attacker),
             TargetId: 0,
             Damage: 0,
             DirX: evt.DirX,
@@ -34,7 +35,7 @@ public sealed partial class CombatEventBuffer : GameSystem
     {
         _events.Add(new CombatEvent(
             Type: CombatEventType.ProjectileSpawn,
-            AttackerId: evt.Attacker.Id,
+            AttackerId: ResolveNetworkId(evt.Attacker),
             TargetId: 0,
             Damage: evt.Damage,
             DirX: evt.DirX,
@@ -50,8 +51,8 @@ public sealed partial class CombatEventBuffer : GameSystem
     {
         _events.Add(new CombatEvent(
             Type: CombatEventType.Hit,
-            AttackerId: evt.Attacker.Id,
-            TargetId: evt.Target.Id,
+            AttackerId: ResolveNetworkId(evt.Attacker),
+            TargetId: ResolveNetworkId(evt.Target),
             Damage: evt.Damage,
             DirX: evt.DirX,
             DirY: evt.DirY,
@@ -60,6 +61,16 @@ public sealed partial class CombatEventBuffer : GameSystem
             Floor: evt.Floor,
             Speed: 0f,
             Range: 0));
+    }
+
+    private int ResolveNetworkId(Entity entity)
+    {
+        if (entity != Entity.Null && World.Has<CharacterId>(entity))
+        {
+            return World.Get<CharacterId>(entity).Value;
+        }
+
+        return entity.Id;
     }
 
     public bool TryDrain(out List<CombatEvent> events)
