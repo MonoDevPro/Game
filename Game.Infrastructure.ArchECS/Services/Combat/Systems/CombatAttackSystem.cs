@@ -2,10 +2,10 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
-using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -17,12 +17,9 @@ namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 public sealed partial class CombatAttackSystem(
     World world,
     WorldMap map,
-    CombatConfig config,
-    CombatEventBuffer events)
-    : BaseSystem<World, long>(world)
+    CombatConfig config)
+    : GameSystem(world)
 {
-    private readonly CentralEntityRegistry _registry = world.GetEntityRegistry();
-
     [Query]
     [All<AttackRequest, CombatStats, VocationTag, AttackCooldown, Position, FloorId>]
     private void ProcessAttackRequests(
@@ -129,7 +126,7 @@ public sealed partial class CombatAttackSystem(
         if (dirX == 0 && dirY == 0)
             return;
 
-        var damage = CalculateDamage(ref attackerStats, vocationConfig);
+        var damage = CalculateDamage(in attackerStats, vocationConfig);
         var ownerTeamId = 0;
         if (World.Has<TeamId>(attacker))
             ownerTeamId = World.Get<TeamId>(attacker).Value;
@@ -173,7 +170,7 @@ public sealed partial class CombatAttackSystem(
         if (targetStats.CurrentHealth <= 0)
             return;
 
-        var damage = CalculateDamage(ref attackerStats, vocationConfig);
+        var damage = CalculateDamage(in attackerStats, vocationConfig);
         if (damage <= 0)
             return;
 
@@ -186,6 +183,7 @@ public sealed partial class CombatAttackSystem(
         CombatDamageEvent damageEvent = new(
             attackerEntity,
             targetEntity,
+            damage,
             dirX,
             dirY,
             targetPos.X,
@@ -195,7 +193,7 @@ public sealed partial class CombatAttackSystem(
         EventBus.Send(ref damageEvent);
     }
 
-    private int CalculateDamage(ref CombatStats stats, CombatConfig.VocationConfig configData)
+    private int CalculateDamage(in CombatStats stats, CombatConfig.VocationConfig configData)
     {
         var stat = configData.DamageStat switch
         {

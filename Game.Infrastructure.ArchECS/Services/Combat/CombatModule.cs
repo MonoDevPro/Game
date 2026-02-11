@@ -16,7 +16,7 @@ public sealed class CombatModule : IDisposable
     public CombatConfig Config { get; }
 
     private readonly World _world;
-    private readonly CombatEventBuffer _events = new();
+    private readonly CombatEventBuffer _events;
     private readonly Group<long> _systems;
     private bool _disposed;
     
@@ -24,6 +24,7 @@ public sealed class CombatModule : IDisposable
 
     public CombatModule(World world, WorldMap worldMap, CombatConfig? config = null)
     {
+        _events = new CombatEventBuffer(world);
         _world = world;
         Config = config ?? CombatConfig.Default;
         
@@ -31,8 +32,9 @@ public sealed class CombatModule : IDisposable
 
         _systems = new Group<long>(
             "ServerCombat",
-            new CombatAttackSystem(world, worldMap, Config, _events),
-            new CombatProjectileSystem(world, worldMap, _events)
+            new CombatAttackSystem(world, worldMap, Config),
+            new CombatProjectileSystem(world, worldMap),
+            _events
         );
 
         _systems.Initialize();
@@ -120,7 +122,6 @@ public sealed class CombatModule : IDisposable
         if (_disposed) return;
         _disposed = true;
         _registry.Clear();
-        _events.Clear();
         _systems.Dispose();
     }
 }

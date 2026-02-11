@@ -5,9 +5,9 @@ using Arch.System.SourceGenerator;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
+using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
-using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
@@ -18,8 +18,7 @@ namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 /// </summary>
 public sealed partial class CombatProjectileSystem(
     World world,
-    WorldMap map,
-    CombatEventBuffer events)
+    WorldMap map)
     : GameSystem(world)
 {
     [Event(order: 1)]
@@ -117,17 +116,19 @@ public sealed partial class CombatProjectileSystem(
         var targetId = Registry.GetExternalId(targetEntity, EntityDomain.Combat);
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
-        events.Add(new CombatEvent(
-            CombatEventType.Hit,
-            projectile.OwnerId,
-            targetId,
+        
+        ProjectileSpawnedEvent evt = new ProjectileSpawnedEvent(
+            targetEntity,
             dirX,
             dirY,
-            damage,
             targetPos.X,
             targetPos.Y,
             targetFloor,
             0f,
-            0));
+            0,
+            projectile.OwnerTeamId,
+            damage);
+        
+        EventBus.Send(ref evt);
     }
 }
