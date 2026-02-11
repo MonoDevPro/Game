@@ -40,6 +40,11 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
             
         if (World.Has<NavIsMoving>(entity))
             World.Remove<NavIsMoving>(entity);
+
+        // Libera modo direcional ao finalizar o passo para permitir
+        // que novas requests (single/continuous) sejam processadas.
+        if (World.Has<NavDirectionalMode>(entity))
+            World.Remove<NavDirectionalMode>(entity);
     }
     
     /// <summary>
