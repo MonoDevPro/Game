@@ -28,20 +28,20 @@ public static class WorldEntityRegistryExtensions
     /// Registra entidade usando o registry do World.
     /// </summary>
     public static void RegisterEntity(this World world, int externalId, Entity entity, 
-        EntityDomain domain, string? debugName = null)
+        EntityDomain domain)
     {
         var registry = world.GetEntityRegistry();
-        registry.Register(externalId, entity, domain, debugName);
+        registry.Register(externalId, entity, domain);
     }
 
     /// <summary>
     /// Registra entidade em múltiplos domínios.
     /// </summary>
     public static void RegisterEntityMultiDomain(this World world, int externalId, Entity entity, 
-        EntityDomain domains, string? debugName = null)
+        EntityDomain domains)
     {
         var registry = world.GetEntityRegistry();
-        registry.RegisterMultiDomain(externalId, entity, domains, debugName);
+        registry.RegisterMultiDomain(externalId, entity, domains);
     }
 
     /// <summary>

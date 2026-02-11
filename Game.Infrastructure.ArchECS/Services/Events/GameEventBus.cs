@@ -8,12 +8,8 @@ namespace Game.Infrastructure.ArchECS.Services.Events;
 /// </summary>
 public sealed partial class GameEventBus : IDisposable
 {
-    public event Action<SpawnEvent>? OnSpawn;
-    public event Action<DespawnEvent>? OnDespawn;
     public event Action<MoveEvent>? OnMove;
     
-    [Event] public void Send(ref SpawnEvent evt) => OnSpawn?.Invoke(evt);
-    [Event] public void Send(ref DespawnEvent evt) => OnDespawn?.Invoke(evt);
     [Event] public void Send(ref MoveEvent evt) => OnMove?.Invoke(evt);
     
     public GameEventBus() { Hook(); }

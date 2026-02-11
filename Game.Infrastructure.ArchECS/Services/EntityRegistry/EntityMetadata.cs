@@ -11,11 +11,10 @@ public struct EntityMetadata
     public int ExternalId;
     public Entity Entity;
     public EntityDomain Domain;
-    public string? DebugName;
     public DateTime RegisteredAt;
 
     public override string ToString()
     {
-        return $"Entity[{ExternalId}] {DebugName ?? "unnamed"} - Domains: {Domain}";
+        return $"Entity[{ExternalId}] - Domains: {Domain}";
     }
 }

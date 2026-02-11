@@ -37,7 +37,7 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
             
             if (metadata.Domain.HasFlag(EntityDomain.Combat))
             {
-                LogTrace($"Combat Entity: {metadata.DebugName} - HP: {health.CurrentHp}/{health.MaxHp}");
+                LogTrace($"Combat Entity: {metadata} - HP: {health.CurrentHp}/{health.MaxHp}");
             }
         }
     }
@@ -95,7 +95,7 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
             
             if (metadata.Domain.HasFlag(EntityDomain.Navigation))
             {
-                LogTrace($"Moving: {metadata.DebugName} - Target: {movement.TargetCell}");
+                LogTrace($"Moving: {metadata} - Target: {movement.TargetCell}");
             }
         }
     }
@@ -132,7 +132,7 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
             // Entidade participa de Combat E Navigation
             if (metadata.Domain.HasFlag(EntityDomain.Combat | EntityDomain.Navigation))
             {
-                LogDebug($"Multi-domain: {metadata.DebugName} - HP: {health.CurrentHp}, Moving: {movement.IsMoving}");
+                LogDebug($"Multi-domain: {metadata} - HP: {health.CurrentHp}, Moving: {movement.IsMoving}");
             }
         }
     }
@@ -149,7 +149,7 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
         if (_registry.Contains(entity))
         {
             var metadata = _registry.GetMetadata(entity);
-            LogInformation($"Full NPC: {metadata.DebugName} - Domains: {metadata.Domain}");
+            LogInformation($"Full NPC: {metadata} - Domains: {metadata.Domain}");
         }
     }
 
@@ -174,7 +174,7 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
             if (metadata.Domain.HasFlag(EntityDomain.Combat)) domains.Add("Combat");
             if (metadata.Domain.HasFlag(EntityDomain.Navigation)) domains.Add("Navigation");
             
-            LogTrace($"Entity {metadata.DebugName} in domains: {string.Join(", ", domains)}");
+            LogTrace($"Entity {metadata} in domains: {string.Join(", ", domains)}");
         }
     }
 
