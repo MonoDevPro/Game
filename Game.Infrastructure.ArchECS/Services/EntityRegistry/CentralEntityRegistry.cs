@@ -248,11 +248,31 @@ public sealed class CentralEntityRegistry : IDisposable
     /// </summary>
     public IEnumerable<Entity> GetEntitiesByDomain(EntityDomain domain)
     {
-        if (!_domainHandles.TryGetValue(domain, out var handle))
+        if (domain == EntityDomain.None)
             return Enumerable.Empty<Entity>();
 
-        ref var registryData = ref _domainRegistries.Get(handle);
-        return registryData.EntityById.Values;
+        // Fast path: domínio exato já registrado (sem alocação extra).
+        if (_domainHandles.TryGetValue(domain, out var handle))
+        {
+            ref var registryData = ref _domainRegistries.Get(handle);
+            return registryData.EntityById.Values;
+        }
+
+        // Fallback: consulta por combinação de flags (ex: Combat | Navigation).
+        var merged = new HashSet<Entity>();
+        foreach (var (registeredDomain, registeredHandle) in _domainHandles)
+        {
+            if (!domain.HasFlag(registeredDomain))
+                continue;
+
+            ref var data = ref _domainRegistries.Get(registeredHandle);
+            foreach (var entity in data.EntityById.Values)
+            {
+                merged.Add(entity);
+            }
+        }
+
+        return merged;
     }
 
     /// <summary>

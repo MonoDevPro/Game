@@ -15,11 +15,12 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.20" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Game.Infrastructure.EfCore\Game.Infrastructure.EfCore.csproj" />
+    <ProjectReference Include="..\Game.Infrastructure.ArchECS\Game.Infrastructure.ArchECS.csproj" />
     <ProjectReference Include="..\Game.Domain\Game.Domain.csproj" />
   </ItemGroup>
 
