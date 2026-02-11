@@ -16,7 +16,7 @@ public sealed class CombatModule : IDisposable
     public CombatConfig Config { get; }
 
     private readonly World _world;
-    private readonly CombatEventBuffer _events;
+    private readonly Events.CombatEventBuffer _events;
     private readonly Group<long> _systems;
     private bool _disposed;
     
@@ -24,7 +24,7 @@ public sealed class CombatModule : IDisposable
 
     public CombatModule(World world, WorldMap worldMap, CombatConfig? config = null)
     {
-        _events = new CombatEventBuffer(world);
+        _events = new Events.CombatEventBuffer(world);
         _world = world;
         Config = config ?? CombatConfig.Default;
         

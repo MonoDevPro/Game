@@ -12,7 +12,7 @@ public sealed partial class EntityEventBuffer : GameSystem
     
     [Event] public void Send(ref EntityRegisteredEvent evt) => _spawnEvents.Enqueue(evt);
     [Event] public void Send(ref EntityUnregisteredEvent evt) => _despawnEvents.Enqueue(evt);
-
+    
     public bool TryDrain(out Span<EntityRegisteredEvent> registerEvents, out Span<EntityUnregisteredEvent> unregisterEvents)
     {
         if (_spawnEvents.Count == 0 && _despawnEvents.Count == 0)

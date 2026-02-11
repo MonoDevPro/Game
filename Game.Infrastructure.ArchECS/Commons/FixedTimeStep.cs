@@ -1,4 +1,4 @@
-namespace Game.Infrastructure.ArchECS.Commons.Systems;
+namespace Game.Infrastructure.ArchECS.Commons;
 
 /// <summary>
 /// Implementa um timestep fixo para simulação determinística.

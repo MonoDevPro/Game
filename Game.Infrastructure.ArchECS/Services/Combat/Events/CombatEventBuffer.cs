@@ -3,10 +3,9 @@ using Arch.Core;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
-using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Microsoft.Extensions.Logging;
 
-namespace Game.Infrastructure.ArchECS.Services.Combat;
+namespace Game.Infrastructure.ArchECS.Services.Combat.Events;
 
 /// <summary>
 /// Buffer simples de eventos de combate por tick.

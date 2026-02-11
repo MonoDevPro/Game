@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Arch.Core;
 using Arch.System;
 using Game.Infrastructure.ArchECS.Commons;
-using Game.Infrastructure.ArchECS.Commons.Systems;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Infrastructure.ArchECS;
