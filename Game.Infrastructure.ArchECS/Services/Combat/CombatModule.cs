@@ -132,8 +132,8 @@ public sealed class CombatModule : IDisposable
         return true;
     }
 
-    public bool TryDrainEvents(out List<CombatEvent> events)
-        => _events.TryDrain(out events);
+    public bool TryDrainEvents(List<CombatEvent> buffer)
+        => _events.TryDrain(buffer);
 
     public void Dispose()
     {

@@ -61,6 +61,8 @@ public class WorldServerWorker(
         var commandQueue = new CommandQueue();
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();
+        var combatEventBuffer = new List<CombatEvent>(64);
+        var snapshotDeltaBuffersByPeer = new ConcurrentDictionary<int, SnapshotDeltaBuffers>();
 
         // Estado para delta compression por peer
         var lastSnapshotByPeer = new ConcurrentDictionary<int, WorldSnapshot>();
@@ -78,6 +80,7 @@ public class WorldServerWorker(
                 peerByCharacter.TryRemove(characterId, out _);
                 simulation.RemovePlayer(characterId); // Remove o jogador da simulação
                 lastSnapshotByPeer.TryRemove(peer.Id, out _);
+                snapshotDeltaBuffersByPeer.TryRemove(peer.Id, out _);
                 logger?.LogDebug("Jogador {CharacterId} desconectado", characterId);
             }
         };
@@ -130,14 +133,25 @@ public class WorldServerWorker(
             // Atualiza a simulação ECS (processa sistemas e navegação)
             simulation.Update(TickIntervalMs);
 
-            if (simulation.TryDrainCombatEvents(out var combatEvents))
+            var hasPeers = !peerByCharacter.IsEmpty;
+
+            if (simulation.TryDrainCombatEvents(combatEventBuffer))
             {
-                var payload = new CombatEventBatch(simulation.CurrentTick, combatEvents);
-                foreach (var (_, peer) in peerByCharacter)
+                if (hasPeers)
                 {
-                    server.Send(peer, new Envelope(OpCode.CombatEventBatch, payload),
-                        LiteNetLib.DeliveryMethod.Unreliable);
+                    var payload = new CombatEventBatch(simulation.CurrentTick, combatEventBuffer);
+                    foreach (var (_, peer) in peerByCharacter)
+                    {
+                        server.Send(peer, new Envelope(OpCode.CombatEventBatch, payload),
+                            LiteNetLib.DeliveryMethod.Unreliable);
+                    }
                 }
+            }
+
+            if (!hasPeers)
+            {
+                await Task.Delay(TickIntervalMs, stoppingToken);
+                continue;
             }
 
             // Constrói snapshot atual
@@ -161,7 +175,8 @@ public class WorldServerWorker(
                 else
                 {
                     // Calcula e envia delta
-                    var delta = SnapshotDeltaCalculator.Calculate(lastSnapshot, currentSnapshot);
+                    var buffers = snapshotDeltaBuffersByPeer.GetOrAdd(peer.Id, _ => new SnapshotDeltaBuffers());
+                    var delta = SnapshotDeltaCalculator.Calculate(lastSnapshot, currentSnapshot, buffers);
 
                     // Só envia delta se houver mudanças
                     if (delta.HasChanges)

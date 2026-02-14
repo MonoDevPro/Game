@@ -380,15 +380,12 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         return _combat.RequestBasicAttack(entity, dirX, dirY, CurrentTick);
     }
 
-    public bool TryDrainCombatEvents(out List<CombatEvent> events)
+    public bool TryDrainCombatEvents(List<CombatEvent> buffer)
     {
         if (_combat is null)
-        {
-            events = [];
             return false;
-        }
 
-        return _combat.TryDrainEvents(out events);
+        return _combat.TryDrainEvents(buffer);
     }
 }
 

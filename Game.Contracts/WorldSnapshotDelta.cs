@@ -35,6 +35,20 @@ public readonly partial record struct WorldSnapshotDelta(
         new List<int>());
 }
 
+public sealed class SnapshotDeltaBuffers
+{
+    public Dictionary<int, PlayerState> PreviousById { get; } = new();
+    public HashSet<int> CurrentIds { get; } = new();
+
+    public void Reset(int previousCount, int currentCount)
+    {
+        PreviousById.Clear();
+        CurrentIds.Clear();
+        PreviousById.EnsureCapacity(previousCount);
+        CurrentIds.EnsureCapacity(currentCount);
+    }
+}
+
 /// <summary>
 /// Utilitário para calcular deltas entre snapshots.
 /// </summary>
@@ -48,19 +62,26 @@ public static class SnapshotDeltaCalculator
     /// <returns>Delta contendo apenas as mudanças.</returns>
     public static WorldSnapshotDelta Calculate(WorldSnapshot previous, WorldSnapshot current)
     {
-        var previousDict = new Dictionary<int, PlayerState>(previous.Players.Count);
+        return Calculate(previous, current, new SnapshotDeltaBuffers());
+    }
+
+    public static WorldSnapshotDelta Calculate(WorldSnapshot previous, WorldSnapshot current, SnapshotDeltaBuffers buffers)
+    {
+        buffers.Reset(previous.Players.Count, current.Players.Count);
+
+        var previousDict = buffers.PreviousById;
         foreach (var player in previous.Players)
         {
             previousDict[player.CharacterId] = player;
         }
-        
+
         var added = new List<PlayerState>();
-        var currentIds = new HashSet<int>();
-        
+        var currentIds = buffers.CurrentIds;
+
         foreach (var player in current.Players)
         {
             currentIds.Add(player.CharacterId);
-            
+
             // Verifica se é novo ou mudou
             if (!previousDict.TryGetValue(player.CharacterId, out var prev))
             {
@@ -73,7 +94,7 @@ public static class SnapshotDeltaCalculator
                 added.Add(player);
             }
         }
-        
+
         // Encontra removidos
         var removed = new List<int>();
         foreach (var id in previousDict.Keys)
@@ -83,7 +104,7 @@ public static class SnapshotDeltaCalculator
                 removed.Add(id);
             }
         }
-        
+
         return new WorldSnapshotDelta(
             current.ServerTick,
             current.Timestamp,

@@ -39,7 +39,9 @@ public class CombatProjectileSystemTests
         var targetEntity = registry.GetEntity(202, EntityDomain.Combat);
         world.Get<CombatStats>(targetEntity).CurrentHealth.Should().Be(90);
 
-        combat.TryDrainEvents(out var events).Should().BeTrue();
+        var events = new List<CombatEvent>();
+
+        combat.TryDrainEvents(events).Should().BeTrue();
         events.Any(e =>
             e.Type == CombatEventType.Hit &&
             e.AttackerId == 101 &&

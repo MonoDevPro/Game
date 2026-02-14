@@ -16,15 +16,14 @@ public sealed partial class CombatEventBuffer : GameSystem
     
     [Event] public void Send(ref CombatEvent evt) => _events.Add(evt);
 
-    public bool TryDrain(out List<CombatEvent> events)
+    public bool TryDrain(List<CombatEvent> buffer)
     {
+        buffer.Clear();
+
         if (_events.Count == 0)
-        {
-            events = [];
             return false;
-        }
-        
-        events = new List<CombatEvent>(_events);
+
+        buffer.AddRange(_events);
         _events.Clear();
         return true;
     }
