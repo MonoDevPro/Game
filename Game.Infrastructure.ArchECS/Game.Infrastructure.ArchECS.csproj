@@ -14,12 +14,7 @@
         <PackageReference Include="Arch.Relationships" Version="1.0.1" />
         <PackageReference Include="Arch.System" Version="1.1.0" />
         <PackageReference Include="Arch.System.SourceGenerator" Version="2.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="Microsoft.Extensions.Logging.Abstractions">
-        <HintPath>..\..\..\.nuget\packages\microsoft.extensions.logging.abstractions\9.0.3\lib\net9.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-      </Reference>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
     </ItemGroup>
 
     <ItemGroup>
