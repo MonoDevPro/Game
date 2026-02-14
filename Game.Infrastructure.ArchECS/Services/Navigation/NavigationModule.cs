@@ -2,6 +2,7 @@ using Arch.Core;
 using Arch.System;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
@@ -22,6 +23,7 @@ public sealed class NavigationModule : IDisposable
     
     private readonly World _world;
     private readonly WorldMap _worldMap;
+    private readonly NavigationEventBuffer _events;
     private int MapId => _worldMap.Id;
     private readonly Group<long> _systems;
     private bool _disposed;
@@ -36,6 +38,7 @@ public sealed class NavigationModule : IDisposable
         WorldMap worldMap,
         NavigationConfig? config = null)
     {
+        _events = new NavigationEventBuffer(world);
         _world = world;
         _worldMap = worldMap;
         Config = config ?? NavigationConfig.Default;
@@ -55,7 +58,8 @@ public sealed class NavigationModule : IDisposable
             "ServerNavigation",
             new NavPathRequestSystem(world, Pathfinder, _worldMap, Config.MaxRequestsPerTick),
             new NavMovementSystem(world, _worldMap),
-            new NavDirectionalMovementSystem(world, _worldMap)
+            new NavDirectionalMovementSystem(world, _worldMap),
+            _events
         );
 
         _systems.Initialize();

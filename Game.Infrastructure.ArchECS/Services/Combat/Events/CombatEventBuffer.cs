@@ -14,10 +14,7 @@ public sealed partial class CombatEventBuffer : GameSystem
 {
     private readonly List<CombatEvent> _events = [];
     
-    [Event] public void Send(ref CombatEvent evt)
-    {
-        _events.Add(evt);
-    }
+    [Event] public void Send(ref CombatEvent evt) => _events.Add(evt);
 
     public bool TryDrain(out List<CombatEvent> events)
     {

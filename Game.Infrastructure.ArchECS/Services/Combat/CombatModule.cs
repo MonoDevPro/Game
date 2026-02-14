@@ -3,6 +3,7 @@ using Arch.System;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
+using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Game.Infrastructure.ArchECS.Services.Combat.Systems;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
@@ -17,7 +18,7 @@ public sealed class CombatModule : IDisposable
     public CombatConfig Config { get; }
 
     private readonly World _world;
-    private readonly Events.CombatEventBuffer _events;
+    private readonly CombatEventBuffer _events;
     private readonly Group<long> _systems;
     private bool _disposed;
 
