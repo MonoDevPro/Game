@@ -27,8 +27,8 @@ public class CombatProjectileSystemTests
 
         var attacker = CreatePlayer(world, map, characterId: 101, x: 5, y: 5);
         var target = CreatePlayer(world, map, characterId: 202, x: 7, y: 5);
-        combat.AddCombatComponents(attacker, BuildStats(), vocation: 1, teamId: 0);
-        combat.AddCombatComponents(target, BuildStats(), vocation: 1, teamId: 0);
+        combat.AddCombatComponents(attacker, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
+        combat.AddCombatComponents(target, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
         registry.Register(101, attacker, EntityDomain.Combat);
         registry.Register(202, target, EntityDomain.Combat);
 
@@ -57,8 +57,8 @@ public class CombatProjectileSystemTests
 
         var attacker = CreatePlayer(world, map, characterId: 301, x: 5, y: 5);
         var target = CreatePlayer(world, map, characterId: 302, x: 8, y: 5); // exactly 3 cells away
-        combat.AddCombatComponents(attacker, BuildStats(), vocation: 1, teamId: 0);
-        combat.AddCombatComponents(target, BuildStats(), vocation: 1, teamId: 0);
+        combat.AddCombatComponents(attacker, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
+        combat.AddCombatComponents(target, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
         registry.Register(301, attacker, EntityDomain.Combat);
         registry.Register(302, target, EntityDomain.Combat);
 
@@ -92,8 +92,8 @@ public class CombatProjectileSystemTests
 
         var attacker = CreatePlayer(world, map, characterId: 401, x: 5, y: 5);
         var target = CreatePlayer(world, map, characterId: 402, x: 7, y: 5);
-        combat.AddCombatComponents(attacker, BuildStats(), vocation: 1, teamId: 0);
-        combat.AddCombatComponents(target, BuildStats(), vocation: 1, teamId: 0);
+        combat.AddCombatComponents(attacker, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
+        combat.AddCombatComponents(target, Level: 1, Experience: 0, Strength: 10, Endurance: 10, Agility: 10, Intelligence: 20, Willpower: 10, MaxHealth: 100, MaxMana: 100, CurrentHealth: 100, CurrentMana: 100, vocation: 1, teamId: 0);
         registry.Register(401, attacker, EntityDomain.Combat);
         registry.Register(402, target, EntityDomain.Combat);
 

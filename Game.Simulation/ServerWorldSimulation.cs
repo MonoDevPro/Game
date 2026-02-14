@@ -26,6 +26,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     private readonly Dictionary<int, int> _playerIdToEntityId = new();
     private readonly CombatModule? _combat;
     private readonly NavigationModule? _navigation;
+    private readonly List<PlayerState> _snapshotBuffer = new();
 
     /// <summary>
     /// Cria uma simulação com mapa e navegação completa.
@@ -240,84 +241,113 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     /// </summary>
     public WorldSnapshot BuildSnapshot()
     {
-        var players = new List<PlayerState>(_playerIdToEntityId.Count);
+        var serverTick = CurrentTick;
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        
-        if (_navigation is null)
-            return new WorldSnapshot(CurrentTick, timestamp, players);
+
+        var players = _snapshotBuffer;
+        players.Clear();
+
+        if (_playerIdToEntityId.Count > players.Capacity)
+            players.Capacity = _playerIdToEntityId.Count;
+
+        if (_navigation is null || _playerIdToEntityId.Count == 0)
+            return new WorldSnapshot(serverTick, timestamp, players);
 
         foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation | EntityDomain.Combat))
         {
-            var characterId = World.Get<CharacterId>(entity).Value;
-
-            // Ignora entidades destruídas
-            if (!_playerIdToEntityId.ContainsKey(characterId))
-                continue;
-
-            // Ignora entidades não vivas
-            if (!World.IsAlive(entity))
-                continue;
-
-            var pos = World.Get<Position>(entity);
-            var name = World.Get<PlayerName>(entity);
-            var floor = World.Has<FloorId>(entity) ? World.Get<FloorId>(entity).Value : 0;
-            var dir = World.Has<Direction>(entity) ? World.Get<Direction>(entity) : new Direction { X = 0, Y = 0 };
-            var target = pos;
-            var currentHp = 0;
-            var maxHp = 0;
-            var currentMp = 0;
-            var maxMp = 0;
-
-            if (World.Has<CombatStats>(entity))
-            {
-                var stats = World.Get<CombatStats>(entity);
-                currentHp = stats.CurrentHealth;
-                maxHp = stats.MaxHealth;
-                currentMp = stats.CurrentMana;
-                maxMp = stats.MaxMana;
-            }
-
-            bool isMoving = false;
-            float moveProgress = 0f;
-
-            if (World.Has<NavMovementState>(entity))
-            {
-                ref readonly var movement = ref World.Get<NavMovementState>(entity);
-                if (movement.IsMoving)
-                {
-                    isMoving = true;
-                    dir = movement.MovementDirection;
-                    target = movement.TargetCell;
-
-                    // Calcula progresso do movimento (0.0 a 1.0)
-                    if (movement.EndTick > movement.StartTick)
-                    {
-                        var totalDuration = movement.EndTick - movement.StartTick;
-                        var elapsed = CurrentTick - movement.StartTick;
-                        moveProgress = Math.Clamp((float)elapsed / totalDuration, 0f, 1f);
-                    }
-                }
-            }
-
-            players.Add(new PlayerState(
-                characterId,
-                name.Name,
-                pos.X,
-                pos.Y,
-                floor,
-                dir.X,
-                dir.Y,
-                isMoving,
-                target.X,
-                target.Y,
-                moveProgress,
-                currentHp,
-                maxHp,
-                currentMp,
-                maxMp));
+            if (TryBuildPlayerState(entity, serverTick, out var state))
+                players.Add(state);
         }
 
-        return new WorldSnapshot(CurrentTick, timestamp, players);
+        return new WorldSnapshot(serverTick, timestamp, players);
+    }
+
+    private bool TryBuildPlayerState(Entity entity, long serverTick, out PlayerState state)
+    {
+        state = default;
+
+        if (!World.IsAlive(entity))
+            return false;
+
+        var characterId = World.Get<CharacterId>(entity).Value;
+
+        if (!_playerIdToEntityId.ContainsKey(characterId))
+            return false;
+
+        var pos = World.Get<Position>(entity);
+        var name = World.Get<PlayerName>(entity);
+        var floor = World.Has<FloorId>(entity) ? World.Get<FloorId>(entity).Value : 0;
+        var dir = World.Has<Direction>(entity) ? World.Get<Direction>(entity) : default;
+        var target = pos;
+
+        GetCombatVitals(entity, out var currentHp, out var maxHp, out var currentMp, out var maxMp);
+        GetMovementState(entity, serverTick, ref dir, ref target, out var isMoving, out var moveProgress);
+
+        state = new PlayerState(
+            characterId,
+            name.Name,
+            pos.X,
+            pos.Y,
+            floor,
+            dir.X,
+            dir.Y,
+            isMoving,
+            target.X,
+            target.Y,
+            moveProgress,
+            currentHp,
+            maxHp,
+            currentMp,
+            maxMp);
+
+        return true;
+    }
+
+    private void GetCombatVitals(Entity entity, out int currentHp, out int maxHp, out int currentMp, out int maxMp)
+    {
+        currentHp = 0;
+        maxHp = 0;
+        currentMp = 0;
+        maxMp = 0;
+
+        if (!World.Has<CombatStats>(entity))
+            return;
+
+        var stats = World.Get<CombatStats>(entity);
+        currentHp = stats.CurrentHealth;
+        maxHp = stats.MaxHealth;
+        currentMp = stats.CurrentMana;
+        maxMp = stats.MaxMana;
+    }
+
+    private void GetMovementState(
+        Entity entity,
+        long serverTick,
+        ref Direction dir,
+        ref Position target,
+        out bool isMoving,
+        out float moveProgress)
+    {
+        isMoving = false;
+        moveProgress = 0f;
+
+        if (!World.Has<NavMovementState>(entity))
+            return;
+
+        ref readonly var movement = ref World.Get<NavMovementState>(entity);
+        if (!movement.IsMoving)
+            return;
+
+        isMoving = true;
+        dir = movement.MovementDirection;
+        target = movement.TargetCell;
+
+        if (movement.EndTick > movement.StartTick)
+        {
+            var totalDuration = movement.EndTick - movement.StartTick;
+            var elapsed = serverTick - movement.StartTick;
+            moveProgress = Math.Clamp((float)elapsed / totalDuration, 0f, 1f);
+        }
     }
 
     /// <summary>

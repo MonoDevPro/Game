@@ -3,7 +3,6 @@ using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
-using Game.Infrastructure.ArchECS.Services.Navigation.Events;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation.Systems;
@@ -34,9 +33,6 @@ public sealed partial class NavMovementSystem(World world, WorldMap grid) : Base
         // Atualiza posição para célula destino
         pos = movement.TargetCell;
         movement.Complete();
-            
-        MoveEvent moveEvent = new(entity, pos, floor.Value);
-        EventBus.Send(ref moveEvent);
             
         if (World.Has<NavIsMoving>(entity))
             World.Remove<NavIsMoving>(entity);
