@@ -30,15 +30,8 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     public void QueryCombatEntities(in Entity entity, ref Vitals health)
     {
         // Processar entidades de combate vivas
-        if (_registry.Contains(entity))
-        {
-            var metadata = _registry.GetMetadata(entity);
-            
-            if (metadata.Domain.HasFlag(EntityDomain.Combat))
-            {
-                LogTrace($"Combat Entity: {metadata} - HP: {health.CurrentHp}/{health.MaxHp}");
-            }
-        }
+        if (TryGetMetadata(entity, out var metadata) && metadata.Domain.HasFlag(EntityDomain.Combat))
+            LogTrace($"Combat Entity: {metadata} - HP: {health.CurrentHp}/{health.MaxHp}");
     }
 
     /// <summary>
@@ -51,12 +44,11 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     public void QueryLowHealthCombatEntities(in Entity entity, ref Vitals health)
     {
         // Apenas entidades com menos de 30% HP
-        if (health.CurrentHp <= health.MaxHp * 0.3f)
+        if (health.CurrentHp <= health.MaxHp * 0.3f &&
+            TryGetMetadata(entity, out var metadata) &&
+            metadata.Domain.HasFlag(EntityDomain.Combat))
         {
-            if (_registry.TryGetEntity(entity.Id, EntityDomain.Combat, out var foundEntity))
-            {
-                LogWarning($"Critical HP: Entity {entity} - {health.CurrentHp}/{health.MaxHp}");
-            }
+            LogWarning($"Critical HP: Entity {entity} - {health.CurrentHp}/{health.MaxHp}");
         }
     }
 
@@ -68,11 +60,8 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CleanupDeadEntities(in Entity entity)
     {
-        if (_registry.Contains(entity))
-        {
-            _registry.Unregister(entity);
+        if (_registry.Unregister(entity))
             LogDebug($"Removed dead entity from registry: {entity}");
-        }
     }
 
     #endregion
@@ -88,15 +77,8 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void QueryMovingNavigationEntities(in Entity entity, ref NavMovementState movement)
     {
-        if (_registry.Contains(entity))
-        {
-            var metadata = _registry.GetMetadata(entity);
-            
-            if (metadata.Domain.HasFlag(EntityDomain.Navigation))
-            {
-                LogTrace($"Moving: {metadata} - Target: {movement.TargetCell}");
-            }
-        }
+        if (TryGetMetadata(entity, out var metadata) && metadata.Domain.HasFlag(EntityDomain.Navigation))
+            LogTrace($"Moving: {metadata} - Target: {movement.TargetCell}");
     }
 
     /// <summary>
@@ -124,15 +106,10 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void QueryMultiDomainEntities(in Entity entity, ref Vitals health, ref NavMovementState movement)
     {
-        if (_registry.Contains(entity))
+        if (TryGetMetadata(entity, out var metadata) &&
+            metadata.Domain.HasFlag(EntityDomain.Combat | EntityDomain.Navigation))
         {
-            var metadata = _registry.GetMetadata(entity);
-            
-            // Entidade participa de Combat E Navigation
-            if (metadata.Domain.HasFlag(EntityDomain.Combat | EntityDomain.Navigation))
-            {
-                LogDebug($"Multi-domain: {metadata} - HP: {health.CurrentHp}, Moving: {movement.IsMoving}");
-            }
+            LogDebug($"Multi-domain: {metadata} - HP: {health.CurrentHp}, Moving: {movement.IsMoving}");
         }
     }
 
@@ -145,11 +122,8 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void QueryFullNPCEntities(in Entity entity)
     {
-        if (_registry.Contains(entity))
-        {
-            var metadata = _registry.GetMetadata(entity);
+        if (TryGetMetadata(entity, out var metadata))
             LogInformation($"Full NPC: {metadata} - Domains: {metadata.Domain}");
-        }
     }
 
     #endregion
@@ -165,16 +139,26 @@ public partial class EntityRegistryQuerySystem(World world, ILogger? logger = nu
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void QueryCombatOrNavigationEntities(in Entity entity)
     {
-        if (_registry.Contains(entity))
+        if (TryGetMetadata(entity, out var metadata))
         {
-            var metadata = _registry.GetMetadata(entity);
-            
             var domains = new List<string>();
             if (metadata.Domain.HasFlag(EntityDomain.Combat)) domains.Add("Combat");
             if (metadata.Domain.HasFlag(EntityDomain.Navigation)) domains.Add("Navigation");
-            
+
             LogTrace($"Entity {metadata} in domains: {string.Join(", ", domains)}");
         }
+    }
+
+    private bool TryGetMetadata(in Entity entity, out EntityMetadata metadata)
+    {
+        if (_registry.Contains(entity))
+        {
+            metadata = _registry.GetMetadata(entity);
+            return true;
+        }
+
+        metadata = default;
+        return false;
     }
 
     #endregion

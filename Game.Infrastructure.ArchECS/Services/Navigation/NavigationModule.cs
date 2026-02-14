@@ -380,35 +380,27 @@ public sealed class NavigationModule : IDisposable
             _world.Get<Position>(entity), 
             _world.Get<FloorId>(entity).Value, 
             entity);
-        
-        if (_world.Has<MapId>(entity))
-            _world.Remove<MapId>(entity);
-        if (_world.Has<FloorId>(entity))
-            _world.Remove<FloorId>(entity);
-        if (_world.Has<Position>(entity))
-            _world.Remove<Position>(entity);
-        if (_world.Has<NavMovementState>(entity))
-            _world.Remove<NavMovementState>(entity);
-        if (_world.Has<NavPathBuffer>(entity))
-            _world.Remove<NavPathBuffer>(entity);
-        if (_world.Has<NavPathState>(entity))
-            _world.Remove<NavPathState>(entity);
-        if (_world.Has<NavAgentSettings>(entity))
-            _world.Remove<NavAgentSettings>(entity);
-        if (_world.Has<NavAgent>(entity))
-            _world.Remove<NavAgent>(entity);
-        if (_world.Has<NavPathRequest>(entity))
-            _world.Remove<NavPathRequest>(entity);
-        if (_world.Has<NavIsMoving>(entity))
-            _world.Remove<NavIsMoving>(entity);
-        if (_world.Has<NavReachedDestination>(entity))
-            _world.Remove<NavReachedDestination>(entity);
-        if (_world.Has<NavWaitingToMove>(entity))
-            _world.Remove<NavWaitingToMove>(entity);
-        if (_world.Has<NavDirectionalRequest>(entity))
-            _world.Remove<NavDirectionalRequest>(entity);
-        if (_world.Has<NavDirectionalMode>(entity))
-            _world.Remove<NavDirectionalMode>(entity);
+
+        RemoveIfExists<MapId>(entity);
+        RemoveIfExists<FloorId>(entity);
+        RemoveIfExists<Position>(entity);
+        RemoveIfExists<NavMovementState>(entity);
+        RemoveIfExists<NavPathBuffer>(entity);
+        RemoveIfExists<NavPathState>(entity);
+        RemoveIfExists<NavAgentSettings>(entity);
+        RemoveIfExists<NavAgent>(entity);
+        RemoveIfExists<NavPathRequest>(entity);
+        RemoveIfExists<NavIsMoving>(entity);
+        RemoveIfExists<NavReachedDestination>(entity);
+        RemoveIfExists<NavWaitingToMove>(entity);
+        RemoveIfExists<NavDirectionalRequest>(entity);
+        RemoveIfExists<NavDirectionalMode>(entity);
+    }
+
+    private void RemoveIfExists<T>(Entity entity) where T : struct
+    {
+        if (_world.Has<T>(entity))
+            _world.Remove<T>(entity);
     }
     
     #endregion

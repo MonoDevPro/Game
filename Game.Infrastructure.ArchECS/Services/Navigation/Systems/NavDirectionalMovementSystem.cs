@@ -70,46 +70,17 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         if (movement.IsMoving)
             return;
 
-        // Calcula posição alvo
-        var targetPos = new Position
-        {
-            X = pos.X + request.Direction.X,
-            Y = pos.Y + request.Direction.Y
-        };
-
-        // Verifica se a posição é válida
-        if (!grid.InBounds(targetPos.X, targetPos.Y, floor.Value))
-        {
-            World.Remove<NavDirectionalRequest>(entity);
-            return;
-        }
-
-        // Verifica se a célula está livre
-        if (!grid.TryMoveEntity(pos, floor.Value, targetPos, floor.Value, entity))
-        {
-            HandleBlockedMove(entity, serverTick, ref request, targetPos, floor.Value);
-            World.Remove<NavDirectionalRequest>(entity);
-            return;
-        }
-
-        // Inicia movimento
-        bool isDiagonal = request.Direction.X != 0 && request.Direction.Y != 0;
-        int duration = settings.GetDuration(isDiagonal);
-
-        movement.StartMove(pos, targetPos, serverTick, duration);
-
-        // Adiciona tags apropriadas
-        World.Add<NavIsMoving, NavDirectionalMode>(entity);
-
-        // Remove tags de espera/destino
-        if (World.Has<NavWaitingToMove>(entity))
-            World.Remove<NavWaitingToMove>(entity);
-
-        if (World.Has<NavReachedDestination>(entity))
-            World.Remove<NavReachedDestination>(entity);
-
-        // Para movimento único, remove a request após iniciar
-        World.Remove<NavDirectionalRequest>(entity);
+        TryStartDirectionalMove(
+            entity,
+            serverTick,
+            pos,
+            floor.Value,
+            ref movement,
+            ref settings,
+            ref request,
+            removeRequestOnFail: true,
+            removeRequestOnSuccess: true,
+            clearReachedDestination: true);
     }
 
     /// <summary>
@@ -131,25 +102,54 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
         if (request.MovementType != DirectionalMovementType.Continuous)
             return;
 
-        // Calcula próxima posição
+        TryStartDirectionalMove(
+            entity,
+            serverTick,
+            pos,
+            floor.Value,
+            ref movement,
+            ref settings,
+            ref request,
+            removeRequestOnFail: false,
+            removeRequestOnSuccess: false,
+            clearReachedDestination: false);
+    }
+
+    private bool TryStartDirectionalMove(
+        Entity entity,
+        long serverTick,
+        Position pos,
+        int floor,
+        ref NavMovementState movement,
+        ref NavAgentSettings settings,
+        ref NavDirectionalRequest request,
+        bool removeRequestOnFail,
+        bool removeRequestOnSuccess,
+        bool clearReachedDestination)
+    {
         var targetPos = new Position
         {
             X = pos.X + request.Direction.X,
             Y = pos.Y + request.Direction.Y
         };
 
-        // Verifica limites
-        if (!grid.InBounds(targetPos.X, targetPos.Y, floor.Value))
-            return;
-
-        // Tenta mover
-        if (!grid.TryMoveEntity(pos, floor.Value, targetPos, floor.Value, entity))
+        if (!grid.InBounds(targetPos.X, targetPos.Y, floor))
         {
-            HandleBlockedMove(entity, serverTick, ref request, targetPos, floor.Value);
-            return;
+            if (removeRequestOnFail)
+                World.Remove<NavDirectionalRequest>(entity);
+            return false;
         }
 
-        // Inicia movimento
+        if (!grid.TryMoveEntity(pos, floor, targetPos, floor, entity))
+        {
+            HandleBlockedMove(entity, serverTick, ref request, targetPos, floor);
+
+            if (removeRequestOnFail)
+                World.Remove<NavDirectionalRequest>(entity);
+
+            return false;
+        }
+
         bool isDiagonal = request.Direction.X != 0 && request.Direction.Y != 0;
         int duration = settings.GetDuration(isDiagonal);
 
@@ -159,6 +159,14 @@ public sealed partial class NavDirectionalMovementSystem(World world, WorldMap g
 
         if (World.Has<NavWaitingToMove>(entity))
             World.Remove<NavWaitingToMove>(entity);
+
+        if (clearReachedDestination && World.Has<NavReachedDestination>(entity))
+            World.Remove<NavReachedDestination>(entity);
+
+        if (removeRequestOnSuccess)
+            World.Remove<NavDirectionalRequest>(entity);
+
+        return true;
     }
 
     private void HandleBlockedMove(

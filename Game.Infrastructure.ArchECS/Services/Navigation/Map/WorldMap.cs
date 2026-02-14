@@ -325,58 +325,45 @@ public sealed class WorldMap
     /// Retorna vizinhos walkable (para pathfinding).
     /// </summary>
     public int GetWalkableNeighbors(Position pos, int floor, Span<Position> neighbors, bool diagonal = false)
-    {
-        var dirs = diagonal ? AllDirs : CardinalDirs;
-        int count = 0;
-        
-        foreach (var (dx, dy, _) in dirs)
-        {
-            int nx = pos.X + dx, ny = pos.Y + dy;
-            
-            if (! InBounds(nx, ny, floor)) continue;
-            if (IsBlocked(nx, ny, floor)) continue;
-            
-            // Evita cortar cantos em diagonais
-            if (dx != 0 && dy != 0)
-            {
-                if (IsBlocked(pos.X + dx, pos.Y, floor) || 
-                    IsBlocked(pos. X, pos.Y + dy, floor))
-                    continue;
-            }
-            
-            if (count < neighbors.Length)
-                neighbors[count++] = new Position { X = nx, Y = ny };
-        }
-        
-        return count;
-    }
+        => GetNeighbors(pos, floor, neighbors, diagonal, requireFree: false);
     
     /// <summary>
     /// Retorna vizinhos walkable E não ocupados. 
     /// </summary>
     public int GetFreeNeighbors(Position pos, int floor, Span<Position> neighbors, bool diagonal = false)
+        => GetNeighbors(pos, floor, neighbors, diagonal, requireFree: true);
+
+    private int GetNeighbors(Position pos, int floor, Span<Position> neighbors, bool diagonal, bool requireFree)
     {
         var dirs = diagonal ? AllDirs : CardinalDirs;
         int count = 0;
-        
+
         foreach (var (dx, dy, _) in dirs)
         {
             int nx = pos.X + dx, ny = pos.Y + dy;
-            
-            if (!IsWalkableAndFree(nx, ny, floor)) continue;
-            
+
+            if (requireFree)
+            {
+                if (!IsWalkableAndFree(nx, ny, floor)) continue;
+            }
+            else
+            {
+                if (!InBounds(nx, ny, floor)) continue;
+                if (IsBlocked(nx, ny, floor)) continue;
+            }
+
             // Evita cortar cantos
             if (dx != 0 && dy != 0)
             {
-                if (IsBlocked(pos.X + dx, pos.Y, floor) || 
-                    IsBlocked(pos. X, pos.Y + dy, floor))
+                if (IsBlocked(pos.X + dx, pos.Y, floor) ||
+                    IsBlocked(pos.X, pos.Y + dy, floor))
                     continue;
             }
-            
-            if (count < neighbors. Length)
+
+            if (count < neighbors.Length)
                 neighbors[count++] = new Position { X = nx, Y = ny };
         }
-        
+
         return count;
     }
     
