@@ -1,6 +1,7 @@
 using Arch.Core;
 using Arch.System;
 using Game.Contracts;
+using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Systems;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
@@ -19,7 +20,7 @@ public sealed class CombatModule : IDisposable
     private readonly Events.CombatEventBuffer _events;
     private readonly Group<long> _systems;
     private bool _disposed;
-    
+
     private readonly CentralEntityRegistry _registry;
 
     public CombatModule(World world, WorldMap worldMap, CombatConfig? config = null)
@@ -27,7 +28,7 @@ public sealed class CombatModule : IDisposable
         _events = new Events.CombatEventBuffer(world);
         _world = world;
         Config = config ?? CombatConfig.Default;
-        
+
         _registry = world.GetEntityRegistry();
 
         _systems = new Group<long>(
@@ -48,49 +49,68 @@ public sealed class CombatModule : IDisposable
     }
 
     public void AddCombatComponents(
-        Entity entity, 
-        in CombatStats stats, 
-        byte vocation, 
+        Entity entity,
+        int Level,
+        long Experience,
+        int Strength,
+        int Endurance,
+        int Agility,
+        int Intelligence,
+        int Willpower,
+        int MaxHealth,
+        int MaxMana,
+        int CurrentHealth,
+        int CurrentMana,
+        byte vocation,
         int teamId)
     {
         if (!_world.Has<AttackCooldown>(entity))
             _world.Add(entity, new AttackCooldown());
-        
-        ApplyCombatStats(entity, in stats);
+
+        var stats = new CombatStats
+        {
+            Level = Level,
+            Experience = Experience,
+            Strength = Strength,
+            Endurance = Endurance,
+            Agility = Agility,
+            Intelligence = Intelligence,
+            Willpower = Willpower,
+            MaxHealth = MaxHealth,
+            MaxMana = MaxMana,
+            CurrentHealth = CurrentHealth,
+            CurrentMana = CurrentMana
+        };
+
+        ApplyCombatStats(entity, stats);
         ApplyVocation(entity, vocation);
         ApplyTeamId(entity, teamId);
     }
-    
-    public void ApplyCombatStats(Entity entity, in CombatStats stats)
+
+    private void ApplyCombatStats(
+        Entity entity,
+        CombatStats stats)
     {
-        ref var combatStats = ref _world.AddOrGet<CombatStats>(entity);
-        combatStats = stats;
+        _world.AddOrReplace<CombatStats>(entity, stats);
     }
-    
-    public void ApplyVocation(Entity entity, byte vocation)
+
+    private void ApplyVocation(Entity entity, byte vocation)
     {
-        ref var vocationTag = ref _world.AddOrGet<VocationTag>(entity);
-        vocationTag.Value = vocation;
+        _world.AddOrReplace<VocationTag>(entity, new VocationTag { Value = vocation });
     }
-    
-    public void ApplyTeamId(Entity entity, int teamId)
+
+    private void ApplyTeamId(Entity entity, int teamId)
     {
-        ref var team = ref _world.AddOrGet<TeamId>(entity);
-        team.Value = teamId;
+        _world.AddOrReplace<TeamId>(entity, new TeamId { Value = teamId });
     }
-    
+
     public void RemoveCombatComponents(Entity entity)
     {
-        if (_world.Has<CombatStats>(entity))
-            _world.Remove<CombatStats>(entity);
-        if (_world.Has<VocationTag>(entity))
-            _world.Remove<VocationTag>(entity);
-        if (_world.Has<TeamId>(entity))
-            _world.Remove<TeamId>(entity);
-        if (_world.Has<AttackCooldown>(entity))
-            _world.Remove<AttackCooldown>(entity);
-        if (_world.Has<AttackRequest>(entity))
-            _world.Remove<AttackRequest>(entity);
+        _world.RemoveIfExists<CombatStats>(entity);
+        _world.RemoveIfExists<VocationTag>(entity);
+        _world.RemoveIfExists<TeamId>(entity);
+        _world.RemoveIfExists<AttackCooldown>(entity);
+        _world.RemoveIfExists<AttackRequest>(entity);
     }
 
     public bool RequestBasicAttack(Entity entity, int dirX, int dirY, long serverTick)
@@ -101,10 +121,7 @@ public sealed class CombatModule : IDisposable
         dirX = Math.Clamp(dirX, -1, 1);
         dirY = Math.Clamp(dirY, -1, 1);
 
-        if (_world.Has<AttackRequest>(entity))
-            _world.Remove<AttackRequest>(entity);
-
-        _world.Add(entity, new AttackRequest
+        _world.AddOrReplace<AttackRequest>(entity, new AttackRequest
         {
             DirX = dirX,
             DirY = dirY,
@@ -116,7 +133,7 @@ public sealed class CombatModule : IDisposable
 
     public bool TryDrainEvents(out List<CombatEvent> events)
         => _events.TryDrain(out events);
-    
+
     public void Dispose()
     {
         if (_disposed) return;

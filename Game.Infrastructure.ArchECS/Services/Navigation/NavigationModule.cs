@@ -1,5 +1,6 @@
 using Arch.Core;
 using Arch.System;
+using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
@@ -381,26 +382,20 @@ public sealed class NavigationModule : IDisposable
             _world.Get<FloorId>(entity).Value, 
             entity);
 
-        RemoveIfExists<MapId>(entity);
-        RemoveIfExists<FloorId>(entity);
-        RemoveIfExists<Position>(entity);
-        RemoveIfExists<NavMovementState>(entity);
-        RemoveIfExists<NavPathBuffer>(entity);
-        RemoveIfExists<NavPathState>(entity);
-        RemoveIfExists<NavAgentSettings>(entity);
-        RemoveIfExists<NavAgent>(entity);
-        RemoveIfExists<NavPathRequest>(entity);
-        RemoveIfExists<NavIsMoving>(entity);
-        RemoveIfExists<NavReachedDestination>(entity);
-        RemoveIfExists<NavWaitingToMove>(entity);
-        RemoveIfExists<NavDirectionalRequest>(entity);
-        RemoveIfExists<NavDirectionalMode>(entity);
-    }
-
-    private void RemoveIfExists<T>(Entity entity) where T : struct
-    {
-        if (_world.Has<T>(entity))
-            _world.Remove<T>(entity);
+        _world.RemoveIfExists<MapId>(entity);
+        _world.RemoveIfExists<FloorId>(entity);
+        _world.RemoveIfExists<Position>(entity);
+        _world.RemoveIfExists<NavMovementState>(entity);
+        _world.RemoveIfExists<NavPathBuffer>(entity);
+        _world.RemoveIfExists<NavPathState>(entity);
+        _world.RemoveIfExists<NavAgentSettings>(entity);
+        _world.RemoveIfExists<NavAgent>(entity);
+        _world.RemoveIfExists<NavPathRequest>(entity);
+        _world.RemoveIfExists<NavIsMoving>(entity);
+        _world.RemoveIfExists<NavReachedDestination>(entity);
+        _world.RemoveIfExists<NavWaitingToMove>(entity);
+        _world.RemoveIfExists<NavDirectionalRequest>(entity);
+        _world.RemoveIfExists<NavDirectionalMode>(entity);
     }
     
     #endregion

@@ -2,6 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Events;
@@ -9,6 +10,7 @@ using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
+using System.Drawing;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 
@@ -22,35 +24,11 @@ public sealed partial class CombatProjectileSystem : GameSystem
     public CombatProjectileSystem(World world, WorldMap map) : base(world)
     {
         _map = map;
-        Hook();
     }
 
     public override void Dispose()
     {
-        Unhook();
         base.Dispose();
-    }
-
-    [Event(order: 1)]
-    public void HandleProjectileCreation(ref ProjectileSpawnedEvent evt)
-    {
-        var attackerId = Registry.GetExternalId(evt.Attacker, EntityDomain.Combat);
-        var speedCellsPerTick = Math.Max(0f, evt.Speed) / SimulationConfig.TicksPerSecond;
-
-        World.Create(
-            new Position { X = evt.PosX, Y = evt.PosY },
-            new FloorId { Value = evt.Floor },
-            new Projectile
-            {
-                OwnerId = attackerId,
-                OwnerTeamId = evt.TeamId,
-                Damage = evt.Damage,
-                DirX = evt.DirX,
-                DirY = evt.DirY,
-                RemainingRange = evt.Range,
-                SpeedCellsPerTick = speedCellsPerTick,
-                TravelRemainder = 0f
-            });
     }
     
     
@@ -133,15 +111,18 @@ public sealed partial class CombatProjectileSystem : GameSystem
         if (!Registry.TryGetEntity(projectile.OwnerId, EntityDomain.Combat, out var attackerEntity))
             attackerEntity = Entity.Null;
 
-        CombatDamageEvent evt = new CombatDamageEvent(
-            attackerEntity,
-            targetEntity,
-            damage,
-            dirX,
-            dirY,
-            targetPos.X,
-            targetPos.Y,
-            targetFloor);
+        CombatEvent evt = new CombatEvent(
+            Type: CombatEventType.Hit,
+            AttackerId: attackerEntity.Id,
+            TargetId: targetEntity.Id,
+            DirX: dirX,
+            DirY: dirY,
+            Damage: damage,
+            X: targetPos.X,
+            Y: targetPos.Y,
+            Floor: targetFloor,
+            Speed: 0f,
+            Range: 0);
         
         EventBus.Send(ref evt);
     }

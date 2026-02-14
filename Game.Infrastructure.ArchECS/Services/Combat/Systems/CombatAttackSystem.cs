@@ -2,9 +2,11 @@ using Arch.Bus;
 using Arch.Core;
 using Arch.System;
 using Arch.System.SourceGenerator;
+using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Events;
+using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
@@ -57,13 +59,18 @@ public sealed partial class CombatAttackSystem(
             stats.CurrentMana -= vocationConfig.ManaCost;
         }
 
-        AttackStartedEvent attackEvent = new(
-            entity,
-            request.DirX,
-            request.DirY,
-            position.X,
-            position.Y,
-            floor.Value);
+        CombatEvent attackEvent = new CombatEvent(
+            Type: CombatEventType.AttackStarted,
+            AttackerId: World.ResolveNetworkId(entity),
+            TargetId: 0,
+            Damage: 0,
+            DirX: request.DirX,
+            DirY: request.DirY,
+            X: position.X,
+            Y: position.Y,
+            Floor: floor.Value,
+            Speed: 0f,
+            Range: 0);
 
         EventBus.Send(ref attackEvent);
 
@@ -131,17 +138,36 @@ public sealed partial class CombatAttackSystem(
         if (World.Has<TeamId>(attacker))
             ownerTeamId = World.Get<TeamId>(attacker).Value;
 
-        ProjectileSpawnedEvent projectileEvent = new(
-            attacker,
-            dirX,
-            dirY,
-            position.X,
-            position.Y,
-            floor.Value,
-            vocationConfig.ProjectileSpeed,
-            vocationConfig.Range,
-            ownerTeamId,
-            damage);
+        CombatEvent projectileEvent = new CombatEvent(
+            Type: CombatEventType.ProjectileSpawn,
+            AttackerId: World.ResolveNetworkId(attacker),
+            TargetId: 0,
+            Damage: damage,
+            DirX: dirX,
+            DirY: dirY,
+            X: position.X,
+            Y: position.Y,
+            Floor: floor.Value,
+            Speed: vocationConfig.ProjectileSpeed,
+            Range: vocationConfig.Range);
+
+        var attackerId = Registry.GetExternalId(attacker, EntityDomain.Combat);
+        var speedCellsPerTick = Math.Max(0f, vocationConfig.ProjectileSpeed) / SimulationConfig.TicksPerSecond;
+
+        World.Create(
+            position,
+            floor,
+            new Projectile
+            {
+                OwnerId = attackerId,
+                OwnerTeamId = ownerTeamId,
+                Damage = damage,
+                DirX = dirX,
+                DirY = dirY,
+                RemainingRange = vocationConfig.Range,
+                SpeedCellsPerTick = speedCellsPerTick,
+                TravelRemainder = 0f
+            });
 
         EventBus.Send(ref projectileEvent);
     }
@@ -179,16 +205,18 @@ public sealed partial class CombatAttackSystem(
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
 
-
-        CombatDamageEvent damageEvent = new(
-            attackerEntity,
-            targetEntity,
-            damage,
-            dirX,
-            dirY,
-            targetPos.X,
-            targetPos.Y,
-            targetFloor);
+        CombatEvent damageEvent = new CombatEvent(
+            Type: CombatEventType.Hit,
+            AttackerId: World.ResolveNetworkId(attackerEntity),
+            TargetId: World.ResolveNetworkId(targetEntity),
+            Damage: damage,
+            DirX: dirX,
+            DirY: dirY,
+            X: targetPos.X,
+            Y: targetPos.Y,
+            Floor: targetFloor,
+            Speed: 0f,
+            Range: 0);
 
         EventBus.Send(ref damageEvent);
     }

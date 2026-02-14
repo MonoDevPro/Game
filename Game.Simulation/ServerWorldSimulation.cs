@@ -170,22 +170,9 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         if (_combat is null)
             return entity;
         
-        var stats = new CombatStats
-        {
-            Level = level,
-            Experience = experience,
-            Strength = strength,
-            Endurance = endurance,
-            Agility = agility,
-            Intelligence = intelligence,
-            Willpower = willpower,
-            MaxHealth = healthPoints,
-            MaxMana = manaPoints,
-            CurrentHealth = healthPoints,
-            CurrentMana = manaPoints
-        };
 
-        _combat.AddCombatComponents(entity, stats, vocation, teamId);
+        _combat.AddCombatComponents(entity, level, experience, strength, endurance, agility, intelligence, willpower,
+            healthPoints, manaPoints, healthPoints, manaPoints, vocation, teamId);
         return entity;
     }
 
