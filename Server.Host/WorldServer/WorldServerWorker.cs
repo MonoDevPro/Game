@@ -69,7 +69,8 @@ public class WorldServerWorker(
         // Estado para delta compression por peer
         var lastSnapshotByPeer = new ConcurrentDictionary<int, WorldSnapshot>();
         var fullSnapshotCounter = 0;
-        const int fullSnapshotInterval = 10; // Envia snapshot completo a cada 10 ticks
+        const int fullSnapshotInterval = 10; // Envia snapshot completo a cada 10 ticks da simulação
+        long lastProcessedTick = 0;
 
         logger?.LogInformation("Mapa criado: {Width}x{Height}",
             worldMap.Width, worldMap.Height);
@@ -151,11 +152,15 @@ public class WorldServerWorker(
                 }
             }
 
-            if (!hasPeers)
+            // Só constrói e envia snapshots quando o tick da simulação avançou
+            var currentTick = simulation.CurrentTick;
+            if (!hasPeers || currentTick == lastProcessedTick)
             {
                 await Task.Delay(TickIntervalMs, stoppingToken);
                 continue;
             }
+
+            lastProcessedTick = currentTick;
 
             // Constrói snapshot atual
             var currentSnapshot = simulation.BuildSnapshot();
@@ -173,7 +178,7 @@ public class WorldServerWorker(
                 {
                     server.Send(peer, new Envelope(OpCode.WorldSnapshot, currentSnapshot),
                         LiteNetLib.DeliveryMethod.Unreliable);
-                    lastSnapshotByPeer[peer.Id] = currentSnapshot;
+                    lastSnapshotByPeer[peer.Id] = CloneSnapshot(currentSnapshot);
                 }
                 else
                 {
@@ -188,14 +193,14 @@ public class WorldServerWorker(
                             LiteNetLib.DeliveryMethod.Unreliable);
                     }
 
-                    lastSnapshotByPeer[peer.Id] = currentSnapshot;
+                    lastSnapshotByPeer[peer.Id] = CloneSnapshot(currentSnapshot);
                 }
             }
 
             // Reseta contador após envio de snapshot completo
             if (fullSnapshotCounter >= fullSnapshotInterval)
                 fullSnapshotCounter = 0;
-            
+
             await Task.Delay(TickIntervalMs, stoppingToken);
         }
 
@@ -222,6 +227,9 @@ public class WorldServerWorker(
 
         return map;
     }
+
+    private static WorldSnapshot CloneSnapshot(WorldSnapshot snapshot)
+        => new(snapshot.ServerTick, snapshot.Timestamp, new List<PlayerState>(snapshot.Players));
 
     private async Task HandleEnterWorld(
         LiteNetLib.NetPeer peer,

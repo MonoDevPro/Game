@@ -295,24 +295,33 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
 
     public bool TryDrainCombatEvents(List<CombatEvent> buffer, List<EntityCombatEvent> eventBuffer)
     {
+        buffer.Clear();
         _combat.TryDrainEvents(eventBuffer);
 
         if (eventBuffer.Count == 0)
             return false;
 
-        buffer.AddRange(eventBuffer.Select(evt => new CombatEvent(
-            Type: evt.Type,
-            AttackerId: _entity.GetPlayerEntityCharacterId(evt.Attacker),
-            TargetId: _entity.GetPlayerEntityCharacterId(evt.Target),
-            DirX: evt.DirX,
-            DirY: evt.DirY,
-            Damage: evt.Damage,
-            X: evt.X,
-            Y: evt.Y,
-            Floor: evt.Floor,
-            Speed: evt.Speed,
-            Range: evt.Range
-            )));
+        foreach (var evt in eventBuffer)
+        {
+            if (!_entity.TryGetPlayerEntityCharacterId(evt.Attacker, out var attackerId))
+                attackerId = -1;
+
+            if (!_entity.TryGetPlayerEntityCharacterId(evt.Target, out var targetId))
+                targetId = -1;
+
+            buffer.Add(new CombatEvent(
+                Type: evt.Type,
+                AttackerId: attackerId,
+                TargetId: targetId,
+                DirX: evt.DirX,
+                DirY: evt.DirY,
+                Damage: evt.Damage,
+                X: evt.X,
+                Y: evt.Y,
+                Floor: evt.Floor,
+                Speed: evt.Speed,
+                Range: evt.Range));
+        }
 
         return true;
     }

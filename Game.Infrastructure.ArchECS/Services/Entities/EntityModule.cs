@@ -25,6 +25,10 @@ public class EntityModule : IDisposable
         EntityDomain.Effects | 
         EntityDomain.Network;
 
+    // Domínio individual usado para lookups exatos (TryGetEntity, GetExternalId).
+    // PlayerDomain é flag combinada e não existe como chave no registry.
+    private const EntityDomain PlayerLookupDomain = EntityDomain.Navigation;
+
     public EntityModule(World world, WorldMap worldMap, int initialCapacity = 256)
     {
         _registry = new CentralEntityRegistry(initialCapacity);
@@ -43,12 +47,23 @@ public class EntityModule : IDisposable
         _systems.AfterUpdate(in serverTick);
     }
 
-    public int GetPlayerEntityCount() => _registry.CountByDomain(PlayerDomain);
+    public int GetPlayerEntityCount()
+    {
+        var count = 0;
+        foreach (var _ in _registry.GetEntitiesByDomain(PlayerDomain))
+            count++;
+        return count;
+    }
 
     public int GetPlayerEntityCharacterId(Entity entity)
     {
-        var externalId = _registry.GetExternalId(entity, PlayerDomain);
+        var externalId = _registry.GetExternalId(entity, PlayerLookupDomain);
         return externalId;
+    }
+
+    public bool TryGetPlayerEntityCharacterId(Entity entity, out int characterId)
+    {
+        return _registry.TryGetExternalId(entity, PlayerLookupDomain, out characterId);
     }
 
     public Entity CreatePlayerEntity(int characterId, string name)
@@ -93,7 +108,7 @@ public class EntityModule : IDisposable
     private bool TryGetEntityByCharacterId(int characterId, out Entity entity)
     {
         entity = default;
-        return _registry.TryGetEntity(characterId, PlayerDomain, out entity);
+        return _registry.TryGetEntity(characterId, PlayerLookupDomain, out entity);
     }
 
     public void Dispose()

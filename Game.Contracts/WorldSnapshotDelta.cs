@@ -121,28 +121,32 @@ public static class SnapshotDeltaCalculator
         // Mudou posição
         if (prev.X != curr.X || prev.Y != curr.Y)
             return true;
-            
+
         // Mudou andar
         if (prev.Floor != curr.Floor)
             return true;
-            
+
         // Mudou estado de movimento
         if (prev.IsMoving != curr.IsMoving)
             return true;
-            
+
         // Mudou direção (enquanto em movimento)
         if (curr.IsMoving && (prev.DirX != curr.DirX || prev.DirY != curr.DirY))
             return true;
-            
+
         // Mudou alvo (enquanto em movimento)
         if (curr.IsMoving && (prev.TargetX != curr.TargetX || prev.TargetY != curr.TargetY))
+            return true;
+
+        // Mudou progresso do movimento (essencial para interpolação no cliente)
+        if (prev.MoveProgress != curr.MoveProgress)
             return true;
 
         // Mudou HP/MP
         if (prev.CurrentHp != curr.CurrentHp || prev.MaxHp != curr.MaxHp ||
             prev.CurrentMp != curr.CurrentMp || prev.MaxMp != curr.MaxMp)
             return true;
-            
+
         return false;
     }
     

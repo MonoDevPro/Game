@@ -208,11 +208,26 @@ public sealed class CentralEntityRegistry : IDisposable
             throw new KeyNotFoundException($"Domain {domain} not initialized");
 
         ref var registryData = ref _domainRegistries.Get(handle);
-        
+
         if (registryData.IdByEntity.TryGetValue(entity, out var id))
             return id;
 
         throw new KeyNotFoundException($"Entity {entity} not found in domain {domain}");
+    }
+
+    /// <summary>
+    /// Tenta obter ID externo de uma entidade (zero-allocation, sem exceção).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetExternalId(Entity entity, EntityDomain domain, out int externalId)
+    {
+        externalId = default;
+
+        if (!_domainHandles.TryGetValue(domain, out var handle))
+            return false;
+
+        ref var registryData = ref _domainRegistries.Get(handle);
+        return registryData.IdByEntity.TryGetValue(entity, out externalId);
     }
 
     /// <summary>
