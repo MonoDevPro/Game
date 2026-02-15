@@ -2,9 +2,9 @@ using System.Runtime.CompilerServices;
 using Arch.Bus;
 using Arch.Core;
 using Arch.LowLevel;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry.Events;
+using Game.Infrastructure.ArchECS.Services.Entities.Components;
 
-namespace Game.Infrastructure.ArchECS.Services.EntityRegistry;
+namespace Game.Infrastructure.ArchECS.Services.Entities;
 
 /// <summary>
 /// Registro centralizado de entidades usando Arch.LowLevel para máxima performance.
@@ -64,7 +64,7 @@ public sealed class CentralEntityRegistry : IDisposable
     /// Registra uma entidade em um domínio específico.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Register(int externalId, Entity entity, EntityDomain domain)
+    public void Register(int externalId, string name, Entity entity, EntityDomain domain)
     {
         InitializeDomain(domain);
         
@@ -81,6 +81,7 @@ public sealed class CentralEntityRegistry : IDisposable
             _entityMetadata[entity] = new EntityMetadata
             {
                 ExternalId = externalId,
+                Name = name,
                 Entity = entity,
                 Domain = domain,
                 RegisteredAt = DateTime.UtcNow
@@ -90,17 +91,17 @@ public sealed class CentralEntityRegistry : IDisposable
         {
             // Adicionar domínio adicional
             ref var metadata = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrNullRef(_entityMetadata, entity);
-            metadata.Domain |= domain;
+            if (!Unsafe.IsNullRef(ref metadata))
+            {
+                metadata.Domain |= domain;
+            }
         }
-        
-        var evt = new EntityRegisteredEvent(entity, _entityMetadata[entity]);
-        EventBus.Send(ref evt);
     }
 
     /// <summary>
     /// Registra uma entidade em múltiplos domínios (ex: Combat + Navigation).
     /// </summary>
-    public void RegisterMultiDomain(int externalId, Entity entity, EntityDomain domains)
+    public void RegisterMultiDomain(int externalId, string name, Entity entity, EntityDomain domains)
     {
         foreach (EntityDomain domain in Enum.GetValues(typeof(EntityDomain)))
         {
@@ -121,15 +122,13 @@ public sealed class CentralEntityRegistry : IDisposable
         var meta = new EntityMetadata
         {
             ExternalId = externalId,
+            Name = name,
             Entity = entity,
             Domain = domains,
             RegisteredAt = DateTime.UtcNow
         };
 
         _entityMetadata[entity] = meta;
-        
-        var evt = new EntityRegisteredEvent(entity, meta);
-        EventBus.Send(ref evt);
     }
 
     /// <summary>
@@ -159,10 +158,6 @@ public sealed class CentralEntityRegistry : IDisposable
         }
 
         _entityMetadata.Remove(entity);
-        
-        var evt = new EntityUnregisteredEvent(entity, metadata);
-        EventBus.Send(ref evt);
-        
         return true;
     }
 

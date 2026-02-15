@@ -1,3 +1,5 @@
+using Arch.Core;
+
 namespace Game.Infrastructure.ArchECS.Services.Combat.Components;
 
 // Componentes básicos de combate (placeholders para expansão gradual)
@@ -74,7 +76,7 @@ public struct AttackRequest
 
 public struct Projectile
 {
-    public int OwnerId;
+    public Entity Owner;
     public int OwnerTeamId;
     public int Damage;
     public int DirX;

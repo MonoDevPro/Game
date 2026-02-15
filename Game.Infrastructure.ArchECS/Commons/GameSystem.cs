@@ -1,6 +1,6 @@
 using Arch.Core;
 using Arch.System;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Infrastructure.ArchECS.Commons;
@@ -10,8 +10,6 @@ namespace Game.Infrastructure.ArchECS.Commons;
 /// </summary>
 public abstract partial class GameSystem(World world, ILogger? logger = null) : BaseSystem<World, long>(world)
 {
-    protected readonly CentralEntityRegistry Registry = world.GetEntityRegistry();
-    
     protected void LogTrace(string message, params object[] args) => logger?.LogTrace(message, args);
     protected void LogDebug(string message, params object[] args) => logger?.LogDebug(message, args);
     protected void LogInformation(string message, params object[] args) => logger?.LogInformation(message, args);

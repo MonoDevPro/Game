@@ -6,11 +6,11 @@ using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Events;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Entities.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 using System.Drawing;
+using static Game.Infrastructure.ArchECS.Services.Combat.CombatConfig;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat.Systems;
 
@@ -73,7 +73,7 @@ public sealed partial class CombatProjectileSystem : GameSystem
                 continue;
             }
 
-            if (Registry.TryGetEntity(projectile.OwnerId, EntityDomain.Combat, out var ownerEntity) && targetEntity == ownerEntity)
+            if (targetEntity == projectile.Owner)
                 continue;
 
             TryApplyProjectileDamage(projectile, targetEntity, projectile.DirX, projectile.DirY);
@@ -87,8 +87,7 @@ public sealed partial class CombatProjectileSystem : GameSystem
         if (!World.Has<CombatStats>(targetEntity))
             return;
 
-        if (World.Has<CharacterId>(targetEntity) &&
-            (_map.Flags & MapFlags.PvPEnabled) == 0)
+        if ((_map.Flags & MapFlags.PvPEnabled) == 0)
             return;
 
         var targetTeam = World.Has<TeamId>(targetEntity) ? World.Get<TeamId>(targetEntity).Value : 0;
@@ -108,13 +107,10 @@ public sealed partial class CombatProjectileSystem : GameSystem
         var targetPos = World.Has<Position>(targetEntity) ? World.Get<Position>(targetEntity) : new Position();
         var targetFloor = World.Has<FloorId>(targetEntity) ? World.Get<FloorId>(targetEntity).Value : 0;
 
-        if (!Registry.TryGetEntity(projectile.OwnerId, EntityDomain.Combat, out var attackerEntity))
-            attackerEntity = Entity.Null;
-
-        CombatEvent evt = new CombatEvent(
+        EntityCombatEvent evt = new EntityCombatEvent(
             Type: CombatEventType.Hit,
-            AttackerId: attackerEntity.Id,
-            TargetId: targetEntity.Id,
+            Attacker: projectile.Owner,
+            Target: targetEntity,
             DirX: dirX,
             DirY: dirY,
             Damage: damage,
@@ -123,7 +119,7 @@ public sealed partial class CombatProjectileSystem : GameSystem
             Floor: targetFloor,
             Speed: 0f,
             Range: 0);
-        
+
         EventBus.Send(ref evt);
     }
 }

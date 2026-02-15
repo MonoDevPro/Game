@@ -1,4 +1,4 @@
-namespace Game.Infrastructure.ArchECS.Services.EntityRegistry;
+namespace Game.Infrastructure.ArchECS.Services.Entities.Components;
 
 public struct RegistryStatistics
 {

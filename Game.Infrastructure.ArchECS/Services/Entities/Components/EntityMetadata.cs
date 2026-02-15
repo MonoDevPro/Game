@@ -1,6 +1,6 @@
 using Arch.Core;
 
-namespace Game.Infrastructure.ArchECS.Services.EntityRegistry;
+namespace Game.Infrastructure.ArchECS.Services.Entities.Components;
 
 /// <summary>
 /// Metadados de uma entidade registrada.
@@ -9,12 +9,13 @@ namespace Game.Infrastructure.ArchECS.Services.EntityRegistry;
 public struct EntityMetadata
 {
     public int ExternalId;
+    public string Name;
     public Entity Entity;
     public EntityDomain Domain;
     public DateTime RegisteredAt;
 
     public override string ToString()
     {
-        return $"Entity[{ExternalId}] - Domains: {Domain}";
+        return $"Entity[{ExternalId}] - Name:{Name} Domains: {Domain}";
     }
 }

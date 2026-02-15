@@ -1,13 +1,27 @@
 using Arch.Core;
 using Arch.System;
 using Game.Infrastructure.ArchECS.Commons;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
+using Game.Infrastructure.ArchECS.Services.Entities;
+using Game.Infrastructure.ArchECS.Services.Entities.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 using Game.Infrastructure.ArchECS.Services.Navigation.Systems;
 
 namespace Game.Infrastructure.ArchECS.Services.Navigation;
+
+public readonly record struct NavEntityState(
+    int MapId,
+    int FloorId,
+    int CurrentX,
+    int CurrentY,
+    int DirectionX,
+    int DirectionY,
+    bool IsMoving,
+    int TargetX,
+    int TargetY,
+    float MoveProgress
+);
 
 /// <summary>
 /// Módulo de navegação para SERVIDOR.
@@ -40,8 +54,6 @@ public sealed class NavigationModule : IDisposable
         _worldMap = worldMap;
         Config = config ?? NavigationConfig.Default;
         
-        _registry = world.GetEntityRegistry();
-
         Pool = new PathfindingPool(
             defaultNodeArraySize: _worldMap.Width * _worldMap.Height,
             defaultPathArraySize: Config.MaxPathLength,
@@ -101,40 +113,50 @@ public sealed class NavigationModule : IDisposable
             new NavAgent()
         );
     }
-    
+
+    public void GetMovementState(
+        Entity entity,
+        long serverTick,
+        out NavEntityState state)
+    {
+        bool isMoving = false;
+        Position position = _world.Get<Position>(entity);
+        Position targetPosition = position;
+        Direction direction = default;
+        float moveProgress = 0f;
+
+        if (_world.Has<NavMovementState>(entity))
+        {
+            ref readonly var movement = ref _world.Get<NavMovementState>(entity);
+            isMoving = movement.IsMoving;
+            targetPosition = movement.TargetCell;
+            direction = movement.MovementDirection;
+            moveProgress = isMoving && movement.EndTick > movement.StartTick
+                ? Math.Clamp(
+                    (float)(serverTick - movement.StartTick) / 
+                    (movement.EndTick - movement.StartTick), 0f, 1f) 
+                : 0f;
+        }
+
+        state = new NavEntityState
+        {
+            MapId = _world.Has<MapId>(entity) ? _world.Get<MapId>(entity).Value : -1,
+            FloorId = _world.Has<FloorId>(entity) ? _world.Get<FloorId>(entity).Value : -1,
+            CurrentX = position.X,
+            CurrentY = position.Y,
+            DirectionX = direction.X,
+            DirectionY = direction.Y,
+            IsMoving = isMoving,
+            TargetX = targetPosition.X,
+            TargetY = targetPosition.Y,
+            MoveProgress = moveProgress,
+        };
+    }
+
     #region Movimento Direcional (Manual)
-    
-    // === Sobrecargas por ID ===
-    
-    /// <summary>Solicita movimento único em uma direção.</summary>
-    public void RequestDirectionalMove(int entityId, Direction direction, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestDirectionalMove(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, flags);
-    
-    /// <summary>Solicita movimento direcional com tipo específico.</summary>
-    public void RequestDirectionalMove(int entityId, Direction direction, DirectionalMovementType movementType, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestDirectionalMove(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, movementType, flags);
-    
-    /// <summary>Inicia movimento contínuo em uma direção.</summary>
-    public void StartContinuousMovement(int entityId, Direction direction, PathRequestFlags flags = PathRequestFlags.None)
-        => StartContinuousMovement(_registry.GetEntity(entityId, EntityDomain.Navigation), direction, flags);
-    
-    /// <summary>Para movimento direcional contínuo.</summary>
-    public void StopDirectionalMovement(int entityId)
-        => StopDirectionalMovement(_registry.GetEntity(entityId, EntityDomain.Navigation));
-    
-    /// <summary>Atualiza direção de movimento contínuo.</summary>
-    public void UpdateMovementDirection(int entityId, Direction newDirection)
-        => UpdateMovementDirection(_registry.GetEntity(entityId, EntityDomain.Navigation), newDirection);
-    
-    /// <summary>Verifica se entidade está em modo de movimento direcional.</summary>
-    public bool IsInDirectionalMode(int entityId)
-        => IsInDirectionalMode(_registry.GetEntity(entityId, EntityDomain.Navigation));
-    
-    public void MovePlayerDirectly(int entityId, int x, int y, int floor)
-        => MovePlayerDirectly(_registry.GetEntity(entityId, EntityDomain.Navigation), x, y, floor);
-    
+
     // === Métodos por Entity ===
-    
+
     /// <summary>
     /// Move um jogador diretamente para uma posição específica (teleporte).
     /// </summary>
@@ -253,20 +275,6 @@ public sealed class NavigationModule : IDisposable
     
     #region Movimento por Pathfinding
     
-    // === Sobrecargas por ID ===
-    
-    /// <summary>Solicita movimento para uma posição via pathfinding.</summary>
-    public void RequestPathfindingMove(int entityId, int targetX, int targetY, int targetFloor, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestPathfindingMove(_registry.GetEntity(entityId, EntityDomain.Navigation), targetX, targetY, targetFloor, flags);
-    
-    /// <summary>Solicita movimento para uma posição via pathfinding.</summary>
-    public void RequestPathfindingMove(int entityId, Position target, int targetFloor, PathRequestFlags flags = PathRequestFlags.None)
-        => RequestPathfindingMove(_registry.GetEntity(entityId, EntityDomain.Navigation), target.X, target.Y, targetFloor, flags);
-    
-    /// <summary>Cancela pathfinding em andamento.</summary>
-    public void CancelPathfinding(int entityId)
-        => CancelPathfinding(_registry.GetEntity(entityId, EntityDomain.Navigation));
-    
     // === Métodos por Entity ===
 
     /// <summary>
@@ -331,33 +339,12 @@ public sealed class NavigationModule : IDisposable
     
     #region Gerenciamento de Entidades
     
-    // === Sobrecargas por ID ===
-    
-    /// <summary>Para todo movimento de uma entidade.</summary>
-    public void StopMovement(int entityId)
-        => StopMovement(_registry.GetEntity(entityId, EntityDomain.Navigation));
-    
-    public bool TryRemoveNavigationComponents(int entityId, out Entity entity)
-    {
-        if (!_registry.TryGetEntity(entityId, EntityDomain.Navigation, out entity))
-            return false;
-        
-        _worldMap.RemoveEntity(
-            _world.Get<Position>(entity),
-            _world.Get<FloorId>(entity).Value,
-            entity);
-        
-        RemoveNavigationComponents(entity);
-        _registry.Unregister(entity);
-        return true;
-    }
-    
     // === Métodos por Entity ===
 
     /// <summary>
     /// Para todo movimento de uma entidade (direcional e pathfinding).
     /// </summary>
-    private void StopMovement(Entity entity)
+    public void StopMovement(Entity entity)
     {
         // Para movimento direcional
         StopDirectionalMovement(entity);

@@ -174,6 +174,6 @@ public static class SnapshotDeltaCalculator
             players[player.CharacterId] = player;
         }
         
-        return new WorldSnapshot(delta.ServerTick, delta.Timestamp, players.Values.ToList());
+        return new WorldSnapshot(delta.ServerTick, delta.Timestamp, [.. players.Values]);
     }
 }

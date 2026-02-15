@@ -5,8 +5,8 @@ using Game.Contracts;
 using Game.Infrastructure.ArchECS;
 using Game.Infrastructure.ArchECS.Services.Combat;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Entities;
+using Game.Infrastructure.ArchECS.Services.Entities.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation;
 using Game.Infrastructure.ArchECS.Services.Navigation.Components;
 using Game.Infrastructure.ArchECS.Services.Navigation.Core;
@@ -23,10 +23,11 @@ namespace Game.Simulation;
 public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
 {
     private readonly ILogger? _logger;
-    private readonly Dictionary<int, int> _playerIdToEntityId = new();
-    private readonly CombatModule? _combat;
-    private readonly NavigationModule? _navigation;
-    private readonly List<PlayerState> _snapshotBuffer = new();
+    private readonly EntityModule _entity;
+    private readonly CombatModule _combat;
+    private readonly NavigationModule _navigation;
+
+    private readonly List<PlayerState> _snapshotBuffer = [];
 
     /// <summary>
     /// Cria uma simulação com mapa e navegação completa.
@@ -46,6 +47,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     {
         _logger = logger;
         Map = worldMap;
+        _entity = new EntityModule(world, worldMap);
         _navigation = new NavigationModule(world, worldMap, navigationConfig);
         _combat = new CombatModule(world, worldMap, combatConfig);
 
@@ -102,19 +104,7 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         int strength, int endurance, int agility, int intelligence, int willpower, 
         int healthPoints, int manaPoints)
     {
-        // Cria nova entidade com componentes básicos
-        var entity = World.Create(
-            new CharacterId { Value = characterId },
-            new PlayerName { Name = name }
-        );
-
-        // Mapeia characterId para entityId
-        var entityId = entity.Id;
-        _playerIdToEntityId[characterId] = entityId;
-        
-        // Registra no registry
-        Registry.RegisterMultiDomain(entityId, entity, 
-            EntityDomain.Navigation | EntityDomain.Combat);
+        var entity = _entity.CreatePlayerEntity(characterId, name);
 
         // Adiciona componentes de navegação
         entity = AddToNavigation(entity, x, y, floor, dirX, dirY);
@@ -131,25 +121,17 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     
     public bool RemovePlayer(int characterId)
     {
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-            return false;
-
-        if (!Registry.TryGetEntity(entityId, EntityDomain.Navigation, out var entity))
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var playerMeta))
             return false;
 
         // Remove do módulo de navegação
-        _navigation?.RemoveNavigationComponents(entity);
+        _navigation?.RemoveNavigationComponents(playerMeta.Entity);
         
         // Remove do módulo de combate
-        _combat?.RemoveCombatComponents(entity);
+        _combat?.RemoveCombatComponents(playerMeta.Entity);
         
-        Registry.Unregister(entity);
-        
-        _playerIdToEntityId.Remove(characterId);
-        
-        // Destroi entidade
-        World.Destroy(entity);
-        
+        _entity.DestroyPlayerEntity(characterId);
+
         _logger?.LogDebug("Jogador removido: {CharacterId}", characterId);
         return true;
     }
@@ -190,13 +172,10 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     public bool RequestPlayerMove(int characterId, int targetX, int targetY, int targetFloor,
         PathRequestFlags flags = PathRequestFlags.None)
     {
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-        {
-            _logger?.LogWarning("Jogador {CharacterId} não encontrado para movimento", characterId);
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var playerMeta))
             return false;
-        }
 
-        _navigation?.RequestPathfindingMove(entityId, targetX, targetY, targetFloor, flags);
+        _navigation?.RequestPathfindingMove(playerMeta.Entity, targetX, targetY, targetFloor, flags);
         _logger?.LogTrace("Movimento solicitado para {CharacterId}: ({X}, {Y}, {Floor})",
             characterId, targetX, targetY, targetFloor);
 
@@ -206,13 +185,10 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     public bool RequestPlayerMoveDelta(int characterId, int deltaX, int deltaY,
         PathRequestFlags flags = PathRequestFlags.None)
     {
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-        {
-            _logger?.LogWarning("Jogador {CharacterId} não encontrado para movimento delta", characterId);
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var entityMetadata))
             return false;
-        }
 
-        _navigation?.RequestDirectionalMove(entityId, new Direction { X = deltaX, Y = deltaY }, flags);
+        _navigation?.RequestDirectionalMove(entityMetadata.Entity, new Direction { X = deltaX, Y = deltaY }, flags);
 
         _logger?.LogTrace("Movimento delta solicitado para {CharacterId}: Δ({Dx}, {Dy})",
             characterId, deltaX, deltaY);
@@ -228,10 +204,10 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     /// <returns>True se o movimento foi parado.</returns>
     public bool StopPlayerMove(int characterId)
     {
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entity))
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var entityMetadata))
             return false;
 
-        _navigation?.StopMovement(entity);
+        _navigation?.StopMovement(entityMetadata.Entity);
         return true;
     }
 
@@ -247,107 +223,51 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
         var players = _snapshotBuffer;
         players.Clear();
 
-        if (_playerIdToEntityId.Count > players.Capacity)
-            players.Capacity = _playerIdToEntityId.Count;
+        int playerCount = _entity.GetPlayerEntityCount();
 
-        if (_navigation is null || _playerIdToEntityId.Count == 0)
+        if (playerCount > players.Capacity)
+            players.Capacity = playerCount;
+
+        if (playerCount == 0)
             return new WorldSnapshot(serverTick, timestamp, players);
 
-        foreach (Entity entity in Registry.GetEntitiesByDomain(EntityDomain.Navigation | EntityDomain.Combat))
+        foreach (EntityMetadata meta in _entity.GetAllPlayerEntities())
         {
-            if (TryBuildPlayerState(entity, serverTick, out var state))
+            if (TryBuildPlayerState(meta.ExternalId, meta, serverTick, out var state))
                 players.Add(state);
         }
 
         return new WorldSnapshot(serverTick, timestamp, players);
     }
 
-    private bool TryBuildPlayerState(Entity entity, long serverTick, out PlayerState state)
+    public bool TryBuildPlayerState(int characterId, EntityMetadata metadata,long serverTick, out PlayerState state)
     {
-        state = default;
-
-        if (!World.IsAlive(entity))
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var playerMeta))
+        {
+            state = default;
             return false;
-
-        var characterId = World.Get<CharacterId>(entity).Value;
-
-        if (!_playerIdToEntityId.ContainsKey(characterId))
-            return false;
-
-        var pos = World.Get<Position>(entity);
-        var name = World.Get<PlayerName>(entity);
-        var floor = World.Has<FloorId>(entity) ? World.Get<FloorId>(entity).Value : 0;
-        var dir = World.Has<Direction>(entity) ? World.Get<Direction>(entity) : default;
-        var target = pos;
-
-        GetCombatVitals(entity, out var currentHp, out var maxHp, out var currentMp, out var maxMp);
-        GetMovementState(entity, serverTick, ref dir, ref target, out var isMoving, out var moveProgress);
+        }
+        _combat.GetCombatVitals(metadata.Entity, out var currentHp, out var maxHp, out var currentMp, out var maxMp);
+        _navigation.GetMovementState(metadata.Entity, serverTick, out NavEntityState navState);
 
         state = new PlayerState(
-            characterId,
-            name.Name,
-            pos.X,
-            pos.Y,
-            floor,
-            dir.X,
-            dir.Y,
-            isMoving,
-            target.X,
-            target.Y,
-            moveProgress,
+            metadata.ExternalId,
+            playerMeta.Name,
+            navState.CurrentX,
+            navState.CurrentY,
+            navState.FloorId,
+            navState.DirectionX,
+            navState.DirectionY,
+            navState.IsMoving,
+            navState.TargetX,
+            navState.TargetY,
+            navState.MoveProgress,
             currentHp,
             maxHp,
             currentMp,
             maxMp);
 
         return true;
-    }
-
-    private void GetCombatVitals(Entity entity, out int currentHp, out int maxHp, out int currentMp, out int maxMp)
-    {
-        currentHp = 0;
-        maxHp = 0;
-        currentMp = 0;
-        maxMp = 0;
-
-        if (!World.Has<CombatStats>(entity))
-            return;
-
-        var stats = World.Get<CombatStats>(entity);
-        currentHp = stats.CurrentHealth;
-        maxHp = stats.MaxHealth;
-        currentMp = stats.CurrentMana;
-        maxMp = stats.MaxMana;
-    }
-
-    private void GetMovementState(
-        Entity entity,
-        long serverTick,
-        ref Direction dir,
-        ref Position target,
-        out bool isMoving,
-        out float moveProgress)
-    {
-        isMoving = false;
-        moveProgress = 0f;
-
-        if (!World.Has<NavMovementState>(entity))
-            return;
-
-        ref readonly var movement = ref World.Get<NavMovementState>(entity);
-        if (!movement.IsMoving)
-            return;
-
-        isMoving = true;
-        dir = movement.MovementDirection;
-        target = movement.TargetCell;
-
-        if (movement.EndTick > movement.StartTick)
-        {
-            var totalDuration = movement.EndTick - movement.StartTick;
-            var elapsed = serverTick - movement.StartTick;
-            moveProgress = Math.Clamp((float)elapsed / totalDuration, 0f, 1f);
-        }
     }
 
     /// <summary>
@@ -362,37 +282,38 @@ public sealed class ServerWorldSimulation : WorldSimulation, IWorldSimulation
     {
         _navigation?.Dispose();
         _combat?.Dispose();
-        _playerIdToEntityId.Clear();
         base.Dispose();
     }
 
     public bool RequestBasicAttack(int characterId, int dirX, int dirY)
     {
-        if (_combat is null)
+        if (!_entity.TryGetEntityMetadataByCharacterId(characterId, out var meta))
             return false;
         
-        if (!_playerIdToEntityId.TryGetValue(characterId, out var entityId))
-            return false;
-        
-        if (!Registry.TryGetEntity(entityId, EntityDomain.Combat, out var entity))
-            return false;
-        
-        return _combat.RequestBasicAttack(entity, dirX, dirY, CurrentTick);
+        return _combat.RequestBasicAttack(meta.Entity, dirX, dirY, CurrentTick);
     }
 
-    public bool TryDrainCombatEvents(List<CombatEvent> buffer)
+    public bool TryDrainCombatEvents(List<CombatEvent> buffer, List<EntityCombatEvent> eventBuffer)
     {
-        if (_combat is null)
+        _combat.TryDrainEvents(eventBuffer);
+
+        if (eventBuffer.Count == 0)
             return false;
 
-        return _combat.TryDrainEvents(buffer);
-    }
-}
+        buffer.AddRange(eventBuffer.Select(evt => new CombatEvent(
+            Type: evt.Type,
+            AttackerId: _entity.GetPlayerEntityCharacterId(evt.Attacker),
+            TargetId: _entity.GetPlayerEntityCharacterId(evt.Target),
+            DirX: evt.DirX,
+            DirY: evt.DirY,
+            Damage: evt.Damage,
+            X: evt.X,
+            Y: evt.Y,
+            Floor: evt.Floor,
+            Speed: evt.Speed,
+            Range: evt.Range
+            )));
 
-/// <summary>
-/// Componente para armazenar o nome do jogador.
-/// </summary>
-public struct PlayerName
-{
-    public string Name;
+        return true;
+    }
 }

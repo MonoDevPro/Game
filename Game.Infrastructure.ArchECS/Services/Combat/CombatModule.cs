@@ -5,7 +5,6 @@ using Game.Infrastructure.ArchECS.Commons;
 using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Game.Infrastructure.ArchECS.Services.Combat.Events;
 using Game.Infrastructure.ArchECS.Services.Combat.Systems;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat;
@@ -22,15 +21,11 @@ public sealed class CombatModule : IDisposable
     private readonly Group<long> _systems;
     private bool _disposed;
 
-    private readonly CentralEntityRegistry _registry;
-
     public CombatModule(World world, WorldMap worldMap, CombatConfig? config = null)
     {
         _events = new Events.CombatEventBuffer(world);
         _world = world;
         Config = config ?? CombatConfig.Default;
-
-        _registry = world.GetEntityRegistry();
 
         _systems = new Group<long>(
             "ServerCombat",
@@ -105,6 +100,23 @@ public sealed class CombatModule : IDisposable
         _world.AddOrReplace<TeamId>(entity, new TeamId { Value = teamId });
     }
 
+    public void GetCombatVitals(Entity entity, out int currentHp, out int maxHp, out int currentMp, out int maxMp)
+    {
+        currentHp = 0;
+        maxHp = 0;
+        currentMp = 0;
+        maxMp = 0;
+
+        if (!_world.Has<CombatStats>(entity))
+            return;
+
+        var stats = _world.Get<CombatStats>(entity);
+        currentHp = stats.CurrentHealth;
+        maxHp = stats.MaxHealth;
+        currentMp = stats.CurrentMana;
+        maxMp = stats.MaxMana;
+    }
+
     public void RemoveCombatComponents(Entity entity)
     {
         _world.RemoveIfExists<CombatStats>(entity);
@@ -132,14 +144,13 @@ public sealed class CombatModule : IDisposable
         return true;
     }
 
-    public bool TryDrainEvents(List<CombatEvent> buffer)
+    public bool TryDrainEvents(List<EntityCombatEvent> buffer)
         => _events.TryDrain(buffer);
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        _registry.Clear();
         _systems.Dispose();
     }
 }

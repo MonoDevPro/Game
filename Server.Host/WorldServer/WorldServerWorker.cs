@@ -12,6 +12,7 @@ using Server.Host.Common;
 using Game.Domain;
 using Game.Infrastructure.ArchECS;
 using Game.Infrastructure.ArchECS.Services.Navigation.Map;
+using Game.Infrastructure.ArchECS.Services.Combat.Components;
 
 namespace Server.Host.WorldServer;
 
@@ -62,6 +63,7 @@ public class WorldServerWorker(
         var peerByCharacter = new ConcurrentDictionary<int, LiteNetLib.NetPeer>();
         var characterByPeer = new ConcurrentDictionary<int, int>();
         var combatEventBuffer = new List<CombatEvent>(64);
+        var entityCombatBuffer = new List<EntityCombatEvent>(64);
         var snapshotDeltaBuffersByPeer = new ConcurrentDictionary<int, SnapshotDeltaBuffers>();
 
         // Estado para delta compression por peer
@@ -110,6 +112,7 @@ public class WorldServerWorker(
                     HandleBasicAttackCommand(peer, envelope, characterByPeer, commandQueue);
                     break;
 
+
                 case OpCode.WorldSnapshotRequest:
                     // Cliente solicitou snapshot completo (após perda de pacotes)
                     lastSnapshotByPeer.TryRemove(peer.Id, out _);
@@ -135,7 +138,7 @@ public class WorldServerWorker(
 
             var hasPeers = !peerByCharacter.IsEmpty;
 
-            if (simulation.TryDrainCombatEvents(combatEventBuffer))
+            if (simulation.TryDrainCombatEvents(combatEventBuffer, entityCombatBuffer))
             {
                 if (hasPeers)
                 {

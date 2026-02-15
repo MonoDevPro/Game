@@ -2,7 +2,7 @@ using Arch.Bus;
 using Arch.Core;
 using Game.Contracts;
 using Game.Infrastructure.ArchECS.Commons;
-using Game.Infrastructure.ArchECS.Services.EntityRegistry.Components;
+using Game.Infrastructure.ArchECS.Services.Combat.Components;
 using Microsoft.Extensions.Logging;
 
 namespace Game.Infrastructure.ArchECS.Services.Combat.Events;
@@ -12,11 +12,14 @@ namespace Game.Infrastructure.ArchECS.Services.Combat.Events;
 /// </summary>
 public sealed partial class CombatEventBuffer : GameSystem
 {
-    private readonly List<CombatEvent> _events = [];
-    
-    [Event] public void Send(ref CombatEvent evt) => _events.Add(evt);
+    private readonly List<EntityCombatEvent> _events = [];
 
-    public bool TryDrain(List<CombatEvent> buffer)
+    [Event] public void Send(ref EntityCombatEvent evt)
+    {
+        _events.Add(evt);
+    }
+
+    public bool TryDrain(List<EntityCombatEvent> buffer)
     {
         buffer.Clear();
 
